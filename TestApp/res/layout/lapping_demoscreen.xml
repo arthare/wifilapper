@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+    <view
+	  class="com.artsoft.wifilapper.StatusBarView"
+	  android:id="@+android:id/statusbar"
+	  android:layout_width="wrap_content"
+	  android:layout_height="wrap_content"
+	  android:scrollbars="vertical"
+	  android:fadingEdge="vertical" />
+
+    <Button
+        android:id="@+id/btnMarket"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Go to WifiLapper in the Android Market." />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Your time is up!  WifiLapper Lite permits 30 minutes of full usage each 24 hours.  If you want to use it for longer each day, you should upgrade to the non-lite version for $5."
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="You can use the free Pitside application to view your .wflp lap databases if you transfer them to a PC.  This has been the full edition of WifiLapper - the full version is only different in that it doesn't include this message."
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+</LinearLayout>

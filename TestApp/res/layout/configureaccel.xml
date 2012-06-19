@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <CheckBox
+        android:id="@+id/chkUseAccel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Use Accelerometer"
+        android:checked="true" />
+<!-- 
+    <TextView
+        android:id="@+id/lblInstructions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Please wait.  Do not touch the phone."
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <Button
+        android:id="@+id/btnRedo"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Redo calibration" />
+-->
+</LinearLayout>

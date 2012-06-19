@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.artsoft.wifilapper"
+      android:versionCode="19"
+      android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="8" 
+          android:targetSdkVersion="8"/>
+    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <application android:icon="@drawable/icon" android:label="@string/app_name" android:debuggable="true">
+        <activity android:name=".LandingScreen"
+            	  android:launchMode="singleTask"
+                  android:label="@string/app_name"
+                  android:screenOrientation="landscape"
+                  android:configChanges="orientation|keyboard|keyboardHidden">
+        </activity>
+		<activity android:name=".ComputerChooserActivity" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape"
+          android:configChanges="orientation|keyboard|keyboardHidden"  />
+		<activity android:name=".LandingNewRace" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name=".LandingLoadRace" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name=".LandingSetSplits" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name=".LandingDBManage" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name=".LandingOptions" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name=".ApiDemos" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" 
+          android:launchMode="singleTask"
+          android:configChanges="orientation|keyboard|keyboardHidden" />
+		
+		<receiver android:name=".SMSReceiver"> 
+            <intent-filter> 
+                <action android:name=
+                    "android.provider.Telephony.SMS_RECEIVED" /> 
+            </intent-filter> 
+        </receiver>
+    </application>
+
+
+
+
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"></uses-permission>
+<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+<uses-permission android:name="android.permission.CHANGE_WIFI_STATE"></uses-permission>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
+<uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"></uses-permission>
+<uses-permission android:name="android.permission.CHANGE_COMPONENT_ENABLED_STATE"></uses-permission>
+
+<uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION"></uses-permission>
+<uses-permission android:name="android.permission.BLUETOOTH"></uses-permission>
+</manifest> 

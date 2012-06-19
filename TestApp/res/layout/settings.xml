@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+<TextView android:text="Settings" android:id="@+id/TextView03" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+
+
+<LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout01" android:layout_width="wrap_content" android:layout_height="wrap_content">
+	<EditText android:text="belkinsucks" android:id="@+id/txtSSID" android:layout_width="wrap_content" android:layout_height="wrap_content"></EditText>
+	<TextView android:text="SSID" android:id="@+id/TextView02" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+</LinearLayout>
+
+<LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout02" android:layout_width="wrap_content" android:layout_height="wrap_content">
+	<EditText android:text="192.168.1.100" android:id="@+id/txtIP" android:layout_width="wrap_content" android:layout_height="wrap_content"></EditText>
+	<TextView android:text="IP Address" android:id="@+id/TextView01" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+</LinearLayout>
+<CheckBox android:text="Test Mode" android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/chkTestMode"></CheckBox>
+<!-- <LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout02" android:layout_width="wrap_content" android:layout_height="wrap_content">
+<EditText android:text="@+id/EditText01" android:id="@+id/EditText01" android:layout_width="wrap_content" android:layout_height="wrap_content"></EditText>
+</LinearLayout>
+<LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout02" android:layout_width="wrap_content" android:layout_height="wrap_content">
+<EditText android:text="@+id/EditText01" android:id="@+id/EditText01" android:layout_width="wrap_content" android:layout_height="wrap_content"></EditText>
+</LinearLayout>-->
+
+
+<Button android:text="Apply" android:id="@+id/btnApply" android:layout_width="fill_parent" android:layout_height="wrap_content"></Button>
+
+
+</LinearLayout>

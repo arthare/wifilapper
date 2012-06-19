@@ -1,0 +1,4 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:enabled="true" android:title="Buy Full Version" android:visible="true" android:id="@+id/mnuBuyFull"></item>
+    <item android:enabled="true" android:title="Quit" android:visible="true" android:id="@+id/mnuClose"></item>
+</menu>

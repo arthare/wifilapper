@@ -1,0 +1,33 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal" >
+    
+    <!-- list of found wflp files on sd card -->
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:layout_weight="1" >
+    	<TextView android:text="Choose a database to import.  Your existing DB will be replaced, so it's recommend you save it first on the right" android:id="@+id/TextView02" android:layout_width="fill_parent" android:layout_height="wrap_content"></TextView>
+    	<ListView
+	        android:id="@android:id/list"
+	        android:layout_width="fill_parent"
+	        android:layout_height="fill_parent" >
+    	</ListView>
+    </LinearLayout>
+    
+    
+    <!-- export filename and save button -->
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" 
+    android:layout_weight="1">
+    	<TextView android:text="Save filename" android:id="@+id/TextView02" android:layout_width="fill_parent" android:layout_height="wrap_content"></TextView>
+		<EditText android:text="laps" android:id="@+id/edtFilename" android:layout_width="fill_parent" android:layout_height="wrap_content"></EditText>
+		<TextView android:text="" android:id="@+id/txtSavePath" android:layout_width="fill_parent" android:layout_height="wrap_content"></TextView>
+		<Button android:text="Save" android:id="@+id/btnSaveDB" android:layout_width="fill_parent" android:layout_height="wrap_content"></Button>
+    </LinearLayout>
+</LinearLayout>
+    
