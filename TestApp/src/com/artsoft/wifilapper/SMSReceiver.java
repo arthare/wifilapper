@@ -49,7 +49,6 @@ public class SMSReceiver extends BroadcastReceiver
         }                         
 	}
 	
-	// strAcknowledgeString = the string we'll send.  Example: "Ack 'ram red green...'"
 	public static void SMSAcknowledgeMessage(String strAcknowledgeString, String strPhoneNumber)
 	{
 		if(strAcknowledgeString == null || strAcknowledgeString.length() <= 0)
