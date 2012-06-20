@@ -26,6 +26,7 @@ import com.artsoft.wifilapper.Utility.MultiStateObject.STATE;
 
 import ioio.lib.api.*;
 import ioio.lib.api.IOIO.VersionType;
+import ioio.lib.api.PulseInput.ClockRate;
 import ioio.lib.api.PulseInput.PulseMode;
 import ioio.lib.api.TwiMaster.Rate;
 import ioio.lib.api.Uart.Parity;
@@ -40,6 +41,7 @@ public class IOIOManager
 	{
 		public static final int FILTERTYPE_NONE = 0;
 		public static final int FILTERTYPE_WHEELSPEED = 1;
+		public static final int FILTERTYPE_WHEELSPEEDRPM = 2;
 		
 		public PinParams(int iPin, int iPeriod, int iFilterType, double dParam1, double dParam2, int iCustomType)
 		{
@@ -65,6 +67,7 @@ public class IOIOManager
 			{
 			case PinParams.FILTERTYPE_NONE: return flValue;
 			case PinParams.FILTERTYPE_WHEELSPEED: return (float)(dParam2 * (flValue / dParam1)); // dParam1 = # of pulses per rev.  dParam2 = wheel diameter
+			case PinParams.FILTERTYPE_WHEELSPEEDRPM: return (float)((flValue / dParam1)); // dParam1 = # of pulses per rev.  flValue = # of pulses detected
 			default: return flValue;
 			}
 		}
@@ -76,6 +79,9 @@ public class IOIOManager
 				return "None";
 			case PinParams.FILTERTYPE_WHEELSPEED:
 				return fShort ? "Wheelspeed" : "Wheelspeed (" + (int)(dParam1+0.5) + " pulses per rev, " + Utility.FormatFloat((float)dParam2,0) + "mm)";
+			case PinParams.FILTERTYPE_WHEELSPEEDRPM:
+				return fShort ? "Wheelspeed-RPM" : "Wheelspeed-RPM (" + (int)(dParam1+0.5) + " pulses per rev)";
+				
 			}
 			return "";
 		}
@@ -185,8 +191,8 @@ public class IOIOManager
 				{
 					Thread.sleep(1000);
 					
-					//pIOIO = IOIOFactory.create();
-					pIOIO = new FakeIOIO();
+					pIOIO = IOIOFactory.create();
+					//pIOIO = new FakeIOIO();
 					if(pIOIO == null) 
 					{
 						m_pStateMan.SetState(IOIOManager.class, STATE.TROUBLE_BAD, "Could not connect to IOIO");
@@ -206,7 +212,10 @@ public class IOIOManager
 					{
 						if(m_rgPulsePins[x] != null)
 						{
-							pulseIn[x] = pIOIO.openPulseInput(x, PulseMode.FREQ);
+							DigitalInput.Spec spec = new DigitalInput.Spec(x);
+							spec.mode = DigitalInput.Spec.Mode.FLOATING;
+							
+							pulseIn[x] = pIOIO.openPulseInput(spec, ClockRate.RATE_62KHz, PulseMode.FREQ, false);
 						}
 					}
 					

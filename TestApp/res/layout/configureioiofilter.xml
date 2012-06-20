@@ -39,7 +39,13 @@
                     android:id="@+id/rbWheelSpeed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Wheel Speed Sensor" />
+                    android:text="Wheel Speed" />
+                
+                <RadioButton
+                    android:id="@+id/rbWheelSpeedRPM"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Wheel Speed (RPM)" />
             </RadioGroup>
 
         </LinearLayout>
@@ -51,6 +57,12 @@
             android:layout_weight="1"
             android:orientation="vertical" >
 
+            <TextView
+                android:id="@+id/lbl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="In pitside, treat output as..."
+                android:textAppearance="?android:attr/textAppearanceMedium" />
             <Spinner
                 android:id="@+id/spnCustom"
                 android:layout_width="match_parent"

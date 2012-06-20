@@ -23,6 +23,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
@@ -124,32 +125,44 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 		UpdateUI();
 	}
 	
+	private void SetupParamText(int idLabel, int idTextBox, String strLabelText, double dDefault)
+	{
+		TextView lbl= (TextView)findViewById(idLabel);
+		EditText txt = (EditText)findViewById(idTextBox);
+		
+		txt.setVisibility(strLabelText.length() > 0 ? View.VISIBLE : View.GONE);
+		lbl.setVisibility(strLabelText.length() > 0 ? View.VISIBLE : View.GONE);
+		lbl.setText(strLabelText);
+		txt.setText("" + Utility.FormatFloat((float)dDefault, 2));
+	}
+	
 	private void UpdateUI()
 	{
-		boolean fVisible = true;
 		String strParam1 = "";
 		String strParam2 = "";
+		double dDefault1 = 0;
+		double dDefault2 = 0;
 		if(idChecked == R.id.rbNone)
 		{
-			fVisible = false;
+			strParam1 = strParam2 = "";
+		}
+		else if(idChecked == R.id.rbWheelSpeedRPM)
+		{
+			strParam1 = "Pulses per revolution";
+			strParam2 = "";
+			dDefault1 = 8;
+			dDefault2 = 0;
 		}
 		else if(idChecked == R.id.rbWheelSpeed)
 		{
-			fVisible = true;
-			strParam1 = "Pulses per revoluation";
+			strParam1 = "Pulses per revolution";
 			strParam2 = "Wheel Diameter (mm)";
+			dDefault1 = 8;
+			dDefault2 = 711.2;
 		}
 		
-		TextView txt;
-		
-		txt= (TextView)findViewById(R.id.lblParam1);
-		txt.setText(strParam1);
-		
-		txt = (TextView)findViewById(R.id.lblParam2);
-		txt.setText(strParam2);
-		
-		LinearLayout linCustom = (LinearLayout)findViewById(R.id.linCustom);
-		linCustom.setVisibility(fVisible ? View.VISIBLE : View.INVISIBLE);
+		SetupParamText(R.id.lblParam1, R.id.txtParam1, strParam1, dDefault1);
+		SetupParamText(R.id.lblParam2, R.id.txtParam2, strParam2, dDefault2);
 	}
 
 	@Override
