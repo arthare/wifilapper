@@ -544,8 +544,12 @@ public class LapSender
 							else
 							{
 								// pop the first lap off the front of our queue
-								lapToSend = lstLapsToSend.get(0);
-								lstLapsToSend.remove(0);
+								do
+								{
+									lapToSend = lstLapsToSend.get(0);
+									lstLapsToSend.remove(0);
+								}
+								while(lapToSend != null && (lapToSend.IsPruned()));
 							}
 						}
 						

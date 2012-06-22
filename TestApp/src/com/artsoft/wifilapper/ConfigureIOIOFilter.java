@@ -21,6 +21,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -65,6 +67,15 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 		            this, R.array.ioiocustomnames, android.R.layout.simple_spinner_item);
 		    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		    spnCustom.setAdapter(adapter);
+		    
+		    spnCustom.setOnItemSelectedListener(new OnItemSelectedListener() {
+	            @Override
+	            public void onItemSelected(AdapterView<?> arg0, View arg1,
+	                    int arg2, long arg3) {arg0.invalidate();}
+
+	            @Override
+	            public void onNothingSelected(AdapterView<?> arg0) {arg0.invalidate();}
+	        });
 		}
 		
 		UpdateUI();
