@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PitsideConsole", "PitsideConsole\PitsideConsole.vcxproj", "{5091EEA3-E98B-4748-BF4D-6B9D281B7931}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B} = {D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArtLib", "ArtLib\ArtLib.vcxproj", "{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZLib", "ZLib\ZLib.vcxproj", "{08C9BB96-9EF4-4E8B-9227-5AC50E394C7A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Debug|Win32.Build.0 = Debug|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Release|Win32.ActiveCfg = Release|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Release|Win32.Build.0 = Release|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Debug|Win32.Build.0 = Debug|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Release|Win32.ActiveCfg = Release|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Release|Win32.Build.0 = Release|Win32
+		{08C9BB96-9EF4-4E8B-9227-5AC50E394C7A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{08C9BB96-9EF4-4E8B-9227-5AC50E394C7A}.Debug|Win32.Build.0 = Debug|Win32
+		{08C9BB96-9EF4-4E8B-9227-5AC50E394C7A}.Release|Win32.ActiveCfg = Release|Win32
+		{08C9BB96-9EF4-4E8B-9227-5AC50E394C7A}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

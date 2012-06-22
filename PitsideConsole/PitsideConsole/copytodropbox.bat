@@ -1,0 +1,1 @@
+copy ..\release\pitsideconsole.exe e:\dropbox\wifilapper\pitside\
