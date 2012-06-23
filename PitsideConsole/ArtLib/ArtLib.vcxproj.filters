@@ -60,6 +60,12 @@
     <ClInclude Include="Multicast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ArtHTTPServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ArtNet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -84,6 +90,12 @@
       <Filter>Source Files\ArtSQL</Filter>
     </ClCompile>
     <ClCompile Include="Multicast.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ArtNet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ArtHTTPServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

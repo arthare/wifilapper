@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include "DashWare.h"
 #include "Multicast.h"
+#include "PitsideHTTP.h"
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
 
@@ -167,6 +168,18 @@ public:
     vector<const CLap*> ret = m_lstLaps;
     return ret;
   }
+  virtual const CLap* GetLap(int iLapId) const override
+  {
+    AutoLeaveCS _cs(&m_cs);
+    for(int x = 0; x < m_lstLaps.size(); x++)
+    {
+      if(m_lstLaps[x]->GetLapId() == iLapId)
+      {
+        return m_lstLaps[x];
+      }
+    }
+    return NULL;
+  }
   virtual const CDataChannel* GetDataChannel(int iLapId,DATA_CHANNEL eChannel) const override
   {
     AutoLeaveCS _cs(&m_cs);
@@ -182,6 +195,24 @@ public:
     }
     return NULL;
   }
+  virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const override
+  {
+    AutoLeaveCS _cs(&m_cs);
+    set<DATA_CHANNEL> setRet;
+
+    ChannelMap::const_iterator i = m_mapChannels.find(iLapId);
+    if(i != m_mapChannels.end())
+    {
+      // ok, we've got stuff about that lap...
+      map<DATA_CHANNEL,const CDataChannel*>::const_iterator i2 = i->second.begin();
+      while(i2 != i->second.end())
+      {
+        setRet.insert(i2->first);
+        i2++;
+      }
+    }
+    return setRet;
+  };
 private:
   IUI* m_pUI;
   vector<const CLap*> m_lstLaps;
@@ -1242,10 +1273,13 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   CLapReceiver sfLaps(&sfUI);
   g_pLapDB = &sfLaps;
 
+  
+  PitsideHTTP aResponder(g_pLapDB);
+  SimpleHTTPServer aServer(80,&aResponder);
+
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
-
   exit(0);
 }
 

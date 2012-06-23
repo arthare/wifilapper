@@ -247,8 +247,10 @@ public:
   // I chose to access all the laps at once to avoid race condition issues if the network thread updates
   // the databank while the UI is displaying it
   virtual vector<const CLap*> GetLaps() const = 0;
+  virtual const CLap* GetLap(int iLapId) const = 0;
   virtual const CDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
-  
+  virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const = 0;
+
   // modifying data
 	virtual void AddLap(const CLap* pLap) = 0;
   virtual void AddDataChannel(const CDataChannel* pChannel) = 0;

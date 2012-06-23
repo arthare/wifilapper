@@ -1,0 +1,1 @@
+copy webside.js ..\debug\webside.js

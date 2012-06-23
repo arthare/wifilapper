@@ -87,6 +87,8 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArtHTTPServer.h" />
+    <ClInclude Include="ArtNet.h" />
     <ClInclude Include="ArtSQL\ArtSQLite.h" />
     <ClInclude Include="ArtSQL\sqlite3.h" />
     <ClInclude Include="ArtSQL\sqlite3ext.h" />
@@ -101,6 +103,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ArtHTTPServer.cpp" />
+    <ClCompile Include="ArtNet.cpp" />
     <ClCompile Include="ArtSQL\ArtSQLite.cpp" />
     <ClCompile Include="ArtSQL\shell.c" />
     <ClCompile Include="ArtSQL\sqlite3.c" />

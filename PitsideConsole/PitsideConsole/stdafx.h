@@ -5,6 +5,7 @@
 
 #pragma once
 
+#define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
 #include "targetver.h"
 
 #include <stdio.h>
