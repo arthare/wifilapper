@@ -37,6 +37,7 @@ interface ILapSupplier
 {
 public:
   virtual vector<CExtendedLap*> GetLapsToShow() const = 0;
+  virtual vector<CExtendedLap*> GetAllLaps() const = 0;
   virtual LAPDISPLAYSTYLE GetLapDisplayStyle(int iSupplierId) const = 0;
   virtual const CDataChannel* GetXChannel(int iLapId) const = 0;
   virtual const CDataChannel* GetYChannel(int iLapId) const = 0;

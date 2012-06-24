@@ -91,6 +91,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
+    <None Include="webside.js" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DashWare.h" />

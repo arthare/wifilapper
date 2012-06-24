@@ -1006,7 +1006,19 @@ private:
       return false;
     }
   }
+  
+  virtual vector<CExtendedLap*> GetAllLaps() const override
+  {
+    set<LPARAM> setSelectedLaps = m_sfLapList.GetSelectedItemsData();
+    vector<CExtendedLap*> lstLaps;
+    for(map<int,CExtendedLap*>::const_iterator i = m_mapLaps.begin(); i != m_mapLaps.end(); i++)
+    {
+      CExtendedLap* pLap = i->second;
+      lstLaps.push_back(pLap);
+    }
 
+    return lstLaps;
+  }
   virtual vector<CExtendedLap*> GetLapsToShow() const override
   {
     set<LPARAM> setSelectedLaps = m_sfLapList.GetSelectedItemsData();
@@ -1273,8 +1285,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   CLapReceiver sfLaps(&sfUI);
   g_pLapDB = &sfLaps;
 
-  
-  PitsideHTTP aResponder(g_pLapDB);
+  PitsideHTTP aResponder(g_pLapDB,&sfUI);
   SimpleHTTPServer aServer(80,&aResponder);
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
