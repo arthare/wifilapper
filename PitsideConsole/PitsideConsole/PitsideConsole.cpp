@@ -262,11 +262,11 @@ public:
       m_fShowDriverBests(false),
       m_pReferenceLap(NULL),
       m_eXChannel(DATA_CHANNEL_DISTANCE),
-      m_eYChannel(DATA_CHANNEL_VELOCITY),
       m_fdwUpdateNeeded(0),
       m_flShiftX(0),
       m_flShiftY(0)
   {
+    m_lstYChannels.push_back(DATA_CHANNEL_VELOCITY);
     m_szCommentText[0] = '\0';
     m_szMessageStatus[0] = '\0';
     SetupMulticast();
@@ -397,9 +397,13 @@ public:
             {
             case LVN_ITEMCHANGED:
               const set<LPARAM> sel = m_sfYAxis.GetSelectedItemsData();
-              if(sel.size() == 1)
+              if(sel.size() >= 1)
               {
-                m_eYChannel = (DATA_CHANNEL)*sel.begin();
+                m_lstYChannels.clear();
+                for(set<LPARAM>::iterator i = sel.begin(); i != sel.end(); i++)
+                {
+                  m_lstYChannels.push_back((DATA_CHANNEL)*i);
+                }
                 NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
                 if(pDetails->iItem >= 0)
                 {
@@ -785,7 +789,11 @@ public:
       set<LPARAM> setXSelected,setYSelected;
       setXSelected.insert(m_eXChannel);
       m_sfXAxis.SetSelectedData(setXSelected);
-      setYSelected.insert(m_eYChannel);
+
+      for(int x = 0; x < m_lstYChannels.size(); x++)
+      {
+        setYSelected.insert(m_lstYChannels[x]);
+      }
       m_sfYAxis.SetSelectedData(setYSelected);
 
       HWND hDriverButton = GetDlgItem(m_hWnd, IDC_SETDRIVER);
@@ -1184,9 +1192,18 @@ private:
   {
     return g_pLapDB->GetDataChannel(iLapId, m_eXChannel);
   }
-  virtual const CDataChannel* GetYChannel(int iLapId) const override
+  virtual const CDataChannel* GetChannel(int iLapId, DATA_CHANNEL eChannel) const override
   {
-    return g_pLapDB->GetDataChannel(iLapId, m_eYChannel);
+    return g_pLapDB->GetDataChannel(iLapId, eChannel);
+  }
+  virtual vector<const CDataChannel*> GetYChannels(int iLapId) const override
+  {
+    vector<const CDataChannel*> lstChans;
+    for(int x = 0;x < m_lstYChannels.size(); x++)
+    {
+      lstChans.push_back(g_pLapDB->GetDataChannel(iLapId, m_lstYChannels[x]));
+    }
+    return lstChans;
   }
   virtual void GetResponse(const char* pbData, int cbData, char** ppbResponse, int* pcbResponse)
   {
@@ -1236,7 +1253,7 @@ private:
   LAPSUPPLIEROPTIONS m_sfLapOpts;
   LAPDISPLAYSTYLE m_eLapDisplayStyle;
   DATA_CHANNEL m_eXChannel;
-  DATA_CHANNEL m_eYChannel;
+  vector<DATA_CHANNEL> m_lstYChannels;
   bool m_fShowBests;
   bool m_fShowDriverBests;
 
@@ -1285,8 +1302,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   CLapReceiver sfLaps(&sfUI);
   g_pLapDB = &sfLaps;
 
-  PitsideHTTP aResponder(g_pLapDB,&sfUI);
-  SimpleHTTPServer aServer(80,&aResponder);
+  //PitsideHTTP aResponder(g_pLapDB,&sfUI);
+  //SimpleHTTPServer aServer(80,&aResponder);
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 

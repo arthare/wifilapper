@@ -40,7 +40,8 @@ public:
   virtual vector<CExtendedLap*> GetAllLaps() const = 0;
   virtual LAPDISPLAYSTYLE GetLapDisplayStyle(int iSupplierId) const = 0;
   virtual const CDataChannel* GetXChannel(int iLapId) const = 0;
-  virtual const CDataChannel* GetYChannel(int iLapId) const = 0;
+  virtual vector<const CDataChannel*> GetYChannels(int iLapId) const = 0;
+  virtual const CDataChannel* GetChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
   virtual FLOATRECT GetAllLapsBounds() const = 0;
 
   // guide-parameter functions

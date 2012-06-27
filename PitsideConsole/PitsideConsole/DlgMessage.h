@@ -25,7 +25,7 @@ struct WIFILAPPER_MESSAGE
 {
   WIFILAPPER_MESSAGE() : WFLP('WFLP'),iTime(0)
   {
-    szMessage[0] = '\0';
+    memset(szMessage,0,sizeof(szMessage));
   }
   const int WFLP;
   int iTime; // time to show the message

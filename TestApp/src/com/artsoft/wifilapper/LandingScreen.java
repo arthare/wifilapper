@@ -69,7 +69,7 @@ public class LandingScreen extends android.app.TabActivity
 			}
 			else
 			{
-				Utility.ShowAlert(this, "WifiLapper was unable to load your database on either internal or external storages.  Is your phone out of space?");
+				Toast.makeText(this, "WifiLapper was unable to load your database on either internal or external storages.  Is your phone out of space?", Toast.LENGTH_LONG).show();
 				finish();
 			}
 		}

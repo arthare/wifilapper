@@ -196,6 +196,43 @@ void PitsideHTTP::WriteLapDataScript(const CLap* pLap, string strArrayName, ostr
   }
 }
 
+// CSL = comma-separated-list
+vector<int> ParseCSL(string strCSL)
+{
+  vector<int> lstRet;
+
+  char szParse[1000];
+  strncpy(szParse,strCSL.c_str(),strCSL.length());
+  char* pszCurPos = &szParse[0];
+  do
+  {
+    char* pszComma = strstr(pszCurPos,",");
+    if(!pszComma)
+    {
+      // we're at the last thing in the list
+      int iVal = atoi(pszCurPos);
+      if(iVal > 0)
+      {
+        lstRet.push_back(iVal);
+      }
+      break;
+    }
+    else
+    {
+      // found the next comma
+      pszComma[0] = 0;
+      int iVal = atoi(pszCurPos);
+      if(iVal > 0)
+      {
+        lstRet.push_back(iVal);
+      }
+      pszCurPos = pszComma+1;
+    }
+  } while(true);
+  return lstRet;
+
+}
+
 bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
 {
   if(pReq.strPage == "/") // main page - list all the laps the user can view
@@ -275,6 +312,42 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
       if(pLap)
       {
         WriteLapDataScript(pLap,strLapId,out);
+      }
+    }
+  }
+  else if(pReq.strPage == "/dataxy")
+  {
+    // returns a page containing comma-separated values for the selected laps
+    string strY = pReq.mapParams["yaxis"];
+    string strLapids = pReq.mapParams["lapids"]; // comma-separated list of lapids
+    int y = atoi(strY.c_str());
+    vector<int> lstLaps = ParseCSL(strLapids);
+    if(y > 0)
+    {
+      const CDataChannel** rgDataY = new const CDataChannel*[lstLaps.size()];
+      const CDataChannel** rgDataX = new const CDataChannel*[lstLaps.size()];
+      
+      int tmStart = 0x7fffffff;
+      int tmEnd = -0x7fffffff;
+
+      out<<"Distance,";
+      for(int ixLap = 0; ixLap < lstLaps.size(); ixLap++)
+      {
+        out<<"Lap "<<lstLaps[ixLap]<<",";
+        rgDataX[ixLap] = m_pLapsDB->GetDataChannel(lstLaps[ixLap],DATA_CHANNEL_DISTANCE);
+        rgDataY[ixLap] = m_pLapsDB->GetDataChannel(lstLaps[ixLap],(DATA_CHANNEL)y);
+
+        tmStart = min(tmStart,rgDataX[ixLap]->GetStartTimeMs());
+        tmEnd = max(tmEnd,rgDataX[ixLap]->GetEndTimeMs());
+      }
+      out<<endl;
+      
+      for(int tmTime = tmStart; tmTime < tmEnd; tmTime += 100)
+      {
+        out<<tmTime<<","; //
+        for(int ixLap = 0; ixLap < lstLaps.size(); ixLap++)
+        {
+        }
       }
     }
   }

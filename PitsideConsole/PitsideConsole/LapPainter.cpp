@@ -10,6 +10,8 @@ public:
   const CDataChannel* m_pDataY;
   POINT m_ptWindow;
   const CExtendedLap* m_pLap;
+  DATA_CHANNEL m_eChannelY;
+
 };
 
 CLapPainter::CLapPainter(/*IUI* pUI, */ILapSupplier* pLapSupplier, int iSupplierId) : ArtOpenGLWindow(), /*m_pUI(pUI),*/ m_pLapSupplier(pLapSupplier), m_iSupplierId(iSupplierId)
@@ -27,13 +29,13 @@ void CLapPainter::OGL_Paint()
   
   RECT rcClient;
   GetClientRect(OGL_GetHWnd(), &rcClient);
-  glViewport(0,0,RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient));
   
   LAPDISPLAYSTYLE eDisplayStyle = m_pLapSupplier->GetLapDisplayStyle(m_iSupplierId);
   const LAPSUPPLIEROPTIONS& sfLapOpts = m_pLapSupplier->GetDisplayOptions();
   switch(eDisplayStyle)
   {
   case LAPDISPLAYSTYLE_MAP:
+    glViewport(0,0,RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient));
     DrawLapLines(sfLapOpts);
     break;
   case LAPDISPLAYSTYLE_PLOT:
@@ -64,8 +66,8 @@ void CLapPainter::DrawSelectLapsPrompt() const
 
 void UpdateHighlightPointList(vector<HIGHLIGHTDATA>& lst, const CExtendedLap* pLap, GLdouble* rgModelviewMatrix, GLdouble* rgProjMatrix, GLint* rgViewport, float dTimeToHighlight, const CDataChannel* pDataX, const CDataChannel* pDataY)
 {
-  double dPointX = pDataX->GetValue(dTimeToHighlight);
-  double dPointY = pDataY->GetValue(dTimeToHighlight);
+  const double dPointX = pDataX->GetValue(dTimeToHighlight);
+  const double dPointY = pDataY->GetValue(dTimeToHighlight);
 
   GLdouble winx,winy,winz;
   gluProject(dPointX, dPointY, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &winx, &winy, &winz);
@@ -78,6 +80,7 @@ void UpdateHighlightPointList(vector<HIGHLIGHTDATA>& lst, const CExtendedLap* pL
   aHighlight.m_pDataX = pDataX;
   aHighlight.m_pDataY = pDataY;
   aHighlight.m_pLap = pLap;
+  aHighlight.m_eChannelY = pDataY->GetChannelType();
   lst.push_back(aHighlight);
 }
 
@@ -85,39 +88,78 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 {
   vector<CExtendedLap*> lstLaps = m_pLapSupplier->GetLapsToShow();
 
-  DATA_CHANNEL eX,eY;
+  DATA_CHANNEL eX;
   eX = DATA_CHANNEL_DISTANCE;
-  eY = DATA_CHANNEL_VELOCITY;
+  set<DATA_CHANNEL> setY;
+  map<DATA_CHANNEL,float> mapMinY;
+  map<DATA_CHANNEL,float> mapMaxY;
+  float dMaxX = -1e30;
+  float dMinX = 1e30;
+
   { // figuring out bounds and getting matrices all set up
-    float dMaxX = -1e30;
-    float dMinX = 1e30;
-    float dMaxY = -1e30;
-    float dMinY = 1e30;
     
     for(int x = 0;x < lstLaps.size(); x++)
     {
       const CDataChannel* pDataX = m_pLapSupplier->GetXChannel(lstLaps[x]->GetLap()->GetLapId());
-      const CDataChannel* pDataY = m_pLapSupplier->GetYChannel(lstLaps[x]->GetLap()->GetLapId());
-      if(pDataX && pDataY)
+      vector<const CDataChannel*> lstDataY = m_pLapSupplier->GetYChannels(lstLaps[x]->GetLap()->GetLapId());
+      for(int y = 0; y < lstDataY.size(); y++)
+      {
+        const CDataChannel* pChannel = lstDataY[y];
+        const DATA_CHANNEL eType = pChannel->GetChannelType();
+        if(mapMinY.find(eType) == mapMinY.end())
+        {
+          mapMinY[eType] = pChannel->GetMin();
+          mapMaxY[eType] = pChannel->GetMax();
+        }
+        else
+        {
+          mapMinY[eType] = min(pChannel->GetMin(),mapMinY[eType]);
+          mapMaxY[eType] = max(pChannel->GetMax(),mapMaxY[eType]);
+        }
+        setY.insert(eType);
+      }
+      if(pDataX)
       {
         dMaxX = max(dMaxX, pDataX->GetMax());
         dMinX = min(dMinX, pDataX->GetMin());
-        dMaxY = max(dMaxY, pDataY->GetMax());
-        dMinY = min(dMinY, pDataY->GetMin());
 
         eX = pDataX->GetChannelType();
-        eY = pDataY->GetChannelType();
       }
     }
+  }
+  
+  if(setY.size() <= 0)
+  {
+    DrawSelectLapsPrompt();
+    return;
+  }
+  
+  RECT rcSpot;
+  int iSegmentHeight=0;
+  {
+    RECT rcClient;
+    GetClientRect(OGL_GetHWnd(), &rcClient);
+  
+    iSegmentHeight = RECT_HEIGHT(&rcClient) / setY.size();
+    rcSpot.left = 0;
+    rcSpot.top = 0;
+    rcSpot.right = RECT_WIDTH(&rcClient);
+    rcSpot.bottom = iSegmentHeight;
+  }
+  int iPos = 0;
+  for(set<DATA_CHANNEL>::iterator i = setY.begin(); i != setY.end(); i++)
+  {
+    vector<HIGHLIGHTDATA> lstMousePointsToDraw;
+    glViewport(rcSpot.left,rcSpot.top,RECT_WIDTH(&rcSpot),RECT_HEIGHT(&rcSpot));
 
     // now we have the bounds of all the laps we've looked at, so let's draw them
     glPushMatrix();
     glLoadIdentity();
     glScalef(0.95f, 0.70f, 0.95f);
-    glOrtho(dMinX, dMaxX,dMinY, dMaxY,-1.0,1.0);
+    glOrtho(dMinX, dMaxX,mapMinY[*i], mapMaxY[*i],-1.0,1.0);
 
     // draw line guides on the background
-    for(float flLine = m_pLapSupplier->GetGuideStart(eY, dMinY, dMaxY) + m_pLapSupplier->GetGuideStep(eY, dMinY, dMaxY); flLine < dMaxY; flLine += m_pLapSupplier->GetGuideStep(eY, dMinY, dMaxY))
+    for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
       glColor3d(1.0,1.0,1.0);
       glBegin(GL_LINE_STRIP);
@@ -127,168 +169,167 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       
       glColor3d(0.7,0.7,0.7);
       char szText[256];
-      GetChannelString(eY, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+      GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
       DrawText(dMinX, flLine, szText);
     }
-  }
 
-  GLdouble rgModelviewMatrix[16];
-  GLdouble rgProjMatrix[16];
-  GLint rgViewport[4];
-  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
-  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
-  glGetIntegerv(GL_VIEWPORT, rgViewport);
+    GLdouble rgModelviewMatrix[16];
+    GLdouble rgProjMatrix[16];
+    GLint rgViewport[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+    glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+    glGetIntegerv(GL_VIEWPORT, rgViewport);
 
-  Vector2D ptHighlight; // the (x,y) coords in unit-space that we want to highlight.  Example: for a speed-distance graph, x would be in distance units, y in velocities.
-  POINT ptMouse;
-  if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
-  {
-    // the mouse is in our window... we make our own highlighter, ignoring anything that got sent to us
-    GLdouble dX,dY,dZ;
-    gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
-    ptHighlight = V2D(dX,0);
-  }
-
-  vector<HIGHLIGHTDATA> lstMousePointsToDraw;
-  for(int x = 0; x < lstLaps.size(); x++)
-  {
-    const CExtendedLap* pLap = lstLaps[x];
-    const CDataChannel* pDataX = m_pLapSupplier->GetXChannel(pLap->GetLap()->GetLapId());
-    const CDataChannel* pDataY = m_pLapSupplier->GetYChannel(pLap->GetLap()->GetLapId());
-
-    if(pDataX && pDataY)
+    Vector2D ptHighlight; // the (x,y) coords in unit-space that we want to highlight.  Example: for a speed-distance graph, x would be in distance units, y in velocities.
+    POINT ptMouse;
+    if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
     {
-      const vector<DataPoint>& lstPointsX = pDataX->GetData();
-      const vector<DataPoint>& lstPointsY = pDataY->GetData();
+      // the mouse is in our window... we make our own highlighter, ignoring anything that got sent to us
+      GLdouble dX,dY,dZ;
+      gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+      ptHighlight = V2D(dX,0);
+    }
 
-      // tracking what we want to highlight
-      float dBestLength = -1;
-      float dTimeToHighlight = -1;
+    for(int x = 0; x < lstLaps.size(); x++)
+    {
+      const CExtendedLap* pLap = lstLaps[x];
+      const CDataChannel* pDataX = m_pLapSupplier->GetXChannel(pLap->GetLap()->GetLapId());
+      const CDataChannel* pDataY = m_pLapSupplier->GetChannel(pLap->GetLap()->GetLapId(), *i);
 
-      srand((int)pLap);
-      const float r = RandDouble()/2 + 0.5;
-      const float g = RandDouble()/2 + 0.5;
-      const float b = RandDouble()/2 + 0.5;
-      glColor3d( r, g, b ); 
-
-      if(sfLapOpts.fDrawLines)
+      if(pDataX && pDataY)
       {
-        glBegin(GL_LINE_STRIP);
-      }
-      else
-      {
-        glPointSize(5.0f);
-        glBegin(GL_POINTS);
-      }
+        // tracking what we want to highlight
+        float dBestLength = -1;
+        float dTimeToHighlight = -1;
+        const vector<DataPoint>& lstPointsX = pDataX->GetData();
+        const vector<DataPoint>& lstPointsY = pDataY->GetData();
 
-      vector<DataPoint>::const_iterator iX = lstPointsX.begin();
-      vector<DataPoint>::const_iterator iY = lstPointsY.begin();
-      while(iX != lstPointsX.end() && iY != lstPointsY.end())
-      {
-        float dX;
-        float dY;
-        const DataPoint& ptX = *iX;
-        const DataPoint& ptY = *iY;
-        int iTimeUsed = 0;
-        if(ptX.iTimeMs < ptY.iTimeMs)
+
+        srand((int)pLap);
+        const float r = RandDouble()/2 + 0.5;
+        const float g = RandDouble()/2 + 0.5;
+        const float b = RandDouble()/2 + 0.5;
+        glColor3d( r, g, b ); 
+
+        if(sfLapOpts.fDrawLines)
         {
-          iTimeUsed = ptX.iTimeMs;
-          dX = ptX.flValue;
-          dY = pDataY->GetValue(ptX.iTimeMs, iY);
-          iX++;
-        }
-        else if(ptX.iTimeMs > ptY.iTimeMs)
-        {
-          iTimeUsed = ptY.iTimeMs;
-          dX = pDataX->GetValue(ptY.iTimeMs, iX);
-          dY = ptY.flValue;
-          iY++;
+          glBegin(GL_LINE_STRIP);
         }
         else
         {
-          iTimeUsed = ptY.iTimeMs;
-          DASSERT(ptX.iTimeMs == ptY.iTimeMs);
-          dX = ptX.flValue;
-          dY = ptY.flValue;
-          iX++;
-          iY++;
+          glPointSize(5.0f);
+          glBegin(GL_POINTS);
         }
-        glVertex2f(dX,dY);
 
-        // if we're a highlight source, try to figure out the closest point for this lap
-        if(m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+        vector<DataPoint>::const_iterator iX = lstPointsX.begin();
+        vector<DataPoint>::const_iterator iY = lstPointsY.begin();
+        while(iX != lstPointsX.end() && iY != lstPointsY.end())
         {
-          Vector2D vPt = V2D(dX,0);
-          Vector2D vDiff = vPt - ptHighlight;
-          if(vDiff.Length() < dBestLength || dBestLength < 0)
+          float dX;
+          float dY;
+          const DataPoint& ptX = *iX;
+          const DataPoint& ptY = *iY;
+          int iTimeUsed = 0;
+          if(ptX.iTimeMs < ptY.iTimeMs)
           {
-            dBestLength = vDiff.Length();
-            dTimeToHighlight = iTimeUsed;
+            iTimeUsed = ptX.iTimeMs;
+            dX = ptX.flValue;
+            dY = pDataY->GetValue(ptX.iTimeMs, iY);
+            iX++;
+          }
+          else if(ptX.iTimeMs > ptY.iTimeMs)
+          {
+            iTimeUsed = ptY.iTimeMs;
+            dX = pDataX->GetValue(ptY.iTimeMs, iX);
+            dY = ptY.flValue;
+            iY++;
+          }
+          else
+          {
+            iTimeUsed = ptY.iTimeMs;
+            DASSERT(ptX.iTimeMs == ptY.iTimeMs);
+            dX = ptX.flValue;
+            dY = ptY.flValue;
+            iX++;
+            iY++;
+          }
+          glVertex2f(dX,dY);
+
+          // if we're a highlight source, try to figure out the closest point for this lap
+          if(m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+          {
+            Vector2D vPt = V2D(dX,0);
+            Vector2D vDiff = vPt - ptHighlight;
+            if(vDiff.Length() < dBestLength || dBestLength < 0)
+            {
+              dBestLength = vDiff.Length();
+              dTimeToHighlight = iTimeUsed;
+            }
           }
         }
+		    glEnd();
+        // for each lap, draw an indicator of the closest thing to the mouse
+        if(!m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+        {
+          // if we're not a source, use the given time to highlight
+          dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);
+        }
+        else
+        {
+          m_pLapSupplier->SetLapHighlightTime(pLap, (int)dTimeToHighlight);
+        }
+        UpdateHighlightPointList(lstMousePointsToDraw, pLap, rgModelviewMatrix, rgProjMatrix, rgViewport, dTimeToHighlight, pDataX, pDataY);
       }
-		  glEnd();
-      // for each lap, draw an indicator of the closest thing to the mouse
-      if(!m_pLapSupplier->IsHighlightSource(m_iSupplierId))
-      {
-        // if we're not a source, use the given time to highlight
-        dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);
-      }
-      else
-      {
-        m_pLapSupplier->SetLapHighlightTime(pLap, (int)dTimeToHighlight);
-      }
-      UpdateHighlightPointList(lstMousePointsToDraw, pLap, rgModelviewMatrix, rgProjMatrix, rgViewport, dTimeToHighlight, pDataX, pDataY);
-    }
-  } // end lap loop
-  
+    } // end lap loop
 
-	glPopMatrix();
-  if(lstMousePointsToDraw.size() > 0)
-  {
-    RECT rcClient;
-    GetClientRect(OGL_GetHWnd(),&rcClient);
-
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, RECT_WIDTH(&rcClient),0, RECT_HEIGHT(&rcClient),-1.0,1.0);
-
-
-    for(int x = 0; x < lstMousePointsToDraw.size(); x++)
+    if(lstMousePointsToDraw.size() > 0)
     {
-      const CExtendedLap* pLap = lstMousePointsToDraw[x].m_pLap;
-      const POINT& ptWindow = lstMousePointsToDraw[x].m_ptWindow;
-      const CDataChannel* pDataX = lstMousePointsToDraw[x].m_pDataX;
-      const CDataChannel* pDataY = lstMousePointsToDraw[x].m_pDataY;
+      glPushMatrix();
+      glLoadIdentity();
+      glOrtho(0, RECT_WIDTH(&rcSpot),0, RECT_HEIGHT(&rcSpot),-1.0,1.0);
 
-      srand((int)pLap);
-      const float r = RandDouble()/2 + 0.5;
-      const float g = RandDouble()/2 + 0.5;
-      const float b = RandDouble()/2 + 0.5;
-      glColor3d( r, g, b ); 
+
+      for(int x = 0; x < lstMousePointsToDraw.size(); x++)
+      {
+        const CExtendedLap* pLap = lstMousePointsToDraw[x].m_pLap;
+        const POINT& ptWindow = lstMousePointsToDraw[x].m_ptWindow;
+        const CDataChannel* pDataX = lstMousePointsToDraw[x].m_pDataX;
+        const CDataChannel* pDataY = lstMousePointsToDraw[x].m_pDataY;
+
+        srand((int)pLap);
+        const float r = RandDouble()/2 + 0.5;
+        const float g = RandDouble()/2 + 0.5;
+        const float b = RandDouble()/2 + 0.5;
+        glColor3d( r, g, b ); 
       
-      // if we're the main screen, we want to draw some text data for each point
-      TCHAR szLapName[256];
-      pLap->GetString(szLapName, NUMCHARS(szLapName));
+        // if we're the main screen, we want to draw some text data for each point
+        TCHAR szLapName[256];
+        pLap->GetString(szLapName, NUMCHARS(szLapName));
 
-      float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);
+        float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);
 
-      char szYString[256];
-      GetChannelString(eY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
+        char szYString[256];
+        GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
 
-      char szXString[256];
-      GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
+        char szXString[256];
+        GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
 
-      char szText[256];
-      sprintf(szText, "%S - %s @ %s", szLapName, szYString, szXString);
+        char szText[256];
+        sprintf(szText, "%S - %s @ %s", szLapName, szYString, szXString);
 
-      DrawText(0.0,(x+1)*GetWindowFontSize(),szText);
+        DrawText(0.0,(x+1)*GetWindowFontSize(),szText);
 
-      // we also want to draw a highlighted square
-      DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);
+        // we also want to draw a highlighted square
+        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);
+      }
+      glPopMatrix();
+      glPopMatrix();
     }
-    glPopMatrix();
-  }
+    rcSpot.top += iSegmentHeight;
+    rcSpot.bottom += iSegmentHeight;
+  } // end y-channel data channel loop
+
+	
 }
 struct MAPHIGHLIGHT
 {
