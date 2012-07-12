@@ -1302,8 +1302,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   CLapReceiver sfLaps(&sfUI);
   g_pLapDB = &sfLaps;
 
-  //PitsideHTTP aResponder(g_pLapDB,&sfUI);
-  //SimpleHTTPServer aServer(80,&aResponder);
+  PitsideHTTP aResponder(g_pLapDB,&sfUI);
+  SimpleHTTPServer aServer(80,&aResponder);
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 

@@ -370,9 +370,6 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     rcAllLaps.bottom += dCentreY;
 
   }
-  const DATA_CHANNEL eX = DATA_CHANNEL_X;
-  const DATA_CHANNEL eY = DATA_CHANNEL_Y;
-
   // we have now determined the bounds of the thing we're going to draw
 	glPushMatrix();
   glLoadIdentity();

@@ -33,7 +33,7 @@ void WriteData(const vector<DataPoint>& data, ostream& out, bool fTime, float* p
   *pflMax = flMax;
 }
 
-void WritePredoneJS(LPCTSTR lpszFile, ostream& out)
+void WriteFile(LPCTSTR lpszFile, ostream& out)
 {
   TCHAR szModule[MAX_PATH];
   GetModuleFileName(NULL,szModule,NUMCHARS(szModule));
@@ -235,124 +235,134 @@ vector<int> ParseCSL(string strCSL)
 
 bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
 {
+  pReq.strResponseType = "text/html";
+
   if(pReq.strPage == "/") // main page - list all the laps the user can view
   {
-    vector<CExtendedLap*> lstLaps = m_pLapSupplier->GetAllLaps();
-
-    vector<wstring> lstHeaders;
-    vector<int> lstWidths; // not really needed...
-    CExtendedLap::GetStringHeaders(lstHeaders,lstWidths);
-
-    out<<"<table border=1><tr><th>";
-    for(int x = 0;x < lstHeaders.size(); x++)
-    {
-      char szHeaderA[200];
-      _snprintf(szHeaderA,NUMCHARS(szHeaderA),"%S",lstHeaders[x].c_str());
-      out<<"<th>"<<szHeaderA;
-    }
-    out<<"</tr>";
-    for(int x = 0;x < lstLaps.size(); x++)
-    {
-      const CExtendedLap* pLap = lstLaps[x];
-      vector<wstring> lstStrings;
-      pLap->GetStrings(lstStrings);
-      out<<"<tr><td><a href='lap?id="<<pLap->GetLap()->GetLapId()<<"'>Link</a>";
-      for(int ixString = 0; ixString < lstStrings.size(); ixString++)
-      {
-        char szStringA[200];
-        _snprintf(szStringA,NUMCHARS(szStringA),"%S",lstStrings[ixString].c_str());
-        out<<"<td>"<<szStringA;
-      }
-      out<<"</tr>";
-    }
-    out<<"</table>";
+    WriteFile(L"graphPage.html",out);
     return true;
   }
-  else if(pReq.strPage == "/lap")
+  else if(pReq.strPage == "/getlaps.php")
   {
-    string strLapId = pReq.mapParams["id"];
-
-    int iLapId = atoi(strLapId.c_str());
-    if(iLapId > 0)
+    // getlaps needs to return "id, name" for each available race.  In the case of pitside, that'll be one race
+    if(pReq.mapParams["action"] == "getLaps" && pReq.mapParams["raceId"].length() > 0)
     {
-      const CLap* pLap = m_pLapsDB->GetLap(iLapId);
-
-      if(pLap)
+      const int iRaceId = atoi(pReq.mapParams["raceId"].c_str());
+      vector<CExtendedLap*> lstLaps = m_pLapSupplier->GetAllLaps();
+      for(int x = 0;x < lstLaps.size(); x++)
       {
-        out<<"<script type='text/javascript'>"<<endl;
-        WriteLapDataInit(pLap,strLapId,out);
-        WriteLapsAvailable(out);
-        WriteLapDataScript(pLap,strLapId,out);
-        
-        WritePredoneJS(L"webside.js", out);
-        out<<"</script>"<<endl;
-
-        out<<"<body onload='start()'>"<<endl;
-        out<<"Lap Id: "<<pLap->GetLapId()<<" has "<<pLap->GetPoints().size()<<" points<br/>"<<endl;
-        out<<"</body>"<<endl;
-       
-      }
-      else
-      {
-        out<<"Lap not found"<<endl;
-      }
-    }
-    return true;
-  }
-  else if(pReq.strPage == "/lapdata")
-  {
-    // this usually occurs via XMLHttpRequests.  All they want here is just <script>...arrays...</script> for the specified lap
-    string strLapId = pReq.mapParams["id"];
-
-    int iLapId = atoi(strLapId.c_str());
-    if(iLapId > 0)
-    {
-      const CLap* pLap = m_pLapsDB->GetLap(iLapId);
-
-      if(pLap)
-      {
-        WriteLapDataScript(pLap,strLapId,out);
+        const CExtendedLap* pLap = lstLaps[x];
+        out<<pLap->GetLap()->GetLapId()<<", "<<x<<", "<<pLap->GetLap()->GetTime()<<endl;
       }
     }
   }
-  else if(pReq.strPage == "/dataxy")
+  else if(pReq.strPage == "/lapdistance.php")
   {
-    // returns a page containing comma-separated values for the selected laps
-    string strY = pReq.mapParams["yaxis"];
-    string strLapids = pReq.mapParams["lapids"]; // comma-separated list of lapids
-    int y = atoi(strY.c_str());
-    vector<int> lstLaps = ParseCSL(strLapids);
-    if(y > 0)
+    pReq.strResponseType = "text/plain";
+
+    const int lapId1 = atoi(pReq.mapParams["lap"].c_str());
+    const int lapId2 = atoi(pReq.mapParams["refLap"].c_str());
+
+    const CLap* pLap1 = m_pLapsDB->GetLap(lapId1);
+    const CLap* pLap2 = m_pLapsDB->GetLap(lapId2);
+    
+    bool fShowAll = pReq.mapParams["allCols"].length() > 0;
+    // distance, lap 1 vel, lap 2 vel
+    out<<"Distance, Lap "<<lapId1<<", Lap "<<lapId2;
+    if(fShowAll)
     {
-      const CDataChannel** rgDataY = new const CDataChannel*[lstLaps.size()];
-      const CDataChannel** rgDataX = new const CDataChannel*[lstLaps.size()];
-      
-      int tmStart = 0x7fffffff;
-      int tmEnd = -0x7fffffff;
+      out<<", x, y";
+    }
+    out<<endl;
 
-      out<<"Distance,";
-      for(int ixLap = 0; ixLap < lstLaps.size(); ixLap++)
-      {
-        out<<"Lap "<<lstLaps[ixLap]<<",";
-        rgDataX[ixLap] = m_pLapsDB->GetDataChannel(lstLaps[ixLap],DATA_CHANNEL_DISTANCE);
-        rgDataY[ixLap] = m_pLapsDB->GetDataChannel(lstLaps[ixLap],(DATA_CHANNEL)y);
+    const CDataChannel* pDist1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_DISTANCE);
+    const CDataChannel* pDist2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_DISTANCE);
 
-        tmStart = min(tmStart,rgDataX[ixLap]->GetStartTimeMs());
-        tmEnd = max(tmEnd,rgDataX[ixLap]->GetEndTimeMs());
-      }
-      out<<endl;
-      
-      for(int tmTime = tmStart; tmTime < tmEnd; tmTime += 100)
+    const CDataChannel* pVel1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_VELOCITY);
+    const CDataChannel* pVel2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_VELOCITY);
+    
+    const CDataChannel* pX1 = m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_X);
+    const CDataChannel* pY1 = m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_Y);
+    const CDataChannel* pX2 = m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_X);
+    const CDataChannel* pY2 = m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_Y);
+
+    if(pDist1 && pDist2 && pVel1 && pVel2)
+    {
+      const vector<DataPoint>& lstData1 = pDist1->GetData();
+      const vector<DataPoint>& lstData2 = pDist2->GetData();
+      int ix1 = 0;
+      int ix2 = 0;
+      while(true)
       {
-        out<<tmTime<<","; //
-        for(int ixLap = 0; ixLap < lstLaps.size(); ixLap++)
+        const CDataChannel* pX,*pY;
+        DataPoint ptRef;
+        if(ix1 < lstData1.size() && ix2 < lstData2.size() && lstData1[ix1].flValue < lstData2[ix2].flValue)
         {
+          // lap 1 has the next distance data point
+          float flDist = lstData1[ix1].flValue;
+          float flVel = pVel1->GetValue(lstData1[ix1].iTimeMs);
+          out<<flDist<<", "<<flVel<<", ";
+          ptRef = lstData1[ix1];
+          ix1++;
+          pX = pX1;
+          pY = pY1;
+          
         }
+        else if(ix2 < lstData2.size() && ix1 < lstData1.size())
+        {
+          // lap 2 has the next distance data point
+          float flDist = lstData2[ix2].flValue;
+          float flVel = pVel2->GetValue(lstData2[ix2].iTimeMs);
+          out<<flDist<<", , "<<flVel;
+          ptRef = lstData2[ix2];
+          ix2++;
+          pX = pX2;
+          pY = pY2;
+        }
+        else
+        {
+          break; // all done
+        }
+        if(fShowAll)
+        {
+          // we also need to spit out x and y coords for the ref lap, presumably
+          if(pX && pY)
+          {
+            float flX = pX->GetValue(ptRef.iTimeMs);
+            float flY = pY->GetValue(ptRef.iTimeMs);
+            out<<", "<<flX<<", "<<flY;
+          }
+          else
+          {
+            out<<", 0, 0";
+          }
+        }
+        out<<endl;
       }
     }
+    else
+    {
+      out<<"no laps selected"<<endl<<"error"<<endl;
+    }
+
+
+
   }
   else
   {
+    if(pReq.strPage.find(".css") != string::npos)
+    {
+      pReq.strResponseType = "text/css";
+    }
+    else if(pReq.strPage.find(".js") != string::npos)
+    {
+      pReq.strResponseType = "text/javascript";
+    }
+    wstring widePage(pReq.strPage.length(),0);
+    std::copy(pReq.strPage.begin(),pReq.strPage.end(),widePage.begin());
+
+    // just load a local file
+    WriteFile(&widePage[1],out);
     return false;
   }
 }

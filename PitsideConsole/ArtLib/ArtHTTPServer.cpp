@@ -3,6 +3,10 @@
 
 bool ParseRequest(const char* pRequest, int cbRequest, HTTPREQUEST* pParsed)
 {
+  if(strstr(pRequest,"lapdistance"))
+  {
+    cout<<"blah"<<endl;
+  }
   char szURL[200];
   char szRequestType[200];
   szURL[0] = szRequestType[0] = 0;
@@ -45,10 +49,10 @@ bool ParseRequest(const char* pRequest, int cbRequest, HTTPREQUEST* pParsed)
       const char* pszStart = &pRequest[ixPos];
       while(pszStart < pszEnd)
       {
-        const char* pszEquals = strstr(&pRequest[ixPos],"=");
+        const char* pszEquals = strstr(pszStart,"=");
         if(pszEquals && pszEquals < pszEnd)
         {
-          const char* pszAmper = strstr(&pRequest[ixPos],"&");
+          const char* pszAmper = strstr(pszStart,"&");
           if(!pszAmper || pszAmper > pszEnd) pszAmper = pszEnd;
           if(pszAmper && pszAmper <= pszEnd)
           {
@@ -70,7 +74,7 @@ bool ParseRequest(const char* pRequest, int cbRequest, HTTPREQUEST* pParsed)
               szValue[cchValue] = 0;
               pParsed->mapParams[szKey] = szValue;
               
-              pszStart = pszAmper;
+              pszStart = pszAmper+1;
             }
           }
           else
@@ -169,7 +173,7 @@ void SimpleHTTPServer::ThreadProc()
           
             ssHeader<<"HTTP/1.0 200 OK"<<endl;
             ssHeader<<"Server: WifiLapper"<<endl;
-            ssHeader<<"Content-Type: text/html"<<endl;
+            ssHeader<<"Content-Type: "<<aData.strResponseType<<endl;
             ssHeader<<"Content-Length: "<<ss.str().size()<<endl;
             ssHeader<<endl; // empty line ends the headers?
 

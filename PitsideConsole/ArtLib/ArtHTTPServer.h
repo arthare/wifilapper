@@ -14,6 +14,7 @@ struct HTTPREQUEST
 {
   string strType;
   string strPage;
+  string strResponseType;
   map<string,string> mapParams;
 };
 

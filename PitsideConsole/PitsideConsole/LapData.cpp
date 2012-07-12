@@ -430,11 +430,19 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
     // the distance-from-start/finish for P is thus (percentage) * (d2's distance) + (100 - percentage) * (d1's distance)
     CDataChannel* pDistance = pLapDB->AllocateDataChannel();
     CDataChannel* pVelocity = pLapDB->AllocateDataChannel();
+    CDataChannel* pX = pLapDB->AllocateDataChannel();
+    CDataChannel* pY = pLapDB->AllocateDataChannel();
+
+    pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
+    pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
     for(int x = 0;x < lstPoints.size(); x++)
     {
       const TimePoint2D& p = lstPoints[x];
+
+      pX->AddPoint(p.iTime,p.flX);
+      pY->AddPoint(p.iTime,p.flY);
 
       TimePoint2D sfD1, sfD2;
       int iMatchedTime = 0;
@@ -459,6 +467,16 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
           pVelocity->AddPoint((int)p.iTime,p.flVelocity);
         }
       }
+    }
+    if(pX->IsValid())
+    {
+      pX->Lock();
+      pLapDB->AddDataChannel(pX);
+    }
+    if(pY->IsValid())
+    {
+      pY->Lock();
+      pLapDB->AddDataChannel(pY);
     }
     if(pDistance->IsValid())
     {
