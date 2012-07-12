@@ -1605,7 +1605,7 @@ class MapPaintView extends View
 			final TimePoint2D ptCurrent = lap.GetLastPoint();
 			final float flBestSpeed = (float)lapBest.GetSpeedAtPosition(ptCurrent);
 			String strSpeed = Prefs.FormatMetersPerSecond(flBestSpeed,num,eDisplayUnitSystem);
-			Utility.DrawFontInBox(canvas, strSpeed, p, rcTop);
+			Utility.DrawFontInBox(canvas, strSpeed, p, rcBottom);
 		}
 	}
 	public void onDraw(Canvas canvas)

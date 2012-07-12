@@ -12,7 +12,6 @@
 #include <algorithm>
 #include "DlgProgress.h"
 #include "dlgmessage.h"
-#include "zlib.h"
 
 using namespace std;
 
@@ -50,28 +49,6 @@ void CDataChannel::Load(InputChannelRaw* pData)
     pt.iTimeMs = FLIPBITS(pt.iTimeMs);
     lstData.push_back(pt);
   }
-}
-bool CDataChannel::LoadZipped(const char* pszData, int cbData)
-{
-  bool fRet = false;
-
-  int cbUncomp = min(10000,cbData*100);
-  Bytef* pbUncompressed = new Bytef[cbUncomp];
-  if(pbUncompressed)
-  {
-    uLongf outLen = cbUncomp;
-    int iRet = uncompress(pbUncompressed, &outLen, (const Bytef*)pszData, cbData);
-    if(iRet == 0)
-    {
-      // successful decompress!
-      InputChannelRaw* pData = (InputChannelRaw*)pbUncompressed;
-      Load(pData);
-      fRet = true;
-    }
-
-    delete[] pbUncompressed;
-  }
-  return fRet;
 }
 bool CDataChannel::Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc)
 {
@@ -269,28 +246,6 @@ void CDataChannel::Lock()
   }
 }
 
-bool CLap::LoadZipped(const char* pszInput, int cbInput)
-{
-  bool fRet = false;
-
-  int cbUncomp = min(10000,cbInput*100);
-  Bytef* pbUncompressed = new Bytef[cbUncomp];
-  if(pbUncompressed)
-  {
-    uLongf outLen = cbUncomp;
-    int iRet = uncompress(pbUncompressed, &outLen, (const Bytef*)pszInput, cbInput);
-    if(iRet == 0)
-    {
-      // successful decompress!
-      InputLapRaw* pData = (InputLapRaw*)pbUncompressed;
-      Load(pData);
-      fRet = true;
-    }
-
-    delete[] pbUncompressed;
-  }
-  return fRet;
-}
 void CLap::Load(InputLapRaw* pLap)
 {
   FLIP(pLap->cCount);
@@ -367,24 +322,10 @@ bool ProcessLapData(vector<char>& buf, int* piLapId, CLap* pOutputLap)
 	pOutputLap->Load(pLap);
 	return pOutputLap->IsValid();
 }
-//////////////////////////////////////////////////////////////////////////////
-bool ProcessZippedLapData(vector<char>& buf, int* piLapId, CLap* pOutputLap)
-{
-	const char* pbData = (const char*)&buf[0];
-	pOutputLap->LoadZipped(pbData,buf.size());
-	return pOutputLap->IsValid();
-}
 bool ProcessDataChannel(vector<char>& buf, int* piLapId, CDataChannel* pDataChannel)
 {
   InputChannelRaw* pData = (InputChannelRaw*)&buf[0];
   pDataChannel->Load(pData);
-  pDataChannel->Lock();
-  return pDataChannel->IsValid();
-}
-bool ProcessZippedDataChannel(vector<char>& buf, int* piLapId, CDataChannel* pDataChannel)
-{
-  const char* pData = (const char*)&buf[0];
-  pDataChannel->LoadZipped(pData, buf.size()-8);
   pDataChannel->Lock();
   return pDataChannel->IsValid();
 }
@@ -505,10 +446,6 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
   TextMatcher<4> aHTBT("htbt");
   TextMatcher<8> aDataStart("datachan");
   TextMatcher<8> aDataEnd("donedata");
-  TextMatcher<8> aZipDataStart("datachaz");
-  TextMatcher<8> aZipDataEnd("donedatz");
-  TextMatcher<8> aZipLapStart("jndazipz");
-  TextMatcher<8> aZipLapEnd("donezipz");
   TextMatcher<16> aDBIncoming("racingdbincoming");
   TextMatcher<16> aDBDone("racingdbcomplete");
 
@@ -556,30 +493,6 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 				  }
           lstLapBuf.clear();
 			  }
-        if(aZipLapStart.Process(buf[x]))
-        {
-          eRecv = RECV_LAP;
-          aStart.Reset();
-				  // we have detected the start of a new lap
-				  lstLapBuf.clear();
-        }
-        if(aZipLapEnd.Process(buf[x]))
-        {
-          eRecv = RECV_NONE;
-          aEnd.Reset();
-				  // we have found the end of a lap
-				  int iLapId = 0;
-				  CLap* pLap = pLaps->AllocateLap();
-				  if(ProcessZippedLapData(lstLapBuf, &iLapId, pLap))
-				  {
-					  pLaps->AddLap(pLap);
-				  }
-				  else
-				  {
-					  pLaps->FreeLap(pLap);
-				  }
-          lstLapBuf.clear();
-        }
 
         lstDataBuf.push_back(buf[x]);
         if(aDataStart.Process(buf[x]))
@@ -597,26 +510,6 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
           if(ProcessDataChannel(lstDataBuf,&iLapId, pDataChannel))
           {
             pLaps->AddDataChannel(pDataChannel);
-          }
-          lstDataBuf.clear();
-        }
-        if(aZipDataStart.Process(buf[x]))
-        {
-          eRecv = RECV_DATA;
-          aDataStart.Reset();
-          lstDataBuf.clear();
-        }
-        if(aZipDataEnd.Process(buf[x]))
-        {
-          eRecv = RECV_DATA;
-          int iLapId = 0;
-          aDataEnd.Reset();
-          CDataChannel* pDataChannel = pLaps->AllocateDataChannel();
-          if(ProcessZippedDataChannel(lstDataBuf,&iLapId, pDataChannel))
-          {
-            pLaps->AddDataChannel(pDataChannel);
-
-            TCHAR szBuf[200];
           }
           lstDataBuf.clear();
         }

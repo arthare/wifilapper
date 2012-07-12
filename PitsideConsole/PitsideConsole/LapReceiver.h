@@ -102,7 +102,6 @@ public:
   virtual ~CDataChannel();
 
   void Load(InputChannelRaw* pData);
-  bool LoadZipped(const char* pbData, int cbData);
   bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc);
   void Init(int iLapId, DATA_CHANNEL eChannel);
   bool IsValid() const;
@@ -170,7 +169,6 @@ public:
 
 	}
   void Load(InputLapRaw* pLap);
-  bool LoadZipped(const char* pszInput, int cbInput);
   bool Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line);
 
 	bool IsValid() const
