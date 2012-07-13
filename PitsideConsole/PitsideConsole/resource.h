@@ -40,4 +40,7 @@
 #define IDD_PROGRESS 42
 #define ID_OPTIONS_DRAWLINES 43
 #define ID_DATA_DASHWARE 44
+#define IDC_SPLASHIMAGE 45
+#define IDD_DLGSPLASH 46
+#define IDB_SPLASHIMAGE 47
 // don't put anything below this

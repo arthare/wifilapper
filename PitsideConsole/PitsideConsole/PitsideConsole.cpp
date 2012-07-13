@@ -26,6 +26,8 @@
 #include "DashWare.h"
 #include "Multicast.h"
 #include "PitsideHTTP.h"
+#include "DlgSplash.h"
+
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
 
@@ -1301,6 +1303,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   g_pUI = &sfUI;
   CLapReceiver sfLaps(&sfUI);
   g_pLapDB = &sfLaps;
+
+  CSplashDlg splash;
+  ArtShowDialog<IDD_DLGSPLASH>(&splash);
 
   PitsideHTTP aResponder(g_pLapDB,&sfUI);
   SimpleHTTPServer aServer(80,&aResponder);

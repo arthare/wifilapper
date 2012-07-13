@@ -39,7 +39,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\ArtLib;$(IncludePath);../ZLib;</IncludePath>
+    <IncludePath>..\ArtLib;$(IncludePath);</IncludePath>
     <LibraryPath>C:\libs\SDL\lib;$(LibraryPath);../Debug/</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -91,6 +91,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
+    <None Include="res\splash.bmp" />
     <None Include="webside.js" />
   </ItemGroup>
   <ItemGroup>
@@ -98,6 +99,7 @@
     <ClInclude Include="DlgMessage.h" />
     <ClInclude Include="DlgProgress.h" />
     <ClInclude Include="DlgRaceSelect.h" />
+    <ClInclude Include="DlgSplash.h" />
     <ClInclude Include="LapData.h" />
     <ClInclude Include="LapPainter.h" />
     <ClInclude Include="LapReceiver.h" />
@@ -112,6 +114,7 @@
     <ClCompile Include="DlgMessage.cpp" />
     <ClCompile Include="DlgProgress.cpp" />
     <ClCompile Include="DlgRaceSelect.cpp" />
+    <ClCompile Include="DlgSplash.cpp" />
     <ClCompile Include="LapData.cpp" />
     <ClCompile Include="LapPainter.cpp" />
     <ClCompile Include="LapReceiver.cpp" />
