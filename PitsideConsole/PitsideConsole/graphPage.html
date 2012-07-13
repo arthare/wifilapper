@@ -1,178 +1,91 @@
-
-
-
 <html>
-
 <head>
-
 <script type="text/javascript"
-
   src="dygraph-combined.js"></script>
-
 <script type="text/javascript"
-
   src="dragdealer.js"></script>
-
 <link rel="stylesheet" type="text/css" href="dragdealer.css" />
-
 <!-- <link rel="stylesheet" type="text/css" href="wifilapper.css" /> -->
-
 </head>
-
 <body>
-
 <div id="wrapper">
-
   <div id="header">
-
-	Title!	
-
+	WiFiLapper	
 	</div><!-- #header-->
-
   <div id="middle">
-
-    
-
     <div class="sidebar" id="sideLeft"> 
-
       <form action="jstest2.php" method="GET">
-
       <table>
-
       <tr><td>Race:</td><td> <select name=race id=race onChange="popLaps(this.options[selectedIndex].value)">
-
             <option>Pick One</option>
-
             <option value=1>1</option>
-
             <option value=2>2</option>
-
             <option value=3>3</option>
-
             <option value=4>4</option>
-
             </select></td></tr>
-
       <tr><td>Target Lap:</td><td> <select name=lap id=lap></select></td></tr>
-
       <tr><td>Reference Lap:</td><td> <select name=refLap id=refLap></select></td></tr>
-
       <tr><td colspan=2><input type="button" value="Update Graph" onclick="graphUpdate()"></td></tr>
-
       </table>
-
     </div>  
-
     <div class="sidebar" id="trackArea" >
-
     </div>
-
     <div id="container">
-
 			<div id="content">
-
 			<div id="trackLabel"></div>
-
       <div id="distLabel"></div>	
-
 			</div><!-- #content-->
-
 		</div><!-- #container-->
-
   </div>
-
   <div id="footer">
-
     <div id="renderArea" style="width:800px; height:300px; position:relative"></div>
-
     <div id="simple-slider" class="dragdealer rounded-cornered" style="width:800px">
-
     	<div class="red-bar handle">drag me</div>
-
     </div>
-
   </div>
-
 </div>
-
 <script>
 
   var g1;
   var g2;
   if (!String.prototype.trim) {
-
   String.prototype.trim=function(){return this.replace(/^\s\s*/, '').replace(/\s\s*$/, '');};
-
   String.prototype.ltrim=function(){return this.replace(/^\s+/,'');}
-
   String.prototype.rtrim=function(){return this.replace(/\s+$/,'');}
-
   String.prototype.fulltrim=function(){return this.replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ');}
-
   }
-
-
 
   var div = document.getElementById("renderArea");
-
   var trackDiv = document.getElementById("trackArea");
-
   var glbArr = Array();
-
   var req = new XMLHttpRequest();
-
   req.onreadystatechange = function () {
-
   if (req.readyState == 4) {
-
   if (req.status === 200 || // Normal http
-
   req.status === 0) { // Chrome w/ --allow-file-access-from-files
-
   var data = req.responseText;
-
   drawGraph(data);
-
   glbArr = toArray(data);
-
   }
-
   }
-
   };
 
   req.open('GET', 'lapdistance.php?lap=&refLap=&allCols=1', true);
-
 req.send(null);
 
-
-
 var updateGraph = function(data) {
-
   var lineArry = toArray(data);
-
   var headers = lineArry[0];
-
 //  alert(headers);
-
   var lineArry = lineArry.slice(1);
-
   lineArry.sort(sortByY);
-
   for (var idx = 0; idx < lineArry.length; idx++) {
-
     var row = lineArry[idx];
-
     row.push(idx);
-
   }
-
   lineArry.sort(mySorting);
-
   
-
   var trackArry = arrColumns(lineArry, [3, 4]);
-
   var distArry = arrColumns(lineArry, [0, 1, 2]); 
 
   trackArry.sort(mySorting);
@@ -180,403 +93,229 @@ var updateGraph = function(data) {
   //var firstRow = ['x', 'y', 'z'];
 
   var firstRow = [headers[0], headers[1], headers[2]];
-
   var trackHeader = ['x' , 'y'];
-
   
-
   g1.updateOptions({
-
                   file: trackArry
-
                   })
-
   g2.updateOptions({
-
                   file: distArry,
-
                   labels: firstRow,
-
                   highlightCallback: function(e, x, pts, rowi) {
-
                       var xrange = g2.toDataXCoord(rowi);
-
                       rowi+=g2.getLeftBoundary_();
-
                       var lft = g2.getLeftBoundary_();
-
                       g1.setSelection(lineArry[rowi][5]);
-
                     }
-
                   })
-
 }
 
-
-
 var drawGraph = function(data) {
-
   var lineArry = toArray(data);
-
   var headers = lineArry[0];
-
 //  alert(headers);
-
   var lineArry = lineArry.slice(1);
-
   lineArry.sort(sortByY);
-
   for (var idx = 0; idx < lineArry.length; idx++) {
-
     var row = lineArry[idx];
-
     row.push(idx);
-
   }
-
   lineArry.sort(mySorting);
-
   
-
   var trackArry = arrColumns(lineArry, [3, 4]);
-
   var distArry = arrColumns(lineArry, [0, 1, 2]); 
-
   trackArry.sort(mySorting);
-
   //var firstRow = ['x', 'y', 'z'];
-
   var firstRow = [headers[0], headers[1], headers[2]];
-
-  var trackHeader = ['x' , 'y'];
-
+  var trackHeader = ['X' , 'Y'];
  
-
   
-
   g1 = new Dygraph(trackDiv,trackArry, { 
-
       labels: trackHeader, 
-
       drawPoints: true,
-
       pointSize: 1,
-
       highlightCircleSize: 5,
-
       strokeWidth: 0.0,
-
       drawXGrid: 0,
-
       drawYGrid: 0,
-
       drawXAxis: 0,
-
       drawYAxis: 0,
-
       interactionModel: {},
-
       labelsDiv: "trackLabel",
-
       labelsDivStyles: {
-
         'backgroundColor': 'transparent',
-
       },
-
       labelsSeparateLines: true,
-
-              
-
+      axes: {
+        x: {
+          valueFormatter: function(ms) {
+            return 'X: ' + ms;
+          }
+        },
+        y: {
+          valueFormatter: function(y) {
+            return ' ' + y;
+          }
+        }  
+      }       
       });
-
   g2 = new Dygraph(div,distArry, { 
-
       labels: firstRow, 
-
       labelsDiv: "distLabel",
-
       labelsDivStyles: {
-
         'backgroundColor': 'transparent',
-
       },
-
       labelsSeparateLines: true,
-
+      rollPeriod: 4,
+      connectSeparatedPoints: true,
       highlightCallback: function(e, x, pts, rowi) {
-
           var xrange = g2.toDataXCoord(rowi);
-
           rowi+=g2.getLeftBoundary_();
-
           var lft = g2.getLeftBoundary_();
-
           //var rowNum = xrange[0] + rowi
-
           g1.setSelection(lineArry[rowi][5]);
-
 //          console.log(lft+" "+rht);
-
-        }
-
+      },
+      axes: {
+        x: {
+          valueFormatter: function(ms) {
+            return 'Distance: ' + ms.toFixed(2) + ' Units';
+          }
+        },
+        y: {
+          valueFormatter: function(y) {
+            var speed = y * 2.23693629;
+            return ' ' + speed.toFixed(2) + 'MPH';
+          }
+        }  
       }
-
+      
+    }
   );
 
   s1 = new Dragdealer('simple-slider',
-
   {
-
   	steps: g2.numRows() + 1,
-
   	snap: true,
-
   	animationCallback: function(x, y)
-
   	{
-
       var myx = Math.round((g2.numRows()) * x);
-
       g2.setSelection(myx);
-
       g1.setSelection(lineArry[myx][5]);
-
 //      console.log(myx);
-
   	}
-
   });
-
 }
-
-
 
 var arrColumns = function(data, cols) {
-
   var arry = [];
-
   var rarry = [];
-
   for (var row = 0; row < data.length; row++){
-
     rarry = [];
-
     for (var i = 0; i < cols.length; i++) {
-
       rarry.push(data[row][cols[i]]);
-
     }
-
     arry.push(rarry);
-
   }
-
   return arry;
-
 }
-
-
 
 function mySorting(a,b) {
-
   a = a[0];
-
   b = b[0];
-
   return a == b ? 0 : (a < b ? -1 : 1)
-
 }
-
-
 
 function sortByY(a,b) {
-
   a = a[3];
-
   b = b[3];
-
   return a == b ? 0 : (a < b ? -1 : 1)
-
 }
-
-
 
 var toArray = function(data) {
-
   var lines = data.split("\n");
-
   var arry = [];
-
   for (var idx = 0; idx < lines.length; idx++) {
-
     var line = lines[idx];
-
     // Oftentimes there's a blank line at the end. Ignore it.
-
     if (line.length == 0) {
-
       continue;
-
     }
-
     var row = line.split(",");
-
     // Special processing for every row except the header.
-
     if (idx > 0) {
-
 //      row[0] = new Date(row[0]); // Turn the string date into a Date.
-
       for (var rowIdx = 0; rowIdx < row.length; rowIdx++) {
-
         // Turn "123" into 123.
-
         row[rowIdx] = parseFloat(row[rowIdx]);
-
         if (isNaN(row[rowIdx])) {
-
 //          alert("NaN detected at "+idx+" "+rowIdx);
-
+          row[rowIdx] = null;
         }
-
       }    
-
     }     
-
     arry.push(row);
-
   }     
-
   return arry;
-
 }
-
-
 
 function popLaps(raceId) {
-
   var req = new XMLHttpRequest();
-
   req.onreadystatechange = function () {
-
     if (req.readyState == 4) {
-
       if (req.status === 200 || // Normal http
-
           req.status === 0) { // Chrome w/ --allow-file-access-from-files
-
         var data = req.responseText;
-
         popLapsCallback(data);
-
       }
-
     }
-
   };
-
   req.open('GET', 'getlaps.php?action=getLaps&raceId='+raceId, true);
-
   req.send(null);
-
-
-
 }
-
-
 
 function popLapsCallback(data) {
-
   var lapArr = toArray(data);
-
   var lapSelect = document.getElementById("lap");
-
   var refLapSelect = document.getElementById("refLap");
-
   //wipe out the existing options
-
   lapSelect.options.length = 0;
-
   refLapSelect.options.length = 0;
-
   lapSelect.options[lapSelect.options.length] = new Option("FASTEST LAP", "FASTEST");
-
   refLapSelect.options[refLapSelect.options.length] = new Option("FASTEST LAP", "FASTEST");
-
   lapSelect.options[lapSelect.options.length] = new Option("LAST LAP", "LAST");
-
   refLapSelect.options[refLapSelect.options.length] = new Option("LAST LAP", "LAST");
-
   for (var idx = 0; idx < lapArr.length; idx++) {
-
     lapSelect.options[lapSelect.options.length] = new Option(lapArr[idx][1]+" - "+lapArr[idx][2], lapArr[idx][0]);
-
     refLapSelect.options[refLapSelect.options.length] = new Option(lapArr[idx][1]+" - "+lapArr[idx][2], lapArr[idx][0]);
-
   }
-
-  
-
-  
-
 }
-
-
 
 function graphUpdate() {
-
   var lapSelect = document.getElementById("lap");
-
   var refLapSelect = document.getElementById("refLap");
-
   var raceSelect = document.getElementById("race");
-
   var lap = lapSelect.options[lapSelect.selectedIndex].value;
-
   var refLap = refLapSelect.options[refLapSelect.selectedIndex].value;
-
   var race = raceSelect.options[raceSelect.selectedIndex].value;
-
   var req = new XMLHttpRequest();
-
   req.onreadystatechange = function () {
-
     if (req.readyState == 4) {
-
       if (req.status === 200 || // Normal http
-
           req.status === 0) { // Chrome w/ --allow-file-access-from-files
-
         var data = req.responseText;
-
         updateGraph(data);
-
       }
-
     }
-
   };
-
   req.open('GET', 'lapdistance.php?lap='+lap+'&refLap='+refLap+'&race='+race+'&allCols=1', true);
-
   req.send(null);
-
-
-
 }
-
-
 
 </script>
 
 
-
-
-
 </body>
-
 </html>
 
 
