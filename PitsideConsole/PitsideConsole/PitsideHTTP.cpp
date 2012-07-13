@@ -38,7 +38,7 @@ void WriteFile(LPCTSTR lpszFile, ostream& out)
   TCHAR szModule[MAX_PATH];
   GetModuleFileName(NULL,szModule,NUMCHARS(szModule));
   // now we should have a path like "c:\blah\pitsideconsole.exe".  We want to remove the PitsideConsole.exe and append the user's lpszFile (which will probably be WebSide.js)
-  int cchEnd = wcslen(szModule);
+  int cchEnd = wcslen(szModule)-1;
   for(;cchEnd >= 0;cchEnd--)
   {
     if(szModule[cchEnd] == '\\') break;
@@ -46,7 +46,7 @@ void WriteFile(LPCTSTR lpszFile, ostream& out)
   if(cchEnd > 0)
   {
     // found the slash
-    szModule[cchEnd+1] = 0; // kill the string after the slash
+    szModule[cchEnd+1] = (TCHAR)0; // kill the string after the slash
     wcsncat(szModule,lpszFile, NUMCHARS(szModule));
   }
 
@@ -330,6 +330,7 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
           {
             float flX = pX->GetValue(ptRef.iTimeMs);
             float flY = pY->GetValue(ptRef.iTimeMs);
+            out.precision(8);
             out<<", "<<flX<<", "<<flY;
           }
           else
@@ -362,7 +363,7 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     std::copy(pReq.strPage.begin(),pReq.strPage.end(),widePage.begin());
 
     // just load a local file
-    WriteFile(&widePage[1],out);
+    WriteFile(&widePage.c_str()[1],out);
     return false;
   }
 }

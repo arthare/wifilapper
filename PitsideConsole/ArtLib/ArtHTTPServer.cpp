@@ -3,10 +3,6 @@
 
 bool ParseRequest(const char* pRequest, int cbRequest, HTTPREQUEST* pParsed)
 {
-  if(strstr(pRequest,"lapdistance"))
-  {
-    cout<<"blah"<<endl;
-  }
   char szURL[200];
   char szRequestType[200];
   szURL[0] = szRequestType[0] = 0;
@@ -57,7 +53,7 @@ bool ParseRequest(const char* pRequest, int cbRequest, HTTPREQUEST* pParsed)
           if(pszAmper && pszAmper <= pszEnd)
           {
             // now we've got the key and the value positions
-            const char cchMaxValue = 10000;
+            const int cchMaxValue = 10000;
             char szKey[cchMaxValue];
             char szValue[cchMaxValue];
             if(pszAmper - pszEquals >= cchMaxValue || pszEquals - pszStart > cchMaxValue)
@@ -96,8 +92,8 @@ bool ParseRequest(const char* pRequest, int cbRequest, HTTPREQUEST* pParsed)
     }
   }
 
-  pParsed->strPage = szURL;
-  pParsed->strType = szRequestType;
+  pParsed->strPage = string(szURL);
+  pParsed->strType = string(szRequestType);
   return szURL[0] && szRequestType[0];
 }
 

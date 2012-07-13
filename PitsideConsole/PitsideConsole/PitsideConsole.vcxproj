@@ -44,7 +44,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>E:\artroot\ahare_ArtNew_6488\artroot\PC\PitsideConsole\ZLib;E:\artroot\ahare_ArtNew_6488\artroot\PC\PitsideConsole\ArtLib;$(IncludePath)</IncludePath>
+    <IncludePath>..\ArtLib;$(IncludePath)</IncludePath>
     <LibraryPath>E:\artroot\ahare_ArtNew_6488\artroot\PC\PitsideConsole\Release\;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
