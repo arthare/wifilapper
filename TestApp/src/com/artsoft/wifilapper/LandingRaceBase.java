@@ -209,9 +209,8 @@ public abstract class LandingRaceBase extends Activity implements OnItemSelected
     				Toast.makeText(this, "Attempting to connect to '" + strSSID + "'", Toast.LENGTH_SHORT).show();
     			}
     		}
-    		
-         	spn.invalidate();
     	}
+    	arg0.invalidate();
     }
 
     @Override

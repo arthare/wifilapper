@@ -326,6 +326,9 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		SetupUnitSpinner(spnUnits, eUnits);
 		chkTestMode.setChecked(fTestMode);
 		
+		spnSpeedo.setOnItemSelectedListener(this);
+		spnUnits.setOnItemSelectedListener(this);
+		
 		if(fInternalDB) chkInternal.setChecked(true);
 		else chkExternal.setChecked(true);
 		
@@ -337,6 +340,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		btnAccel.setOnClickListener(this);
 		btnComms.setOnClickListener(this);
 	}
+
 	
 	@Override
 	public void onClick(View v) 
