@@ -103,6 +103,69 @@ public class LapAccumulator
 		return lap;
 	}
 	
+	public static class CrossData
+	{
+		public int ixCrossedLine; // index of the crossed line
+		public int ixLast; // the index of the final line (m_lstPositions.size())
+		public float flSpeedOfCrossedLine;
+	}
+	
+	public boolean IsNowCrossingSelf(LineSeg.IntersectData intersect, CrossData cross)
+	{
+		// we want to check if the tip of this lap (the most recent point) crosses the rest of the recorded lap data at any point
+		if(m_fPruned) return false;
+		if(m_fDeferredLoad) return false; // I don't expect we'll ever be loading this lap for the sake of checking its crossing state
+		if(m_lstPositions.size() < 4) return false; // it is impossible for a 3-point lap to cross itself
+		
+		TimePoint2D ptLast = m_lstPositions.get(m_lstPositions.size()-1);
+		TimePoint2D ptNextLast = m_lstPositions.get(m_lstPositions.size()-2);
+		LineSeg lnLast = new LineSeg(ptNextLast.pt,ptLast.pt);
+		
+		for(int x = 0;x < m_lstPositions.size()-4; x++)
+		{
+			TimePoint2D ptX = m_lstPositions.get(x);
+			TimePoint2D ptXNext = m_lstPositions.get(x+1);
+			LineSeg lnCurrent = new LineSeg(ptX.pt,ptXNext.pt);
+			if(lnCurrent.Intersect(lnLast, intersect, true, true))
+			{
+				cross.ixCrossedLine = x;
+				cross.ixLast = m_lstPositions.size();
+				cross.flSpeedOfCrossedLine = (float)(ptXNext.dVelocity + ptX.dVelocity)/2;
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public LineSeg MakeSplitAtIndex(int ix, Vector2D vDirOut)
+	{
+		if(ix >= 1 && ix < m_lstPositions.size())
+		{
+			TimePoint2D ptLast = m_lstPositions.get(ix-1);
+			TimePoint2D ptCurrent = m_lstPositions.get(ix);
+			
+			float tmCurrent = (float)ptCurrent.iTime / 1000.0f;
+			float tmLast = (float)ptLast.iTime / 1000.0f;
+			
+			Vector2D vDir = Vector2D.P1MinusP2(ptCurrent.pt, ptLast.pt);
+			if(vDir.GetLength() <= 0) return null;
+			
+			Vector2D vPerpDir = vDir.GetPerpindicular();
+			Vector2D vUnitPerp = vPerpDir.GetUnitVector();
+			
+			// this makes sure we're always setting points as if we're moving 0.0001944 degrees per second (approx 15m/s)
+			float dSFLength = Math.max(0.0001944f, vPerpDir.GetLength() / (tmCurrent - tmLast));
+			Point2D ptLeft = ptCurrent.pt.Add(vUnitPerp.Multiply(dSFLength));
+			Point2D ptRight = ptCurrent.pt.Subtract(vUnitPerp.Multiply(dSFLength));
+			vDirOut.Set(vDir.GetX(),vDir.GetY());
+			return new LineSeg(ptLeft, ptRight);
+		}
+		else
+		{
+			return null;
+		}
+	}
+	
 	// calculates and returns this guy's length in km
 	public float GetCalculatedLength()
 	{
@@ -496,6 +559,7 @@ public class LapAccumulator
 		
 		assert(ptNew != null && ptLast.pt != null);
 		LineSeg lnLast = new LineSeg(ptNewRaw, ptLast.pt);
+		if(lnLast.GetLength() <= 0) return; // don't add it if it isn't new
 		
 		m_dCumulativeDistance += lnLast.GetLength(); // add how far we've travelled here
 		
@@ -851,6 +915,10 @@ public class LapAccumulator
 	public int GetLastSplitIndex()
 	{
 		return m_lstCrossTimes.size() - 1;
+	}
+	public int GetPositionCount()
+	{
+		return m_lstPositions.size();
 	}
 	public double GetSplit(int ixIndex)
 	{

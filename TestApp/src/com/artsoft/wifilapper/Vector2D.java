@@ -41,6 +41,11 @@ public class Vector2D
 	{
 		return new Vector2D(x - vOther.x,y - vOther.y);
 	}
+	public void Set(float x, float y)
+	{
+		this.x = x;
+		this.y = y;
+	}
 	
 	// returns a vector2D rotated about (0,0) by flAngleDegrees
 	public Vector2D Rotate(float flAngleDegrees)
