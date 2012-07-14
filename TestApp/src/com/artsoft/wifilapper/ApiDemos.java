@@ -1578,9 +1578,12 @@ class StartFinishAutoSetView extends View
 				int cSF = myApp.GetSFCount();
 				LapAccumulator.DrawLap(lap, false, myApp.GetSF(), rcInWorld, canvas, paintTrack, paintLines, new Rect(rcOnScreen));
 				
-				String str = "Start/finish will auto-set once after 1 lap";
-				
-				Utility.DrawFontInBox(canvas, str, paintSmallText, rcOnScreen);
+				String str1 = "Start/finish will auto-set once after 1 lap";
+				String str2 = "Tap screen to force start/finish and splits";
+				final int mid = getTop() + getHeight()/2;
+
+				Utility.DrawFontInBox(canvas, str1, paintSmallText, new Rect(getLeft(),getTop(),getRight(),mid));
+				Utility.DrawFontInBox(canvas, str2, paintSmallText, new Rect(getLeft(),mid,getRight(),getBottom()));
 			}
 			else
 			{
