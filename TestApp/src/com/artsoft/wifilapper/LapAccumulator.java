@@ -804,31 +804,35 @@ public class LapAccumulator
 				}
 				ptLast = pt;
 			}
-			canvas.drawLines(rgflPoints, paintLap);
-			final int ixX = rgflPoints.length - 2;
-			final int ixY = rgflPoints.length - 1;
-			canvas.drawRect(rgflPoints[ixX]-5,rgflPoints[ixY]-5, rgflPoints[ixX]+5,rgflPoints[ixY]+5, paintLap);
-
-			if(lstSF != null && paintSplits != null)
+			
+			if(rgflPoints.length >= 2) // making sure we don't crash...
 			{
-				for(int ix = 0; ix < lstSF.size(); ix++)
+				canvas.drawLines(rgflPoints, paintLap);
+				final int ixX = rgflPoints.length - 2;
+				final int ixY = rgflPoints.length - 1;
+				canvas.drawRect(rgflPoints[ixX]-5,rgflPoints[ixY]-5, rgflPoints[ixX]+5,rgflPoints[ixY]+5, paintLap);
+	
+				if(lstSF != null && paintSplits != null)
 				{
-					LineSeg ln = lstSF.get(ix);
-					float x1 = (float)((ln.GetP1().GetX() - rcInWorld.left) / dWidth) * iTargetWidth;
-					float x2 = (float)((ln.GetP2().GetX() - rcInWorld.left) / dWidth) * iTargetWidth;
-					float y1 = (float)((ln.GetP1().GetY() - rcInWorld.top) / dHeight) * iTargetHeight;
-					float y2 = (float)((ln.GetP2().GetY() - rcInWorld.top) / dHeight) * iTargetHeight;
-					x1 += rcOnScreen.left;
-					x2 += rcOnScreen.left;
-					y1 += rcOnScreen.top;
-					y2 += rcOnScreen.top;
-					y1 = (rcOnScreen.bottom - y1) + rcOnScreen.top;
-					y2 = (rcOnScreen.bottom - y2) + rcOnScreen.top;
-					
-					//x1 = rcOnScreen.right - x1 + rcOnScreen.left;
-					//x2 = rcOnScreen.right - x2 + rcOnScreen.left;
-					
-					canvas.drawLine(x1, y1, x2, y2, paintSplits);
+					for(int ix = 0; ix < lstSF.size(); ix++)
+					{
+						LineSeg ln = lstSF.get(ix);
+						float x1 = (float)((ln.GetP1().GetX() - rcInWorld.left) / dWidth) * iTargetWidth;
+						float x2 = (float)((ln.GetP2().GetX() - rcInWorld.left) / dWidth) * iTargetWidth;
+						float y1 = (float)((ln.GetP1().GetY() - rcInWorld.top) / dHeight) * iTargetHeight;
+						float y2 = (float)((ln.GetP2().GetY() - rcInWorld.top) / dHeight) * iTargetHeight;
+						x1 += rcOnScreen.left;
+						x2 += rcOnScreen.left;
+						y1 += rcOnScreen.top;
+						y2 += rcOnScreen.top;
+						y1 = (rcOnScreen.bottom - y1) + rcOnScreen.top;
+						y2 = (rcOnScreen.bottom - y2) + rcOnScreen.top;
+						
+						//x1 = rcOnScreen.right - x1 + rcOnScreen.left;
+						//x2 = rcOnScreen.right - x2 + rcOnScreen.left;
+						
+						canvas.drawLine(x1, y1, x2, y2, paintSplits);
+					}
 				}
 			}
 		}
