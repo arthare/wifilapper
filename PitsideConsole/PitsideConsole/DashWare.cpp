@@ -129,7 +129,7 @@ namespace DashWare
           out<<ixLap<<",";
 
           TCHAR szTemp[100];
-          _snwprintf(szTemp,NUMCHARS(szTemp),L"%6.3f",((float)msQuery/1000.0f)+flStartTime + 50000);
+          _snwprintf(szTemp,NUMCHARS(szTemp),L"%6.3f",((float)msQuery/1000.0f)+flStartTime);
           out<<szTemp;
 
           TimePoint2D pt = ::GetPointAtTime(lstPoints,msQuery);
