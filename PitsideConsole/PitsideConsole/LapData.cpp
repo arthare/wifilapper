@@ -236,8 +236,8 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
   case DATA_CHANNEL_DISTANCE: lpszDataName = L"Distance"; break;
   case DATA_CHANNEL_VELOCITY: lpszDataName = L"Velocity"; break;
   case DATA_CHANNEL_TIMESLIP: lpszDataName = L"Time-slip"; break;
-  case DATA_CHANNEL_X_ACCEL: lpszDataName = L"X acceleration"; break;
-  case DATA_CHANNEL_Y_ACCEL: lpszDataName = L"Y acceleration"; break;
+  case DATA_CHANNEL_X_ACCEL: lpszDataName = L"X accel"; break;
+  case DATA_CHANNEL_Y_ACCEL: lpszDataName = L"Y accel"; break;
   case DATA_CHANNEL_TEMP: lpszDataName = L"Temperature"; break;
   case DATA_CHANNEL_SIGNAL_STRENGTH: lpszDataName = L"Signal Strength"; break;
   default:
@@ -553,11 +553,18 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
   }
   else
   {
+    CDataChannel* pX = pLapDB->AllocateDataChannel();
+    CDataChannel* pY = pLapDB->AllocateDataChannel();
+    pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
+    pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     // no reference lap.  That means WE'RE the reference lap!
     // it also makes distance computation stupid easy
     double dDistance = 0;
     TimePoint2D ptLast = lstPoints[0];
     m_lstPoints.push_back(TimePoint2D(ptLast));
+
+    pX->AddPoint(ptLast.iTime,ptLast.flX);
+    pY->AddPoint(ptLast.iTime,ptLast.flY);
 
     CDataChannel* pDistance = pLapDB->AllocateDataChannel();
     CDataChannel* pVelocity = pLapDB->AllocateDataChannel();
@@ -568,6 +575,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
     for(int x = 1;x < lstPoints.size(); x++)
     {
       const TimePoint2D& p = lstPoints[x];
+      pX->AddPoint(p.iTime,p.flX);
+      pY->AddPoint(p.iTime,p.flY);
+
       const double dX = p.flX - ptLast.flX;
       const double dY = p.flY - ptLast.flY;
       const double d = sqrt(dX*dX + dY*dY);
@@ -586,6 +596,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
     pLapDB->AddDataChannel(pDistance);
     pLapDB->AddDataChannel(pVelocity);
     pLapDB->AddDataChannel(pTimeSlip);
+    pLapDB->AddDataChannel(pX);
+    pLapDB->AddDataChannel(pY);
   }
 }
 const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTimeMs)

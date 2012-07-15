@@ -15,7 +15,7 @@ namespace DashWare
   void WriteChannelHeaders(wofstream& out, const vector<const CLap*>& lstLaps, set<DATA_CHANNEL>& setData)
   {
     // if you update this function, update the dashware.xml file too!
-    out<<L"Time,x,y";
+    out<<L"Lap,Time,x,y";
 
     // column headers
     for(set<DATA_CHANNEL>::iterator i = begin(setData); i != end(setData); i++)
@@ -98,6 +98,7 @@ namespace DashWare
 
     WriteChannelHeaders(out, lstSortedLaps, setChannels);
 
+    int msLastLine = 0;
     float flStartTime = 0; // start time in seconds;
     for(int ixLap = 0; ixLap < lstSortedLaps.size(); ixLap++)
     {
@@ -108,38 +109,57 @@ namespace DashWare
       for(set<DATA_CHANNEL>::iterator i = begin(setChannels); i != end(setChannels); i++)
       {
         const CDataChannel* pDC = g_pLapDB->GetDataChannel(pLap->GetLapId(),*i);
-        msStartTime = min(pDC->GetStartTimeMs(),msStartTime);
-        msEndTime = max(pDC->GetEndTimeMs(),msEndTime);
+        if(pDC)
+        {
+          msStartTime = min(pDC->GetStartTimeMs(),msStartTime);
+          msEndTime = max(pDC->GetEndTimeMs(),msEndTime);
+        }
       }
 
       const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
-      for(int msQuery = msStartTime; msQuery < msEndTime; msQuery += 50)
+      float flRunningAverage[DATA_CHANNEL_COUNT];
+      bool fUseRunningAverage[DATA_CHANNEL_COUNT] = {0};
+      fUseRunningAverage[DATA_CHANNEL_X_ACCEL] = true;
+      fUseRunningAverage[DATA_CHANNEL_Y_ACCEL] = true;
+
+      for(int msQuery = msStartTime; msQuery < msEndTime; msQuery += 100)
       {
-        TCHAR szTemp[100];
-        _snwprintf(szTemp,NUMCHARS(szTemp),L"%5.3f",((float)msQuery/1000.0f)+flStartTime);
-        out<<szTemp;
-
-        TimePoint2D pt = ::GetPointAtTime(lstPoints,msQuery);
-        _snwprintf(szTemp,NUMCHARS(szTemp),L"%4.6f",pt.flX);
-        out<<","<<szTemp;
-        _snwprintf(szTemp,NUMCHARS(szTemp),L"%4.6f",pt.flY);
-        out<<","<<szTemp;
-
-        for(set<DATA_CHANNEL>::iterator i = begin(setChannels); i != end(setChannels); i++)
+        if(msQuery > msLastLine)
         {
-          const DATA_CHANNEL eDC = *i;
-          const CDataChannel* pDC = g_pLapDB->GetDataChannel(pLap->GetLapId(),eDC);
-          if(pDC)
+          out<<ixLap<<",";
+
+          TCHAR szTemp[100];
+          _snwprintf(szTemp,NUMCHARS(szTemp),L"%6.3f",((float)msQuery/1000.0f)+flStartTime + 50000);
+          out<<szTemp;
+
+          TimePoint2D pt = ::GetPointAtTime(lstPoints,msQuery);
+          _snwprintf(szTemp,NUMCHARS(szTemp),L"%4.6f",pt.flX);
+          out<<","<<szTemp;
+          _snwprintf(szTemp,NUMCHARS(szTemp),L"%4.6f",pt.flY);
+          out<<","<<szTemp;
+
+          for(set<DATA_CHANNEL>::iterator i = begin(setChannels); i != end(setChannels); i++)
           {
-            _snwprintf(szTemp,NUMCHARS(szTemp),L"%5.2f",pDC->GetValue(msQuery));
-            out<<","<<szTemp;
+            const DATA_CHANNEL eDC = *i;
+            const CDataChannel* pDC = g_pLapDB->GetDataChannel(pLap->GetLapId(),eDC);
+            if(pDC)
+            {
+              float flValue = pDC->GetValue(msQuery);
+              if(fUseRunningAverage[eDC])
+              {
+                flRunningAverage[eDC] = 0.7*flValue + 0.3*flRunningAverage[eDC];
+              }
+              _snwprintf(szTemp,NUMCHARS(szTemp),L"%5.2f",fUseRunningAverage[eDC] ? flRunningAverage[eDC] : flValue);
+              out<<","<<szTemp;
+            }
+            else
+            {
+              out<<","; // if this lap didn't include the data channel, skip it
+            }
           }
-          else
-          {
-            out<<","; // if this lap didn't include the data channel, skip it
-          }
+          out<<","<<endl;
+          msLastLine = msQuery;
         }
-        out<<","<<endl;
       }
     }
 

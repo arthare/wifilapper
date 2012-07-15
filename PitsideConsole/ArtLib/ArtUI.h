@@ -38,7 +38,7 @@ public:
       LVCOLUMN LvCol = {0};
       LvCol.mask=LVCF_TEXT|LVCF_WIDTH|LVCF_SUBITEM;
       LvCol.pszText=L"";
-      LvCol.cx=RECT_WIDTH(&rc);
+      LvCol.cx=RECT_WIDTH(&rc) - 30;
 
       SendMessage(m_hWnd,LVM_INSERTCOLUMN,0,(LPARAM)&LvCol); // Insert/Show the coloum
     }
