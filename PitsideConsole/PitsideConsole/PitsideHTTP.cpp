@@ -347,6 +347,7 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
   }
   else if(pReq.strPage == "/getdata")
   {
+    out.precision(8);
     pReq.strResponseType = "text/plain";
     // they have called the general "getdata" page
     // params:
@@ -370,6 +371,26 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
         out<<pLap->GetLapId()<<","<<x<<","<<pLap->GetStartTime()<<","<<pLap->GetTime()<<endl;
       }
       return true;
+    }
+    else if(pReq.mapParams["table"] == "points")
+    {
+      string strLapId = pReq.mapParams["parentId"];
+      int iLapId = 0;
+      if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
+      {
+        const CLap* pLap = m_pLapsDB->GetLap(iLapId);
+        if(pLap)
+        {
+          const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
+          out<<"Time,Longitude,Latitude,Velocity"<<endl;
+          for(int x = 0;x < lstPoints.size(); x++)
+          {
+            TimePoint2D pt = lstPoints[x];
+            out<<pt.iTime<<","<<pt.flX<<","<<pt.flY<<","<<pt.flVelocity<<endl;
+          }
+          return true;
+        }
+      }
     }
     else if(pReq.mapParams["table"] == "channels")
     {
@@ -396,8 +417,6 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     }
     else if(pReq.mapParams["table"] == "data")
     {
-      out.precision(8);
-
       // querying for actual data from a data channel.
       // this will require knowing a lapid and a channel type
       string strLapId = pReq.mapParams["lapId"];
