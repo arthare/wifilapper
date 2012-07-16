@@ -1,0 +1,138 @@
+/*
+ * Colors for search and replace:
+ * Background:  93B3BF
+ * Menu:        495F73
+ * Active Menu: 192E40
+ * Menu Hover:  324759 
+ * Graphs:      BEB1A4 
+ *    
+*/
+html {
+    background-color: #93B3BF;
+}
+body {
+    font-family: "Trebuchet MS",Arial,sans-serif;
+    margin: 0;
+}
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+div.menu_search {
+    overflow: hidden;
+    width: 800px;
+}
+div.menu_search div.menu {
+    float: left;
+}
+div.menu_search div.menu ul {
+    overflow: hidden;
+    padding: 0 0 0 7px;
+}
+div.menu_search div.menu ul li {
+    float: left;
+    font-size: 12px;
+    line-height: 18px;
+    margin: 1px 0 0;
+    padding: 0 1px;
+    text-align: center;
+    width: 125px;
+}
+div.menu_search div.menu ul li a {
+    background: none no-repeat scroll 0 0 #192E40;
+    border-radius: 10px 10px 0 0;
+    border-style: solid;
+    border-width: 1px 1px 0;
+    color: white;
+    cursor: pointer;
+    display: block;
+    float: left;
+    padding: 7px 0 5px;
+    position: relative;
+    width: 120px;
+}
+div.menu_search div.menu ul li a {
+    text-decoration: none;
+    text-transform: uppercase;
+}
+div.menu_search div.menu ul li.active {
+    height: 18px;
+    margin: 0;
+    width: 125px;
+}
+div.menu_search div.menu ul li.active a {
+    background: none no-repeat scroll 0 0 #324759;
+    color: white;
+    height: 18px;
+    padding-top: 8px;
+    width: 120px;
+}
+div.menu_search div.menu ul li.active a:hover {
+    background: none no-repeat scroll 0 0 #324759 !important;
+    width: 120px;
+}
+div.menu_search div.menu ul li a:hover {
+    background: none no-repeat scroll 0 0 #324759;
+    color: white;
+    width: 120px;
+}
+#laplist {
+     height: 190;
+}
+
+#lap {
+     height: 100%;
+    border-radius: 10;
+    padding: 0 5 0 5
+}
+#wrapper {
+    margin: 0 auto;
+    width: 800px;
+}
+#header {
+    background: none repeat scroll 0 0 #495F73;
+    border-radius: 10px 10px 0 0;
+    border-style: solid;
+    border-width: 1px 1px 0;
+    padding: 0 0 0 10px;
+    width: 790px;
+}
+#middle {
+    background: none repeat scroll 0 0 #495F73;
+    border-style: solid;
+    border-radius: 10px 10px 0 0;
+    border-width: 1px 1px 1px;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+#sideLeft {
+    background: none repeat scroll 0 0 transparent;
+    float: left;
+    position: relative;
+    padding: 5px;
+    width: 240px;
+}
+#trackArea {
+    background: none repeat scroll 0 0 #BEB1A4;
+    border-style: solid;
+    border-width: 1px;
+    margin: 5;
+    float: right;
+    height: 190px;
+    position: relative;
+    width: 290px;
+}
+#footer {
+    background: none repeat scroll 0 0 #BEB1A4;
+    border-style: solid;
+    border-width: 0 1px 1px;
+    clear: both;
+    height: 300px;
+    margin: 0;
+    padding: 0 ;
+    position: relative;
+    width: 800px;
+}
