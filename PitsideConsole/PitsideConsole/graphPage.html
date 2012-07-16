@@ -1,32 +1,41 @@
 <html>
 <head>
-<script type="text/javascript"
-  src="dygraph-combined.js"></script>
-<script type="text/javascript"
-  src="dragdealer.js"></script>
+<script type="text/javascript" src="dygraph-combined.js"></script>
+<script type="text/javascript" src="dragdealer.js"></script>
+    
 <link rel="stylesheet" type="text/css" href="dragdealer.css" />
-<!-- <link rel="stylesheet" type="text/css" href="wifilapper.css" /> -->
+<link rel="stylesheet" type="text/css" href="wifilapper.css" />
+
 </head>
 <body>
+
+
 <div id="wrapper">
-  <div id="header">
-	WiFiLapper	
-	</div><!-- #header-->
+  <div class="menu_search">
+  <div class="menu">
+    <ul>
+      <li class="active">
+        <a href="/">HOME</a>
+      </li>
+      <li>
+        <a href="summary.php">SUMMARY</a>
+      </li>
+      <li>
+        <a href="settings.php">SETTINGS</a>
+      </li>
+      <li>
+        <a href="about.php">ABOUT</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
   <div id="middle">
     <div class="sidebar" id="sideLeft"> 
-      <form action="jstest2.php" method="GET">
-      <table>
-      <tr><td>Race:</td><td> <select name=race id=race onChange="popLaps(this.options[selectedIndex].value)">
-            <option>Pick One</option>
-            <option value=1>1</option>
-            <option value=2>2</option>
-            <option value=3>3</option>
-            <option value=4>4</option>
-            </select></td></tr>
-      <tr><td>Target Lap:</td><td> <select name=lap id=lap></select></td></tr>
-      <tr><td>Reference Lap:</td><td> <select name=refLap id=refLap></select></td></tr>
-      <tr><td colspan=2><input type="button" value="Update Graph" onclick="graphUpdate()"></td></tr>
-      </table>
+      <form id=laplist>
+      <select name=lap id=lap size=10 multiple onChange="graphUpdate()"></select></td></tr>
+      
+      </form>
     </div>  
     <div class="sidebar" id="trackArea" >
     </div>
@@ -277,27 +286,46 @@ function popLaps(raceId) {
 function popLapsCallback(data) {
   var lapArr = toArray(data);
   var lapSelect = document.getElementById("lap");
-  var refLapSelect = document.getElementById("refLap");
+//  var refLapSelect = document.getElementById("refLap");
   //wipe out the existing options
   lapSelect.options.length = 0;
-  refLapSelect.options.length = 0;
+//  refLapSelect.options.length = 0;
   lapSelect.options[lapSelect.options.length] = new Option("FASTEST LAP", "FASTEST");
-  refLapSelect.options[refLapSelect.options.length] = new Option("FASTEST LAP", "FASTEST");
+//  refLapSelect.options[refLapSelect.options.length] = new Option("FASTEST LAP", "FASTEST");
   lapSelect.options[lapSelect.options.length] = new Option("LAST LAP", "LAST");
-  refLapSelect.options[refLapSelect.options.length] = new Option("LAST LAP", "LAST");
+//  refLapSelect.options[refLapSelect.options.length] = new Option("LAST LAP", "LAST");
   for (var idx = 0; idx < lapArr.length; idx++) {
-    lapSelect.options[lapSelect.options.length] = new Option(lapArr[idx][1]+" - "+lapArr[idx][2], lapArr[idx][0]);
-    refLapSelect.options[refLapSelect.options.length] = new Option(lapArr[idx][1]+" - "+lapArr[idx][2], lapArr[idx][0]);
+    lapSelect.options[lapSelect.options.length] = new Option(lapArr[idx][1]+" - "+sec2min(lapArr[idx][2]), lapArr[idx][0]);
+//    refLapSelect.options[refLapSelect.options.length] = new Option(lapArr[idx][1]+" - "+lapArr[idx][2], lapArr[idx][0]);
   }
 }
 
 function graphUpdate() {
   var lapSelect = document.getElementById("lap");
-  var refLapSelect = document.getElementById("refLap");
-  var raceSelect = document.getElementById("race");
-  var lap = lapSelect.options[lapSelect.selectedIndex].value;
-  var refLap = refLapSelect.options[refLapSelect.selectedIndex].value;
-  var race = raceSelect.options[raceSelect.selectedIndex].value;
+//  var refLapSelect = document.getElementById("refLap");
+//  var raceSelect = document.getElementById("race");
+  // let's get a little fancier and use a single listbox...  
+//  var lap = lapSelect.options[lapSelect.selectedIndex].value;
+//  var refLap = refLapSelect.options[refLapSelect.selectedIndex].value;
+  var len = lapSelect.length ;
+  var lap = 0;
+  var refLap = 0;
+  for (i = 0; i < len && (lap == 0 || refLap == 0); i++) {
+    if (lapSelect[i].selected) {
+      var lap = lapSelect[i].value;
+      for (i++ ; i < len && (lap == 0 || refLap == 0); i++){
+        if (lapSelect[i].selected) {
+          var refLap = lapSelect[i].value;
+        }
+      }      
+    } 
+  }
+//  var chosen = lap + "\n" + refLap; 
+//  alert(chosen);
+  if (!refLap) {
+    refLap = lap;
+  }
+  var race = 0;
   var req = new XMLHttpRequest();
   req.onreadystatechange = function () {
     if (req.readyState == 4) {
@@ -312,6 +340,27 @@ function graphUpdate() {
   req.send(null);
 }
 
+function getSelectedItem(selection) {
+  len = selection.length ;
+  i = 0 ;
+  chosen = "" ;
+  
+  for (i = 0; i < len; i++) {
+    if (selection[i].selected) {
+      chosen = chosen + selection[i].value + "\n" ;
+    } 
+  }  
+  alert(chosen);
+  return chosen ;
+} 
+
+function sec2min(time) {
+  var mins = Math.floor(time / 60);
+  var seconds = time % 60;
+  return mins + ":" + seconds.toFixed(3);
+}
+
+popLaps(0);
 </script>
 
 
