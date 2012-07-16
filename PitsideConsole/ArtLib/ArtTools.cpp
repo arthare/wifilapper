@@ -78,3 +78,20 @@ bool SaveBufferToFile(LPCTSTR lpszPath, void* pvData, int cbData)
   }
   return false;
 }
+
+// a very simple integer conversion function.  Doesn't support negatives, but fails properly instead of returning 0
+bool ArtAtoi(LPCSTR lpsz, int cch, int* pOut)
+{
+  for(int x = 0;x < cch; x++)
+  {
+    if(lpsz[x] >= '0' && lpsz[x] <= '9')
+    {
+    }
+    else
+    {
+      return false;
+    }
+  }
+  *pOut = atoi(lpsz);
+  return true;
+}

@@ -33,7 +33,7 @@ void WriteData(const vector<DataPoint>& data, ostream& out, bool fTime, float* p
   *pflMax = flMax;
 }
 
-void WriteFile(LPCTSTR lpszFile, ostream& out)
+bool WriteFile(LPCTSTR lpszFile, ostream& out)
 {
   TCHAR szModule[MAX_PATH];
   GetModuleFileName(NULL,szModule,NUMCHARS(szModule));
@@ -64,17 +64,17 @@ void WriteFile(LPCTSTR lpszFile, ostream& out)
         buf[cbRead] = 0;
         out<<buf;
         if(cbRead < cbDesiredRead)
-          break; // done!
+          return true;
       }
       else
       {
-        break;
+        return true;
       }
     }
 
     CloseHandle(hFile);
   }
-  
+  return false;
 }
 
 string RGBToNetColor(float r, float g, float b)
@@ -239,8 +239,7 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
 
   if(pReq.strPage == "/") // main page - list all the laps the user can view
   {
-    WriteFile(L"graphPage.html",out);
-    return true;
+    return WriteFile(L"graphPage.html",out);
   }
   else if(pReq.strPage == "/getlaps.php")
   {
@@ -345,9 +344,86 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     {
       out<<"no laps selected"<<endl<<"error"<<endl;
     }
+  }
+  else if(pReq.strPage == "/getdata")
+  {
+    pReq.strResponseType = "text/plain";
+    // they have called the general "getdata" page
+    // params:
+    // table: which table are they interested in? (races, laps, points, channels, or data will be supported in round 1)
+    // parentId: what is the value of the logical parentId? (example: for laps, it would be the raceId we care about)
+    
+    if(pReq.mapParams["table"] == "races")
+    {
+      out<<"id,racename,date"<<endl; // for the time being, pitside only supports one race/car/whatever at once
+      out<<"1,OnlyRace,1"<<endl;
+      return true;
+    }
+    else if(pReq.mapParams["table"] == "laps")
+    {
+      // there should also be a raceId parameter here, but since we only support one race we don't care.  Sometime in the future...
+      vector<const CLap*> lstLaps = m_pLapsDB->GetLaps();
+      out<<"id,Lap #,Time of Day, Lap Time"<<endl;
+      for(int x = 0;x < lstLaps.size(); x++)
+      {
+        const CLap* pLap = lstLaps[x];
+        out<<pLap->GetLapId()<<","<<x<<","<<pLap->GetStartTime()<<","<<pLap->GetTime()<<endl;
+      }
+      return true;
+    }
+    else if(pReq.mapParams["table"] == "channels")
+    {
+      // querying what data channels are available for a given lap
+      // we need to know the lap ID
+      string strLapId = pReq.mapParams["parentId"];
+      int iLapId = 0;
+      if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
+      {
+        out<<"id,Name"<<endl;
+        set<DATA_CHANNEL> setChans = m_pLapsDB->GetAvailableChannels(iLapId);
+        for(set<DATA_CHANNEL>::iterator i = setChans.begin(); i != setChans.end(); i++)
+        {
+          TCHAR szName[MAX_PATH];
+          GetDataChannelName(*i,szName,NUMCHARS(szName));
 
+          char szSmallName[MAX_PATH];
+          _snprintf(szSmallName,NUMCHARS(szSmallName),"%S",szName);
 
+          out<<*i<<","<<szSmallName<<endl;
+        }
+        return true;
+      }
+    }
+    else if(pReq.mapParams["table"] == "data")
+    {
+      out.precision(8);
 
+      // querying for actual data from a data channel.
+      // this will require knowing a lapid and a channel type
+      string strLapId = pReq.mapParams["lapId"];
+      int iLapId = 0;
+      if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
+      {
+        string strChannelType = pReq.mapParams["dataType"];
+        int iChannelId = 0;
+        if(ArtAtoi(strChannelType.c_str(), strChannelType.size(),&iChannelId))
+        {
+          DATA_CHANNEL eChannel = (DATA_CHANNEL)iChannelId;
+          const CDataChannel* pChannel = m_pLapsDB->GetDataChannel(iLapId,eChannel);
+          if(pChannel)
+          {
+            out<<"time,value"<<endl;
+            vector<DataPoint> lstData = pChannel->GetData();
+            for(int x = 0;x < lstData.size(); x++)
+            {
+              const DataPoint& pt = lstData[x];
+              out<<pt.iTimeMs<<","<<pt.flValue<<endl;
+            }
+            return true;
+          }
+        }
+      }
+    }
   }
   else
   {
@@ -363,7 +439,7 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     std::copy(pReq.strPage.begin(),pReq.strPage.end(),widePage.begin());
 
     // just load a local file
-    WriteFile(&widePage.c_str()[1],out);
-    return false;
+    return WriteFile(&widePage.c_str()[1],out);
   }
+  return false;
 }
