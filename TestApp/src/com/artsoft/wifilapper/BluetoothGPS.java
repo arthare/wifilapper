@@ -38,6 +38,8 @@ import android.util.Log;
 
 public class BluetoothGPS 
 {
+	public static final String NO_VTG_FOUND = "com.artsoft.BluetoothGPS.NoVTG";
+	
 	DeviceRecvThread m_thd;
 	public BluetoothGPS(BluetoothDevice dev, LocationListener listener)
 	{
@@ -87,6 +89,17 @@ public class BluetoothGPS
 		final int MSG_SENDLOCS = 101;
 		final int MSG_LOSTGPS = 102;
 		final int MSG_NOGPSDEVICE = 103;
+		final int MSG_NOVTG = 104;
+		
+		// whether we're in "no VTG mode".  Since we can't assume that all our users will figure out the right thing to do wrt qstarz setup,
+		// we should handle the case where it is missing
+		boolean fNoVTGMode = false; 
+		long tmLastVTGSeen = 0; // when we last saw a VTG.  Starts equal to the current time (since maybe one flew by just before the thread started)
+		
+		double dLastLat = 361;
+		double dLastLong = 361;
+		long lLastTime = -1;
+		float dLastSpeed = 0;
 		
 		public DeviceRecvThread(BluetoothDevice dev, LocationListener listener)
 		{
@@ -136,6 +149,7 @@ public class BluetoothGPS
 			}
 			return false;
 		}
+		
 		private String ParseAndSendNMEA(String strNMEA)
 		{
 			String strLastLeftover = "";
@@ -147,18 +161,51 @@ public class BluetoothGPS
 				int ixNextAfterVTG = strNMEA.indexOf("$",ixVTG+1);
 				if(ixNextAfterVTG == -1) ixNextAfterVTG = strNMEA.length();
 				
-				if(ixVTG == -1 || ixNext == -1)
+				if(ixNext == -1)
 				{
 					strLastLeftover = strNMEA.substring(ixCur,strNMEA.length());
 					break;
 				}
+				else if(ixVTG == -1)
+				{
+					// we found a GPGGA, but failed to find a GPVTG.  This means the user isn't getting accurate velocity readings.
+					// what we're going to do is fail for 10 seconds in case one is coming, and then switch to "no VTG mode"
+					long tmNow = System.currentTimeMillis();
+					if(!fNoVTGMode && (tmNow - this.tmLastVTGSeen < 10000))
+					{
+						// we're still waiting for that damn VTG to show up.
+						break;
+					}
+					else
+					{
+						// it's been at least 10 seconds, or we're already in no-VTG mode.  From now on (until we see a VTG), we're operating in no-VTG mode
+						if(tmNow - tmLastVTGSeen > 10000)
+						{
+							// 10 seconds since our last warning to the user about the hazards of no-VTG mode.
+							m_handler.sendEmptyMessage(MSG_NOVTG);
+							tmLastVTGSeen = tmNow + 100000; // we want the warning to repeat, but not too frequently
+						}
+						fNoVTGMode = true;
+					}
+				}
+				else
+				{
+					tmLastVTGSeen = System.currentTimeMillis();
+					fNoVTGMode = false;
+				}
 				strLastLeftover = "";
 				String strGGACommand = strNMEA.substring(ixCur,ixNext);
-				String strVTGCommand = strNMEA.substring(ixVTG,ixNextAfterVTG);
 				String strGGABits[] = strGGACommand.split(",");
-				String strVTGBits[] = strVTGCommand.split(",");
+				String strVTGCommand = null;
+				String strVTGBits[] = null;
+				if(!fNoVTGMode)
+				{
+					strVTGCommand = strNMEA.substring(ixVTG,ixNextAfterVTG);
+					strVTGBits = strVTGCommand.split(",");
+				}
 				
-				if(strGGABits.length >= 6 && strVTGBits.length >= 8 && ValidateNMEA(strGGACommand) && ValidateNMEA(strVTGCommand))
+				
+				if(strGGABits.length >= 6 && ValidateNMEA(strGGACommand) && (fNoVTGMode || (ValidateNMEA(strVTGCommand) && strVTGBits.length >= 8)))
 				{
 					/*
 					1    = UTC of Position (hhmmss.mmmm)
@@ -183,7 +230,12 @@ public class BluetoothGPS
 					String strNS = strGGABits[3];
 					String strLong = strGGABits[4];
 					String strEW = strGGABits[5];
-					String strSpeed = strVTGBits[7];
+					
+					String strSpeed = null;
+					if(!fNoVTGMode)
+					{
+						strSpeed = strVTGBits[7];
+					}
 					
 					if(strUTC.length() > 0 && strLat.length() > 0 && strLong.length() > 0 && strNS.length() >= 1 && strEW.length() >= 1)
 					{
@@ -217,7 +269,34 @@ public class BluetoothGPS
 							
 							long lTime = cal.getTimeInMillis();
 							
-							float dSpeed = (float)Double.parseDouble(strSpeed);
+							float dSpeed = 0;
+							if(fNoVTGMode)
+							{
+								// we're not getting VTG data, so let's get speed data from differences between lat/long coords
+								float flDistance[] = new float[1];
+								if(dLastLat <= 360 && dLastLong <= 360 && lLastTime > 0)
+								{
+									Location.distanceBetween(dLastLat, dLastLong, dLat, dLong, flDistance);
+									float dTimeGap = (lTime - lLastTime) / 1000.0f;
+									dSpeed = 0.3f*((flDistance[0] / dTimeGap) * 3.6f) + 0.7f * dLastSpeed;
+								}
+								else
+								{
+									// we don't have a last latitude or longitude, so give up now
+									lLastTime = lTime;
+									dLastLat = dLat;
+									dLastLong = dLong;
+									break;
+								}
+							}
+							else
+							{
+								dSpeed = (float)Double.parseDouble(strSpeed);
+							}
+							lLastTime = lTime;
+							dLastLat = dLat;
+							dLastLong = dLong;
+							dLastSpeed = dSpeed;
 							
 							Location l = new Location("ArtBT");
 							l.setLatitude(dLat);
@@ -269,8 +348,10 @@ public class BluetoothGPS
 					fDeviceGood = false;
 				}
 				String strLastLeftover = "";
+				tmLastVTGSeen = System.currentTimeMillis();
 				while(fDeviceGood && !m_shutdown)
 				{
+					
 					// 1. read buffer
 					// 2. convert to string
 					// 3. find last GPGGA
@@ -339,6 +420,13 @@ public class BluetoothGPS
 				{
 					m_listener.onStatusChanged(LocationManager.GPS_PROVIDER, LocationProvider.OUT_OF_SERVICE, null);
 					fLostGPS = true;
+				}
+			}
+			else if(msg.what == MSG_NOVTG)
+			{
+				synchronized(this)
+				{
+					m_listener.onStatusChanged(BluetoothGPS.NO_VTG_FOUND, 0, null);
 				}
 			}
 			return false;

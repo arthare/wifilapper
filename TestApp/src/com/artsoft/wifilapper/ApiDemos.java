@@ -908,6 +908,10 @@ implements
     		}
     		SetState(State.WAITING_FOR_GPS);
     	}
+    	else if(provider.equals(BluetoothGPS.NO_VTG_FOUND))
+    	{
+    		Toast.makeText(this, "Your GPS device isn't transmitting velocity information.  Try the qstarz configuration info on www.wifilapper.com.", Toast.LENGTH_SHORT).show();
+    	}
     	
     	if(fStillWaiting && status != LocationProvider.OUT_OF_SERVICE)
     	{
