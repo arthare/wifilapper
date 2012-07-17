@@ -64,10 +64,14 @@ bool WriteFile(LPCTSTR lpszFile, ostream& out)
         buf[cbRead] = 0;
         out<<buf;
         if(cbRead < cbDesiredRead)
+        {
+          CloseHandle(hFile);
           return true;
+        }
       }
       else
       {
+        CloseHandle(hFile);
         return true;
       }
     }
