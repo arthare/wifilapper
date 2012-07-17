@@ -158,6 +158,7 @@ public class BluetoothGPS
 			{
 				int ixNext = strNMEA.indexOf("$", ixCur+1);
 				int ixVTG = strNMEA.indexOf("$GPVTG",ixCur+1); // finds the next command
+				//int ixVTG = -1;
 				int ixNextAfterVTG = strNMEA.indexOf("$",ixVTG+1);
 				if(ixNextAfterVTG == -1) ixNextAfterVTG = strNMEA.length();
 				
@@ -168,7 +169,7 @@ public class BluetoothGPS
 				}
 				else if(ixVTG == -1)
 				{
-					// we found a GPGGA, but failed to find a GPVTG.  This means the user isn't getting accurate velocity readings.
+					// we found a GPGGA, but failed to find a GPVTG.  This means the user isn't  getting accurate velocity readings.
 					// what we're going to do is fail for 10 seconds in case one is coming, and then switch to "no VTG mode"
 					long tmNow = System.currentTimeMillis();
 					if(!fNoVTGMode && (tmNow - this.tmLastVTGSeen < 10000))
@@ -279,6 +280,11 @@ public class BluetoothGPS
 									Location.distanceBetween(dLastLat, dLastLong, dLat, dLong, flDistance);
 									float dTimeGap = (lTime - lLastTime) / 1000.0f;
 									dSpeed = 0.3f*((flDistance[0] / dTimeGap) * 3.6f) + 0.7f * dLastSpeed;
+									if(dSpeed > 200 || dSpeed < 0)
+									{
+										// for whatever reason our speed is messed up.  Don't even bother reporting this.  720km/h should be plenty fast for our users
+										break;
+									}
 								}
 								else
 								{
