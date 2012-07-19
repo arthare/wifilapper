@@ -4,11 +4,33 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-    <CheckBox
-        android:id="@+id/chkIOIO"
+    <LinearLayout
+        android:id="@+id/linearLayout2"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Use IOIO Board" />
+        android:layout_height="wrap_content" >
+
+        <CheckBox
+            android:id="@+id/chkIOIO"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Use IOIO Board" />
+
+        <FrameLayout
+            android:id="@+id/frameLayout1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="right" >
+
+            <CheckBox
+                android:id="@+id/chkClicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:text="Use pin 17 digital input as clicker" />
+
+        </FrameLayout>
+
+    </LinearLayout>
 
     >
 

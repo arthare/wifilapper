@@ -344,6 +344,7 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
     		boolean fUseAccel = settings.getBoolean(Prefs.PREF_USEACCEL_BOOLEAN, Prefs.DEFAULT_USEACCEL);
     		boolean fAckSMS = settings.getBoolean(Prefs.PREF_ACKSMS_BOOLEAN, Prefs.DEFAULT_ACKSMS);
     		String strPrivacy = settings.getString(Prefs.PREF_PRIVACYPREFIX_STRING, Prefs.DEFAULT_PRIVACYPREFIX);
+    		int iButtonPin = settings.getInt(Prefs.PREF_IOIOBUTTONPIN, Prefs.DEFAULT_IOIOBUTTONPIN);
     		
     		List<Integer> lstSelectedPIDs = new ArrayList<Integer>();
     		Prefs.LoadOBD2PIDs(settings, lstSelectedPIDs);
@@ -352,7 +353,7 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
     		IOIOManager.PinParams rgPulsePins[] = Prefs.LoadIOIOPulsePins(settings);
     		
 			ApiDemos.SaveSharedPrefs(settings, strIP, strSSID, null, null);
-			Intent i = ApiDemos.BuildStartIntent(rgAnalPins, rgPulsePins, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, r.rgSF, r.rgSFDir, strRaceName, strPrivacy, fAckSMS, fUseAccel, r.fTestMode, listData.id, idModeSelected, strBTGPS, strOBD2, strSpeedoStyle, eUnitSystem.toString());
+			Intent i = ApiDemos.BuildStartIntent(rgAnalPins, rgPulsePins, iButtonPin, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, r.rgSF, r.rgSFDir, strRaceName, strPrivacy, fAckSMS, fUseAccel, r.fTestMode, listData.id, idModeSelected, strBTGPS, strOBD2, strSpeedoStyle, eUnitSystem.toString());
 			startActivity(i);
 		}
 		else

@@ -148,6 +148,8 @@ implements
 	private static final int MSG_STATE_CHANGED = 50;
 	public static final int MSG_FAKE_LOCATION = 51;
 	private static final int MSG_LOADING_PROGRESS = 52;
+	private static final int MSG_IOIO_BUTTON = 53;
+	
 	
 	private PendingIntent m_restartIntent;
 	
@@ -196,6 +198,8 @@ implements
 		Parcelable[] rgPulseParcel = i.getParcelableArrayExtra(Prefs.IT_IOIOPULSEPINS_ARRAY); // an array of indices indicating which pins we want to use
 		IOIOManager.PinParams rgSelectedAnalPins[] = new IOIOManager.PinParams[rgAnalParcel.length];
 		IOIOManager.PinParams rgSelectedPulsePins[] = new IOIOManager.PinParams[rgPulseParcel.length];
+		int iButtonPin = i.getIntExtra(Prefs.IT_IOIOBUTTONPIN, Prefs.DEFAULT_IOIOBUTTONPIN);
+		
 		for(int x = 0;x < rgAnalParcel.length; x++) rgSelectedAnalPins[x] = (IOIOManager.PinParams)rgAnalParcel[x];
 		for(int x = 0;x < rgPulseParcel.length; x++) rgSelectedPulsePins[x] = (IOIOManager.PinParams)rgPulseParcel[x];
 		
@@ -223,9 +227,9 @@ implements
     	float rgSF[] = i.getFloatArrayExtra(Prefs.IT_STARTFINISH_ARRAY);
     	float rgSFDir[] = i.getFloatArrayExtra(Prefs.IT_STARTFINISHDIR_ARRAY);
     	
-    	StartupTracking(rgSelectedAnalPins, rgSelectedPulsePins, rgSelectedPIDs, strIP, strSSID, strBTGPS, strOBD2, fUseAccel, m_fTestMode, idLapLoadMode, rgSF, rgSFDir);
+    	StartupTracking(rgSelectedAnalPins, rgSelectedPulsePins, iButtonPin, rgSelectedPIDs, strIP, strSSID, strBTGPS, strOBD2, fUseAccel, m_fTestMode, idLapLoadMode, rgSF, rgSFDir);
     }
-    public static Intent BuildStartIntent(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], List<Integer> lstSelectedPIDs, Context ctxApp, String strIP, String strSSID, float[] rgSF, float[] rgSFDir, String strRaceName, String strPrivacy, boolean fAckSMS, boolean fUseAccel, boolean fTestMode, long idRace, long idModeSelected, String strBTGPS, String strBTOBD2, String strSpeedoStyle, String strUnitSystem)
+    public static Intent BuildStartIntent(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, List<Integer> lstSelectedPIDs, Context ctxApp, String strIP, String strSSID, float[] rgSF, float[] rgSFDir, String strRaceName, String strPrivacy, boolean fAckSMS, boolean fUseAccel, boolean fTestMode, long idRace, long idModeSelected, String strBTGPS, String strBTOBD2, String strSpeedoStyle, String strUnitSystem)
     {
     	Intent myIntent = new Intent(ctxApp, ApiDemos.class);
 		myIntent.putExtra(Prefs.IT_IP_STRING, strIP).putExtra("SSID", strSSID);
@@ -242,6 +246,7 @@ implements
 		myIntent.putExtra(Prefs.IT_USEACCEL_BOOLEAN, fUseAccel);
 		myIntent.putExtra(Prefs.IT_ACKSMS_BOOLEAN, fAckSMS);
 		myIntent.putExtra(Prefs.IT_PRIVACYPREFIX_STRING, strPrivacy);
+		myIntent.putExtra(Prefs.IT_IOIOBUTTONPIN, iButtonPin);
 		{
 			int rgArray[] = new int[lstSelectedPIDs.size()];
 			for(int x = 0;x < rgArray.length; x++) rgArray[x] = lstSelectedPIDs.get(x).intValue();
@@ -416,7 +421,7 @@ implements
     	super.onConfigurationChanged(con);
     }
     // only called once the user has done all their settings stuff
-    private void StartupTracking(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int rgSelectedPIDs[], String strIP, String strSSID, String strBTGPS, String strBTOBD2, boolean fUseAccel, boolean fTestMode, int idLapLoadMode, float rgSF[], float rgSFDir[])
+    private void StartupTracking(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, int rgSelectedPIDs[], String strIP, String strSSID, String strBTGPS, String strBTOBD2, boolean fUseAccel, boolean fTestMode, int idLapLoadMode, float rgSF[], float rgSFDir[])
     {
     	ApiDemos.State eEndState = ApiDemos.State.WAITING_FOR_GPS;
 
@@ -453,7 +458,7 @@ implements
 	    
 	    if(rgAnalPins.length > 0 || rgPulsePins.length > 0)
 	    {
-	    	m_ioio = new IOIOManager(this, this, rgAnalPins,rgPulsePins);
+	    	m_ioio = new IOIOManager(this, this, rgAnalPins,rgPulsePins, iButtonPin);
 	    }
 	    else
 	    {
@@ -1148,6 +1153,10 @@ implements
 				}
 			}
 			return true;
+		case MSG_IOIO_BUTTON:
+			// the user pressed a digital input on their IOIO that we are going to treat as a click.  So call the click code.
+			onClick(m_currentView);
+			return true;
 		}
 		return false;
 	}
@@ -1314,6 +1323,11 @@ implements
 		StateData stateFromMap = m_mapStateData.get(c);
 		if(stateFromMap != null) return stateFromMap;
 		return new StateData(STATE.OFF,null);
+	}
+	@Override
+	public void NotifyIOIOButton() 
+	{
+		this.m_pHandler.sendEmptyMessage(MSG_IOIO_BUTTON);
 	}
 }
 

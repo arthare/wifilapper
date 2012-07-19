@@ -44,6 +44,7 @@ public class Prefs
 	public static String PREF_ACCEL_GRAV_Z = "gravz";
 	public static String PREF_ACKSMS_BOOLEAN = "acksms";
 	public static String PREF_PRIVACYPREFIX_STRING ="privacy";
+	public static String PREF_IOIOBUTTONPIN = "ioiobuttonpin";
 	
 	// the strings we use in for defaults when a SharedPreference isn't available
 	public static String DEFAULT_IP_STRING = "192.168.1.100";
@@ -58,6 +59,7 @@ public class Prefs
 	public static boolean DEFAULT_USEACCEL = true; 
 	public static boolean DEFAULT_ACKSMS = false; // whether to send a text to acknowledge a text
 	public static String DEFAULT_PRIVACYPREFIX = "wflp";
+	public static int DEFAULT_IOIOBUTTONPIN = -1;
 	
 	
 	// strings we use for extra data in intents
@@ -75,6 +77,7 @@ public class Prefs
 	public static String IT_UNITS_STRING = PREF_UNITS_STRING;
 	public static String IT_SELECTEDPIDS_ARRAY = "selectedpids";
 	public static String IT_IOIOANALPINS_ARRAY = "selectedanalpins";
+	public static String IT_IOIOBUTTONPIN = PREF_IOIOBUTTONPIN;
 	public static String IT_IOIOPULSEPINS_ARRAY = "selectedpulsepins";
 	public static String IT_USEACCEL_BOOLEAN = PREF_USEACCEL_BOOLEAN;
 	public static String IT_ACKSMS_BOOLEAN = PREF_ACKSMS_BOOLEAN;

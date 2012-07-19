@@ -122,6 +122,7 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		boolean fUseAccel = settings.getBoolean(Prefs.PREF_USEACCEL_BOOLEAN, Prefs.DEFAULT_USEACCEL);
     		boolean fAckSMS = settings.getBoolean(Prefs.PREF_ACKSMS_BOOLEAN, Prefs.DEFAULT_ACKSMS);
     		String strPrivacy = settings.getString(Prefs.PREF_PRIVACYPREFIX_STRING, Prefs.DEFAULT_PRIVACYPREFIX);
+    		int iButtonPin = settings.getInt(Prefs.PREF_IOIOBUTTONPIN, Prefs.DEFAULT_IOIOBUTTONPIN);
     		
     		eUnitSystem = Prefs.UNIT_SYSTEM.valueOf(strUnitSystem);
     		
@@ -133,7 +134,7 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		IOIOManager.PinParams rgAnalPins[] = Prefs.LoadIOIOAnalPins(settings);
     		IOIOManager.PinParams rgPulsePins[] = Prefs.LoadIOIOPulsePins(settings);
     		
-    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, null, null, strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
+    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, iButtonPin, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, null, null, strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
     		if(fTestMode)
     		{
     			// they're about to start a run in test mode.  Test mode sucks for real users, so warn them

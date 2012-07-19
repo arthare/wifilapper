@@ -112,12 +112,15 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		
 	    SeekBar seek = (SeekBar)findViewById(R.id.seekSampleRate);
 		CheckBox chk = (CheckBox)findViewById(R.id.chkIOIO);
+		CheckBox chkClicker = (CheckBox)findViewById(R.id.chkClicker);
 		Button btnAdd = (Button)findViewById(R.id.btnAdd);
 		Button btnCustom = (Button)findViewById(R.id.btnCustom);
 		
 		boolean fIOIO = settings.getBoolean(Prefs.PREF_USEIOIO_BOOLEAN, false);
+		boolean fClicker = settings.getInt(Prefs.PREF_IOIOBUTTONPIN, Prefs.DEFAULT_IOIOBUTTONPIN) >= 1;
 		
 		chk.setChecked(fIOIO);
+		chkClicker.setChecked(fClicker);
 		onCheckedChanged(chk,fIOIO);
 
 		lstAnalPins = new ArrayList<IOIOManager.PinParams>();
@@ -206,10 +209,12 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		
 		SharedPreferences settings = this.getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
 		CheckBox chk = (CheckBox)findViewById(R.id.chkIOIO);
+		CheckBox chkClicker = (CheckBox)findViewById(R.id.chkClicker);
 		
 		SharedPreferences.Editor edit = settings.edit();
 		edit = SaveIOIOPins(edit);
 		edit = edit.putBoolean(Prefs.PREF_USEIOIO_BOOLEAN, chk.isChecked());
+		edit = edit.putInt(Prefs.PREF_IOIOBUTTONPIN, chkClicker.isChecked() ? 17 : Prefs.DEFAULT_IOIOBUTTONPIN);
 		
 		Object objSelected = spnPin.getItemAtPosition(spnPin.getSelectedItemPosition());
 		if(objSelected != null)

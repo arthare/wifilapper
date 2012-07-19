@@ -121,15 +121,17 @@ public class IOIOManager
 	private Utility.MultiStateObject m_pStateMan;
 	private PinParams m_rgAnalPins[];
 	private PinParams m_rgPulsePins[];
+	private int m_iButtonPin;
 	
 	private IOIOListener m_listener;
 	
 	private QueryThread m_thd;
 	// rdAnalIn - the i'th element indicates we want to use the i'th analog input
-	public IOIOManager(IOIOListener listener, Utility.MultiStateObject pStateMan, PinParams rgAnalPins[], PinParams rgPulsePins[])
+	public IOIOManager(IOIOListener listener, Utility.MultiStateObject pStateMan, PinParams rgAnalPins[], PinParams rgPulsePins[], int iButtonPin)
 	{
 		m_pStateMan = pStateMan;
 		
+		m_iButtonPin = iButtonPin;
 		m_rgAnalPins = new PinParams[48];
 		m_rgPulsePins = new PinParams[48];
 		
@@ -161,6 +163,7 @@ public class IOIOManager
 	public interface IOIOListener
 	{
 		public abstract void NotifyIOIOValue(int pin, int iCustomType, float flValue);
+		public abstract void NotifyIOIOButton();
 	}
 	
 	private class QueryThread extends Thread implements Runnable
@@ -219,7 +222,12 @@ public class IOIOManager
 						}
 					}
 					
-				
+					DigitalInput buttonPin = null;
+					if(m_iButtonPin >= 1 && m_iButtonPin < 30)
+					{
+						buttonPin = pIOIO.openDigitalInput(m_iButtonPin);
+					}
+					
 					// everything is loaded, so let's continue
 					m_pStateMan.SetState(IOIOManager.class, STATE.ON, "IOIO Loaded");
 					
@@ -245,6 +253,8 @@ public class IOIOManager
 					// the loop runs at 10hz.
 					// if rgSpinsUntilQuery[x] == 0, then we query the pin and reset the count.  Else, we decrement the counter
 					// So a 0.1hz pin will always get reset to 100, 1hz gets 10, and 10hz gets 1
+					
+					boolean fLastButton = buttonPin != null ? buttonPin.read() : false;
 					while(m_fContinue)
 					{
 						for(int x = 0; x < analIn.length; x++)
@@ -277,6 +287,16 @@ public class IOIOManager
 									rgSpinsUntilQuery[x]--;
 								}
 							}
+						}
+						
+						if(buttonPin != null)
+						{
+							boolean fValue = buttonPin.read();
+							if(fValue != fLastButton && fValue)
+							{
+								m_listener.NotifyIOIOButton();
+							}
+							fLastButton = fValue;
 						}
 						
 						Thread.sleep(MS_PER_LOOP); // max 10hz sampling
