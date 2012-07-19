@@ -385,12 +385,14 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
         const CLap* pLap = m_pLapsDB->GetLap(iLapId);
         if(pLap)
         {
+          const CDataChannel* pData = m_pLapsDB->GetDataChannel(pLap->GetLapId(),DATA_CHANNEL_DISTANCE);
+
           const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
-          out<<"Time,Longitude,Latitude,Velocity"<<endl;
+          out<<"Time,Longitude,Latitude,Velocity,Distance"<<endl;
           for(int x = 0;x < lstPoints.size(); x++)
           {
             TimePoint2D pt = lstPoints[x];
-            out<<pt.iTime<<","<<pt.flX<<","<<pt.flY<<","<<pt.flVelocity<<endl;
+            out<<pt.iTime<<","<<pt.flX<<","<<pt.flY<<","<<pt.flVelocity<<","<<pData->GetValue(pt.iTime)<<endl;
           }
           return true;
         }
