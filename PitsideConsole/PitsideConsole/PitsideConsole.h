@@ -7,4 +7,5 @@ enum NOTIFY
   NOTIFY_NEWDATA,
   NOTIFY_NEWMSGDATA,
   NOTIFY_NEWDATABASE, // an entire database has been shipped here from the net thread
+  NOTIFY_NEEDRECVCONFIG,
 };

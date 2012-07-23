@@ -34,7 +34,7 @@
 #define ID_DATA_OPENDB 36
 #define IDC_RACE 37
 #define IDD_SELECTRACE 38
-#define ID_DATA_CLEAR 39
+#define ID_DATA_NEWSESSION 39
 #define ID_HELP_IPS 40
 #define IDC_PROGRESS 41
 #define IDD_PROGRESS 42
@@ -43,4 +43,5 @@
 #define IDC_SPLASHIMAGE 45
 #define IDD_DLGSPLASH 46
 #define IDB_SPLASHIMAGE 47
+#define ID_DATA_SWITCHSESSION 48
 // don't put anything below this

@@ -259,8 +259,18 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     {
       if(pReq.mapParams["table"] == "races")
       {
-        out<<"id,racename,date"<<endl; // for the time being, pitside only supports one race/car/whatever at once
-        out<<"1,OnlyRace,1"<<endl;
+        out<<"id,racename,date,lapcount"<<endl; // for the time being, pitside only supports one race/car/whatever at once
+        
+        vector<RACEDATA> lstRaces = m_pLapsDB->GetRaces();
+        for(int x = 0;x < lstRaces.size(); x++)
+        {
+          wstring strWRace = lstRaces[x].strName;
+          char szRaceName[1000];
+          _snprintf(szRaceName,NUMCHARS(szRaceName),"%S",strWRace.c_str());
+
+          out<<lstRaces[x].raceId<<","<<szRaceName<<","<<lstRaces[x].unixtime<<","<<lstRaces[x].laps<<endl;
+        }
+
         return true;
       }
       else if(pReq.mapParams["table"] == "laps")

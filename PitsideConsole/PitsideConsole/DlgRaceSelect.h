@@ -2,6 +2,7 @@
 
 #include "ArtUI.h"
 #include "ArtTools.h"
+#include "LapReceiver.h"
 
 struct RACESELECT_RESULT
 {
@@ -18,9 +19,9 @@ public:
 class CRaceSelectDlg : public IUI
 {
 public:
-  CRaceSelectDlg(LPCTSTR lpszSQL, RACESELECT_RESULT* pResults) : m_pResults(pResults) 
+  CRaceSelectDlg(ILapReceiver* pLapDB, RACESELECT_RESULT* pResults) : m_pResults(pResults) 
   {
-    wcsncpy(m_szSQL, lpszSQL, NUMCHARS(m_szSQL));
+    m_pLapDB = pLapDB;
   };
 
   virtual void NotifyChange(WPARAM wParam, LPARAM lParam) {DASSERT(FALSE);};
@@ -28,6 +29,6 @@ public:
   virtual DWORD GetDlgId() const {return IDD_SELECTRACE;}
 private:
   RACESELECT_RESULT* m_pResults;
-  TCHAR m_szSQL[MAX_PATH];
+  ILapReceiver* m_pLapDB;
   ArtListBox sfListBox;
 };
