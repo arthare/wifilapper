@@ -3,6 +3,7 @@
 #include "resource.h"
 #include "pitsideconsole.h"
 #include "ArtSQL/ArtSQLite.h"
+#include "LapReceiver.h"
 LRESULT CRaceSelectDlg::DlgProc
 (
   HWND hWnd, 
@@ -26,38 +27,26 @@ LRESULT CRaceSelectDlg::DlgProc
       sfListBox.Init(GetDlgItem(hWnd,IDC_RACE),lstCols,lstWidths);
 
       // gotta set up the list
-      CSfArtSQLiteDB sfDB;
-      HRESULT hr = sfDB.Open(m_szSQL);
-      if(SUCCEEDED(hr))
+      vector<RACEDATA> lstRaces = m_pLapDB->GetRaces();
+      
+      for(int x = 0;x < lstRaces.size(); x++)
       {
-        CSfArtSQLiteQuery sfQuery(sfDB);
-        if(sfQuery.Init(L"select races._id,races.name,count(laps._id),unixtime from races left join laps on races._id = laps.raceid group by races._id order by races._id"))
-        {
-          while(sfQuery.Next())
-          {
-            int id = 0;
-            TCHAR szName[MAX_PATH];
-            int cCount = 0;
-            int tmUnix = 0;
-            if(sfQuery.GetCol(0,&id) && sfQuery.GetCol(1,szName,NUMCHARS(szName)) && sfQuery.GetCol(2,&cCount) && sfQuery.GetCol(3,&tmUnix))
-            {
-              vector<wstring> lstCols;
+        vector<wstring> lstCols;
 
-              SYSTEMTIME stStart = SecondsSince1970ToSYSTEMTIME(tmUnix);
-              TCHAR szDate[100];
-              _snwprintf(szDate,NUMCHARS(szDate),L"%d/%d/%4d",stStart.wMonth,stStart.wDay,stStart.wYear);
-              lstCols.push_back(szDate);
+        SYSTEMTIME stStart = SecondsSince1970ToSYSTEMTIME(lstRaces[x].unixtime);
+        TCHAR szDate[100];
+        _snwprintf(szDate,NUMCHARS(szDate),L"%d/%d/%4d",stStart.wMonth,stStart.wDay,stStart.wYear);
+        lstCols.push_back(szDate);
               
-              lstCols.push_back(szName);
+        lstCols.push_back(lstRaces[x].strName.c_str());
 
-              TCHAR szTemp[MAX_PATH];
-              _snwprintf(szTemp, NUMCHARS(szTemp), L"%d",cCount);
-              lstCols.push_back(szTemp);
-              sfListBox.AddStrings(lstCols,id);
-            }
-          }
-        }
+        TCHAR szTemp[MAX_PATH];
+        _snwprintf(szTemp, NUMCHARS(szTemp), L"%d",lstRaces[x].laps);
+        lstCols.push_back(szTemp);
+
+        sfListBox.AddStrings(lstCols,lstRaces[x].raceId);
       }
+
       break;
     }
     case WM_COMMAND:

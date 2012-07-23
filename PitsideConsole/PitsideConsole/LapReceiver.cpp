@@ -95,9 +95,9 @@ bool CDataChannel::IsValid() const
 {
   return iLapId != -1 && eChannelType >= 0 && eChannelType < DATA_CHANNEL_COUNT;
 }
-bool CDataChannel::IsSameChannel(const CDataChannel* pOther) const
+bool CDataChannel::IsSameChannel(const IDataChannel* pOther) const
 {
-  return iLapId == pOther->iLapId && eChannelType == pOther->eChannelType;
+  return iLapId == pOther->GetLapId() && eChannelType == pOther->GetChannelType();
 }
 int CDataChannel::GetLapId() const
 {
@@ -110,40 +110,50 @@ float CDataChannel::GetValue(int iTime) const
   int iBegin = 0;
   int iEnd = lstData.size();
 
+  const DataPoint* pData = lstData.data();
   // this binary search will find the first and second points that we should use for interpolation.
   DataPoint dataFirst;
   DataPoint dataSecond;
   while(true)
   {
     const int iCheck = (iBegin + iEnd)/2;
-    if(iEnd - iBegin <= 1)
+    const bool fDone = iEnd - iBegin <= 1;
+    if(pData[iCheck].iTimeMs > iTime && !fDone)
+    {
+      iEnd = iCheck;
+    }
+    else if(pData[iCheck].iTimeMs < iTime && !fDone)
+    {
+      iBegin = iCheck;
+    }
+    else if(fDone)
     {
       // ok, we've narrowed it down to one data point, which is probably the closest
-      if(iTime > lstData[iBegin].iTimeMs)
+      if(iTime > pData[iBegin].iTimeMs)
       {
-        dataFirst = lstData[iBegin];
+        dataFirst = pData[iBegin];
         // we need to interpolate with the data point after
-        if(iBegin >= lstData.size() - 1)
+        if(iBegin < lstData.size() - 1)
         {
-          // but we're right at the end of the list, so just return this value
-          dataSecond = lstData[iBegin];
+          dataSecond = pData[iBegin+1];
         }
         else
         {
-          dataSecond = lstData[iBegin+1];
+          // but we're right at the end of the list, so just return this value
+          dataSecond = pData[iBegin];
         }
       }
       else
       {
-        dataSecond = lstData[iBegin];
+        dataSecond = pData[iBegin];
         if(iBegin > 0)
         {
           // we didn't find the first point, so we can use the previous point
-          dataFirst = lstData[iBegin-1];
+          dataFirst = pData[iBegin-1];
         }
         else
         {
-          dataFirst = lstData[iBegin];
+          dataFirst = pData[iBegin];
         }
       }
       DASSERT(dataFirst.iTimeMs <= dataSecond.iTimeMs);
@@ -156,17 +166,9 @@ float CDataChannel::GetValue(int iTime) const
       const float flPct = flOffset / flWidth;
       return (1-flPct)*flFirst + (flPct)*flNext;
     }
-    else if(lstData[iCheck].iTimeMs > iTime)
+    else
     {
-      iEnd = iCheck;
-    }
-    else if(lstData[iCheck].iTimeMs < iTime)
-    {
-      iBegin = iCheck;
-    }
-    else if(lstData[iCheck].iTimeMs == iTime)
-    {
-      return lstData[iCheck].flValue;
+      return pData[iCheck].flValue;
     }
   }
   return 0;
@@ -246,7 +248,7 @@ void CDataChannel::Lock()
   }
 }
 
-void CLap::Load(InputLapRaw* pLap)
+void CMemoryLap::Load(InputLapRaw* pLap)
 {
   FLIP(pLap->cCount);
   FLIP(pLap->dTime);
@@ -283,7 +285,7 @@ void CLap::Load(InputLapRaw* pLap)
 	iLapId = pLap->iLapId;
   iStartTime = pLap->iStartTime;
 }
-bool CLap::Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line)
+bool CMemoryLap::Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line)
 {
   bool fSuccess = true;
   fSuccess &= (line.GetCol(0, &iLapId));
@@ -316,13 +318,13 @@ bool CLap::Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-bool ProcessLapData(vector<char>& buf, int* piLapId, CLap* pOutputLap)
+bool ProcessLapData(vector<char>& buf, int* piLapId, ILap* pOutputLap)
 {
 	InputLapRaw* pLap = (InputLapRaw*)&buf[0];
 	pOutputLap->Load(pLap);
 	return pOutputLap->IsValid();
 }
-bool ProcessDataChannel(vector<char>& buf, int* piLapId, CDataChannel* pDataChannel)
+bool ProcessDataChannel(vector<char>& buf, int* piLapId, IDataChannel* pDataChannel)
 {
   InputChannelRaw* pData = (InputChannelRaw*)&buf[0];
   pDataChannel->Load(pData);
@@ -482,10 +484,10 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 				  aEnd.Reset();
 				  // we have found the end of a lap
 				  int iLapId = 0;
-				  CLap* pLap = pLaps->AllocateLap();
+				  ILap* pLap = pLaps->AllocateLap(true);
 				  if(ProcessLapData(lstLapBuf, &iLapId, pLap))
 				  {
-					  pLaps->AddLap(pLap);
+					  pLaps->AddLap(pLap, 0xffffffff);
 				  }
 				  else
 				  {
@@ -506,7 +508,7 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
           eRecv = RECV_NONE;
           int iLapId = 0;
           aDataEnd.Reset();
-          CDataChannel* pDataChannel = pLaps->AllocateDataChannel();
+          IDataChannel* pDataChannel = pLaps->AllocateDataChannel();
           if(ProcessDataChannel(lstDataBuf,&iLapId, pDataChannel))
           {
             pLaps->AddDataChannel(pDataChannel);
@@ -633,8 +635,9 @@ DWORD LoadFromSQLiteThreadProc(LPVOID pvParam)
 {
   LOADFROMSQLITE_PARAMS* pParams = (LOADFROMSQLITE_PARAMS*)pvParam;
 
+  vector<wstring> lstSQL;
   CSfArtSQLiteDB sfDB;
-  HRESULT hr = sfDB.Open(pParams->lpszSQL);
+  HRESULT hr = sfDB.Open(pParams->lpszSQL, lstSQL);
   if(SUCCEEDED(hr))
   {
     sfDB.StartTransaction();
@@ -689,11 +692,11 @@ DWORD LoadFromSQLiteThreadProc(LPVOID pvParam)
       while(sfQuery.Next())
       {
         // going through the laps...
-        CLap* pLap = pParams->pRecv->AllocateLap();
+        ILap* pLap = pParams->pRecv->AllocateLap(false);
         if(pLap->Load(sfDB, rgSF, sfQuery))
         {
           // yay, the lap loaded!
-          pParams->pRecv->AddLap(pLap);
+          pParams->pRecv->AddLap(pLap, pParams->iRaceId);
 
           // now let's load any data channels associated with it
           CSfArtSQLiteQuery sfQueryDC(sfDB);
@@ -704,7 +707,7 @@ DWORD LoadFromSQLiteThreadProc(LPVOID pvParam)
             while(sfQueryDC.Next())
             {
               // going through the laps...
-              CDataChannel* pDC = pParams->pRecv->AllocateDataChannel();
+              IDataChannel* pDC = pParams->pRecv->AllocateDataChannel();
               if(pDC->Load(sfDB, sfQueryDC))
               {
                 pDC->Lock();

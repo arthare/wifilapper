@@ -126,14 +126,14 @@ bool ArtGetOpenFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int 
   BOOL fSuccess =  GetOpenFileName(&ofn);
   return fSuccess;
 }
-bool ArtGetSaveFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int cchPath)
+bool ArtGetSaveFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int cchPath, LPCTSTR lpszFilter)
 {
   lpszPath[0] = '\0';
   OPENFILENAME ofn;
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = hWndOwner;
   ofn.hInstance = NULL;
-  ofn.lpstrFilter = NULL;
+  ofn.lpstrFilter = lpszFilter;
   ofn.lpstrCustomFilter = NULL;
   ofn.nMaxCustFilter = 0;
   ofn.nFilterIndex = 0;

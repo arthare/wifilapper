@@ -2,17 +2,23 @@
 
 #include <windows.h>
 #include "sqlite3.h"
+#include <vector>
+#include <string>
+#include <map>
+using namespace std;
+
 class CSfArtSQLiteDB
 {
 public:
   CSfArtSQLiteDB() : m_sqlite3(NULL) {};
   virtual ~CSfArtSQLiteDB() {Close();};
 
-  HRESULT Open(LPCTSTR filename);
+  HRESULT Open(LPCTSTR filename, vector<wstring>& lstTableSQL);
   void Close();
 
   sqlite3* GetSQLite() {return m_sqlite3;};
 
+  long long GetLastInsertId() {return sqlite3_last_insert_rowid(m_sqlite3);};
   void StartTransaction() {ExecuteSQL("BEGIN TRANSACTION");}
   void StopTransaction() {ExecuteSQL("END TRANSACTION");}
 private:
@@ -25,11 +31,17 @@ private:
 class CSfArtSQLiteQuery
 {
 public:
-  CSfArtSQLiteQuery(CSfArtSQLiteDB& DB) : m_DB(DB), m_stmt(NULL) {};
+  CSfArtSQLiteQuery(CSfArtSQLiteDB& DB) : m_fDone(false), m_iBindIndex(0),m_DB(DB), m_stmt(NULL) {};
   virtual ~CSfArtSQLiteQuery() {DeInit();}
 
   bool Init(LPCTSTR lpszSQL, int cchSQL = 0);
   bool Next();
+  bool IsDone() const {return m_fDone;}; // for queries that don't return results, this tells us if the query finished successfully
+
+  bool BindValue(long long value);
+  bool BindValue(int value);
+  bool BindValue(double value);
+  bool BindValue(LPCTSTR lpszValue);
 
   bool GetCol(int iCol, double* pd);
   bool GetCol(int iCol, float* pd);
@@ -39,6 +51,9 @@ public:
 
   void DeInit();
 private:
+  int m_iBindIndex;
+  bool m_fDone;
+
   sqlite3_stmt* m_stmt;
   CSfArtSQLiteDB& m_DB;
 };

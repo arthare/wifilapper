@@ -95,37 +95,66 @@ struct InputLapRaw
 	TimePoint2D rgPoints[1];
 };
 
-class CDataChannel
+class IDataChannel
+{
+public:
+  virtual void Load(InputChannelRaw* pData) = 0;
+  virtual bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc) = 0;
+  virtual void Init(int iLapId, DATA_CHANNEL eChannel) = 0;
+  virtual bool IsValid() const = 0;
+  virtual bool IsSameChannel(const IDataChannel* pOther) const = 0;
+
+  virtual int GetLapId() const = 0;
+
+  // random-access version: slower
+  virtual float GetValue(int iTime) const = 0;
+  // the iterator points to the DataPoint with time greater than the current time
+  virtual float GetValue(int iTime, const vector<DataPoint>::const_iterator& i) const = 0;
+  virtual float GetMin() const = 0;
+  virtual float GetMax() const = 0;
+  virtual int GetEndTimeMs() const = 0;
+  virtual int GetStartTimeMs() const = 0;
+
+  virtual const vector<DataPoint>& GetData() const = 0;
+
+  virtual void AddPoint(int iTime, float flValue) = 0;
+  virtual DATA_CHANNEL GetChannelType() const = 0;
+  // when you lock a data channel, it means that no more points may be added to it ever.
+  // it also sorts the vector
+  virtual void Lock() = 0;
+  virtual bool IsLocked() const = 0;
+};
+class CDataChannel : public IDataChannel
 {
 public:
   CDataChannel();
   virtual ~CDataChannel();
 
-  void Load(InputChannelRaw* pData);
-  bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc);
-  void Init(int iLapId, DATA_CHANNEL eChannel);
-  bool IsValid() const;
-  bool IsSameChannel(const CDataChannel* pOther) const;
+  void Load(InputChannelRaw* pData) override;
+  bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc) override;
+  void Init(int iLapId, DATA_CHANNEL eChannel) override;
+  bool IsValid() const override;
+  bool IsSameChannel(const IDataChannel* pOther) const override;
 
-  int GetLapId() const;
+  int GetLapId() const override;
 
   // random-access version: slower
-  float GetValue(int iTime) const;
+  float GetValue(int iTime) const override;
   // the iterator points to the DataPoint with time greater than the current time
-  float GetValue(int iTime, const vector<DataPoint>::const_iterator& i) const;
-  float GetMin() const;
-  float GetMax() const;
-  int GetEndTimeMs() const;
-  int GetStartTimeMs() const;
+  float GetValue(int iTime, const vector<DataPoint>::const_iterator& i) const override;
+  float GetMin() const override;
+  float GetMax() const override;
+  int GetEndTimeMs() const override;
+  int GetStartTimeMs() const override;
 
-  const vector<DataPoint>& GetData() const {return lstData;}
+  const vector<DataPoint>& GetData() const override {return lstData;}
 
-  void AddPoint(int iTime, float flValue); // iTime must be in milliseconds since the phone app started.  flValue can be whatever you want
-  DATA_CHANNEL GetChannelType() const {return eChannelType;}
+  void AddPoint(int iTime, float flValue) override; // iTime must be in milliseconds since the phone app started.  flValue can be whatever you want
+  DATA_CHANNEL GetChannelType() const override {return eChannelType;}
   // when you lock a data channel, it means that no more points may be added to it ever.
   // it also sorts the vector
-  void Lock();
-  bool IsLocked() const {return fLocked;}
+  void Lock() override;
+  bool IsLocked() const override {return fLocked;}
 private:
   bool fLocked;
   int iLapId;
@@ -161,10 +190,24 @@ private:
   Vector2D m_pt2;
 };
 // a more civilized lap, constructed from InputLapRaw and sent to the user's ILapReceiver
-class CLap
+interface ILap
 {
 public:
-	CLap()
+  virtual void Load(InputLapRaw* pLap) = 0;
+  virtual bool Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line) = 0;
+
+	virtual bool IsValid() const = 0;
+  virtual int GetStartTime() const = 0;
+  virtual int GetLapId() const = 0;
+  virtual float GetTime() const = 0;
+  virtual const vector<TimePoint2D> GetPoints() const = 0;
+  virtual const StartFinish* GetSF() const = 0;
+private:
+};
+class CMemoryLap : public ILap
+{
+public:
+	CMemoryLap()
 	{
 
 	}
@@ -178,7 +221,7 @@ public:
   int GetStartTime() const {return iStartTime;} // returns the start time in unix time (seconds since 1970)
   int GetLapId() const {return iLapId;}
   float GetTime() const {return dTime;}
-  const vector<TimePoint2D>& GetPoints() const {return lstPoints;}
+  const vector<TimePoint2D> GetPoints() const {return lstPoints;}
   const StartFinish* GetSF() const {return rgSF;}
 private:
 	vector<TimePoint2D> lstPoints;
@@ -188,7 +231,6 @@ private:
 	int iLapId;
   int iStartTime; // seconds since Jan 1 1970
 };
-
 template<int cToMatch>
 struct TextMatcher
 {
@@ -231,30 +273,51 @@ enum NETSTATUSSTRING
 
   NETSTATUS_COUNT,
 };
+
+struct RACEDATA
+{
+  RACEDATA()
+  {
+    unixtime = 0;
+    laps = 0;
+    raceId = -1;
+  }
+  wstring strName;
+  int unixtime;
+  int laps;
+  int raceId;
+};
+
 interface ILapReceiver
 {
 public:
-  // memory management
-	virtual CLap* AllocateLap() const = 0;
-	virtual void FreeLap(CLap* pLap) const = 0;
+  // loading from file
+  virtual bool Init(LPCTSTR lpszSQL) = 0;
+  virtual bool InitRaceSession(int* iRaceId, LPCTSTR lpszName) = 0;
 
-  virtual CDataChannel* AllocateDataChannel() const = 0;
-  virtual void FreeDataChannel(CDataChannel* pChannel) const = 0;
+  // memory management
+	virtual ILap* AllocateLap(bool fMemory) = 0;
+	virtual void FreeLap(ILap* pLap) const = 0;
+
+  virtual IDataChannel* AllocateDataChannel() const = 0;
+  virtual void FreeDataChannel(IDataChannel* pChannel) const = 0;
 
   // data access
   // I chose to access all the laps at once to avoid race condition issues if the network thread updates
   // the databank while the UI is displaying it
-  virtual vector<const CLap*> GetLaps() const = 0;
-  virtual const CLap* GetLap(int iLapId) const = 0;
-  virtual const CDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
+  virtual vector<RACEDATA> GetRaces() = 0;
+  virtual vector<const ILap*> GetLaps(int iRaceId) = 0;
+  virtual const ILap* GetLap(int iLapId) = 0;
+  virtual const IDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
   virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const = 0;
 
   // modifying data
-	virtual void AddLap(const CLap* pLap) = 0;
-  virtual void AddDataChannel(const CDataChannel* pChannel) = 0;
+	virtual void AddLap(const ILap* pLap, int iRaceId) = 0;
+  virtual void AddDataChannel(const IDataChannel* pChannel) = 0;
   virtual void Clear() = 0;
 
   // status strings
+  virtual void SetReceiveId(int iRaceId) = 0; // if we receive a lap with a race id < 0, this tells us the race that we should stick it in.  This is pretty much temporary until we get multi-cars working
   virtual void NotifyDBArrival(LPCTSTR lpszPath) = 0;
   virtual void SetNetStatus(NETSTATUSSTRING eString, LPCTSTR szData) = 0; // network man tells us the latest status
   virtual LPCTSTR GetNetStatus(NETSTATUSSTRING eString) const = 0;

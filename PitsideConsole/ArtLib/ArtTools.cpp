@@ -50,7 +50,6 @@ SYSTEMTIME SecondsSince1970ToSYSTEMTIME(int cSeconds)
 {
   // we're going to take the time reported from the phone (seconds since 1970) and convert it to windows FILETIMEs (100*nanosecs since 1601)
   const int iSecSince1970 = cSeconds;
-  LONGLONG llMsSince1970 = iSecSince1970 * 1000;
   const LONGLONG llSecondsBetween1601And1970 = 11644473600; // from the google
   const LONGLONG iSecSince1601 = iSecSince1970 + llSecondsBetween1601And1970; // how many seconds after 1601 the lap started
   ULARGE_INTEGER ulTime;
@@ -65,6 +64,20 @@ SYSTEMTIME SecondsSince1970ToSYSTEMTIME(int cSeconds)
   FileTimeToSystemTime(&ftLocal,&stResult);
   return stResult;
 }
+int GetSecondsSince1970()
+{
+  FILETIME ft;
+  GetSystemTimeAsFileTime(&ft);
+  ULARGE_INTEGER ulTime;
+  ulTime.LowPart = ft.dwLowDateTime;
+  ulTime.HighPart = ft.dwHighDateTime;
+  const LONGLONG llSecondsBetween1601And1970 = 11644473600; // from the google
+
+  const LONGLONG iSecsSince1601 = (ulTime.QuadPart / 10000000);
+  const LONGLONG iSecsSince1970 = iSecsSince1601 - llSecondsBetween1601And1970;
+  return iSecsSince1970;
+}
+
 
 bool SaveBufferToFile(LPCTSTR lpszPath, void* pvData, int cbData)
 {

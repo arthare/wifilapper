@@ -6,8 +6,8 @@
 struct HIGHLIGHTDATA
 {
 public:
-  const CDataChannel* m_pDataX;
-  const CDataChannel* m_pDataY;
+  const IDataChannel* m_pDataX;
+  const IDataChannel* m_pDataY;
   POINT m_ptWindow;
   const CExtendedLap* m_pLap;
   DATA_CHANNEL m_eChannelY;
@@ -64,7 +64,7 @@ void CLapPainter::DrawSelectLapsPrompt() const
   glPopMatrix();
 }
 
-void UpdateHighlightPointList(vector<HIGHLIGHTDATA>& lst, const CExtendedLap* pLap, GLdouble* rgModelviewMatrix, GLdouble* rgProjMatrix, GLint* rgViewport, float dTimeToHighlight, const CDataChannel* pDataX, const CDataChannel* pDataY)
+void UpdateHighlightPointList(vector<HIGHLIGHTDATA>& lst, const CExtendedLap* pLap, GLdouble* rgModelviewMatrix, GLdouble* rgProjMatrix, GLint* rgViewport, float dTimeToHighlight, const IDataChannel* pDataX, const IDataChannel* pDataY)
 {
   const double dPointX = pDataX->GetValue(dTimeToHighlight);
   const double dPointY = pDataY->GetValue(dTimeToHighlight);
@@ -100,12 +100,18 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     
     for(int x = 0;x < lstLaps.size(); x++)
     {
-      const CDataChannel* pDataX = m_pLapSupplier->GetXChannel(lstLaps[x]->GetLap()->GetLapId());
-      vector<const CDataChannel*> lstDataY = m_pLapSupplier->GetYChannels(lstLaps[x]->GetLap()->GetLapId());
+      CExtendedLap* pLap = lstLaps[x];
+      DATA_CHANNEL eDataX = m_pLapSupplier->GetXChannel();
+      const IDataChannel* pDataX = pLap->GetChannel(eDataX);
+      if(!pDataX) continue;
+
+      vector<DATA_CHANNEL> lstDataY = m_pLapSupplier->GetYChannels();
       for(int y = 0; y < lstDataY.size(); y++)
       {
-        const CDataChannel* pChannel = lstDataY[y];
-        const DATA_CHANNEL eType = pChannel->GetChannelType();
+        const IDataChannel* pChannel = pLap->GetChannel(lstDataY[y]);
+        if(!pChannel) continue;
+
+        const DATA_CHANNEL eType = lstDataY[y];
         if(mapMinY.find(eType) == mapMinY.end())
         {
           mapMinY[eType] = pChannel->GetMin();
@@ -192,9 +198,9 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
     for(int x = 0; x < lstLaps.size(); x++)
     {
-      const CExtendedLap* pLap = lstLaps[x];
-      const CDataChannel* pDataX = m_pLapSupplier->GetXChannel(pLap->GetLap()->GetLapId());
-      const CDataChannel* pDataY = m_pLapSupplier->GetChannel(pLap->GetLap()->GetLapId(), *i);
+      CExtendedLap* pLap = lstLaps[x];
+      const IDataChannel* pDataX = pLap->GetChannel(m_pLapSupplier->GetXChannel());
+      const IDataChannel* pDataY = pLap->GetChannel(*i);
 
       if(pDataX && pDataY)
       {
@@ -293,8 +299,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       {
         const CExtendedLap* pLap = lstMousePointsToDraw[x].m_pLap;
         const POINT& ptWindow = lstMousePointsToDraw[x].m_ptWindow;
-        const CDataChannel* pDataX = lstMousePointsToDraw[x].m_pDataX;
-        const CDataChannel* pDataY = lstMousePointsToDraw[x].m_pDataY;
+        const IDataChannel* pDataX = lstMousePointsToDraw[x].m_pDataX;
+        const IDataChannel* pDataY = lstMousePointsToDraw[x].m_pDataY;
 
         srand((int)pLap);
         const float r = RandDouble()/2 + 0.5;

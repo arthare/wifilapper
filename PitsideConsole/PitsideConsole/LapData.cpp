@@ -376,29 +376,31 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
 
 bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const vector<TimePoint2D>& lstPoints, TimePoint2D* pt1, TimePoint2D* pt2)
 {
+  if(lstPoints.size() < 2) return false;
   // dInputPercentage is the % of it's lap that p comes from.
   // example: if p is the 12th sample of a 60-sample lap, p = 0.20.
   // we use p to determine if we're mismatching with the beginning or end of a lap
 
   double dClosest = 1e30;
   int ixBestIndex = -1;
-
-  const int ixStart = max(0,lstPoints.size() - (lstPoints.size()/4));
-  const int ixEnd = min(lstPoints.size(),lstPoints.size() + (lstPoints.size()/4));
-  for(int x = 0; x < lstPoints.size()-1; x++)
+  
+  const int cSize = lstPoints.size();
+  double dNextX = lstPoints[1].flX - p.flX;
+  double dNextY = lstPoints[1].flY - p.flY;
+  for(int x = 0; x < cSize-1; x++)
   {
-    const int ixThis = x;
-    const int ixNext = ((x+1)%lstPoints.size());
+    const int ixNext = ((x+1)%cSize);
 
-    double dx1 = lstPoints[ixThis].flX - p.flX;
-    double dx2 = lstPoints[ixNext].flX - p.flX;
-    double dy1 = lstPoints[ixThis].flY - p.flY;
-    double dy2 = lstPoints[ixNext].flY - p.flY;
-    double d1 = sqrt(dx1*dx1 + dy1*dy1);
-    double d2 = sqrt(dx2*dx2 + dy2*dy2);
-    double dAvg = (d1+d2)/2.0;
-    double dPct = (double)x / (double)lstPoints.size();
-    double dPctDiff = abs(dPct - dInputPercentage);
+    const double dx1 = dNextX;
+    const double dy1 = dNextY;
+    dNextX = lstPoints[ixNext].flX - p.flX;
+    dNextY = lstPoints[ixNext].flY - p.flY;
+
+    const double d1 = (dx1*dx1 + dy1*dy1);
+    const double d2 = (dNextX*dNextX + dNextY*dNextY);
+    const double dAvg = (d1+d2)/2.0;
+    const double dPct = (double)x / (double)cSize;
+    const double dPctDiff = abs(dPct - dInputPercentage);
     if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.5)
     {
       dClosest = dAvg;
@@ -409,31 +411,31 @@ bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const v
   if(ixBestIndex >= 0)
   {
     *pt1 = lstPoints[ixBestIndex];
-    *pt2 = lstPoints[(ixBestIndex+1)%lstPoints.size()];
+    *pt2 = lstPoints[(ixBestIndex+1)%cSize];
     return true;
   }
   return false;
 }
 
-void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CExtendedLap* pReferenceLap, ILapReceiver* pLapDB)
+void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtendedLap* pReferenceLap, const ILapReceiver* pLapDB)
 {
-  // first, let's compute when this sucker actually started
-  m_tmStart = SecondsSince1970ToSYSTEMTIME(GetLap()->GetStartTime());
+  if(lstPoints.size() <= 3) return;
+
 
   // for calculating distance and time-slip, we need the reference lap
   if(pReferenceLap != NULL)
   {
-    const CDataChannel* pReferenceDistanceChannel = pLapDB->GetDataChannel(pReferenceLap->GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
+    const IDataChannel* pReferenceDistanceChannel = pReferenceLap->GetChannel(DATA_CHANNEL_DISTANCE);
 
     const vector<TimePoint2D>& lstReference = pReferenceLap->GetPoints();
     // here's the idea:
     // for a point P, we find the 2 closest points in lstReference (d1 to d2, making vector D)
     // we cast a vector perpindicular to D that intersects P.  That vector will intersect D.  Usually at a point from 0-100% (0 = hitting d1, 100 = hitting d2) of its length, but it's ok if it is off a bit.
     // the distance-from-start/finish for P is thus (percentage) * (d2's distance) + (100 - percentage) * (d1's distance)
-    CDataChannel* pDistance = pLapDB->AllocateDataChannel();
-    CDataChannel* pVelocity = pLapDB->AllocateDataChannel();
-    CDataChannel* pX = pLapDB->AllocateDataChannel();
-    CDataChannel* pY = pLapDB->AllocateDataChannel();
+    IDataChannel* pDistance = pLapDB->AllocateDataChannel();
+    IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
+    IDataChannel* pX = pLapDB->AllocateDataChannel();
+    IDataChannel* pY = pLapDB->AllocateDataChannel();
 
     pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
     pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
@@ -473,33 +475,45 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
     if(pX->IsValid())
     {
       pX->Lock();
-      pLapDB->AddDataChannel(pX);
+      AddChannel(pX);
+    }
+    else
+    {
+      pLapDB->FreeDataChannel(pX);
+      pX = NULL;
     }
     if(pY->IsValid())
     {
       pY->Lock();
-      pLapDB->AddDataChannel(pY);
+      AddChannel(pY);
+    }
+    else
+    {
+      pLapDB->FreeDataChannel(pY);
+      pY = NULL;
     }
     if(pDistance->IsValid())
     {
       pDistance->Lock();
-      pLapDB->AddDataChannel(pDistance);
+      AddChannel(pDistance);
     }
     else
     {
       pLapDB->FreeDataChannel(pDistance);
+      pDistance = NULL;
     }
     if(pVelocity->IsValid())
     {
       pVelocity->Lock();
-      pLapDB->AddDataChannel(pVelocity);
+      AddChannel(pVelocity);
     }
     else
     {
       pLapDB->FreeDataChannel(pVelocity);
+      pVelocity = NULL;
     }
 
-    CDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
+    IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
     pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
 
     const int iStartTime = m_lstPoints[0].iTime;
@@ -542,7 +556,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
     if(pTimeSlip && pTimeSlip->IsValid())
     {
       pTimeSlip->Lock();
-      pLapDB->AddDataChannel(pTimeSlip);
+      AddChannel(pTimeSlip);
     }
     else
     {
@@ -550,11 +564,21 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
     }
 
     // now every point has a distance and a timeslip
+    // let's add the rest of the data channels...
+    set<DATA_CHANNEL> setChannels = pLapDB->GetAvailableChannels(GetLap()->GetLapId());
+    for(set<DATA_CHANNEL>::iterator i = setChannels.begin(); i != setChannels.end(); i++)
+    {
+      const IDataChannel* pChannel = pLapDB->GetDataChannel(GetLap()->GetLapId(),*i);
+      if(pChannel)
+      {
+        AddChannel(pChannel);
+      }
+    }
   }
   else
   {
-    CDataChannel* pX = pLapDB->AllocateDataChannel();
-    CDataChannel* pY = pLapDB->AllocateDataChannel();
+    IDataChannel* pX = pLapDB->AllocateDataChannel();
+    IDataChannel* pY = pLapDB->AllocateDataChannel();
     pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
     pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     // no reference lap.  That means WE'RE the reference lap!
@@ -566,9 +590,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
     pX->AddPoint(ptLast.iTime,ptLast.flX);
     pY->AddPoint(ptLast.iTime,ptLast.flY);
 
-    CDataChannel* pDistance = pLapDB->AllocateDataChannel();
-    CDataChannel* pVelocity = pLapDB->AllocateDataChannel();
-    CDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
+    IDataChannel* pDistance = pLapDB->AllocateDataChannel();
+    IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
+    IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
     pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
@@ -593,11 +617,11 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, const CE
     pDistance->Lock();
     pVelocity->Lock();
     pTimeSlip->Lock();
-    pLapDB->AddDataChannel(pDistance);
-    pLapDB->AddDataChannel(pVelocity);
-    pLapDB->AddDataChannel(pTimeSlip);
-    pLapDB->AddDataChannel(pX);
-    pLapDB->AddDataChannel(pY);
+    AddChannel(pDistance);
+    AddChannel(pVelocity);
+    AddChannel(pTimeSlip);
+    AddChannel(pX);
+    AddChannel(pY);
   }
 }
 const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTimeMs)

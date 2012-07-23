@@ -87,5 +87,6 @@ bool AreSetsEqual(const std::set<T>& set1, const std::set<T>& set2)
 bool SaveBufferToFile(LPCTSTR lpszPath, void* pvData, int cbData);
 
 SYSTEMTIME SecondsSince1970ToSYSTEMTIME(int cSeconds);
+int GetSecondsSince1970();
 
 bool ArtAtoi(LPCSTR lpsz, int cch, int* pOut);

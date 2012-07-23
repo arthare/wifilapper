@@ -27,6 +27,7 @@
 #include "Multicast.h"
 #include "PitsideHTTP.h"
 #include "DlgSplash.h"
+#include "SQLiteLapDB.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -63,7 +64,7 @@ public:
   }
 };
 
-bool CLap_SortByTime(const CLap* p1, const CLap* p2)
+bool CLap_SortByTime(const ILap* p1, const ILap* p2)
 {
   return p1->GetStartTime() < p2->GetStartTime();
 }
@@ -87,17 +88,17 @@ public:
 
     for(int x = 0;x < m_lstLaps.size(); x++)
     {
-      FreeLap(const_cast<CLap*>(m_lstLaps[x]));
+      delete m_lstLaps[x];
     }
     m_lstLaps.clear();
 
     ChannelMap::iterator i = m_mapChannels.begin();
     while(i != m_mapChannels.end())
     {
-      map<DATA_CHANNEL,const CDataChannel*>::iterator i2 = i->second.begin();
+      map<DATA_CHANNEL,const IDataChannel*>::iterator i2 = i->second.begin();
       while(i2 != i->second.end())
       {
-        FreeDataChannel(const_cast<CDataChannel*>(i2->second));
+        FreeDataChannel((IDataChannel*)(i2->second));
         i2++;
       }
       i++;
@@ -106,7 +107,7 @@ public:
     m_pUI->NotifyChange(NOTIFY_NEWDATA,(LPARAM)this);
   }
 
-	void AddLap(const CLap* pLap) override
+	void AddLap(const ILap* pLap, int iRaceId) override
 	{
     {
       AutoLeaveCS _cs(&m_cs);
@@ -114,19 +115,19 @@ public:
     }
     m_pUI->NotifyChange(NOTIFY_NEWLAP,(LPARAM)this);
 	}
-  void AddDataChannel(const CDataChannel* pDataChannel)
+  void AddDataChannel(const IDataChannel* pDataChannel) override
   {
     DASSERT(pDataChannel->IsLocked());
 
     bool fFoundHome = false;
     {
       AutoLeaveCS _cs(&m_cs);
-      map<DATA_CHANNEL,const CDataChannel*>& mapChannels = m_mapChannels[pDataChannel->GetLapId()];
-       map<DATA_CHANNEL,const CDataChannel*>::iterator i = mapChannels.find(pDataChannel->GetChannelType());
+      map<DATA_CHANNEL,const IDataChannel*>& mapChannels = m_mapChannels[pDataChannel->GetLapId()];
+      map<DATA_CHANNEL,const IDataChannel*>::iterator i = mapChannels.find(pDataChannel->GetChannelType());
       if(i != mapChannels.end())
       {
         // we already had one.  The correct thing to do would be to free it.
-        CDataChannel* pChannel = const_cast<CDataChannel*>(i->second);
+        IDataChannel* pChannel = const_cast<IDataChannel*>(i->second);
       }
 
       mapChannels[pDataChannel->GetChannelType()] = pDataChannel;
@@ -134,19 +135,19 @@ public:
 
     m_pUI->NotifyChange(NOTIFY_NEWDATA,(LPARAM)this);
   }
-	CLap* AllocateLap() const
+	ILap* AllocateLap(bool fMemory) override
 	{
-		return new CLap();
+		return new CMemoryLap();
 	}
-	void FreeLap(CLap* pInput) const
+	void FreeLap(ILap* pInput) const override
 	{
-		delete pInput;
+		delete static_cast<CMemoryLap*>(pInput);
 	}
-	CDataChannel* AllocateDataChannel() const
+	IDataChannel* AllocateDataChannel() const override
 	{
 		return new CDataChannel();
 	}
-	void FreeDataChannel(CDataChannel* pInput) const
+	void FreeDataChannel(IDataChannel* pInput) const override
 	{
 		delete pInput;
 	}
@@ -164,13 +165,17 @@ public:
   {
     return szLastNetStatus[eString];
   }
-  virtual vector<const CLap*> GetLaps() const override
+  virtual vector<const ILap*> GetLaps(int iRaceId) override
   {
     AutoLeaveCS _cs(&m_cs);
-    vector<const CLap*> ret = m_lstLaps;
+    vector<const ILap*> ret;
+    for(int x = 0;x < m_lstLaps.size();x++)
+    {
+      ret.push_back(m_lstLaps[x]);
+    }
     return ret;
   }
-  virtual const CLap* GetLap(int iLapId) const override
+  virtual const ILap* GetLap(int iLapId) override
   {
     AutoLeaveCS _cs(&m_cs);
     for(int x = 0; x < m_lstLaps.size(); x++)
@@ -182,14 +187,14 @@ public:
     }
     return NULL;
   }
-  virtual const CDataChannel* GetDataChannel(int iLapId,DATA_CHANNEL eChannel) const override
+  virtual const IDataChannel* GetDataChannel(int iLapId,DATA_CHANNEL eChannel) const override
   {
     AutoLeaveCS _cs(&m_cs);
     ChannelMap::const_iterator i = m_mapChannels.find(iLapId);
     if(i != m_mapChannels.end())
     {
       // ok, we've got stuff about that lap...
-      map<DATA_CHANNEL,const CDataChannel*>::const_iterator i2 = i->second.find(eChannel);
+      map<DATA_CHANNEL,const IDataChannel*>::const_iterator i2 = i->second.find(eChannel);
       if(i2 != i->second.end())
       {
         return i2->second;
@@ -206,7 +211,7 @@ public:
     if(i != m_mapChannels.end())
     {
       // ok, we've got stuff about that lap...
-      map<DATA_CHANNEL,const CDataChannel*>::const_iterator i2 = i->second.begin();
+      map<DATA_CHANNEL,const IDataChannel*>::const_iterator i2 = i->second.begin();
       while(i2 != i->second.end())
       {
         setRet.insert(i2->first);
@@ -216,12 +221,12 @@ public:
     return setRet;
   };
 private:
+  vector<const ILap*> m_lstLaps;
+
+  typedef map<int,map<DATA_CHANNEL,const IDataChannel*> > ChannelMap; // for each lapid, defines a map from channeltype to channel
+  mutable ChannelMap m_mapChannels; // maps from a lapid to a list of data channels for that lap
+  
   IUI* m_pUI;
-  vector<const CLap*> m_lstLaps;
-
-  typedef map<int,map<DATA_CHANNEL,const CDataChannel*> > ChannelMap; // for each lapid, defines a map from channeltype to channel
-  ChannelMap m_mapChannels; // maps from a lapid to a list of data channels for that lap
-
   TCHAR szLastNetStatus[NETSTATUS_COUNT][200];
 
   mutable ManagedCS m_cs;
@@ -266,14 +271,18 @@ public:
       m_eXChannel(DATA_CHANNEL_DISTANCE),
       m_fdwUpdateNeeded(0),
       m_flShiftX(0),
-      m_flShiftY(0)
+      m_flShiftY(0),
+      m_iRaceId(0)
   {
     m_lstYChannels.push_back(DATA_CHANNEL_VELOCITY);
     m_szCommentText[0] = '\0';
     m_szMessageStatus[0] = '\0';
     SetupMulticast();
   }
-
+  void SetRaceId(int iRaceId)
+  {
+    m_iRaceId = iRaceId;
+  }
   void NotifyChange(WPARAM wParam, LPARAM lParam) override
   {
     if(m_hWnd != NULL)
@@ -310,8 +319,10 @@ public:
 
         set<DATA_CHANNEL> setAvailable;
         InitAxes(setAvailable);
+        LoadLaps(::g_pLapDB);
         UpdateUI(UPDATE_ALL);
         InitBaseWindowPos();
+
 		    return 0;
       }
       case WM_CLOSE:
@@ -474,26 +485,37 @@ public:
             UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
             return TRUE;
           }
-          case ID_DATA_CLEAR:
+          case ID_DATA_SWITCHSESSION:
           {
-            int iRet = MessageBox(NULL, L"This will clear all of your received data.  Are you sure?", L"Clear Data?", MB_YESNO | MB_ICONEXCLAMATION);
-            if(iRet == IDYES)
+            RACESELECT_RESULT sfResult;
+            CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
+            ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
+
+            if(!sfResult.fCancelled)
             {
-              if(g_pLapDB)
-              {
-                m_mapLapHighlightTimes.clear();
-                m_pReferenceLap = NULL;
-                m_mapLaps.clear();
-                g_pLapDB->Clear();
-                m_sfLapList.Clear();
-                UpdateUI(UPDATE_ALL);
-              }
-              else
-              {
-                DASSERT(FALSE);
-              }
+              m_iRaceId = sfResult.iRaceId;
+              ClearUILaps();
+              LoadLaps(g_pLapDB);
+              UpdateUI(UPDATE_ALL);
             }
             return TRUE;
+          }
+          case ID_DATA_NEWSESSION:
+          {
+            ClearUILaps();
+
+            // creates a new race session
+            if(!g_pLapDB->InitRaceSession(&m_iRaceId,L"Received Data"))
+            {
+              MessageBox(NULL,L"Pitside was unable to create a new race session.  This is extremely unexpected and you should complain on the forums",L"Failed in session creation",0);
+            }
+            else
+            {
+              g_pLapDB->SetReceiveId(m_iRaceId);
+            }
+            LoadLaps(::g_pLapDB);
+            UpdateUI(UPDATE_ALL);
+            break;
           }
           case ID_HELP_IPS:
           {
@@ -505,14 +527,19 @@ public:
             TCHAR szFilename[MAX_PATH];
             if(ArtGetOpenFileName(hWnd, L"Choose WFLP file", szFilename, NUMCHARS(szFilename)))
             {
-              RACESELECT_RESULT sfResult;
-              CRaceSelectDlg dlgRace(szFilename, &sfResult);
-              ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
-
-              if(!sfResult.fCancelled)
+              if(g_pLapDB->Init(szFilename))
               {
-                LoadFromSQLite(szFilename, sfResult.iRaceId, g_pLapDB);
-                UpdateUI(UPDATE_ALL);
+                RACESELECT_RESULT sfResult;
+                CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
+                ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
+
+                if(!sfResult.fCancelled)
+                {
+                  m_iRaceId = sfResult.iRaceId;
+                  ClearUILaps();
+                  LoadLaps(g_pLapDB);
+                  UpdateUI(UPDATE_ALL);
+                }
               }
             }
             return TRUE;
@@ -523,17 +550,17 @@ public:
             if(setSelectedData.size() > 0)
             {
               TCHAR szFilename[MAX_PATH];
-              if(ArtGetSaveFileName(hWnd, L"Choose Output file", szFilename, NUMCHARS(szFilename)))
+              if(ArtGetSaveFileName(hWnd, L"Choose Output file", szFilename, NUMCHARS(szFilename),L"CSV Files (*.csv)\0*.CSV\0\0"))
               {
-                vector<const CLap*> lstLaps;
-                map<const CLap*, const CDataChannel*> mapData;
+                vector<const ILap*> lstLaps;
+                map<const ILap*, const IDataChannel*> mapData;
                 for(set<LPARAM>::iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
                 {
                   CExtendedLap* pLap = (CExtendedLap*)*i;
 
                   for(int x = 0;x < DATA_CHANNEL_COUNT; x++)
                   {
-                    const CDataChannel* pChannel = g_pLapDB->GetDataChannel(pLap->GetLap()->GetLapId(),(DATA_CHANNEL)x);
+                    const IDataChannel* pChannel = g_pLapDB->GetDataChannel(pLap->GetLap()->GetLapId(),(DATA_CHANNEL)x);
                     mapData[pLap->GetLap()] = pChannel;
                   }
                   lstLaps.push_back(pLap->GetLap());
@@ -642,6 +669,18 @@ public:
       {
         switch(wParam)
         {
+        case NOTIFY_NEEDRECVCONFIG:
+        {
+          // a lap has been received, but the database isn't set up to receive (aka it's pointing at a high-quality race).
+          // let's tell the user about it and ask them for input.
+          static bool fWarnedOnce = false;
+          if(!fWarnedOnce)
+          {
+            fWarnedOnce = true;
+            MessageBox(NULL,L"You just received a lap from a car, but you're looking at old data.  Hit data->'new race session' or else Pitside will keep ignoring it",L"Not ready to receive",0);
+          }
+          return TRUE;
+        }
         case NOTIFY_NEWLAP:
           LoadLaps((ILapReceiver*)lParam);
           UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD);
@@ -655,14 +694,19 @@ public:
           if(dwRet == IDYES)
           {
             LPCTSTR lpszFilename = (LPCTSTR)lParam;
-            RACESELECT_RESULT sfResult;
-            CRaceSelectDlg dlgRace(lpszFilename, &sfResult);
-            ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
-
-            if(!sfResult.fCancelled)
+            if(g_pLapDB->Init(lpszFilename))
             {
-              LoadFromSQLite(lpszFilename, sfResult.iRaceId, g_pLapDB);
-              UpdateUI(UPDATE_ALL);
+              RACESELECT_RESULT sfResult;
+              CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
+              ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
+              if(!sfResult.fCancelled)
+              {
+                m_iRaceId = sfResult.iRaceId;
+                
+                ClearUILaps();
+                LoadLaps(g_pLapDB);
+                UpdateUI(UPDATE_ALL);
+              }
             }
           }
           return TRUE;
@@ -736,6 +780,21 @@ public:
   void UpdateUI_Internal(DWORD fdwUpdateFlags)
   {
     set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
+    vector<CExtendedLap*> laps = GetSortedLaps(); // translates our m_mapLaps into a vector sorted by time
+
+    // do some memory cleanup
+    for(int x = 0;x < laps.size(); x++)
+    {
+      if(setSelectedData.find((LPARAM)laps[x]) != setSelectedData.end() || laps[x] == m_pReferenceLap)
+      {
+        // this lap is still selected, as it is in the set of selected items
+      }
+      else
+      {
+        // this lap is not selected.  we should compact it so that it doesn't gobble memory.
+        laps[x]->Compact();
+      }
+    }
 
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_LIST))
     {
@@ -770,13 +829,10 @@ public:
       for(set<LPARAM>::const_iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
       {
         CExtendedLap* pLap = (CExtendedLap*)(*i);
-        for(int x = DATA_CHANNEL_START; x < DATA_CHANNEL_COUNT; x++)
+        set<DATA_CHANNEL> setLapData = pLap->GetAvailableChannels();
+        for(set<DATA_CHANNEL>::iterator i = setLapData.begin(); i != setLapData.end(); i++)
         {
-          const CDataChannel* pChannel = g_pLapDB->GetDataChannel(pLap->GetLap()->GetLapId(), (DATA_CHANNEL)x);
-          if(pChannel)
-          {
-            setSelectedChannels.insert((DATA_CHANNEL)x);
-          }
+          setSelectedChannels.insert(*i);
         }
       }
 
@@ -824,6 +880,13 @@ public:
     }
   }
 private:
+  void ClearUILaps()
+  {
+    m_mapLapHighlightTimes.clear();
+    m_pReferenceLap = NULL;
+    m_mapLaps.clear();
+    m_sfLapList.Clear();
+  }
   void ShowNetInfo()
   {
     while(true)
@@ -961,14 +1024,16 @@ private:
   }
   void LoadLaps(ILapReceiver* pReceiver)
   {
-    vector<const CLap*> laps = pReceiver->GetLaps();
+    vector<const ILap*> laps = pReceiver->GetLaps(m_iRaceId);
     for(int x = 0;x < laps.size(); x++)
     {
-      const CLap* pLap = laps[x];
+      const ILap* pLap = laps[x];
       // let's see if we already have this lap
       if(m_mapLaps.count(pLap->GetLapId()) != 0)
       {
         // we've already got this lap.  THere is nothing to be added from this lap
+        pReceiver->FreeLap((ILap*)pLap);
+        laps[x] = NULL;
       }
       else
       {
@@ -1190,22 +1255,17 @@ private:
   {
     return m_sfLapOpts;
   }
-  virtual const CDataChannel* GetXChannel(int iLapId) const override
+  virtual DATA_CHANNEL GetXChannel() const override
   {
-    return g_pLapDB->GetDataChannel(iLapId, m_eXChannel);
+    return m_eXChannel;
   }
-  virtual const CDataChannel* GetChannel(int iLapId, DATA_CHANNEL eChannel) const override
+  virtual const IDataChannel* GetChannel(int iLapId, DATA_CHANNEL eChannel) const override
   {
     return g_pLapDB->GetDataChannel(iLapId, eChannel);
   }
-  virtual vector<const CDataChannel*> GetYChannels(int iLapId) const override
+  virtual vector<DATA_CHANNEL> GetYChannels() const override
   {
-    vector<const CDataChannel*> lstChans;
-    for(int x = 0;x < m_lstYChannels.size(); x++)
-    {
-      lstChans.push_back(g_pLapDB->GetDataChannel(iLapId, m_lstYChannels[x]));
-    }
-    return lstChans;
+    return m_lstYChannels;
   }
   virtual void GetResponse(const char* pbData, int cbData, char** ppbResponse, int* pcbResponse)
   {
@@ -1279,6 +1339,8 @@ private:
   // multicast responses for each network device detected
   vector<MulticastListener*> m_lstMulticast;
   MCResponder m_sfResponder;
+
+  int m_iRaceId;
 };
 
 DWORD ReceiveThreadProc(LPVOID param)
@@ -1301,7 +1363,57 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   CMainUI sfUI;
   g_pUI = &sfUI;
-  CLapReceiver sfLaps(&sfUI);
+  //CLapReceiver sfLaps(&sfUI);
+
+  
+  CSQLiteLapDB sfLaps(&sfUI);
+  bool fDBOpened = false;
+
+  int iRaceId = 0;
+  TCHAR szDBPath[MAX_PATH];
+  if(ArtGetSaveFileName(NULL,L"Select .wflp to open or save to",szDBPath,NUMCHARS(szDBPath),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
+  {
+    // they chose one to open, so open it.
+    if(sfLaps.Init(szDBPath))
+    {
+      // show the race-selection dialog
+      RACESELECT_RESULT sfRaceResult;
+      CRaceSelectDlg sfRaceSelect(&sfLaps,&sfRaceResult);
+      ::ArtShowDialog<IDD_SELECTRACE>(&sfRaceSelect);
+      if(!sfRaceResult.fCancelled)
+      {
+        iRaceId = sfRaceResult.iRaceId;
+        fDBOpened = true;
+      }
+    }
+    
+  }
+  
+  if(!fDBOpened)
+  {
+    // they didn't choose a file, so just use a temp DB.
+    TCHAR szTempPath[MAX_PATH];
+    GetTempPath(NUMCHARS(szTempPath),szTempPath);
+    wcscat(szTempPath,L"\\pitsidetemp.wflp");
+    if(sfLaps.Init(szTempPath))
+    {
+      // success!
+      if(sfLaps.InitRaceSession(&iRaceId,L"Received Data"))
+      {
+        sfLaps.SetReceiveId(iRaceId);
+        fDBOpened = true;
+      }
+    }
+  }
+  if(!fDBOpened)
+  {
+    // disaster.
+    MessageBox(NULL,L"Pitside was unable to create a database to save data to.  Is your hard drive full?",L"Failed to create DB",MB_ICONERROR);
+    exit(0);
+  }
+  sfUI.SetRaceId(iRaceId);
+
+
   g_pLapDB = &sfLaps;
 
   CSplashDlg splash;

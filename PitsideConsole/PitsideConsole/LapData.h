@@ -45,16 +45,42 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
 
 bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const vector<TimePoint2D>& lstPoints, TimePoint2D* pt1, TimePoint2D* pt2);
 
+// this class contains the UI representation of a lap.  It contains, in memory, all the data channels for a lap, pre-aligned, and ready for display.
+// it is built by the main display dialog from a lap, using a reference lap.  If you're displaying UI, you shouldn't directly access the database for lap data, you should use a CExtendedLap instead
 class CExtendedLap
 {
 public:
-  CExtendedLap(const CLap* pLap, const CExtendedLap* pReferenceLap, ILapReceiver* pLapDB) : m_pLap(pLap)
+  CExtendedLap(const ILap* pLap, CExtendedLap* pReferenceLap, ILapReceiver* pLapDB) : m_pLap(pLap)
   {
+    DASSERT(pReferenceLap);
     m_szComment[0] = '\0';
     GetLocalTime(&m_tmRecv);
-    ComputeLapData(pLap->GetPoints(),pReferenceLap,pLapDB);
+    m_tmStart = SecondsSince1970ToSYSTEMTIME(pLap->GetStartTime());
+
+    m_pReferenceLap = pReferenceLap;
+    m_pLapDB = pLapDB;
   }
-  const CLap* GetLap() const {return m_pLap;}
+  virtual ~CExtendedLap()
+  {
+    for(map<DATA_CHANNEL,const IDataChannel*>::iterator i = m_mapChannels.begin(); i != m_mapChannels.end(); i++)
+    {
+      this->m_pLapDB->FreeDataChannel((IDataChannel*)i->second);
+    }
+    m_mapChannels.clear();
+  }
+  void Compact()
+  {
+    if(m_lstPoints.size() > 0)
+    {
+      for(map<DATA_CHANNEL,const IDataChannel*>::iterator i = m_mapChannels.begin(); i != m_mapChannels.end(); i++)
+      {
+        this->m_pLapDB->FreeDataChannel((IDataChannel*)i->second);
+      }
+      m_mapChannels.clear();
+      m_lstPoints.clear();
+    }
+  }
+  const ILap* GetLap() const {return m_pLap;}
   void GetString(LPTSTR lpszBuffer, int cchBuffer) const
   {
       TCHAR szTime[100];
@@ -96,24 +122,66 @@ public:
   {
     wcscpy_s(m_szComment, NUMCHARS(m_szComment), lpsz);
   }
-  const vector<TimePoint2D>& GetPoints() const {return m_lstPoints;}
+  const vector<TimePoint2D>& GetPoints() 
+  {
+    CheckCompute();
+
+    return m_lstPoints;
+  }
+
+  set<DATA_CHANNEL> GetAvailableChannels() const
+  {
+    set<DATA_CHANNEL> setRet;
+    for(map<DATA_CHANNEL,const IDataChannel*>::iterator i = m_mapChannels.begin(); i != m_mapChannels.end(); i++)
+    {
+      setRet.insert(i->first);
+    }
+    return setRet;
+  }
+  const IDataChannel* GetChannel(DATA_CHANNEL eChan)
+  {
+    CheckCompute();
+    return m_mapChannels[eChan];
+  }
 
   // this is telling us to recompute our distances based on this reference lap and our already-owned CLap
-  void ComputeDistances(const CExtendedLap* pReferenceLap, ILapReceiver* pReceiver)
+  void ComputeDistances(CExtendedLap* pReferenceLap, ILapReceiver* pReceiver)
   {
+    DASSERT(pReferenceLap);
     m_lstPoints.clear();
-    ComputeLapData(GetLap()->GetPoints(), pReferenceLap, pReceiver);
+    m_pLapDB = pReceiver;
+    m_pReferenceLap = pReferenceLap;
   }
 private:
   // function to properly compute distances, and not just do the sum of the changes in position.
   // pReceiver allows us to add data channels as they are computed
-  void ComputeLapData(const vector<TimePoint2D>& lstPoints, const CExtendedLap* pReferenceLap, ILapReceiver* pReceiver);
+  void ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtendedLap* pReferenceLap, const ILapReceiver* pReceiver);
+  void CheckCompute()
+  {
+    if(m_lstPoints.size() <= 0)
+    {
+      ComputeLapData(m_pLap->GetPoints(),m_pReferenceLap,m_pLapDB);
+    }
+  }
+  void AddChannel(const IDataChannel* pChan)
+  {
+    DASSERT(pChan->IsLocked());
+    if(m_mapChannels[pChan->GetChannelType()])
+    {
+      m_pLapDB->FreeDataChannel((IDataChannel*)m_mapChannels[pChan->GetChannelType()]);
+    }
+    m_mapChannels[pChan->GetChannelType()] = pChan;
+  }
 private:
-  const CLap* m_pLap;
+  ILapReceiver* m_pLapDB;
+  CExtendedLap* m_pReferenceLap;
+  const ILap* m_pLap;
   TCHAR m_szComment[512];
   SYSTEMTIME m_tmRecv; // when was this thing constructed?
   SYSTEMTIME m_tmStart; // when was this thing started on-track?
   vector<TimePoint2D> m_lstPoints;
+
+  mutable map<DATA_CHANNEL,const IDataChannel*> m_mapChannels; // we own these pointers.  We get them allocated in ComputeLapData, and it is our responsibility to get them de-allocated
 };
 
 const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTimeMs);

@@ -2,7 +2,7 @@
 #include "PitsideHTTP.h"
 #include "LapData.h"
 
-PitsideHTTP::PitsideHTTP(const ILapReceiver* pReceiver, const ILapSupplier* pSupplier) : m_pLapsDB(pReceiver),m_pLapSupplier(pSupplier) {}
+PitsideHTTP::PitsideHTTP(ILapReceiver* pReceiver, const ILapSupplier* pSupplier) : m_pLapsDB(pReceiver),m_pLapSupplier(pSupplier) {}
 PitsideHTTP::~PitsideHTTP() {}
 
 // writes the javascript array for data: "{1,2,3};" for example.  if fTime, writes the timings.  If !fTime, writes the data values
@@ -93,113 +93,6 @@ string RGBToNetColor(float r, float g, float b)
   return string(szResult);
 }
 
-void PitsideHTTP::WriteLapsAvailable(ostream& out) const
-{
-  vector<CExtendedLap*> lstLaps = m_pLapSupplier->GetAllLaps();
-
-  out<<"var lapsAvailable = new Array();"<<endl;
-  out<<"lapsAvailable = [";
-  for(int x = 0;x < lstLaps.size(); x++)
-  {
-    out<<lstLaps[x]->GetLap()->GetLapId()<<",";
-  }
-  out<<"];"<<endl;
-
-  out<<"var lapColors = new Array();"<<endl;
-  out<<"lapColors = [";
-  for(int x = 0;x < lstLaps.size(); x++)
-  {
-    srand((int)lstLaps[x]);
-    const float r = RandDouble()/2 + 0.5;
-    const float g = RandDouble()/2 + 0.5;
-    const float b = RandDouble()/2 + 0.5;
-    out<<"'"<<RGBToNetColor(r,g,b).c_str()<<"',";
-  }
-  out<<"];"<<endl;
-
-  out<<"var lapTexts = new Array();"<<endl;
-  out<<"lapTexts = [";
-  for(int x = 0;x < lstLaps.size(); x++)
-  {
-    TCHAR szLapW[200];
-    lstLaps[x]->GetString(szLapW,NUMCHARS(szLapW));
-    char szLapA[200];
-    _snprintf(szLapA,NUMCHARS(szLapA),"%S",szLapW);
-
-    out<<"'"<<szLapA<<"',";
-  }
-  out<<"];"<<endl;
-}
-
-void PitsideHTTP::WriteLapDataInit(const CLap* pLap, string strArrayName, ostream& out) const
-{
-  set<DATA_CHANNEL> setChannels = m_pLapsDB->GetAvailableChannels(pLap->GetLapId());
-  
-  out<<"var defaultLap = "<<pLap->GetLapId()<<";"<<endl;
-
-  out<<"var lapArrayTime = new Array("<<setChannels.size()<<");"<<endl;
-  out<<"var lapArrayData = new Array("<<setChannels.size()<<");"<<endl;
-  out<<"var lapArrayDataMinMax = new Array("<<setChannels.size()<<");"<<endl;
-  out<<"var lapArrayTimeMinMax = new Array("<<setChannels.size()<<");"<<endl;
-
-  // write out an array of the indices for the data channels we have
-  out<<"var ixData = new Array();"<<endl;
-  
-
-  out<<"var strData = new Array();"<<endl;
-}
-void PitsideHTTP::WriteLapDataScript(const CLap* pLap, string strArrayName, ostream& out) const
-{
-  out<<"lapArrayTime["<<strArrayName<<"] = new Array();"<<endl;
-  out<<"lapArrayData["<<strArrayName<<"] = new Array();"<<endl;
-  out<<"lapArrayDataMinMax["<<strArrayName<<"] = new Array();"<<endl;
-  out<<"lapArrayTimeMinMax["<<strArrayName<<"] = new Array();"<<endl;
-
-  set<DATA_CHANNEL> setChannels = m_pLapsDB->GetAvailableChannels(pLap->GetLapId());
-
-  out<<"strData["<<strArrayName<<"] = [";
-  for(set<DATA_CHANNEL>::iterator i = setChannels.begin(); i != setChannels.end(); i++)
-  {
-    TCHAR szChannelName[MAX_PATH];
-    GetDataChannelName(*i,szChannelName, NUMCHARS(szChannelName));
-
-    char szChannelCStr[MAX_PATH];
-    _snprintf(szChannelCStr,sizeof(szChannelCStr),"%S",szChannelName);
-    out<<"'"<<szChannelCStr<<"',";
-  }
-  out<<"];"<<endl;
-
-  out<<"ixData["<<strArrayName<<"] = [";
-  for(set<DATA_CHANNEL>::iterator i = setChannels.begin(); i != setChannels.end(); i++)
-  {
-    out<<(*i)<<",";
-  }
-  out<<"];"<<endl;
-
-  set<DATA_CHANNEL>::iterator i = setChannels.begin();
-  while(i != setChannels.end())
-  {
-    DATA_CHANNEL eChannelType = *i;
-    const CDataChannel* pChannel = m_pLapsDB->GetDataChannel(pLap->GetLapId(),eChannelType);
-    if(pChannel)
-    {
-      float flMinTime,flMaxTime;
-      float flMinData,flMaxData;
-      const vector<DataPoint>& data = pChannel->GetData();
-      out<<"lapArrayTime["<<strArrayName<<"]["<<(int)(eChannelType)<<"] = ";
-      WriteData(data,out,true,&flMinTime,&flMaxTime);
-      out<<endl;
-
-      out<<"lapArrayData["<<strArrayName<<"]["<<(int)(eChannelType)<<"] = ";
-      WriteData(data,out,false,&flMinData,&flMaxData);
-      out<<endl;
-      out<<"lapArrayDataMinMax["<<strArrayName<<"]["<<(int)(eChannelType)<<"] = ["<<flMinData<<","<<flMaxData<<"];"<<endl;
-      out<<"lapArrayTimeMinMax["<<strArrayName<<"]["<<(int)(eChannelType)<<"] = ["<<flMinTime<<","<<flMaxTime<<"];"<<endl;
-    }
-    i++;
-  }
-}
-
 // CSL = comma-separated-list
 vector<int> ParseCSL(string strCSL)
 {
@@ -266,8 +159,8 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     const int lapId1 = atoi(pReq.mapParams["lap"].c_str());
     const int lapId2 = atoi(pReq.mapParams["refLap"].c_str());
 
-    const CLap* pLap1 = m_pLapsDB->GetLap(lapId1);
-    const CLap* pLap2 = m_pLapsDB->GetLap(lapId2);
+    const ILap* pLap1 = m_pLapsDB->GetLap(lapId1);
+    const ILap* pLap2 = m_pLapsDB->GetLap(lapId2);
     
     bool fShowAll = pReq.mapParams["allCols"].length() > 0;
     // distance, lap 1 vel, lap 2 vel
@@ -278,16 +171,16 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     }
     out<<endl;
 
-    const CDataChannel* pDist1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_DISTANCE);
-    const CDataChannel* pDist2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_DISTANCE);
+    const IDataChannel* pDist1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_DISTANCE);
+    const IDataChannel* pDist2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_DISTANCE);
 
-    const CDataChannel* pVel1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_VELOCITY);
-    const CDataChannel* pVel2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_VELOCITY);
+    const IDataChannel* pVel1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_VELOCITY);
+    const IDataChannel* pVel2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_VELOCITY);
     
-    const CDataChannel* pX1 = m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_X);
-    const CDataChannel* pY1 = m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_Y);
-    const CDataChannel* pX2 = m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_X);
-    const CDataChannel* pY2 = m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_Y);
+    const IDataChannel* pX1 = m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_X);
+    const IDataChannel* pY1 = m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_Y);
+    const IDataChannel* pX2 = m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_X);
+    const IDataChannel* pY2 = m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_Y);
 
     if(pDist1 && pDist2 && pVel1 && pVel2)
     {
@@ -297,7 +190,7 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
       int ix2 = 0;
       while(true)
       {
-        const CDataChannel* pX,*pY;
+        const IDataChannel* pX,*pY;
         DataPoint ptRef;
         if(ix1 < lstData1.size() && ix2 < lstData2.size() && lstData1[ix1].flValue < lstData2[ix2].flValue)
         {
@@ -358,93 +251,101 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     // table: which table are they interested in? (races, laps, points, channels, or data will be supported in round 1)
     // parentId: what is the value of the logical parentId? (example: for laps, it would be the raceId we care about)
     
-    if(pReq.mapParams["table"] == "races")
-    {
-      out<<"id,racename,date"<<endl; // for the time being, pitside only supports one race/car/whatever at once
-      out<<"1,OnlyRace,1"<<endl;
-      return true;
-    }
-    else if(pReq.mapParams["table"] == "laps")
-    {
-      // there should also be a raceId parameter here, but since we only support one race we don't care.  Sometime in the future...
-      vector<const CLap*> lstLaps = m_pLapsDB->GetLaps();
-      out<<"id,Lap #,Time of Day, Lap Time"<<endl;
-      for(int x = 0;x < lstLaps.size(); x++)
-      {
-        const CLap* pLap = lstLaps[x];
-        out<<pLap->GetLapId()<<","<<x<<","<<pLap->GetStartTime()<<","<<pLap->GetTime()<<endl;
-      }
-      return true;
-    }
-    else if(pReq.mapParams["table"] == "points")
-    {
-      string strLapId = pReq.mapParams["parentId"];
-      int iLapId = 0;
-      if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
-      {
-        const CLap* pLap = m_pLapsDB->GetLap(iLapId);
-        if(pLap)
-        {
-          const CDataChannel* pData = m_pLapsDB->GetDataChannel(pLap->GetLapId(),DATA_CHANNEL_DISTANCE);
 
-          const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
-          out<<"Time,Longitude,Latitude,Velocity,Distance"<<endl;
-          for(int x = 0;x < lstPoints.size(); x++)
+    string strRaceId = pReq.mapParams["raceid"];
+    int iRaceId = 0;
+    int iLapId = 0;
+    if(ArtAtoi(strRaceId.c_str(),strRaceId.size(),&iRaceId))
+    {
+      if(pReq.mapParams["table"] == "races")
+      {
+        out<<"id,racename,date"<<endl; // for the time being, pitside only supports one race/car/whatever at once
+        out<<"1,OnlyRace,1"<<endl;
+        return true;
+      }
+      else if(pReq.mapParams["table"] == "laps")
+      {
+        // there should also be a raceId parameter here, but since we only support one race we don't care.  Sometime in the future...
+        vector<const ILap*> lstLaps = m_pLapsDB->GetLaps(iRaceId);
+        out<<"id,Lap #,Time of Day, Lap Time"<<endl;
+        for(int x = 0;x < lstLaps.size(); x++)
+        {
+          const ILap* pLap = lstLaps[x];
+          out<<pLap->GetLapId()<<","<<x<<","<<pLap->GetStartTime()<<","<<pLap->GetTime()<<endl;
+          m_pLapsDB->FreeLap((ILap*)lstLaps[x]);
+        }
+        return true;
+      }
+      else if(pReq.mapParams["table"] == "points")
+      {
+        string strLapId = pReq.mapParams["parentId"];
+        int iLapId = 0;
+        if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
+        {
+          const ILap* pLap = m_pLapsDB->GetLap(iLapId);
+          if(pLap)
           {
-            TimePoint2D pt = lstPoints[x];
-            out<<pt.iTime<<","<<pt.flX<<","<<pt.flY<<","<<pt.flVelocity<<","<<pData->GetValue(pt.iTime)<<endl;
+            const IDataChannel* pData = m_pLapsDB->GetDataChannel(pLap->GetLapId(),DATA_CHANNEL_DISTANCE);
+
+            const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
+            out<<"Time,Longitude,Latitude,Velocity,Distance"<<endl;
+            for(int x = 0;x < lstPoints.size(); x++)
+            {
+              TimePoint2D pt = lstPoints[x];
+              out<<pt.iTime<<","<<pt.flX<<","<<pt.flY<<","<<pt.flVelocity<<","<<pData->GetValue(pt.iTime)<<endl;
+            }
+            return true;
+          }
+        }
+      }
+      else if(pReq.mapParams["table"] == "channels")
+      {
+        // querying what data channels are available for a given lap
+        // we need to know the lap ID
+        string strLapId = pReq.mapParams["parentId"];
+        int iLapId = 0;
+        if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
+        {
+          out<<"id,Name"<<endl;
+          set<DATA_CHANNEL> setChans = m_pLapsDB->GetAvailableChannels(iLapId);
+          for(set<DATA_CHANNEL>::iterator i = setChans.begin(); i != setChans.end(); i++)
+          {
+            TCHAR szName[MAX_PATH];
+            GetDataChannelName(*i,szName,NUMCHARS(szName));
+
+            char szSmallName[MAX_PATH];
+            _snprintf(szSmallName,NUMCHARS(szSmallName),"%S",szName);
+
+            out<<*i<<","<<szSmallName<<endl;
           }
           return true;
         }
       }
-    }
-    else if(pReq.mapParams["table"] == "channels")
-    {
-      // querying what data channels are available for a given lap
-      // we need to know the lap ID
-      string strLapId = pReq.mapParams["parentId"];
-      int iLapId = 0;
-      if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
+      else if(pReq.mapParams["table"] == "data")
       {
-        out<<"id,Name"<<endl;
-        set<DATA_CHANNEL> setChans = m_pLapsDB->GetAvailableChannels(iLapId);
-        for(set<DATA_CHANNEL>::iterator i = setChans.begin(); i != setChans.end(); i++)
+        // querying for actual data from a data channel.
+        // this will require knowing a lapid and a channel type
+        string strLapId = pReq.mapParams["lapId"];
+        int iLapId = 0;
+        if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
         {
-          TCHAR szName[MAX_PATH];
-          GetDataChannelName(*i,szName,NUMCHARS(szName));
-
-          char szSmallName[MAX_PATH];
-          _snprintf(szSmallName,NUMCHARS(szSmallName),"%S",szName);
-
-          out<<*i<<","<<szSmallName<<endl;
-        }
-        return true;
-      }
-    }
-    else if(pReq.mapParams["table"] == "data")
-    {
-      // querying for actual data from a data channel.
-      // this will require knowing a lapid and a channel type
-      string strLapId = pReq.mapParams["lapId"];
-      int iLapId = 0;
-      if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
-      {
-        string strChannelType = pReq.mapParams["dataType"];
-        int iChannelId = 0;
-        if(ArtAtoi(strChannelType.c_str(), strChannelType.size(),&iChannelId))
-        {
-          DATA_CHANNEL eChannel = (DATA_CHANNEL)iChannelId;
-          const CDataChannel* pChannel = m_pLapsDB->GetDataChannel(iLapId,eChannel);
-          if(pChannel)
+          string strChannelType = pReq.mapParams["dataType"];
+          int iChannelId = 0;
+          if(ArtAtoi(strChannelType.c_str(), strChannelType.size(),&iChannelId))
           {
-            out<<"time,value"<<endl;
-            vector<DataPoint> lstData = pChannel->GetData();
-            for(int x = 0;x < lstData.size(); x++)
+            DATA_CHANNEL eChannel = (DATA_CHANNEL)iChannelId;
+            const IDataChannel* pChannel = m_pLapsDB->GetDataChannel(iLapId,eChannel);
+            if(pChannel)
             {
-              const DataPoint& pt = lstData[x];
-              out<<pt.iTimeMs<<","<<pt.flValue<<endl;
+              out<<"time,value"<<endl;
+              vector<DataPoint> lstData = pChannel->GetData();
+              for(int x = 0;x < lstData.size(); x++)
+              {
+                const DataPoint& pt = lstData[x];
+                out<<pt.iTimeMs<<","<<pt.flValue<<endl;
+              }
+              return true;
             }
-            return true;
           }
         }
       }

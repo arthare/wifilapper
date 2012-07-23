@@ -4,14 +4,26 @@
 #include "../ArtTools.h"
 #include <stdio.h>
 
-HRESULT CSfArtSQLiteDB::Open(LPCTSTR filename)
+HRESULT CSfArtSQLiteDB::Open(LPCTSTR filename, vector<wstring>& lstTables)
 {
   HRESULT hr = S_OK;
 
   int iRet = sqlite3_open16((void*)filename, &m_sqlite3);
   if(iRet == SQLITE_OK)
   {
-    // hooray!
+    // hooray!.  Let's get the table list
+    CSfArtSQLiteQuery sfQuery(*this);
+    if(sfQuery.Init(L"select * from sqlite_master order by tbl_name,type desc"))
+    {
+      while(sfQuery.Next())
+      {
+        TCHAR szSQL[1000];
+        if(sfQuery.GetCol(4,szSQL,NUMCHARS(szSQL)))
+        {
+          lstTables.push_back(wstring(szSQL));
+        }
+      }
+    }
   }
   else
   {
@@ -38,6 +50,8 @@ void CSfArtSQLiteDB::ExecuteSQL(const char* lpszSQL)
 
 bool CSfArtSQLiteQuery::Init(LPCTSTR lpszSQL, int cchSQL)
 {
+  m_fDone = false;
+  m_iBindIndex = 0;
   if(cchSQL <= 0)
   {
     cchSQL = wcslen(lpszSQL) * sizeof(*lpszSQL);
@@ -55,8 +69,38 @@ bool CSfArtSQLiteQuery::Next()
   {
     iRet = sqlite3_step(m_stmt);
   } while(iRet == SQLITE_BUSY);
+
+  m_fDone = iRet == SQLITE_DONE;
   return iRet == SQLITE_ROW;
 }
+bool CSfArtSQLiteQuery::BindValue(long long value)
+{
+  m_iBindIndex++;
+
+  return sqlite3_bind_int64(m_stmt,m_iBindIndex,value) == SQLITE_OK;
+}
+bool CSfArtSQLiteQuery::BindValue(int value)
+{
+  m_iBindIndex++;
+  
+  return sqlite3_bind_int(m_stmt,m_iBindIndex,value) == SQLITE_OK;
+}
+bool CSfArtSQLiteQuery::BindValue(double value)
+{
+  m_iBindIndex++;
+  
+  return sqlite3_bind_double(m_stmt,m_iBindIndex,value) == SQLITE_OK;
+}
+bool CSfArtSQLiteQuery::BindValue(LPCTSTR lpszValue)
+{
+  m_iBindIndex++;
+
+  char szValue[2000]; // convert to single-wide text
+  _snprintf(szValue, NUMCHARS(szValue), "%S", lpszValue);
+
+  return sqlite3_bind_text(m_stmt,m_iBindIndex,szValue, strlen(szValue), SQLITE_TRANSIENT) == SQLITE_OK;
+}
+
 bool CSfArtSQLiteQuery::GetCol(int iCol, double* p)
 {
   if(sqlite3_column_type(m_stmt, iCol) != SQLITE_FLOAT) 

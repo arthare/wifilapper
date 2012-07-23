@@ -8,5 +8,5 @@ using namespace std;
 
 namespace DashWare
 {
-  HRESULT SaveToDashware(LPCTSTR lpszFilename, const vector<const CLap*>& lstLaps);
+  HRESULT SaveToDashware(LPCTSTR lpszFilename, const vector<const ILap*>& lstLaps);
 }
