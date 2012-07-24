@@ -396,6 +396,12 @@ implements
 		{
 			m_ioio.Shutdown();
 		}
+		
+		LocationManager locMan = (LocationManager)getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+		if(locMan != null)
+		{
+			locMan.removeUpdates(this);
+		}
 		finish();
     }
     
