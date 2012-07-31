@@ -1,7 +1,8 @@
 <html>
 <head>
-<script type="text/javascript" src="dygraph-combined.js"></script>
-<script type="text/javascript" src="dragdealer.js"></script>
+<script type="text/javascript" src="dygraph-dev.js"></script>
+<script type="text/javascript" src="trackmap.js"></script>
+<script type="text/javascript" src="lapdata.js"></script>
     
 <link rel="stylesheet" type="text/css" href="dragdealer.css" />
 <link rel="stylesheet" type="text/css" href="wifilapper.css" />
@@ -18,158 +19,218 @@
         <a href="/">HOME</a>
       </li>
       <li>
-        <a href="summary.php">SUMMARY</a>
+        <a href="lapSummary.html">SUMMARY</a>
       </li>
       <li>
-        <a href="settings.php">SETTINGS</a>
+        <a href="settings.html">SETTINGS</a>
       </li>
       <li>
-        <a href="about.php">ABOUT</a>
+        <a href="about.html">ABOUT</a>
       </li>
     </ul>
   </div>
-</div>
+  </div>
 
   <div id="middle">
     <div class="sidebar" id="sideLeft"> 
-      <form id=laplist>
-      <select name=lap id=lap size=10 multiple onChange="graphUpdate()"></select></td></tr>
       
-      </form>
-    </div>  
-    <div class="sidebar" id="trackArea" >
+    </div>
+    <div id="trackContainer">  
+    <div class="titleBar">Track Map</div>
+    <div class="sidebar" id="trackArea" ></div>
     </div>
     <div id="container">
-			<div id="content">
+			<div id="labels">
 			<div id="trackLabel"></div>
       <div id="distLabel"></div>	
+      <div id="debugOut"></div>
 			</div><!-- #content-->
 		</div><!-- #container-->
   </div>
   <div id="footer">
+    <div class="titleBar">Lap Graph</div>
     <div id="renderArea" style="width:800px; height:300px; position:relative"></div>
-    <div id="simple-slider" class="dragdealer rounded-cornered" style="width:800px">
-    	<div class="red-bar handle">drag me</div>
-    </div>
+    
   </div>
 </div>
+
+<div id="datamenuframe">
+  <div id="datamenu">
+    <form id=laplist>
+    Race:<br>
+    <select name=race id=race onChange="popLaps()"></select>  <br>
+    Laps:<br>
+    <select name=lap id=lap size=10 multiple onChange="graphUpdate()"></select>
+    Data Channels:<br>
+    <select name=data id=data size=4 multiple></select>
+    </form>
+  </div>
+  <div id="datamenutab" onclick="toggle2('datamenuframe','datamenutab');">&gt;<br>&gt;<br>&gt;<br>&gt;</div>
+</div>
+
+<div id="settingsmenuframe">
+  <div id="settingsmenu">
+    Some settings stuff goes here.
+  </div>
+  <div id="settingsmenutab" onclick="toggle2('settingsmenuframe','settingsmenutab');">&gt;<br>&gt;<br>&gt;<br>&gt;</div>
+</div>
+
+<script>
+    function toggle2(showHideDiv, switchTextDiv) {
+      var ele = document.getElementById(showHideDiv);
+      var text = document.getElementById(switchTextDiv);
+      if(ele.style.marginLeft == "0px") {
+      // hid the div
+              ele.style.marginLeft = "-275px";
+              ele.style.zIndex = "auto"
+          text.innerHTML = "&gt<br>&gt<br>&gt<br>&gt";
+        }
+      else {
+      // show the div
+          ele.style.marginLeft = "0";
+          ele.style.zIndex = 9999;
+          text.innerHTML = "&lt<br>&lt<br>&lt<br>&lt";
+      }
+  }
+</script>
+
 <script>
 
-  var g1;
-  var g2;
-  if (!String.prototype.trim) {
-  String.prototype.trim=function(){return this.replace(/^\s\s*/, '').replace(/\s\s*$/, '');};
-  String.prototype.ltrim=function(){return this.replace(/^\s+/,'');}
-  String.prototype.rtrim=function(){return this.replace(/\s+$/,'');}
-  String.prototype.fulltrim=function(){return this.replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ');}
+var g1;
+var g2;
+
+var div = document.getElementById("renderArea");
+var trackDiv = document.getElementById("trackArea");
+var glbArr = Array();
+
+// some constants for the getdata?points call.
+// change this if the output of that call changes...
+var TIME = 0;
+var LON = 1;
+var LAT = 2;
+var VELOCITY = 3;
+var DISTANCE = 4;
+var IDX = 5;
+
+
+
+var updateGraph = function(lineArry) {
+  if (!g2) {
+    drawGraph();
   }
 
-  var div = document.getElementById("renderArea");
-  var trackDiv = document.getElementById("trackArea");
-  var glbArr = Array();
-  var req = new XMLHttpRequest();
-  req.onreadystatechange = function () {
-  if (req.readyState == 4) {
-  if (req.status === 200 || // Normal http
-  req.status === 0) { // Chrome w/ --allow-file-access-from-files
-  var data = req.responseText;
-  drawGraph(data);
-  glbArr = toArray(data);
-  }
-  }
-  };
-
-  req.open('GET', 'lapdistance.php?lap=&refLap=&allCols=1', true);
-req.send(null);
-
-var updateGraph = function(data) {
-  var lineArry = toArray(data);
   var headers = lineArry[0];
-//  alert(headers);
   var lineArry = lineArry.slice(1);
-  lineArry.sort(sortByY);
-  for (var idx = 0; idx < lineArry.length; idx++) {
-    var row = lineArry[idx];
-    row.push(idx);
+  var lapCols = []; 
+  var firstRow = [];
+  for (var i = 0; i < headers.indexOf('X'); i++) {
+    lapCols.push(i);
+    firstRow.push(headers[i]); 
   }
-  lineArry.sort(mySorting);
-  
-  var trackArry = arrColumns(lineArry, [3, 4]);
-  var distArry = arrColumns(lineArry, [0, 1, 2]); 
-
+  var indexCol = headers.length - 1;
+  lapCols.push(indexCol);
+  firstRow.push(headers[indexCol]);
+    
+  var trackArry = arrColumns(lineArry, [headers.indexOf('X'), headers.indexOf('Y') ]);
+  var distArry = arrColumns(lineArry, lapCols); 
   trackArry.sort(mySorting);
 
-  //var firstRow = ['x', 'y', 'z'];
-
-  var firstRow = [headers[0], headers[1], headers[2]];
   var trackHeader = ['x' , 'y'];
   
-  g1.updateOptions({
-                  file: trackArry
-                  })
+//   g1.updateOptions({
+//                   file: trackArry
+//                   })
+   trk1.drawTrack(laps.master);
   g2.updateOptions({
                   file: distArry,
                   labels: firstRow,
                   highlightCallback: function(e, x, pts, rowi) {
                       var xrange = g2.toDataXCoord(rowi);
                       rowi+=g2.getLeftBoundary_();
-                      var lft = g2.getLeftBoundary_();
-                      g1.setSelection(lineArry[rowi][5]);
+//                       var lft = g2.getLeftBoundary_();
+//                      // g1.setSelection(lineArry[rowi][(headers.length - 1)]);
+//                       var debug = document.getElementById("debugOut");
+                      var series = -1;
+                      var dots = [];
+//                       var ptsString = g2.file_[rowi][g2.file_[rowi].length - 1];
+                      for (var i = 1; i < (g2.file_[rowi].length - 1); i++) {
+                        if (g2.file_[rowi][i]) {
+                          series = i - 1;
+                          dots[series] = g2.file_[rowi][g2.file_[rowi].length - 1];  
+                        }
+                      }
+                      
+                      
+          //            var ptsString = laps.master.points[0][rowi].toString();
+//                       debug.innerHTML = series + " " + ptsString;
+                       trk1.drawDots(dots)
+                      
                     }
                   })
+  // dygraphs remembers visibility...
+  var vis = g2.visibility();
+  for (var i = 0; i < vis.length; i++) {
+    g2.setVisibility(i,true);
+  }                
+  g2.setVisibility((lapCols.length-2), 0);
 }
 
-var drawGraph = function(data) {
-  var lineArry = toArray(data);
-  var headers = lineArry[0];
+var drawGraph = function() {
+//  var lineArry = toArray(data);
+//  var headers = lineArry[0];
 //  alert(headers);
-  var lineArry = lineArry.slice(1);
-  lineArry.sort(sortByY);
-  for (var idx = 0; idx < lineArry.length; idx++) {
-    var row = lineArry[idx];
-    row.push(idx);
-  }
-  lineArry.sort(mySorting);
-  
-  var trackArry = arrColumns(lineArry, [3, 4]);
-  var distArry = arrColumns(lineArry, [0, 1, 2]); 
-  trackArry.sort(mySorting);
-  //var firstRow = ['x', 'y', 'z'];
-  var firstRow = [headers[0], headers[1], headers[2]];
-  var trackHeader = ['X' , 'Y'];
+//   var lineArry = lineArry.slice(1);
+//   lineArry.sort(sortByY);
+//   for (var idx = 0; idx < lineArry.length; idx++) {
+//     var row = lineArry[idx];
+//     row.push(idx);
+//   }
+//   lineArry.sort(mySorting);
+//   
+//   var trackArry = arrColumns(lineArry, [3, 4]);
+//   var distArry = arrColumns(lineArry, [0, 1, 2]); 
+//   trackArry.sort(mySorting);
+//   //var firstRow = ['x', 'y', 'z'];
+//   var firstRow = [headers[0], headers[1], headers[2]];
+//   var trackHeader = ['X' , 'Y'];
  
   
-  g1 = new Dygraph(trackDiv,trackArry, { 
-      labels: trackHeader, 
-      drawPoints: true,
-      pointSize: 1,
-      highlightCircleSize: 5,
-      strokeWidth: 0.0,
-      drawXGrid: 0,
-      drawYGrid: 0,
-      drawXAxis: 0,
-      drawYAxis: 0,
-      interactionModel: {},
-      labelsDiv: "trackLabel",
-      labelsDivStyles: {
-        'backgroundColor': 'transparent',
-      },
-      labelsSeparateLines: true,
-      axes: {
-        x: {
-          valueFormatter: function(ms) {
-            return 'X: ' + ms;
-          }
-        },
-        y: {
-          valueFormatter: function(y) {
-            return ' ' + y;
-          }
-        }  
-      }       
-      });
-  g2 = new Dygraph(div,distArry, { 
-      labels: firstRow, 
+//   g1 = new Dygraph(trackDiv,[[0,0],[1,1]], { 
+//       labels: ['nolap','nolap'], 
+//       drawPoints: true,
+//       pointSize: 1,
+//       highlightCircleSize: 5,
+//       strokeWidth: 0.0,
+//       drawXGrid: 0,
+//       drawYGrid: 0,
+//       drawXAxis: 0,
+//       drawYAxis: 0,
+//       interactionModel: {},
+//       highlightOnHover: false,
+//       hideOverlayOnMouseOut: false,
+//       labelsDiv: "trackLabel",
+//       labelsDivStyles: {
+//         'backgroundColor': 'transparent',
+//       },
+//       labelsSeparateLines: true,
+//       axes: {
+//         x: {
+//           valueFormatter: function(ms) {
+//             return 'X: ' + ms;
+//           }
+//         },
+//         y: {
+//           valueFormatter: function(y) {
+//             return ' ' + y;
+//           }
+//         }  
+//       }       
+//       });
+//  trk_div = document.getElementById("trackDiv");
+  trk1 = new TrackMap(trackDiv, laps.master);
+
+  g2 = new Dygraph(div,[[0,0,0],[1,1,1]], { 
+      labels: ['nolap','nolap','nolap'], 
       labelsDiv: "distLabel",
       labelsDivStyles: {
         'backgroundColor': 'transparent',
@@ -177,14 +238,15 @@ var drawGraph = function(data) {
       labelsSeparateLines: true,
       rollPeriod: 4,
       connectSeparatedPoints: true,
-      highlightCallback: function(e, x, pts, rowi) {
-          var xrange = g2.toDataXCoord(rowi);
-          rowi+=g2.getLeftBoundary_();
-          var lft = g2.getLeftBoundary_();
-          //var rowNum = xrange[0] + rowi
-          g1.setSelection(lineArry[rowi][5]);
+      hideOverlayOnMouseOut: false,
+//       highlightCallback: function(e, x, pts, rowi) {
+//           var xrange = g2.toDataXCoord(rowi);
+//           rowi+=g2.getLeftBoundary_();
+//           var lft = g2.getLeftBoundary_();
+//           //var rowNum = xrange[0] + rowi
+//           g1.setSelection(lineArry[rowi][5]);
 //          console.log(lft+" "+rht);
-      },
+//      },
       axes: {
         x: {
           valueFormatter: function(ms) {
@@ -201,19 +263,6 @@ var drawGraph = function(data) {
       
     }
   );
-
-  s1 = new Dragdealer('simple-slider',
-  {
-  	steps: g2.numRows() + 1,
-  	snap: true,
-  	animationCallback: function(x, y)
-  	{
-      var myx = Math.round((g2.numRows()) * x);
-      g2.setSelection(myx);
-      g1.setSelection(lineArry[myx][5]);
-//      console.log(myx);
-  	}
-  });
 }
 
 var arrColumns = function(data, cols) {
@@ -253,12 +302,10 @@ var toArray = function(data) {
     var row = line.split(",");
     // Special processing for every row except the header.
     if (idx > 0) {
-//      row[0] = new Date(row[0]); // Turn the string date into a Date.
       for (var rowIdx = 0; rowIdx < row.length; rowIdx++) {
         // Turn "123" into 123.
         row[rowIdx] = parseFloat(row[rowIdx]);
         if (isNaN(row[rowIdx])) {
-//          alert("NaN detected at "+idx+" "+rowIdx);
           row[rowIdx] = null;
         }
       }    
@@ -268,7 +315,53 @@ var toArray = function(data) {
   return arry;
 }
 
-function popLaps(raceId) {
+var toArray2 = function(data) {
+  var lines = data.split("\n");
+  var arry = [];
+  for (var idx = 0; idx < lines.length; idx++) {
+    var line = lines[idx];
+    // Oftentimes there's a blank line at the end. Ignore it.
+    if (line.length == 0) {
+      continue;
+    }
+    var row = line.split(",");
+    arry.push(row);
+  }     
+  return arry;
+}
+
+function popRaces() {
+  var req = new XMLHttpRequest();
+  req.onreadystatechange = function () {
+    if (req.readyState == 4) {
+      if (req.status === 200 || // Normal http
+          req.status === 0) { // Chrome w/ --allow-file-access-from-files
+        var data = req.responseText;
+        popRaces_cb(data);
+      }
+    }
+  };
+  req.open('GET', 'getdata?table=races', true);
+  req.send(null);
+}
+
+function popRaces_cb(data) {
+
+  var raceArr = toArray2(data);
+  var raceSelect = document.getElementById("race");
+  
+  //wipe out the existing options
+  raceSelect.options.length = 0;
+  raceSelect.options[raceSelect.options.length] = new Option("Choose One",-1);
+  for (var idx = 1; idx < raceArr.length; idx++) {
+    raceSelect.options[raceSelect.options.length] = new Option(raceArr[idx][1]+" - "+raceArr[idx][2]+" - "+raceArr[idx][3]+" laps", raceArr[idx][0]);
+  }
+  
+}
+
+function popLaps() {
+  var raceSelect = document.getElementById("race");
+  var raceId = raceSelect.options[raceSelect.selectedIndex].value
   var req = new XMLHttpRequest();
   req.onreadystatechange = function () {
     if (req.readyState == 4) {
@@ -286,21 +379,55 @@ function popLaps(raceId) {
 function popLapsCallback(data) {
   var lapArr = toArray(data);
   var lapSelect = document.getElementById("lap");
-//  var refLapSelect = document.getElementById("refLap");
+  var fastLap = lapArr[0][0];
+  var fastLapIdx = 0
+  var lastLap = lapArr[(lapArr.length - 1)][0]; 
+  for (var idx = 0; idx < lapArr.length; idx++) {
+    if (lapArr[idx][2] < lapArr[fastLapIdx][2]) {
+      fastLapIdx = idx;
+      fastLap = lapArr[fastLapIdx][0]
+      
+    }
+  }
   //wipe out the existing options
   lapSelect.options.length = 0;
-//  refLapSelect.options.length = 0;
-  lapSelect.options[lapSelect.options.length] = new Option("FASTEST LAP", "FASTEST");
-//  refLapSelect.options[refLapSelect.options.length] = new Option("FASTEST LAP", "FASTEST");
-  lapSelect.options[lapSelect.options.length] = new Option("LAST LAP", "LAST");
-//  refLapSelect.options[refLapSelect.options.length] = new Option("LAST LAP", "LAST");
+  lapSelect.options[lapSelect.options.length] = new Option("FASTEST LAP", fastLap);
+  lapSelect.options[lapSelect.options.length] = new Option("LAST LAP", lastLap);
   for (var idx = 0; idx < lapArr.length; idx++) {
     lapSelect.options[lapSelect.options.length] = new Option(lapArr[idx][1]+" - "+sec2min(lapArr[idx][2]), lapArr[idx][0]);
-//    refLapSelect.options[refLapSelect.options.length] = new Option(lapArr[idx][1]+" - "+lapArr[idx][2], lapArr[idx][0]);
   }
+  // draw the graph with the fast/last lap defaulted...
+  if (!g1) {
+  
+    laps.getLap(lastLap);
+    laps.getLap(fastLap)    
+    //drawGraph();
+//    updateGraph(laps.mergeLaps());
+  }  
 }
-
 function graphUpdate() {
+  var lapSelect = document.getElementById("lap");
+  var len = lapSelect.length ;
+  var lapList = [];
+  for (var i = 0; i < len; i++) {
+    if (lapSelect[i].selected) {
+      var thisLap = lapSelect[i].value;
+      lapList.push(thisLap);
+//      laps.getLap(thisLap);
+    }
+    
+//    updateGraph(laps.mergeLaps());
+  }
+  laps.prune(lapList);
+  for (var i = 0; i < lapList.length; i++){
+    if (laps.master.idx.indexOf(lapList[i]) < 0) {
+      laps.getLap(lapList[i]);
+    }
+  }
+  
+  
+}
+function graphUpdate_old() {
   var lapSelect = document.getElementById("lap");
 //  var refLapSelect = document.getElementById("refLap");
 //  var raceSelect = document.getElementById("race");
@@ -350,7 +477,7 @@ function getSelectedItem(selection) {
       chosen = chosen + selection[i].value + "\n" ;
     } 
   }  
-  alert(chosen);
+//  alert(chosen);
   return chosen ;
 } 
 
@@ -359,8 +486,8 @@ function sec2min(time) {
   var seconds = time % 60;
   return mins + ":" + seconds.toFixed(3);
 }
-
-popLaps(0);
+var laps = new lapData();
+popRaces();
 </script>
 
 
