@@ -26,6 +26,10 @@ var TrackMap = function(div, data) {
 // "data" format:
 // [[?, x, y],[?, x, y],...]
 //
+  this.minX = 0;
+  this.maxX = 0;
+  this.minY = 0;
+  this.maxY = 0;
   this.width = div.clientWidth;
   this.height = div.clientHeight;
   this.canvas = document.createElement("canvas");
@@ -49,10 +53,10 @@ TrackMap.prototype.drawTrack = function(data) {
   var t = 0;
   this.coords = data.points;
   // initialize the min and max values with the first row of data
-  var minX = this.coords[0][1][1];
-  var minY = this.coords[0][1][2];
-  var maxX = this.coords[0][1][1];
-  var maxY = this.coords[0][1][2];
+  this.minX = this.coords[0][1][1];
+  this.minY = this.coords[0][1][2];
+  this.maxX = this.coords[0][1][1];
+  this.maxY = this.coords[0][1][2];
   //step though each lap
   for (var lapix = 0; lapix < data.idx.length; lapix++) {
 //    alert(data.idx[lapix]);
@@ -64,20 +68,20 @@ TrackMap.prototype.drawTrack = function(data) {
     var len = this.coords[lapix].length;
     for (var row = 2; row < len; row++) {
       var numcols = this.coords[lapix][row].length;
-      minX = Math.min(minX, this.coords[lapix][row][1]);
-      minY = Math.min(minY, this.coords[lapix][row][2]);
-      maxX = Math.max(maxX, this.coords[lapix][row][1]);
-      maxY = Math.max(maxY, this.coords[lapix][row][2]);
+      this.minX = Math.min(this.minX, this.coords[lapix][row][1]);
+      this.minY = Math.min(this.minY, this.coords[lapix][row][2]);
+      this.maxX = Math.max(this.maxX, this.coords[lapix][row][1]);
+      this.maxY = Math.max(this.maxY, this.coords[lapix][row][2]);
       points[lapix].push(this.coords[lapix][row][1]);
       points[lapix].push(this.coords[lapix][row][2]);
     }
   }
   
   // get the midpoint and size of the map
-  var meanX = (minX + maxX) / 2;
-  var meanY = (minY + maxY) / 2;
-  var deltaX = maxX - minX;
-  var deltaY = maxY - minY;
+  var meanX = (this.minX + this.maxX) / 2;
+  var meanY = (this.minY + this.maxY) / 2;
+  var deltaX = this.maxX - this.minX;
+  var deltaY = this.maxY - this.minY;
   // the biggest scale value that will still fit.. plus a buffer of 5%
   var scaleX = Math.min((this.width *.95)/deltaX , (this.height *.95)/deltaY);
   // translate and scale.. this took me WAY too long to figure out
@@ -131,7 +135,11 @@ TrackMap.prototype.drawDots = function(dotArray) {
   //
   //
 //  alert(dotArray);
-  this.dots_ctx.clearRect(0,0,this.width,this.height);
+  var deltaX = this.maxX - this.minX;
+  var deltaY = this.maxY - this.minY;
+  var x = this.minX - (deltaX * .1);
+  var y = this.minY - (deltaY * .1);
+  this.dots_ctx.clearRect(x,y,(deltaX * 1.5),(deltaY * 1.5));
   var ctx = this.dots_ctx;
   for (var lap = 0; lap < dotArray.length; lap++) {
 //  for (var pnt in dotArray) {

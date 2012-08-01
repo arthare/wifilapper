@@ -4,42 +4,20 @@
 <script type="text/javascript" src="trackmap.js"></script>
 <script type="text/javascript" src="lapdata.js"></script>
     
-<link rel="stylesheet" type="text/css" href="dragdealer.css" />
 <link rel="stylesheet" type="text/css" href="wifilapper.css" />
 
 </head>
 <body>
 
 
-<div id="wrapper">
-  <div class="menu_search">
-  <div class="menu">
-    <ul>
-      <li class="active">
-        <a href="/">HOME</a>
-      </li>
-      <li>
-        <a href="lapSummary.html">SUMMARY</a>
-      </li>
-      <li>
-        <a href="settings.html">SETTINGS</a>
-      </li>
-      <li>
-        <a href="about.html">ABOUT</a>
-      </li>
-    </ul>
-  </div>
-  </div>
 
   <div id="middle">
-    <div class="sidebar" id="sideLeft"> 
-      
-    </div>
     <div id="trackContainer">  
-    <div class="titleBar">Track Map</div>
-    <div class="sidebar" id="trackArea" ></div>
+      <div class="titleBar">Track Map</div>
+      <div id="trackArea" ></div>
     </div>
-    <div id="container">
+    <div id="dataContainer">
+      <div class="titleBar">Data Values</div>
 			<div id="labels">
 			<div id="trackLabel"></div>
       <div id="distLabel"></div>	
@@ -47,12 +25,11 @@
 			</div><!-- #content-->
 		</div><!-- #container-->
   </div>
-  <div id="footer">
+  
+  <div id="graphContainer">
     <div class="titleBar">Lap Graph</div>
-    <div id="renderArea" style="width:800px; height:300px; position:relative"></div>
-    
+    <div id="renderArea"></div>    
   </div>
-</div>
 
 <div id="datamenuframe">
   <div id="datamenu">
@@ -147,26 +124,19 @@ var updateGraph = function(lineArry) {
                   highlightCallback: function(e, x, pts, rowi) {
                       var xrange = g2.toDataXCoord(rowi);
                       rowi+=g2.getLeftBoundary_();
-//                       var lft = g2.getLeftBoundary_();
-//                      // g1.setSelection(lineArry[rowi][(headers.length - 1)]);
-//                       var debug = document.getElementById("debugOut");
                       var series = -1;
                       var dots = [];
-//                       var ptsString = g2.file_[rowi][g2.file_[rowi].length - 1];
                       for (var i = 1; i < (g2.file_[rowi].length - 1); i++) {
                         if (g2.file_[rowi][i]) {
                           series = i - 1;
                           dots[series] = g2.file_[rowi][g2.file_[rowi].length - 1];  
                         }
                       }
-                      
-                      
-          //            var ptsString = laps.master.points[0][rowi].toString();
-//                       debug.innerHTML = series + " " + ptsString;
-                       trk1.drawDots(dots)
-                      
-                    }
-                  })
+                    xline.style.left = (pts[0].canvasx - 1) + "px";
+                    xline.style.display = "";  
+                    trk1.drawDots(dots)
+                  }
+  });
   // dygraphs remembers visibility...
   var vis = g2.visibility();
   for (var i = 0; i < vis.length; i++) {
@@ -174,59 +144,9 @@ var updateGraph = function(lineArry) {
   }                
   g2.setVisibility((lapCols.length-2), 0);
 }
+var xline;
 
 var drawGraph = function() {
-//  var lineArry = toArray(data);
-//  var headers = lineArry[0];
-//  alert(headers);
-//   var lineArry = lineArry.slice(1);
-//   lineArry.sort(sortByY);
-//   for (var idx = 0; idx < lineArry.length; idx++) {
-//     var row = lineArry[idx];
-//     row.push(idx);
-//   }
-//   lineArry.sort(mySorting);
-//   
-//   var trackArry = arrColumns(lineArry, [3, 4]);
-//   var distArry = arrColumns(lineArry, [0, 1, 2]); 
-//   trackArry.sort(mySorting);
-//   //var firstRow = ['x', 'y', 'z'];
-//   var firstRow = [headers[0], headers[1], headers[2]];
-//   var trackHeader = ['X' , 'Y'];
- 
-  
-//   g1 = new Dygraph(trackDiv,[[0,0],[1,1]], { 
-//       labels: ['nolap','nolap'], 
-//       drawPoints: true,
-//       pointSize: 1,
-//       highlightCircleSize: 5,
-//       strokeWidth: 0.0,
-//       drawXGrid: 0,
-//       drawYGrid: 0,
-//       drawXAxis: 0,
-//       drawYAxis: 0,
-//       interactionModel: {},
-//       highlightOnHover: false,
-//       hideOverlayOnMouseOut: false,
-//       labelsDiv: "trackLabel",
-//       labelsDivStyles: {
-//         'backgroundColor': 'transparent',
-//       },
-//       labelsSeparateLines: true,
-//       axes: {
-//         x: {
-//           valueFormatter: function(ms) {
-//             return 'X: ' + ms;
-//           }
-//         },
-//         y: {
-//           valueFormatter: function(y) {
-//             return ' ' + y;
-//           }
-//         }  
-//       }       
-//       });
-//  trk_div = document.getElementById("trackDiv");
   trk1 = new TrackMap(trackDiv, laps.master);
 
   g2 = new Dygraph(div,[[0,0,0],[1,1,1]], { 
@@ -238,15 +158,18 @@ var drawGraph = function() {
       labelsSeparateLines: true,
       rollPeriod: 4,
       connectSeparatedPoints: true,
+      highlightOnHover: false,
+      highlightCircleSize: 5,
       hideOverlayOnMouseOut: false,
-//       highlightCallback: function(e, x, pts, rowi) {
-//           var xrange = g2.toDataXCoord(rowi);
-//           rowi+=g2.getLeftBoundary_();
-//           var lft = g2.getLeftBoundary_();
-//           //var rowNum = xrange[0] + rowi
-//           g1.setSelection(lineArry[rowi][5]);
-//          console.log(lft+" "+rht);
-//      },
+      showRangeSelector: true,
+      drawXAxis: false,
+      drawYAxis: false,
+      interactionModel : {
+        'mousedown' : downV4,
+        'mousemove' : moveV4,
+        'mouseup' : upV4,
+//        'dblclick' : dblClickV4,
+      },
       axes: {
         x: {
           valueFormatter: function(ms) {
@@ -263,7 +186,59 @@ var drawGraph = function() {
       
     }
   );
+  xline = document.createElement("div");
+  xline.style.display = "none";
+  xline.style.width = "2px";
+  xline.style.bottom = "0px";
+  xline.style.top = "0px";
+  xline.style.backgroundColor = "blue";
+  xline.style.position = "absolute";
+  document.getElementById("renderArea").appendChild(xline);
+  // we need to add this event because an up event might be triggered on top
+  // of the xline div.
+  Dygraph.addEvent(xline, "mouseup", upV4);
 }
+
+var v4Active = false;
+var v4Canvas = null;
+
+function downV4(event, g, context) {
+  context.initializeMouseDown(event, g, context);
+  v4Active = true;
+  moveV4(event, g, context); // in case the mouse went down on a data point.
+}
+
+
+function moveV4(event, g, context) {
+  if (v4Active) {
+    var points = g.layout_.points;
+    if (points === undefined) return;
+//     var canvasCoords = g.eventToDomCoords(event);
+//     var canvasx = canvasCoords[0];
+//     var canvasy = canvasCoords[1];
+    var canvasx = Dygraph.pageX(event) - Dygraph.findPosX(g.graphDiv);
+    
+    var selectionChanged = false;
+    var idx = g.findClosestRow(canvasx);
+    selectionChanged = g.setSelection(idx);
+    var callback = g.attr_("highlightCallback");
+    if (callback && selectionChanged) {
+      callback(event, g.lastx_, g.selPoints_, g.lastRow_, g.highlightSet_);
+    } 
+  }
+}
+
+function upV4(event, g, context) {
+  if (v4Active) {
+    v4Active = false;
+  }
+}
+
+function dblClickV4(event, g, context) {
+  restorePositioning(g);
+}
+
+
 
 var arrColumns = function(data, cols) {
   var arry = [];
@@ -486,6 +461,32 @@ function sec2min(time) {
   var seconds = time % 60;
   return mins + ":" + seconds.toFixed(3);
 }
+
+function createCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function readCookie(name) {
+	var nameEQ = name + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0;i < ca.length;i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1,c.length);
+		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+	}
+	return null;
+}
+
+function eraseCookie(name) {
+	createCookie(name,"",-1);
+}
+
 var laps = new lapData();
 popRaces();
 </script>

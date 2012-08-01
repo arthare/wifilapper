@@ -166,46 +166,53 @@ div.menu_search div.menu ul li a:hover {
     width: 790px;
 }
 #middle {
-    background: none repeat scroll 0 0 #495F73;
-    border-style: solid;
-    border-radius: 10px 10px 0 0;
-    border-width: 1px 1px 1px;
-    height: 200px;
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    right: 5px;
+    width: 195px;
     overflow: hidden;
-    position: relative;
-    width: 100%;
 }
-#sideLeft {
-    background: none repeat scroll 0 0 transparent;
-    float: left;
-    position: relative;
-    padding: 5px;
-    width: 240px;
-}
-#trackContainer {
+#dataContainer {
     background: none repeat scroll 0 0 #BEB1A4;
     border-style: solid;
     border-width: 1px;
-    margin: 5;
-    float: right;
-    height: 190px;
-    position: relative;
-    width: 290px;
+    position: absolute;
+    top: 198px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+}
+#trackContainer {
+    background: none repeat scroll 0 0 #050505;
+    border-style: solid;
+    border-width: 1px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 193px;
+    width: 193px;
 }
 #trackArea {
     height: 100%;
     width: 100%;
 }
-#footer {
-    background: none repeat scroll 0 0 #BEB1A4;
+#graphContainer {
+    background: none repeat scroll 0 0 #050505;
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 30px;
+    right: 205px;
     border-style: solid;
-    border-width: 0 1px 1px;
-    clear: both;
-    height: 300px;
-    margin: 0;
-    padding: 0 ;
-    position: relative;
-    width: 800px;
+    border-width: 1px;
+}
+#renderArea {
+    position: absolute;
+    top: 18px;
+    bottom: 20px;
+    width: 100%;
+    cursor: pointer;
 }
 
 .titleBar {
