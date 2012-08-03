@@ -390,6 +390,7 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
                 out<<lstChannels[chan]->GetValue(ms)<<",";
               }
             }
+            out<<endl;
           }
           
           return true;
