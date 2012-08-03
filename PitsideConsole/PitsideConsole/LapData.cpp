@@ -374,7 +374,7 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
   }
 }
 
-bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const vector<TimePoint2D>& lstPoints, TimePoint2D* pt1, TimePoint2D* pt2)
+bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInputPercentage, const vector<TimePoint2D>& lstPoints, TimePoint2D* pt1, TimePoint2D* pt2)
 {
   if(lstPoints.size() < 2) return false;
   // dInputPercentage is the % of it's lap that p comes from.
@@ -387,9 +387,12 @@ bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const v
   const int cSize = lstPoints.size();
   double dNextX = lstPoints[1].flX - p.flX;
   double dNextY = lstPoints[1].flY - p.flY;
-  for(int x = 0; x < cSize-1; x++)
+
+  int ixCheck = *pixStartIndex;
+  if(ixCheck < 0) ixCheck = 0;
+  while(true)
   {
-    const int ixNext = ((x+1)%cSize);
+    const int ixNext = ((ixCheck+1)%cSize);
 
     const double dx1 = dNextX;
     const double dy1 = dNextY;
@@ -399,14 +402,29 @@ bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const v
     const double d1 = (dx1*dx1 + dy1*dy1);
     const double d2 = (dNextX*dNextX + dNextY*dNextY);
     const double dAvg = (d1+d2)/2.0;
-    const double dPct = (double)x / (double)cSize;
+    const double dPct = (double)ixCheck / (double)cSize;
     const double dPctDiff = abs(dPct - dInputPercentage);
+
     if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.5)
     {
       dClosest = dAvg;
-      ixBestIndex = x;
+      ixBestIndex = ixCheck;
+    }
+    if(dAvg < 1e-8 && ixBestIndex >= 0)
+    {
+      break; // early-out: if we found one that is close enough, just stop here
+    }
+
+
+    ixCheck = ixNext; // advance to next point
+
+
+    if(ixCheck == *pixStartIndex)
+    {
+      break; // we've done the whole thing now
     }
   }
+  *pixStartIndex = ixBestIndex;
 
   if(ixBestIndex >= 0)
   {
@@ -441,6 +459,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
+    int iStartPoint = 0;
     for(int x = 0;x < lstPoints.size(); x++)
     {
       const TimePoint2D& p = lstPoints[x];
@@ -451,7 +470,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       TimePoint2D sfD1, sfD2;
       int iMatchedTime = 0;
       double dPct = (double)x / (double)lstPoints.size();
-      if(FindClosestTwoPoints(p,dPct, lstReference,&sfD1,&sfD2))
+      if(FindClosestTwoPoints(p,&iStartPoint,dPct,lstReference,&sfD1,&sfD2))
       {
         const double dD1Distance = pReferenceDistanceChannel->GetValue(sfD1.iTime);
         const double dD2Distance = pReferenceDistanceChannel->GetValue(sfD2.iTime);
@@ -525,9 +544,13 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       // this lap's time at {dDistance} was {iElapsedTime}.
       // we now need to estimate what the reference lap's time at {dDistance} was, and then we can get our time slip
       double dLastRefDist = 0;
-      for(int i = 1;i < lstReference.size(); i++)
+
+      int iRefCheckStart = 1; // what index should we start at?  this gets changed each loop so that we always start near the point that is most likely to be near the current m_lstPoints point
+      int ixCheck = iRefCheckStart;
+      const int cReferenceSize = lstReference.size();
+      while(true)
       {
-        const double dRefDist = pReferenceDistanceChannel->GetValue(lstReference[i].iTime);
+        const double dRefDist = pReferenceDistanceChannel->GetValue(lstReference[ixCheck].iTime);
         if(dRefDist >= dDistance && dLastRefDist <= dDistance)
         {
           // we have found two points straddling the distance we're curious about
@@ -538,8 +561,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
             const double dFraction = dOffset / dWidth; // the fraction that dDistance is between dLastRefDist and dRefDist
             if(dFraction >= 0.0 && dFraction <= 1.0)
             {
-              const int iLastTime = lstReference[i-1].iTime;
-              const int iThisTime = lstReference[i].iTime;
+              const int iLastTime = lstReference[ixCheck-1].iTime;
+              const int iThisTime = lstReference[ixCheck].iTime;
               const double dEstimatedElapsedTime = ((1.0-dFraction)*iLastTime + dFraction*iThisTime) - (double)iReferenceStartTime; // this is the estimated time for the previous lap at this position
               if(dEstimatedElapsedTime >= 0)
               {
@@ -548,8 +571,13 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
               }
             }
           }
+          break;
         }
         dLastRefDist = dRefDist;
+
+        // update index.  Increment it, and see if we've looped around to the start yet
+        ixCheck = (ixCheck+1)%cReferenceSize;
+        if(ixCheck == iRefCheckStart) break; // we've done the whole loop
       }
     }
 

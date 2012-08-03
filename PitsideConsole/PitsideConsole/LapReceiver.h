@@ -160,7 +160,6 @@ private:
   int iLapId;
   DATA_CHANNEL eChannelType;
   vector<DataPoint> lstData;
-  map<int,float> m_mapCachedData;
 
   float m_dMin;
   float m_dMax;

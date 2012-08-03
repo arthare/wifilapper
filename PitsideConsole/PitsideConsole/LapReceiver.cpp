@@ -26,7 +26,6 @@ CDataChannel::CDataChannel() : iLapId(-1),fLocked(false),eChannelType(DATA_CHANN
 };
 CDataChannel::~CDataChannel() 
 {
-  m_mapCachedData.clear();
   lstData.clear();
 }
 void CDataChannel::Load(InputChannelRaw* pData)
@@ -105,15 +104,17 @@ int CDataChannel::GetLapId() const
 }
 float CDataChannel::GetValue(int iTime) const
 {
-  if(lstData.size() <= 0) return 0;
+  const int cSize = lstData.size();
+  if(cSize <= 0) return 0;
 
   int iBegin = 0;
-  int iEnd = lstData.size();
+  int iEnd = cSize;
+
 
   const DataPoint* pData = lstData.data();
   // this binary search will find the first and second points that we should use for interpolation.
-  DataPoint dataFirst;
-  DataPoint dataSecond;
+  const DataPoint* dataFirst = NULL;
+  const DataPoint* dataSecond = NULL;
   while(true)
   {
     const int iCheck = (iBegin + iEnd)/2;
@@ -131,37 +132,37 @@ float CDataChannel::GetValue(int iTime) const
       // ok, we've narrowed it down to one data point, which is probably the closest
       if(iTime > pData[iBegin].iTimeMs)
       {
-        dataFirst = pData[iBegin];
+        dataFirst = &pData[iBegin];
         // we need to interpolate with the data point after
-        if(iBegin < lstData.size() - 1)
+        if(iBegin < cSize - 1)
         {
-          dataSecond = pData[iBegin+1];
+          dataSecond = &pData[iBegin+1];
         }
         else
         {
           // but we're right at the end of the list, so just return this value
-          dataSecond = pData[iBegin];
+          dataSecond = &pData[iBegin];
         }
       }
       else
       {
-        dataSecond = pData[iBegin];
+        dataSecond = &pData[iBegin];
         if(iBegin > 0)
         {
           // we didn't find the first point, so we can use the previous point
-          dataFirst = pData[iBegin-1];
+          dataFirst = &pData[iBegin-1];
         }
         else
         {
-          dataFirst = pData[iBegin];
+          dataFirst = &pData[iBegin];
         }
       }
-      DASSERT(dataFirst.iTimeMs <= dataSecond.iTimeMs);
+      DASSERT(dataFirst->iTimeMs <= dataSecond->iTimeMs);
 
-      const float flFirst = dataFirst.flValue;
-      const float flNext = dataSecond.flValue;
-      const float flOffset = iTime - dataFirst.iTimeMs;
-      const float flWidth = dataSecond.iTimeMs - dataFirst.iTimeMs;
+      const float flFirst = dataFirst->flValue;
+      const float flNext = dataSecond->flValue;
+      const float flOffset = iTime - dataFirst->iTimeMs;
+      const float flWidth = dataSecond->iTimeMs - dataFirst->iTimeMs;
       if(flWidth == 0) return flFirst;
       const float flPct = flOffset / flWidth;
       return (1-flPct)*flFirst + (flPct)*flNext;
@@ -243,8 +244,6 @@ void CDataChannel::Lock()
     m_dMax = max(lstData[x].flValue, m_dMax);
     m_msMin = min(lstData[x].iTimeMs,m_msMin);
     m_msMax = max(lstData[x].iTimeMs,m_msMax);
-
-    m_mapCachedData[lstData[x].iTimeMs] = lstData[x].flValue;
   }
 }
 
