@@ -132,8 +132,6 @@ var updateGraph = function(lineArry) {
                           dots[series] = g2.file_[rowi][g2.file_[rowi].length - 1];  
                         }
                       }
-                    xline.style.left = (pts[0].canvasx - 1) + "px";
-                    xline.style.display = "";  
                     trk1.drawDots(dots)
                   }
   });
@@ -156,12 +154,15 @@ var drawGraph = function() {
         'backgroundColor': 'transparent',
       },
       labelsSeparateLines: true,
-      rollPeriod: 4,
+//      rollPeriod: 4,
+      interpolatePoints: true,
       connectSeparatedPoints: true,
       highlightOnHover: false,
       highlightCircleSize: 5,
       hideOverlayOnMouseOut: false,
       showRangeSelector: true,
+      showVerticalCrosshair: true,
+      crosshairColor: "red",
       drawXAxis: false,
       drawYAxis: false,
       interactionModel : {
@@ -186,17 +187,6 @@ var drawGraph = function() {
       
     }
   );
-  xline = document.createElement("div");
-  xline.style.display = "none";
-  xline.style.width = "2px";
-  xline.style.bottom = "0px";
-  xline.style.top = "0px";
-  xline.style.backgroundColor = "blue";
-  xline.style.position = "absolute";
-  document.getElementById("renderArea").appendChild(xline);
-  // we need to add this event because an up event might be triggered on top
-  // of the xline div.
-  Dygraph.addEvent(xline, "mouseup", upV4);
 }
 
 var v4Active = false;
@@ -305,6 +295,21 @@ var toArray2 = function(data) {
   return arry;
 }
 
+function getPage(page, callback){
+  var req = new XMLHttpRequest();
+  req.onreadystatechange = function () {
+    if (req.readyState == 4) {
+      if (req.status === 200 || // Normal http
+          req.status === 0) { // Chrome w/ --allow-file-access-from-files
+        var data = req.responseText;
+        callback(data);
+      }
+    }
+  };
+  req.open('GET', page , true);
+  req.send(null);
+}
+
 function popRaces() {
   var req = new XMLHttpRequest();
   req.onreadystatechange = function () {
@@ -333,6 +338,8 @@ function popRaces_cb(data) {
   }
   
 }
+
+
 
 function popLaps() {
   var raceSelect = document.getElementById("race");
@@ -380,6 +387,25 @@ function popLapsCallback(data) {
 //    updateGraph(laps.mergeLaps());
   }  
 }
+
+function popData() {
+  // the data channels available are on a lap-by-lap basis.  We don't expect
+  // it to change around, so we'll only look at the first selected lap
+  var lapSelect = document.getElementById("lap");
+  var lapId = lapSelect.options[lapSelect.selectedIndex].value;
+  getPage("getdata?table=channels&parentId=" + lapId, popData_cb)  
+}
+
+function popData_cb(data){
+  var channelArr = toArray2(data);
+  channelArr = channelArr.slice(1);
+  var dataSelect = document.getElementById("data");
+  dataSelect.options.length = 0;
+  for (var idx = 0; idx < channelArr.length; idx++) {
+    dataSelect.options[dataSelect.options.length] = new Option(channelArr[idx][1], channelArr[idx][0]);
+  }
+}
+
 function graphUpdate() {
   var lapSelect = document.getElementById("lap");
   var len = lapSelect.length ;
@@ -399,7 +425,7 @@ function graphUpdate() {
       laps.getLap(lapList[i]);
     }
   }
-  
+  popData();
   
 }
 function graphUpdate_old() {

@@ -18,7 +18,7 @@ lapData.prototype.master = {
 lapData.prototype.waiting = 0;
 
 lapData.prototype.getLap = function (lap) {
-  this.waiting++
+  this.waiting++;
   var _this = this;
   var req = new XMLHttpRequest();
   req.onreadystatechange = function () {
@@ -30,9 +30,9 @@ lapData.prototype.getLap = function (lap) {
 //      glbArr = toArray(data);
         _this.getLap_cb(data, lap);
       }
-      if (--_this.waiting == 0) {
-        updateGraph(_this.mergeLaps());
-      }
+//       if (--_this.waiting == 0) {
+//         updateGraph(_this.mergeLaps());
+//       }
     }
     
   };
@@ -51,6 +51,15 @@ lapData.prototype.getLap_cb = function(data, lap) {
   }
   //merge with master array
   this.insertToMaster(thisLap, lap);
+  if (--this.waiting == 0) {
+    updateGraph(this.mergeLaps());
+  }
+}
+
+lapData.prototype.getData = function (lap, channelid) {
+  this.waiting ++ ;
+  var _this = this;
+  
 }
 
 lapData.prototype.insertToMaster = function(lpArr, lap) {
