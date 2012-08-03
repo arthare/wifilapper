@@ -350,23 +350,49 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
       int iLapId = 0;
       if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
       {
-        string strChannelType = pReq.mapParams["dataType"];
-        int iChannelId = 0;
-        if(ArtAtoi(strChannelType.c_str(), strChannelType.size(),&iChannelId))
+        vector<int> lstChannelTypes = ParseCSL(pReq.mapParams["dataType"]);
+        if(lstChannelTypes.size() > 0)
         {
-          DATA_CHANNEL eChannel = (DATA_CHANNEL)iChannelId;
-          const IDataChannel* pChannel = m_pLapsDB->GetDataChannel(iLapId,eChannel);
-          if(pChannel)
+          vector<const IDataChannel*> lstChannels;
+          for(int x = 0;x < lstChannelTypes.size(); x++)
           {
-            out<<"time,value"<<endl;
-            vector<DataPoint> lstData = pChannel->GetData();
-            for(int x = 0;x < lstData.size(); x++)
-            {
-              const DataPoint& pt = lstData[x];
-              out<<pt.iTimeMs<<","<<pt.flValue<<endl;
-            }
-            return true;
+            lstChannels.push_back(m_pLapsDB->GetDataChannel(iLapId,(DATA_CHANNEL)lstChannelTypes[x]));
           }
+
+          int msStart = 0x7fffffff;
+          int msEnd = 0x80000000;
+
+          for(int x = 0;x < lstChannels.size();x++)
+          {
+            const IDataChannel* pChannel = lstChannels[x];
+            if(pChannel)
+            {
+              msStart = min(msStart,pChannel->GetStartTimeMs());
+              msEnd = max(msEnd,pChannel->GetEndTimeMs());
+            }
+          }
+          out<<"time";
+          for(int x = 0; x < lstChannels.size(); x++)
+          {
+            if(lstChannels[x])
+            {
+              out<<",value"<<x;
+            }
+          }
+          out<<endl;
+          for(int ms = msStart; ms < msEnd; ms += 250)
+          {
+            out<<ms<<",";
+            for(int chan = 0; chan < lstChannels.size(); chan++)
+            {
+              if(lstChannels[chan])
+              {
+                out<<lstChannels[chan]->GetValue(ms)<<",";
+              }
+            }
+          }
+          
+          return true;
         }
       }
     }

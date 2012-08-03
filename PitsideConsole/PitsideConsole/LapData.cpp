@@ -410,7 +410,7 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
       dClosest = dAvg;
       ixBestIndex = ixCheck;
     }
-    if(dAvg < 1e-8 && ixBestIndex >= 0)
+    if(dAvg < 5e-9 && ixBestIndex >= 0)
     {
       break; // early-out: if we found one that is close enough, just stop here
     }
