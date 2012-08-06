@@ -292,29 +292,49 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     }
     else if(pReq.mapParams["table"] == "points")
     {
-      string strLapId = pReq.mapParams["parentId"];
-      int iLapId = 0;
-      if(ArtAtoi(strLapId.c_str(),strLapId.size(),&iLapId))
+      vector<int> lstLaps = ParseCSL(pReq.mapParams["parentId"]);
+      if(lstLaps.size() > 0)
       {
-        const ILap* pLap = m_pLapsDB->GetLap(iLapId);
-        if(pLap)
+        string strRefLap = pReq.mapParams["refLap"];
+        int iRefLapId = 0;
+        if(!ArtAtoi(strRefLap.c_str(),strRefLap.size(),&iRefLapId))
         {
-          double dDist = 0;
-          const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
-          out<<"Time,Longitude,Latitude,Velocity,Distance"<<endl;
-          if(lstPoints.size() > 0)
+          iRefLapId = lstLaps[0];
+        }
+        if(iRefLapId >= 0)
+        {
+          const ILap* pMainLap = m_pLapsDB->GetLap(lstLaps[0]);
+          CExtendedLap* pRefLap = new CExtendedLap(pMainLap,NULL,m_pLapsDB, false);
+          if(pMainLap)
           {
-            TimePoint2D ptLast = lstPoints[0];
-            for(int x = 0;x < lstPoints.size(); x++)
+            out<<"Lapid,Time,Longitude,Latitude,Velocity,Distance"<<endl;
+            for(int x = 0;x < lstLaps.size(); x++)
             {
-              TimePoint2D pt = lstPoints[x];
-              const double dX = ptLast.flX - pt.flX;
-              const double dY = ptLast.flY - pt.flY;
-              dDist += sqrt(dX*dX+dY*dY);
+              const ILap* pThisLap = m_pLapsDB->GetLap(lstLaps[x]);
+              if(pThisLap)
+              {
+                CExtendedLap* pExtLap = new CExtendedLap(pThisLap,x > 0 ? pRefLap : NULL,m_pLapsDB, false);
+                const IDataChannel* pDistance = pExtLap->GetChannel(DATA_CHANNEL_DISTANCE);
+                if(pDistance)
+                {
+                  const vector<TimePoint2D>& lstPoints = pExtLap->GetPoints();
+                  if(lstPoints.size() > 0)
+                  {
+                    TimePoint2D ptLast = lstPoints[0];
+                    for(int x = 0;x < lstPoints.size(); x++)
+                    {
+                      TimePoint2D pt = lstPoints[x];
               
-              out<<pt.iTime<<","<<pt.flX<<","<<pt.flY<<","<<pt.flVelocity<<","<<dDist<<endl;
+                      out<<pThisLap->GetLapId()<<","<<pt.iTime<<","<<pt.flX<<","<<pt.flY<<","<<pt.flVelocity<<","<<pDistance->GetValue(pt.iTime)<<endl;
+                    }
+                  }
+                }
+
+                delete pExtLap;
+              }
             }
           }
+          delete pRefLap;
           return true;
         }
       }

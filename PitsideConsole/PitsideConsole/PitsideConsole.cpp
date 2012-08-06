@@ -1038,7 +1038,7 @@ private:
       else
       {
         // we don't have this lap yet, so let's put it in
-        CExtendedLap* pNewLap = new CExtendedLap(pLap, m_pReferenceLap, pReceiver);
+        CExtendedLap* pNewLap = new CExtendedLap(pLap, m_pReferenceLap, pReceiver, true);
         if(m_pReferenceLap == NULL)
         {
           m_pReferenceLap = pNewLap; // by default, make the first lap received the reference lap
