@@ -50,7 +50,7 @@ bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const v
 class CExtendedLap
 {
 public:
-  CExtendedLap(const ILap* pLap, CExtendedLap* pReferenceLap, ILapReceiver* pLapDB) : m_pLap(pLap)
+  CExtendedLap(const ILap* pLap, CExtendedLap* pReferenceLap, ILapReceiver* pLapDB, bool fComputeTimeSlip) : m_pLap(pLap), m_fComputeTimeSlip(fComputeTimeSlip)
   {
     DASSERT(pReferenceLap);
     m_szComment[0] = '\0';
@@ -155,12 +155,12 @@ public:
 private:
   // function to properly compute distances, and not just do the sum of the changes in position.
   // pReceiver allows us to add data channels as they are computed
-  void ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtendedLap* pReferenceLap, const ILapReceiver* pReceiver);
+  void ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtendedLap* pReferenceLap, const ILapReceiver* pReceiver, bool fDoTimeSlip);
   void CheckCompute()
   {
     if(m_lstPoints.size() <= 0)
     {
-      ComputeLapData(m_pLap->GetPoints(),m_pReferenceLap,m_pLapDB);
+      ComputeLapData(m_pLap->GetPoints(),m_pReferenceLap,m_pLapDB, m_fComputeTimeSlip);
     }
   }
   void AddChannel(const IDataChannel* pChan)
@@ -180,6 +180,8 @@ private:
   SYSTEMTIME m_tmRecv; // when was this thing constructed?
   SYSTEMTIME m_tmStart; // when was this thing started on-track?
   vector<TimePoint2D> m_lstPoints;
+  
+  bool m_fComputeTimeSlip; // time-slip is the most expensive data channel, so let's allow the caller to choose not to compute it
 
   mutable map<DATA_CHANNEL,const IDataChannel*> m_mapChannels; // we own these pointers.  We get them allocated in ComputeLapData, and it is our responsibility to get them de-allocated
 };

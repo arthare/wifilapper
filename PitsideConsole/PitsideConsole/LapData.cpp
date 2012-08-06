@@ -435,7 +435,7 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
   return false;
 }
 
-void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtendedLap* pReferenceLap, const ILapReceiver* pLapDB)
+void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtendedLap* pReferenceLap, const ILapReceiver* pLapDB, bool fComputeTimeSlip)
 {
   if(lstPoints.size() <= 3) return;
 
@@ -532,63 +532,66 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pVelocity = NULL;
     }
 
-    IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
-    pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
-
-    const int iStartTime = m_lstPoints[0].iTime;
-    const int iReferenceStartTime = lstReference[0].iTime;
-    for(int x = 1;x < m_lstPoints.size(); x++)
+    if(fComputeTimeSlip)
     {
-      const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
-      const double dDistance = pDistance->GetValue(m_lstPoints[x].iTime);
-      // this lap's time at {dDistance} was {iElapsedTime}.
-      // we now need to estimate what the reference lap's time at {dDistance} was, and then we can get our time slip
-      double dLastRefDist = 0;
+      IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
+      pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
 
-      int iRefCheckStart = 1; // what index should we start at?  this gets changed each loop so that we always start near the point that is most likely to be near the current m_lstPoints point
-      int ixCheck = iRefCheckStart;
-      const int cReferenceSize = lstReference.size();
-      while(true)
+      const int iStartTime = m_lstPoints[0].iTime;
+      const int iReferenceStartTime = lstReference[0].iTime;
+      for(int x = 1;x < m_lstPoints.size(); x++)
       {
-        const double dRefDist = pReferenceDistanceChannel->GetValue(lstReference[ixCheck].iTime);
-        if(dRefDist >= dDistance && dLastRefDist <= dDistance)
+        const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
+        const double dDistance = pDistance->GetValue(m_lstPoints[x].iTime);
+        // this lap's time at {dDistance} was {iElapsedTime}.
+        // we now need to estimate what the reference lap's time at {dDistance} was, and then we can get our time slip
+        double dLastRefDist = 0;
+
+        int iRefCheckStart = 1; // what index should we start at?  this gets changed each loop so that we always start near the point that is most likely to be near the current m_lstPoints point
+        int ixCheck = iRefCheckStart;
+        const int cReferenceSize = lstReference.size();
+        while(true)
         {
-          // we have found two points straddling the distance we're curious about
-          const double dOffset = dDistance - dLastRefDist; // how far into the {dLastRefDist,dRefDist} x axis we are
-          const double dWidth = dRefDist - dLastRefDist; // how far apart {dLastRefDist,dRefDist} are
-          if(dWidth != 0)
+          const double dRefDist = pReferenceDistanceChannel->GetValue(lstReference[ixCheck].iTime);
+          if(dRefDist >= dDistance && dLastRefDist <= dDistance)
           {
-            const double dFraction = dOffset / dWidth; // the fraction that dDistance is between dLastRefDist and dRefDist
-            if(dFraction >= 0.0 && dFraction <= 1.0)
+            // we have found two points straddling the distance we're curious about
+            const double dOffset = dDistance - dLastRefDist; // how far into the {dLastRefDist,dRefDist} x axis we are
+            const double dWidth = dRefDist - dLastRefDist; // how far apart {dLastRefDist,dRefDist} are
+            if(dWidth != 0)
             {
-              const int iLastTime = lstReference[ixCheck-1].iTime;
-              const int iThisTime = lstReference[ixCheck].iTime;
-              const double dEstimatedElapsedTime = ((1.0-dFraction)*iLastTime + dFraction*iThisTime) - (double)iReferenceStartTime; // this is the estimated time for the previous lap at this position
-              if(dEstimatedElapsedTime >= 0)
+              const double dFraction = dOffset / dWidth; // the fraction that dDistance is between dLastRefDist and dRefDist
+              if(dFraction >= 0.0 && dFraction <= 1.0)
               {
-                float dTimeSlip = dEstimatedElapsedTime - (double)iElapsedTime;
-                pTimeSlip->AddPoint(m_lstPoints[x].iTime, dTimeSlip);
+                const int iLastTime = lstReference[ixCheck-1].iTime;
+                const int iThisTime = lstReference[ixCheck].iTime;
+                const double dEstimatedElapsedTime = ((1.0-dFraction)*iLastTime + dFraction*iThisTime) - (double)iReferenceStartTime; // this is the estimated time for the previous lap at this position
+                if(dEstimatedElapsedTime >= 0)
+                {
+                  float dTimeSlip = dEstimatedElapsedTime - (double)iElapsedTime;
+                  pTimeSlip->AddPoint(m_lstPoints[x].iTime, dTimeSlip);
+                }
               }
             }
+            break;
           }
-          break;
+          dLastRefDist = dRefDist;
+
+          // update index.  Increment it, and see if we've looped around to the start yet
+          ixCheck = (ixCheck+1)%cReferenceSize;
+          if(ixCheck == iRefCheckStart) break; // we've done the whole loop
         }
-        dLastRefDist = dRefDist;
-
-        // update index.  Increment it, and see if we've looped around to the start yet
-        ixCheck = (ixCheck+1)%cReferenceSize;
-        if(ixCheck == iRefCheckStart) break; // we've done the whole loop
       }
-    }
 
-    if(pTimeSlip && pTimeSlip->IsValid())
-    {
-      pTimeSlip->Lock();
-      AddChannel(pTimeSlip);
-    }
-    else
-    {
-      pLapDB->FreeDataChannel(pTimeSlip);
+      if(pTimeSlip && pTimeSlip->IsValid())
+      {
+        pTimeSlip->Lock();
+        AddChannel(pTimeSlip);
+      }
+      else
+      {
+        pLapDB->FreeDataChannel(pTimeSlip);
+      }
     }
 
     // now every point has a distance and a timeslip
