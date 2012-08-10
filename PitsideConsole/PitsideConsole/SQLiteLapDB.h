@@ -12,7 +12,6 @@ public:
 
   // memory management
 	virtual ILap* AllocateLap(bool fMemory) override;
-	virtual void FreeLap(ILap* pLap) const override;
 
   virtual IDataChannel* AllocateDataChannel() const override;
   virtual void FreeDataChannel(IDataChannel* pChannel) const override;

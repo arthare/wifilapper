@@ -194,8 +194,9 @@ interface ILap
 public:
   virtual void Load(InputLapRaw* pLap) = 0;
   virtual bool Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line) = 0;
+  virtual void Free() = 0; // delete the lap
 
-	virtual bool IsValid() const = 0;
+  virtual bool IsValid() const = 0;
   virtual int GetStartTime() const = 0;
   virtual int GetLapId() const = 0;
   virtual float GetTime() const = 0;
@@ -212,6 +213,7 @@ public:
 	}
   void Load(InputLapRaw* pLap);
   bool Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line);
+  virtual void Free()override {delete this;};
 
 	bool IsValid() const
 	{
@@ -296,7 +298,6 @@ public:
 
   // memory management
 	virtual ILap* AllocateLap(bool fMemory) = 0;
-	virtual void FreeLap(ILap* pLap) const = 0;
 
   virtual IDataChannel* AllocateDataChannel() const = 0;
   virtual void FreeDataChannel(IDataChannel* pChannel) const = 0;

@@ -24,6 +24,7 @@ public: // ILap overrides
 
     return fSuccess;
   }
+  virtual void Free()override {delete this;};
 
   virtual bool IsValid() const override {return m_flLapTime < 3600 && m_flLapTime > 3.0 && m_iLapId != -1;};
   virtual int GetStartTime() const override {return m_iStartTime;}
@@ -249,12 +250,6 @@ ILap* CSQLiteLapDB::AllocateLap(bool fMemory)
   {
     return new CSQLiteLap(m_sfDB);
   }
-}
-//////////////////////////////////////////////////////////////
-void CSQLiteLapDB::FreeLap(ILap* p) const
-{
-  CSQLiteLap* pLap = (CSQLiteLap*)p;
-  delete pLap;
 }
 //////////////////////////////////////////////////////////////
 IDataChannel* CSQLiteLapDB::AllocateDataChannel() const

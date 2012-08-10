@@ -139,10 +139,6 @@ public:
 	{
 		return new CMemoryLap();
 	}
-	void FreeLap(ILap* pInput) const override
-	{
-		delete static_cast<CMemoryLap*>(pInput);
-	}
 	IDataChannel* AllocateDataChannel() const override
 	{
 		return new CDataChannel();
@@ -1032,7 +1028,7 @@ private:
       if(m_mapLaps.count(pLap->GetLapId()) != 0)
       {
         // we've already got this lap.  THere is nothing to be added from this lap
-        pReceiver->FreeLap((ILap*)pLap);
+        ((ILap*)pLap)->Free();
         laps[x] = NULL;
       }
       else

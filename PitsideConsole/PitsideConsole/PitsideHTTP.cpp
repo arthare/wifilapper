@@ -285,7 +285,7 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
         {
           const ILap* pLap = lstLaps[x];
           out<<pLap->GetLapId()<<","<<x<<","<<pLap->GetStartTime()<<","<<pLap->GetTime()<<endl;
-          m_pLapsDB->FreeLap((ILap*)lstLaps[x]);
+          ((ILap*)lstLaps[x])->Free();
         }
         return true;
       }
