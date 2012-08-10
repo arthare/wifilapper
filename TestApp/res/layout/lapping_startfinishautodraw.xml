@@ -12,7 +12,7 @@
 	  android:scrollbars="vertical"
 	  android:fadingEdge="vertical" />
 <view
-  class="com.artsoft.wifilapper.StartFinishAutoSetView"
+  class="com.artsoft.wifilapper.DeciderWaitingView"
   android:id="@+android:id/linesetter"
   android:layout_width="fill_parent"
   android:layout_height="fill_parent"

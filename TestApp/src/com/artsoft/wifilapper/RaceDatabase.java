@@ -51,7 +51,8 @@ public class RaceDatabase extends BetterOpenHelper
 	// 14->15; removed internal lapid.  The DB lapid will be sufficiently unique
 	// 15->16: messed everything up, need freshness
 	// 16->17: adding accelerometer data in DB
-	private static final int m_iVersion = 20;
+	// 20->21: adding "point-to-point" member in races table
+	private static final int m_iVersion = 21;
 	private static final String DATABASE_NAME_INTERNAL = "races";
 	
 	public static final String KEY_RACENAME = "name";
@@ -59,6 +60,7 @@ public class RaceDatabase extends BetterOpenHelper
 	public static final String KEY_RACEID = "raceid";
 	public static final String KEY_LAPTIME = "laptime";
 	public static final String KEY_STARTTIME = "starttime";
+	public static final String KEY_P2P = "p2p";
 	public static boolean CreateInternal(Context ctx, String strBasePath)
 	{
 		String strPath = strBasePath + "/" + DATABASE_NAME_INTERNAL;
@@ -88,43 +90,44 @@ public class RaceDatabase extends BetterOpenHelper
 		return g_raceDB.getWritableDatabase();
 	}
 	
-	public synchronized static long CreateRaceIfNotExist(SQLiteDatabase db, String strRaceName, Vector<LineSeg> lstSF, Vector<Vector2D> lstSFDirections, boolean fTestMode)
+	public synchronized static long CreateRaceIfNotExist(SQLiteDatabase db, String strRaceName, LapAccumulator.LapAccumulatorParams lapParams, boolean fTestMode, boolean fP2P)
 	{
 		if(db == null)
 		{
 			Toast.makeText(null, "Wifilapper was unable to create a database.  Race will not be saved", Toast.LENGTH_LONG).show();
 			return -1;
 		}
-		if(strRaceName != null && strRaceName.length() > 0 && lstSF.size()== 3)
+		if(strRaceName != null && strRaceName.length() > 0 && lapParams.IsValid(fP2P))
 		{
 			ContentValues content = new ContentValues();
 			content.put("\"name\"", strRaceName);
 			content.put("\"date\"", "");
-			content.put("x1", lstSF.get(0).GetP1().GetX());
-			content.put("y1", lstSF.get(0).GetP1().GetY());
-			content.put("x2", lstSF.get(0).GetP2().GetX());
-			content.put("y2", lstSF.get(0).GetP2().GetY());
+			content.put("x1", lapParams.lnStart != null ? lapParams.lnStart.GetP1().GetX() : 0);
+			content.put("y1", lapParams.lnStart != null ? lapParams.lnStart.GetP1().GetY() : 0);
+			content.put("x2", lapParams.lnStart != null ? lapParams.lnStart.GetP2().GetX() : 0);
+			content.put("y2", lapParams.lnStart != null ? lapParams.lnStart.GetP2().GetY() : 0);
 			
-			content.put("x3", lstSF.get(1).GetP1().GetX());
-			content.put("y3", lstSF.get(1).GetP1().GetY());
-			content.put("x4", lstSF.get(1).GetP2().GetX());
-			content.put("y4", lstSF.get(1).GetP2().GetY());
+			content.put("x3", lapParams.lnStop != null ? lapParams.lnStop.GetP1().GetX() : 0);
+			content.put("y3", lapParams.lnStop != null ? lapParams.lnStop.GetP1().GetY() : 0);
+			content.put("x4", lapParams.lnStop != null ? lapParams.lnStop.GetP2().GetX() : 0);
+			content.put("y4", lapParams.lnStop != null ? lapParams.lnStop.GetP2().GetY() : 0);
 			
-			content.put("x5", lstSF.get(2).GetP1().GetX());
-			content.put("y5", lstSF.get(2).GetP1().GetY());
-			content.put("x6", lstSF.get(2).GetP2().GetX());
-			content.put("y6", lstSF.get(2).GetP2().GetY());
+			content.put("x5", 0);
+			content.put("y5", 0);
+			content.put("x6", 0);
+			content.put("y6", 0);
 			
-			content.put("vx1", lstSFDirections.get(0).GetX());
-			content.put("vy1", lstSFDirections.get(0).GetY());
+			content.put("vx1", lapParams.vStart != null ? lapParams.vStart.GetX() : 0);
+			content.put("vy1", lapParams.vStart != null ? lapParams.vStart.GetY() : 0);
 			
-			content.put("vx2", lstSFDirections.get(1).GetX());
-			content.put("vy2", lstSFDirections.get(1).GetY());
+			content.put("vx2", lapParams.vStop != null ? lapParams.vStop.GetX() : 0);
+			content.put("vy2", lapParams.vStop != null ? lapParams.vStop.GetY() : 0);
 			
-			content.put("vx3", lstSFDirections.get(2).GetX());
-			content.put("vy3", lstSFDirections.get(2).GetY());
+			content.put("vx3", 0);
+			content.put("vy3", 0);
 			
 			content.put("\"testmode\"", fTestMode);
+			content.put("p2p", fP2P ? 1 : 0);
 			
 			long id = db.insertOrThrow("races", null, content);
 			return id;
@@ -133,41 +136,14 @@ public class RaceDatabase extends BetterOpenHelper
 	}
 	public static class RaceData
 	{
-		public float[] rgSF;
-		public float[] rgSFDir;
+		public LapAccumulator.LapAccumulatorParams lapParams;
 		public String strRaceName;
 		public boolean fTestMode;
 		public long unixTimeMsStart;
 		public long unixTimeMsEnd;
 		public RaceData()
 		{
-			rgSF = new float[12];
-			rgSFDir = new float[6];
-		}
-		public List<Vector2D> GetLineDirs()
-		{
-			List<Vector2D> ret = new ArrayList<Vector2D>();
-			for(int x = 0;x < 3; x++)
-    		{
-    			int ixVX = x*2;
-    			int ixVY = x*2 + 1;
-    			ret.add(new Vector2D(rgSFDir[ixVX], rgSFDir[ixVY]));
-    		}
-			return ret;
-		}
-		public List<LineSeg> GetLines()
-		{
-			List<LineSeg> ret = new ArrayList<LineSeg>();
-			for(int x = 0;x < 3; x++)
-    		{
-    			int ixX1 = x*4;
-    			int ixY1 = x*4+1;
-    			int ixX2 = x*4+2;
-    			int ixY2 = x*4+3;
-    			LineSeg l = new LineSeg(new Point2D(rgSF[ixX1],rgSF[ixY1]),new Point2D(rgSF[ixX2],rgSF[ixY2]));
-    			ret.add(l);
-    		}
-			return ret;
+			lapParams = new LapAccumulator.LapAccumulatorParams();
 		}
 	}
 	public static class LapData
@@ -200,14 +176,19 @@ public class RaceDatabase extends BetterOpenHelper
 			RaceData ret = new RaceData();
 			ret.strRaceName = cur.getString(18);
 			ret.fTestMode = cur.getInt(19) != 0;
+			
+			float rgSF[] = new float[12];
+			float rgSFDir[] = new float [6];
 			for(int x = 0; x < 12; x++)
 			{
-				ret.rgSF[x] = (float)cur.getDouble(x);
+				rgSF[x] = (float)cur.getDouble(x);
 			}
 			for(int x = 0; x < 6; x++)
 			{
-				ret.rgSFDir[x] = (float)cur.getDouble(x+12);
+				rgSFDir[x] = (float)cur.getDouble(x+12);
 			}
+			ret.lapParams.InitFromRaw(rgSF,rgSFDir);
+			
 			cur.close();
 			
 			cur = db.rawQuery("select min(laps.unixtime) as starttime,max(laps.unixtime) as endtime from laps where raceid = " + id,null);
@@ -266,7 +247,7 @@ public class RaceDatabase extends BetterOpenHelper
 		
 		DoOrphanCheck(db);
 	}
-	public synchronized static LapAccumulator GetBestLap(SQLiteDatabase db, List<LineSeg> lstLines, List<Vector2D> lstLineDirections, long lRaceId)
+	public synchronized static LapAccumulator GetBestLap(SQLiteDatabase db, LapAccumulator.LapAccumulatorParams lapParams, long lRaceId)
 	{
 		String strSQL;
 		strSQL = "select _id, laptime, unixtime, raceid, min(laps.laptime) from laps where raceid = " + lRaceId;
@@ -286,7 +267,7 @@ public class RaceDatabase extends BetterOpenHelper
 					{
 						int lLapDbId = curBestLap.getInt(0);
 						int iUnixTime = curBestLap.getInt(2);
-						LapAccumulator lap = new LapAccumulator(lstLines, lstLineDirections, iUnixTime, lLapDbId);
+						LapAccumulator lap = new LapAccumulator(lapParams, iUnixTime, lLapDbId);
 						curBestLap.close();
 						curLap.close();
 						return lap;
@@ -297,7 +278,7 @@ public class RaceDatabase extends BetterOpenHelper
 		}
 		return null;
 	}
-	public synchronized static LapAccumulator GetLap(SQLiteDatabase db, List<LineSeg> lstLines, List<Vector2D> lstLineDirections, long lLapId)
+	public synchronized static LapAccumulator GetLap(SQLiteDatabase db, LapAccumulator.LapAccumulatorParams lapParams, long lLapId)
 	{
 		String strSQL = "select _id, laptime, unixtime, raceid, min(laps.laptime) from laps where _id = " + lLapId;
 		Cursor curBestLap = db.rawQuery(strSQL, null);
@@ -307,14 +288,14 @@ public class RaceDatabase extends BetterOpenHelper
 			{
 				int lLapDbId = curBestLap.getInt(0);
 				int iUnixTime = curBestLap.getInt(2);
-				LapAccumulator lap = new LapAccumulator(lstLines, lstLineDirections, iUnixTime, lLapDbId);
+				LapAccumulator lap = new LapAccumulator(lapParams, iUnixTime, lLapDbId);
 				curBestLap.close();
 				return lap;
 			}
 		}
 		return null;
 	}
-	public synchronized static LapData[] GetLapDataList(SQLiteDatabase db, List<LineSeg> lstLines, List<Vector2D> lstLineDirections, long lRaceId)
+	public synchronized static LapData[] GetLapDataList(SQLiteDatabase db, long lRaceId)
 	{
 		String strSQL;
 		strSQL = "select _id, laptime, unixtime from laps where raceid = " + lRaceId;
@@ -336,7 +317,7 @@ public class RaceDatabase extends BetterOpenHelper
 		curLap.close();
 		return lst;
 	}
-	public synchronized static Vector<LapAccumulator> GetLaps(SQLiteDatabase db, Vector<LineSeg> lstLines, Vector<Vector2D> lstLineDirections, long id)
+	public synchronized static Vector<LapAccumulator> GetLaps(SQLiteDatabase db, LapAccumulator.LapAccumulatorParams lapParams, long id)
 	{
 		Vector<LapAccumulator> lstRet = new Vector<LapAccumulator>();
 		String strSQL;
@@ -350,7 +331,7 @@ public class RaceDatabase extends BetterOpenHelper
 			{
 				int lLapDbId = curLap.getInt(0);
 				int iUnixTime = curLap.getInt(2);
-				LapAccumulator lap = new LapAccumulator(lstLines, lstLineDirections, iUnixTime, lLapDbId);
+				LapAccumulator lap = new LapAccumulator(lapParams, iUnixTime, lLapDbId);
 				lstRet.add(lap);
 			}
 			curLap.close();
@@ -393,10 +374,9 @@ public class RaceDatabase extends BetterOpenHelper
 		RaceData raceData = GetRaceData(db, lRaceId);
 		if(raceData != null)
 		{
-			List<LineSeg> lstLines = raceData.GetLines();
-			List<Vector2D> lstLineDirections = raceData.GetLineDirs();
+			LapAccumulator.LapAccumulatorParams lapParams = raceData.lapParams;
 			
-			LapAccumulator lap = GetBestLap(db, lstLines, lstLineDirections, lRaceId);
+			LapAccumulator lap = GetBestLap(db, lapParams, lRaceId);
 			if(lap != null)
 			{
 				Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -415,7 +395,7 @@ public class RaceDatabase extends BetterOpenHelper
 					paintLap.setARGB(255, 25, 140, 225);
 					
 					Rect rcOnScreen = new Rect(0,0,width,height);
-					LapAccumulator.DrawLap(lap, false, lstLines, rcInWorld, canvas, paintLap, null, rcOnScreen);
+					LapAccumulator.DrawLap(lap, false, rcInWorld, canvas, paintLap, null, rcOnScreen);
 				}
 				return bmp;
 			}
@@ -426,7 +406,7 @@ public class RaceDatabase extends BetterOpenHelper
 	{
 		try
 		{
-			Cursor cur = db.rawQuery("select races._id as raceid,min(laps.laptime) as " + KEY_LAPTIME + ", races.name as name,count(laps._id) as lapcount, min(laps.unixtime) as " + KEY_STARTTIME + " from races left join laps on races._id = laps.raceid group by races._id order by races._id", null);
+			Cursor cur = db.rawQuery("select races.p2p as " + KEY_P2P + ", races._id as raceid,min(laps.laptime) as " + KEY_LAPTIME + ", races.name as name,count(laps._id) as lapcount, min(laps.unixtime) as " + KEY_STARTTIME + " from races left join laps on races._id = laps.raceid group by races._id order by races._id", null);
 
 			return cur;
 		}
@@ -460,7 +440,8 @@ public class RaceDatabase extends BetterOpenHelper
 																						"vx2 real," +
 																						"vy2 real," +
 																						"vx3 real," +
-																						"vy3 real)";
+																						"vy3 real," +
+																						"p2p integer not null default 0)";
 	
 	private final static String CREATE_LAPS_SQL = "create table if not exists laps " +
 													"(_id integer primary key asc autoincrement, " +
@@ -538,6 +519,8 @@ public class RaceDatabase extends BetterOpenHelper
 			if(oldVersion == 20 && newVersion == 21)
 			{
 				// upgrade more...
+				db.execSQL("alter table races add column p2p integer not null default 0");
+				oldVersion = 21;
 			}
 		}
 	}

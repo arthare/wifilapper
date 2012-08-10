@@ -16,6 +16,7 @@
 
 package com.artsoft.wifilapper;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -255,6 +256,51 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 			return "IOIO: Off";
 		}
 	}
+	private String MakeP2PText(SharedPreferences settings)
+	{
+		String strStart = "";
+		NumberFormat nf = NumberFormat.getInstance();
+		nf.setMaximumFractionDigits(2);
+		Prefs.UNIT_SYSTEM eCurrentSystem = Prefs.UNIT_SYSTEM.valueOf(settings.getString(Prefs.PREF_UNITS_STRING, Prefs.DEFAULT_UNITS_STRING.toString()));
+		{
+			final int iStartMode = settings.getInt(Prefs.PREF_P2P_STARTMODE, Prefs.DEFAULT_P2P_STARTMODE);
+			final float flStartParam = settings.getFloat(Prefs.PREF_P2P_STARTPARAM, Prefs.DEFAULT_P2P_STARTPARAM); // parameter: how fast do we have to be going for this to count?
+						
+			switch(iStartMode)
+			{
+			case Prefs.P2P_STARTMODE_SPEED:
+				strStart = "Start when speed over " + Prefs.FormatMetersPerSecond(flStartParam, nf, eCurrentSystem, true) + ".";
+				break;
+			case Prefs.P2P_STARTMODE_SCREEN:
+				strStart = "Start on screen tap.";
+				break;
+			case Prefs.P2P_STARTMODE_ACCEL:
+				strStart = "Start on " + nf.format(flStartParam) + "G acceleration.";
+				break;
+			}
+		}
+		
+		String strStop="";
+		{
+			final int iStopMode = settings.getInt(Prefs.PREF_P2P_STOPMODE, Prefs.DEFAULT_P2P_STOPMODE);
+			final float flStopParam = settings.getFloat(Prefs.PREF_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM); // parameter: how fast do we have to be going for this to count?
+			
+			switch(iStopMode)
+			{
+			case Prefs.P2P_STOPMODE_DISTANCE:
+				strStop = "Stop after moving " + Prefs.FormatDistance(flStopParam, nf, eCurrentSystem, true) + ".";
+				break;
+			case Prefs.P2P_STOPMODE_SCREEN:
+				strStop = "Stop on screen tap.";
+				break;
+			case Prefs.P2P_STOPMODE_SPEED:
+				strStop = "Stop when speed below " + Prefs.FormatMetersPerSecond(flStopParam, nf, eCurrentSystem, true) + ".";
+				break;
+			}
+		}
+		
+		return "Point to point: " + strStart + "  " + strStop;
+	}
 	private String MakeAccelText(SharedPreferences settings)
 	{
 		if(settings.getBoolean(Prefs.PREF_USEACCEL_BOOLEAN,Prefs.DEFAULT_USEACCEL))
@@ -280,10 +326,12 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		Button btnIOIO = (Button)findViewById(R.id.btnConfigureIOIO);
 		Button btnAccel = (Button)findViewById(R.id.btnConfigureAccel);
 		Button btnComms = (Button)findViewById(R.id.btnConfigureComms);
+		Button btnP2P = (Button)findViewById(R.id.btnConfigureP2P);
 		TextView chkGPS = (TextView)findViewById(R.id.lblUseExternalGPS);
 		TextView chkOBD2 = (TextView)findViewById(R.id.lblUseExternalOBD2);
 		TextView chkIOIO = (TextView)findViewById(R.id.lblUseIOIO);
 		TextView chkAccel = (TextView)findViewById(R.id.lblUseAccel);
+		TextView txtP2P = (TextView)findViewById(R.id.lblP2P);
 		
 		
 		// load settings
@@ -308,6 +356,8 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		
 		chkIOIO.setText(MakeIOIOText(settings,fIOIO));
 		chkIOIO.setClickable(false);
+		
+		txtP2P.setText(MakeP2PText(settings));
 		
 		chkAccel.setText(MakeAccelText(settings));
 		
@@ -339,6 +389,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		btnIOIO.setOnClickListener(this);
 		btnAccel.setOnClickListener(this);
 		btnComms.setOnClickListener(this);
+		btnP2P.setOnClickListener(this);
 	}
 
 	
@@ -368,6 +419,11 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		else if(v.getId() == R.id.btnConfigureComms)
 		{
 			Intent i = new Intent(this.getApplicationContext(), ConfigureCommunications.class);
+			startActivity(i);
+		}
+		else if(v.getId() == R.id.btnConfigureP2P)
+		{
+			Intent i = new Intent(this.getApplicationContext(), ConfigurePointToPoint.class);
 			startActivity(i);
 		}
 		/*if(v.getId() == R.id.btnScanPIDs)

@@ -81,7 +81,7 @@ implements
 {
 	public enum RESUME_MODE {NEW_RACE, REUSE_SPLITS, RESUME_RACE};
 	
-	enum State {LOADING, WAITING_FOR_GPS, SETTING_LINES, SETTING_LINES_AUTO, MOVING_TO_STARTLINE, PLOTTING, DEMOSCREEN};
+	enum State {LOADING, WAITING_FOR_GPS, WAITINGFORSTART, WAITINGFORSTOP, MOVING_TO_STARTLINE, PLOTTING, DEMOSCREEN};
 	
 	private State m_eState;
 	
@@ -90,6 +90,15 @@ implements
 	private BluetoothGPS m_btgps = null;
 	private OBDThread m_obd = null;
 	private IOIOManager m_ioio = null;
+	
+	private SplitDecider m_startDecider;
+	private SplitDecider m_stopDecider;
+	
+	private boolean m_fUseP2P;
+	private int m_iP2PStartMode;
+	private float m_flP2PStartParam;
+	private int m_iP2PStopMode;
+	private float m_flP2PStopParam;
 	
 	// message-man stuff
 	private String m_strMessage;
@@ -111,9 +120,12 @@ implements
 	private Map<Integer,DataChannel> m_mapPIDS;
 	private Map<Integer,DataChannel> m_mapPins;
 	
+	private long m_tmLastLap = 0; // the system time that we saved the last lap at
 	private LapAccumulator m_lastLap = null;
 	private LapAccumulator m_driverBest = null;
 	private LapAccumulator m_best = null;
+	
+	private LapAccumulator.LapAccumulatorParams m_lapParams = null;
 	
 	Point2D m_ptCurrent; // the most recent point to come in from the location manager
 	public float m_tmCurrent; // the time (in seconds) of the m_ptCurrent
@@ -126,8 +138,6 @@ implements
 	// data about this race
 	private String m_strRaceName;
 	private boolean m_fTestMode;
-	private Vector<LineSeg> m_lstSF;
-	private Vector<Vector2D> m_lstSFDirections;
 	private long m_lRaceId;
 	private String m_strSpeedoStyle;
 	private Prefs.UNIT_SYSTEM m_eUnitSystem;
@@ -188,6 +198,12 @@ implements
     	m_fAcknowledgeBySMS = i.getBooleanExtra(Prefs.IT_ACKSMS_BOOLEAN, true);
     	m_strPrivacyPrefix = i.getStringExtra(Prefs.IT_PRIVACYPREFIX_STRING);
     	
+    	m_fUseP2P = i.getBooleanExtra(Prefs.IT_P2P_ENABLED, false);
+    	m_iP2PStartMode = i.getIntExtra(Prefs.IT_P2P_STARTMODE, Prefs.DEFAULT_P2P_STARTMODE);
+    	m_flP2PStartParam = i.getFloatExtra(Prefs.IT_P2P_STARTPARAM, Prefs.DEFAULT_P2P_STARTPARAM);
+    	m_iP2PStopMode = i.getIntExtra(Prefs.IT_P2P_STOPMODE, Prefs.DEFAULT_P2P_STOPMODE);
+    	m_flP2PStopParam = i.getFloatExtra(Prefs.IT_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM);
+    	
     	if(m_strPrivacyPrefix == null) m_strPrivacyPrefix = Prefs.DEFAULT_PRIVACYPREFIX;
     	
     	if(m_strSpeedoStyle == null) m_strSpeedoStyle = LandingOptions.rgstrSpeedos[0];
@@ -224,17 +240,15 @@ implements
     		m_fSupportSMS = true; // default to trying to SMS
     	}
     	
-    	float rgSF[] = i.getFloatArrayExtra(Prefs.IT_STARTFINISH_ARRAY);
-    	float rgSFDir[] = i.getFloatArrayExtra(Prefs.IT_STARTFINISHDIR_ARRAY);
+    	m_lapParams = (LapAccumulator.LapAccumulatorParams)i.getParcelableExtra(Prefs.IT_LAPPARAMS);
     	
-    	StartupTracking(rgSelectedAnalPins, rgSelectedPulsePins, iButtonPin, rgSelectedPIDs, strIP, strSSID, strBTGPS, strOBD2, fUseAccel, m_fTestMode, idLapLoadMode, rgSF, rgSFDir);
+    	StartupTracking(rgSelectedAnalPins, rgSelectedPulsePins, iButtonPin, rgSelectedPIDs, strIP, strSSID, strBTGPS, strOBD2, fUseAccel, m_fTestMode, idLapLoadMode);
     }
-    public static Intent BuildStartIntent(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, List<Integer> lstSelectedPIDs, Context ctxApp, String strIP, String strSSID, float[] rgSF, float[] rgSFDir, String strRaceName, String strPrivacy, boolean fAckSMS, boolean fUseAccel, boolean fTestMode, long idRace, long idModeSelected, String strBTGPS, String strBTOBD2, String strSpeedoStyle, String strUnitSystem)
+    public static Intent BuildStartIntent(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, boolean fPointToPoint, int iStartMode, float flStartParam, int iStopMode, float flStopParam, List<Integer> lstSelectedPIDs, Context ctxApp, String strIP, String strSSID, LapAccumulator.LapAccumulatorParams lapParams, String strRaceName, String strPrivacy, boolean fAckSMS, boolean fUseAccel, boolean fTestMode, long idRace, long idModeSelected, String strBTGPS, String strBTOBD2, String strSpeedoStyle, String strUnitSystem)
     {
     	Intent myIntent = new Intent(ctxApp, ApiDemos.class);
 		myIntent.putExtra(Prefs.IT_IP_STRING, strIP).putExtra("SSID", strSSID);
-		myIntent.putExtra(Prefs.IT_STARTFINISH_ARRAY, rgSF);
-		myIntent.putExtra(Prefs.IT_STARTFINISHDIR_ARRAY, rgSFDir);
+		myIntent.putExtra(Prefs.IT_LAPPARAMS, lapParams);
 		myIntent.putExtra(Prefs.IT_RACENAME_STRING, strRaceName);
 		myIntent.putExtra(Prefs.IT_TESTMODE_BOOL, (boolean)fTestMode);
 		myIntent.putExtra(Prefs.IT_RACEID_LONG, (long)idRace);
@@ -247,6 +261,11 @@ implements
 		myIntent.putExtra(Prefs.IT_ACKSMS_BOOLEAN, fAckSMS);
 		myIntent.putExtra(Prefs.IT_PRIVACYPREFIX_STRING, strPrivacy);
 		myIntent.putExtra(Prefs.IT_IOIOBUTTONPIN, iButtonPin);
+		myIntent.putExtra(Prefs.IT_P2P_ENABLED, fPointToPoint);
+		myIntent.putExtra(Prefs.IT_P2P_STARTMODE, iStartMode);
+		myIntent.putExtra(Prefs.IT_P2P_STARTPARAM, flStartParam);
+		myIntent.putExtra(Prefs.IT_P2P_STOPMODE, iStopMode);
+		myIntent.putExtra(Prefs.IT_P2P_STOPPARAM, flStopParam);
 		{
 			int rgArray[] = new int[lstSelectedPIDs.size()];
 			for(int x = 0;x < rgArray.length; x++) rgArray[x] = lstSelectedPIDs.get(x).intValue();
@@ -427,39 +446,31 @@ implements
     	super.onConfigurationChanged(con);
     }
     // only called once the user has done all their settings stuff
-    private void StartupTracking(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, int rgSelectedPIDs[], String strIP, String strSSID, String strBTGPS, String strBTOBD2, boolean fUseAccel, boolean fTestMode, int idLapLoadMode, float rgSF[], float rgSFDir[])
+    private void StartupTracking(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, int rgSelectedPIDs[], String strIP, String strSSID, String strBTGPS, String strBTOBD2, boolean fUseAccel, boolean fTestMode, int idLapLoadMode)
     {
     	ApiDemos.State eEndState = ApiDemos.State.WAITING_FOR_GPS;
 
-		
     	m_mapPIDS = new HashMap<Integer,DataChannel>();
     	m_mapPins = new HashMap<Integer,DataChannel>();
-    	
-		m_lstSF = new Vector<LineSeg>();
-		m_lstSFDirections = new Vector<Vector2D>();
-	    if(rgSF != null && rgSF.length == 12)
+
+	    if(m_lapParams.IsValid(m_fUseP2P))
     	{
-    		// this saved race included start-finish lines
-    		// {x1,y1}-{x2,y2},{x1,y1}-{x2-y2},{x1,y1}-{x2-y2}
-    		for(int x = 0;x < 3; x++)
-    		{
-    			int ixX1 = x*4;
-    			int ixY1 = x*4+1;
-    			int ixX2 = x*4+2;
-    			int ixY2 = x*4+3;
-    			LineSeg l = new LineSeg(new Point2D(rgSF[ixX1],rgSF[ixY1]),new Point2D(rgSF[ixX2],rgSF[ixY2]));
-    			m_lstSF.add(l);
-    			
-    			int ixVX = x*2;
-    			int ixVY = x*2 + 1;
-    			m_lstSFDirections.add(new Vector2D(rgSFDir[ixVX], rgSFDir[ixVY]));
-    		}
+	    	if(m_fUseP2P)
+	    	{
+	    		m_startDecider = new LineSplitDecider(m_lapParams.lnStart, m_lapParams.vStart);
+	    		m_stopDecider = new LineSplitDecider(m_lapParams.lnStop, m_lapParams.vStop);
+	    	}
+	    	else
+	    	{
+    			m_startDecider = m_stopDecider = new LineSplitDecider(m_lapParams.lnStart, m_lapParams.vStart);
+	    	}
     		eEndState = State.WAITING_FOR_GPS;
     	}
     	else
     	{
     		// didn't include start-finish lines, so we have to start from the beginning
     		eEndState = State.WAITING_FOR_GPS;
+    		SetupSplitDeciders(); // we'll need the automatic split deciders since splits were not included
     	}
 	    
 	    if(rgAnalPins.length > 0 || rgPulsePins.length > 0)
@@ -476,10 +487,11 @@ implements
 	    m_lapSender = new LapSender(this, pWifi, strIP, strSSID);
 	    m_msgMan = new MessageMan(this);
 	    
-	    if(m_lRaceId != -1 && m_lstSF.size() == 3)
+	    if(m_lRaceId != -1 && m_lapParams.IsValid(m_fUseP2P))
 	    {
+	    	// they're resuming an old race
 	    	m_lapSender.SetRaceId(m_lRaceId);
-	    	LapAccumulator storedBestLap = RaceDatabase.GetBestLap(RaceDatabase.Get(), m_lstSF, m_lstSFDirections, m_lRaceId);
+	    	LapAccumulator storedBestLap = RaceDatabase.GetBestLap(RaceDatabase.Get(), m_lapParams, m_lRaceId);
 	    	if(storedBestLap != null)
 	    	{
 	    		m_best = storedBestLap;
@@ -487,10 +499,10 @@ implements
 	    		m_best.ThdDoDeferredLoad(this.m_pHandler, MSG_LOADING_PROGRESS, false);
 	    	}
 	    }
-	    else if(m_lRaceId == -1 && m_lstSF.size() == 3)
+	    else if(m_lRaceId == -1 && m_lapParams.IsValid(m_fUseP2P))
 	    {
-	    	// occurs if they select "waypoints only"
-	    	m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lstSF, m_lstSFDirections, fTestMode);
+	    	// they're running a new race with old splits
+	    	m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lapParams, fTestMode, m_fUseP2P);
 	    	m_lapSender.SetRaceId(m_lRaceId);
 	    }
 	    
@@ -558,10 +570,6 @@ implements
 	    
 	    this.SetState(eEndState);
     }
-    public Vector<LineSeg> GetSF()
-    {
-    	return m_lstSF;
-    }
     
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) 
@@ -597,56 +605,96 @@ implements
     @Override
     public void onClick(View v)
     {
-    	if(m_eState == State.SETTING_LINES || m_eState == State.SETTING_LINES_AUTO)
+    	if(m_eState == State.WAITINGFORSTART)
     	{
-        	// they have clicked!  let's set a line
+    		if(IsReadyForLineSet())
+			{
+    			m_startDecider.Tap();
+    			if(m_startDecider.IsReady())
+    			{
+    				m_lapParams.lnStart = m_startDecider.GetLine();
+    				m_lapParams.vStart = m_startDecider.GetDir();
+    				if(m_stopDecider.IsReady())
+    				{
+    					m_lapParams.lnStop = m_stopDecider.GetLine();
+    					m_lapParams.vStop = m_stopDecider.GetDir();
+    				}
+    				SetState(State.WAITINGFORSTOP);
+    			}
+			}
+    	}
+    	else if(m_eState == State.WAITINGFORSTOP)
+    	{
     		if(IsReadyForLineSet())
     		{
-    			Vector2D vDir = new Vector2D(0,0);
-    			LineSeg lnSeg = m_myLaps.MakeSplitAtIndex(m_myLaps.GetPositionCount()-1, vDir);
-    			AddSplit(lnSeg,vDir);
+    			m_stopDecider.Tap();
+    			if(m_stopDecider.IsReady())
+    			{
+    				m_lapParams.lnStop = m_stopDecider.GetLine();
+    				m_lapParams.vStop = m_stopDecider.GetDir();
+    				SetState(State.MOVING_TO_STARTLINE);
+    			}
     		}
     	}
-    	
     	// if they tap the screen, clear the current message
     	
     	AcknowledgeMessage();
     }
-    private void AddSplit(LineSeg lnSplit, Vector2D vDir)
+    public String[] GetDeciderWaitingStrings()
     {
-    	if(m_lstSF.size() < 3)
-		{
-			m_lstSF.add(lnSplit);
-			m_lstSFDirections.add(vDir);
-			
-			if(m_lstSF.size() == 3)
-			{
-				// ok, we've got 3.  We promised the user that the first one they set would be start/finish however.
-				// the LapAccumulator expects start/finish to be the [2] element in the array.
-				m_lstSF.add(m_lstSF.get(0)); // puts the start/finish at the end of the array
-				m_lstSF.remove(0); // removes start/finish from the start of the array
-				
-				m_lstSFDirections.add(m_lstSFDirections.get(0));
-				m_lstSFDirections.remove(0);
-	        	if(m_lRaceId == -1)
-	        	{
-	        		// this is a new race, and we finally have its start-finish lines
-	        		m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), m_strRaceName, m_lstSF, m_lstSFDirections, m_fTestMode);
-	        	}
-	        	m_lapSender.SetRaceId(m_lRaceId);
-	        	
-				// ok, we've got 2 sectors and a start/finish.
-				m_myLaps = new LapAccumulator(m_lstSF, m_lstSFDirections, m_ptCurrent, m_dLastSpeed);
-				
-				SetState(State.MOVING_TO_STARTLINE); // we're on to the next state!
-			}
-		}
+    	if(!m_startDecider.IsReady())
+    	{
+    		return m_startDecider.GetUnReadyStrings();
+    	}
+    	else if(!m_stopDecider.IsReady())
+    	{
+    		return m_stopDecider.GetUnReadyStrings();
+    	}
+    	else
+    	{
+    		String str[] = new String[2];
+    		str[0] = "Bugs";
+    		str[1] = "Complain at wifilapper.freeforums.org";
+    		return str;
+    	}
     }
-    private void ClearSplits()
+    private void SetupSplitDeciders()
     {
-    	m_lstSF.clear();
-    	m_lstSFDirections.clear();
+    	if(m_fUseP2P)
+    	{
+    		// they're doing a point-to-point, so we need to be careful about how we set up the start and finish deciders...
+    		switch(m_iP2PStartMode)
+    		{
+    		case Prefs.P2P_STARTMODE_ACCEL:
+    			//m_startDecider = new AccelSplitDecider();
+    			break;
+    		case Prefs.P2P_STARTMODE_SCREEN:
+    			m_startDecider = new LineSplitDecider("Tap to set start line");
+    			break;
+    		case Prefs.P2P_STARTMODE_SPEED:
+    			m_startDecider = new SpeedSplitDecider(false, m_flP2PStartParam, m_eUnitSystem, "Start");
+    			break;
+    		}
+    		switch(m_iP2PStopMode)
+    		{
+    		case Prefs.P2P_STOPMODE_DISTANCE:
+    			break;
+    		case Prefs.P2P_STOPMODE_SCREEN:
+    			m_stopDecider = new LineSplitDecider("Tap to set finish line");
+    			break;
+    		case Prefs.P2P_STOPMODE_SPEED:
+    			m_stopDecider = new SpeedSplitDecider(true, m_flP2PStopParam, m_eUnitSystem, "Finish");
+    			break;
+    		}
+    	}
+    	else
+    	{
+    		// just doing laps, so just use the normal split points
+    		this.m_startDecider = new LineSplitDecider("Tap to set start/finish line");
+    		this.m_stopDecider = m_startDecider; // if they're lapping, the start and end lines are identical
+    	}
     }
+    
     private void AcknowledgeMessage()
     {
     	if(m_fSupportSMS && m_fAcknowledgeBySMS && m_strMessage != null && m_strMessagePhone != null)
@@ -669,12 +717,9 @@ implements
     {
     	return m_ptCurrent != null && m_ptLast != null && m_dLastSpeed > 0.5;
     }
-    public int GetSFCount()
-    {
-    	return m_lstSF != null ? m_lstSF.size() : 0;
-    }
     private void TrackLastLap(LapAccumulator lap, boolean fTransmit, boolean fSaveAsLastLap)
     {
+    	m_tmLastLap = System.currentTimeMillis();
     	if(m_lapSender != null)
     	{
     		if(fSaveAsLastLap)
@@ -791,91 +836,77 @@ implements
     	if(m_eState == State.WAITING_FOR_GPS)
     	{
     		// if we get a location while waiting for GPS, then we're good to advance to setting start/finish lines
-    		if(m_lstSF.size() == 3)
+			SetState(State.WAITINGFORSTART);
+    	}
+    	else if(m_eState == State.WAITINGFORSTART || m_eState == State.WAITINGFORSTOP)
+    	{
+    		if(m_myLaps == null)
     		{
-    			SetState(State.MOVING_TO_STARTLINE);
+    			m_myLaps = new LapAccumulator(m_lapParams, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
     		}
-    		else
-    		{
-    			SetState(State.SETTING_LINES_AUTO);
-    		}
+	    	m_myLaps.AddPosition(m_ptCurrent, (int)location.getTime(), location.getSpeed());
+	    	if(!m_startDecider.IsReady() && m_startDecider.NotifyPoint(m_myLaps, m_ptLast, m_ptCurrent, location.getSpeed()))
+	    	{
+	    		SetState(State.WAITINGFORSTOP);
+	    		// start recording this lap
+	    		m_lapParams.lnStart = m_startDecider.GetLine();
+	    		m_lapParams.vStart = m_startDecider.GetDir();
+	    		if(m_stopDecider.IsReady())
+	    		{
+	    			m_lapParams.lnStop = m_stopDecider.GetLine();
+	    			m_lapParams.vStop = m_stopDecider.GetDir();
+	    		}
+	    		m_myLaps = new LapAccumulator(m_lapParams, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
+	    	}
+	    	else if(!m_stopDecider.IsReady() && m_stopDecider != m_startDecider)
+	    	{
+	    		if(m_stopDecider.NotifyPoint(m_myLaps, m_ptLast, m_ptCurrent, location.getSpeed()))
+	    		{
+		    		m_lapParams.lnStop = m_stopDecider.GetLine();
+		    		m_lapParams.vStop = m_stopDecider.GetDir();
+	    			SetState(State.MOVING_TO_STARTLINE);
+	    		}
+	    	}
+	    	else if(m_startDecider.IsReady() && m_stopDecider.IsReady())
+	    	{
+	    		SetState(State.MOVING_TO_STARTLINE);
+	    	}
+	    	m_currentView.invalidate();
     	}
     	else if(m_eState == State.MOVING_TO_STARTLINE)
     	{
     		if(m_myLaps == null)
     		{
-    			m_myLaps = new LapAccumulator(m_lstSF, m_lstSFDirections, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
+    			m_myLaps = new LapAccumulator(m_lapParams, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
     		}
 	    	m_myLaps.AddPosition(m_ptCurrent, (int)location.getTime(), location.getSpeed());
-	    	if(m_myLaps.IsDoneLap())
+	    	if(this.m_startDecider.NotifyPoint(m_myLaps, m_ptLast, m_ptCurrent, location.getSpeed()))
 	    	{
 	    		m_myLaps.Prune();
-	    		m_myLaps = new LapAccumulator(m_lstSF, m_lstSFDirections, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
+	    		m_myLaps = new LapAccumulator(m_lapParams, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
 	    		SetState(State.PLOTTING);
 	    	}
-    	}
-    	else if(m_eState == State.SETTING_LINES_AUTO)
-    	{
-    		if(m_myLaps == null)
-			{
-				m_myLaps = new LapAccumulator(m_lstSF, m_lstSFDirections, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
-			}
-	    	m_myLaps.AddPosition(m_ptCurrent, (int)location.getTime(), location.getSpeed());
-    		// in SETTING_LINES_AUTO mode, as soon as the accumulating lap crosses itself while travelling a decent speed, we call that the start/finish and auto-set the splits
-    		if(m_dLastSpeed > 5) // going faster than 15m/s (so that we don't get false crosses while sitting in the pits)
-    		{
-    			LineSeg.IntersectData intersect = new LineSeg.IntersectData();
-    			LapAccumulator.CrossData cross = new LapAccumulator.CrossData();
-    			if(m_myLaps.IsNowCrossingSelf(intersect,cross))
-    			{
-    				if(cross.flSpeedOfCrossedLine > 5)
-    				{
-    					// the car crossed a line where it was going fast, while the car was going fast.  therefore, we should set start/finish lines
-    					// we need to fish out pairs of points so we can do proper start/finish setting
-    					
-    					int x = 0;
-    					while(m_lstSF.size() < 3)
-    					{
-    						Vector2D vDir = new Vector2D(0,0);
-    						int ixSF = ((3-x)*(cross.ixCrossedLine+1) + (x*cross.ixLast))/3;
-    						LineSeg SF = m_myLaps.MakeSplitAtIndex(ixSF,vDir);
-    						if(SF != null)
-    						{
-    							AddSplit(SF,vDir);
-    						}
-    						else
-    						{
-    							ClearSplits();
-    							break; // not a good split.  Try again later
-    						}
-    						x++;
-    					}
-    				}
-    			}
-    		}
-    	}
-    	else if(m_eState == State.SETTING_LINES)
-    	{
-    		if(m_myLaps == null)
-    		{
-    			m_myLaps = new LapAccumulator(m_lstSF, m_lstSFDirections, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
-    		}
-	    	m_myLaps.AddPosition(m_ptCurrent, (int)location.getTime(), location.getSpeed());
-	    	
-	    	m_currentView.invalidate();
     	}
     	else if(m_eState == State.PLOTTING)
     	{
     		if(m_myLaps == null)
     		{
-    			m_myLaps = new LapAccumulator(m_lstSF, m_lstSFDirections, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
+    			m_myLaps = new LapAccumulator(m_lapParams, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
     		}
 	    	m_myLaps.AddPosition(m_ptCurrent, (int)location.getTime(), location.getSpeed());
 	    	if(m_myLaps.IsDoneLap())
 	    	{
 	    		TrackLastLap(m_myLaps, true, true);
-	    		m_myLaps = new LapAccumulator(m_lstSF, m_lstSFDirections, m_myLaps.GetFinishPoint(), iUnixTime, -1, m_myLaps.GetLastCrossTime(), location.getSpeed());
-    			m_myLaps.AddPosition(m_ptCurrent, (int)location.getTime(), location.getSpeed());
+
+	    		if(!m_fUseP2P) // if we're lapping, just start the next lap now
+	    		{
+	    			m_myLaps = new LapAccumulator(m_lapParams, m_myLaps.GetFinishPoint(), iUnixTime, -1, m_myLaps.GetLastCrossTime(), location.getSpeed());
+	    			m_myLaps.AddPosition(m_ptCurrent, (int)location.getTime(), location.getSpeed());
+	    		}
+	    		else // if we're point-to-point, then start worrying about getting back to the start line
+	    		{
+	    			SetState(State.MOVING_TO_STARTLINE);
+	    		}
 	    	}
 	    	m_currentView.invalidate();
     	}
@@ -900,16 +931,7 @@ implements
     	if(provider == LocationManager.GPS_PROVIDER && status == LocationProvider.AVAILABLE && m_eState == State.WAITING_FOR_GPS)
     	{
     		SetState(LocationManager.class,STATE.ON,"Signal Acquired");
-    		if(m_lstSF.size() == 3)
-    		{
-    	    	fStillWaiting = false;
-    			SetState(State.MOVING_TO_STARTLINE);
-    		}
-    		else
-    		{
-    	    	fStillWaiting = false;
-    			SetState(State.SETTING_LINES_AUTO);
-    		}
+    		SetState(State.WAITINGFORSTART);
     	}
     	else if(provider == LocationManager.GPS_PROVIDER && status == LocationProvider.OUT_OF_SERVICE || status == LocationProvider.TEMPORARILY_UNAVAILABLE)
     	{
@@ -955,45 +977,7 @@ implements
     
 	public float GetTimeSinceLastSplit()
 	{
-		if(m_myLaps != null)
-		{
-			int iCurrentTime = (int)(m_tmCurrent * 1000.0);
-			float flAnswer = m_myLaps.GetTimeSinceLastSplit(iCurrentTime);
-			return flAnswer;
-		}
-		else
-		{
-			return Float.MAX_VALUE;
-		}
-	}
-	public double GetLastSplit()
-	{
-		if(m_myLaps != null)
-		{
-			if(m_myLaps.GetLastCrossTime() == 0)
-			{
-				// the current lap doesn't have a split yet.  Use the last lap's lap time
-				if(this.m_lastLap != null)
-				{
-					return m_lastLap.GetLastSplit();
-				}
-				else
-				{
-					// current lap doesn't have a split, and last lap doesn't exist.  Why are you even asking?
-					assert(false);
-					return 0.0;
-				}
-			}
-			else
-			{
-				return m_myLaps.GetLastSplit();
-			}
-		}
-		else
-		{
-			assert(false);
-			return 0.0;
-		}
+		return ((float)(System.currentTimeMillis() - m_tmLastLap)) / 1000.0f;
 	}
 	public int GetLapSentCount()
 	{
@@ -1008,6 +992,23 @@ implements
 	}
     void SetState(State eNewState)
     {
+    	// first, let's do a state filter
+    	if(eNewState == State.WAITINGFORSTART || eNewState == State.WAITINGFORSTOP)
+    	{
+    		if(m_startDecider.IsReady() && m_stopDecider.IsReady())
+    		{
+    			eNewState = State.MOVING_TO_STARTLINE;
+    		}
+    		else if(m_startDecider.IsReady() && !m_stopDecider.IsReady())
+    		{
+    			eNewState = State.WAITINGFORSTOP;
+    		}
+    		else if(!m_startDecider.IsReady())
+    		{
+    			eNewState = State.WAITINGFORSTART;
+    		}
+    	}
+    	
     	m_currentView = null;
     	
     	switch(eNewState)
@@ -1031,6 +1032,11 @@ implements
     	}
     	case MOVING_TO_STARTLINE:
     	{
+    		if(m_lRaceId < 0 && m_lapParams.IsValid(m_fUseP2P))
+    		{
+    			m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lapParams, this.m_fTestMode, m_fUseP2P);
+    			m_lapSender.SetRaceId(m_lRaceId);
+    		}
     		View vStartline = View.inflate(this, R.layout.lapping_movetostartline, null);
     		MoveToStartLineView vView = (MoveToStartLineView)vStartline.findViewById(R.id.movetostartline);
     		vView.DoInit(this);
@@ -1066,51 +1072,22 @@ implements
 			
     		break;
     	}
-    	case SETTING_LINES_AUTO:
-    		if(m_lstSF.size() == 3)
-    		{
-    			eNewState = State.PLOTTING;
-    			SetState(State.PLOTTING);
-    		}
-    		else
-    		{
-	    		View vLineDraw = View.inflate(this, R.layout.lapping_startfinishautodraw, null);
-	    		StartFinishAutoSetView vActualView = (StartFinishAutoSetView)vLineDraw.findViewById(R.id.linesetter);
-	    		vActualView.SetData(this);
-	    		m_currentView = vLineDraw;
-	    		m_currentView.setOnClickListener(this);
-	    		m_currentView = vLineDraw;
-	    		setContentView(vLineDraw);
-	    		vLineDraw.requestLayout();
-    		}
-    		break;
-    	case SETTING_LINES:
+    	case WAITINGFORSTART:
+    	case WAITINGFORSTOP:
     	{
-    		if(m_lstSF.size() == 3)
-    		{
-    			eNewState = State.PLOTTING;
-    			SetState(State.PLOTTING);
-    		}
-    		else
-    		{
-	    		View vLineDraw = View.inflate(this, R.layout.lapping_startfinishdraw, null);
-	    		StartFinishSetView vActualView = (StartFinishSetView)vLineDraw.findViewById(R.id.linesetter);
-	    		vActualView.SetData(this);
-	    		m_currentView = vLineDraw;
-	    		m_currentView.setOnClickListener(this);
-	    		m_currentView = vLineDraw;
-	    		setContentView(vLineDraw);
-	    		vLineDraw.requestLayout();
-    		}
+    		// we're waiting for the start and stop deciders to be satisfied and ready to go
+    		View vLineDraw = View.inflate(this, R.layout.lapping_startfinishautodraw, null);
+    		DeciderWaitingView vActualView = (DeciderWaitingView)vLineDraw.findViewById(R.id.linesetter);
+    		vActualView.SetData(this);
+    		m_currentView = vLineDraw;
+    		m_currentView.setOnClickListener(this);
+    		m_currentView = vLineDraw;
+    		setContentView(vLineDraw);
+    		vLineDraw.requestLayout();
     		break;
     	}
     	case PLOTTING:
-    		assert(this.m_lstSF.size() == 3);
-    		LineSeg rgSF[] = new LineSeg[3];
-    		for(int x = 0;x < 3; x++)
-    		{
-    			rgSF[x] = m_lstSF.get(x);
-    		}
+    		assert(this.m_lapParams != null && m_lapParams.IsValid(this.m_fUseP2P));
     		
     		View vView = View.inflate(this, R.layout.lapping_laptimeview, null);
     		MapPaintView view = (MapPaintView)vView.findViewById(R.id.laptimeview);
@@ -1167,9 +1144,163 @@ implements
 		return false;
 	}
 	
+	private interface SplitDecider
+	{
+		public abstract boolean NotifyPoint(LapAccumulator currentLap, Point2D ptLast, Point2D ptCurrent, float flCurrentVel);
+		public abstract boolean IsReady();
+		public abstract String[] GetUnReadyStrings(); // returns the string we display when this split decider isn't ready (example: "tap to set start line")
+		public abstract void Tap(); // user tapped the screen.  absorb this input
+		public abstract LineSeg GetLine();
+		public abstract Vector2D GetDir();
+	}
+	private abstract static class BaseSplitDecider implements SplitDecider
+	{
+		@Override
+		public boolean NotifyPoint(LapAccumulator currentLap, Point2D ptLast, Point2D ptCurrent, float flCurrentVel)
+		{
+			// handles the case that all NotifyPoints have to handle: did this point cross the line and direction we have set?
+			this.currentLap = currentLap;
+			
+			if(IsReady())
+			{
+				LineSeg lnPoints = new LineSeg(ptCurrent,ptLast);
+				LineSeg.IntersectData data = new LineSeg.IntersectData();
+				
+				Vector2D vNewDir = Vector2D.P1MinusP2(ptCurrent, ptLast);
+				return lnPoints.Intersect(ln, data, true, true) && vNewDir.DotProduct(vCrossDir) > 0;
+			}
+			return false;
+		}
+		public abstract String[] GetUnReadyStrings(); // returns the string we display when this split decider isn't ready (example: "tap to set start line")
+		public abstract void Tap(); // user tapped the screen.  absorb this input
+
+		@Override
+		public final boolean IsReady()	{return ln != null && vCrossDir != null && vCrossDir.GetLength() > 0 && ln.GetLength() > 0;	}
+		@Override
+		public final LineSeg GetLine() {return ln;}
+		@Override
+		public final Vector2D GetDir() {return vCrossDir;}
+
+		protected LapAccumulator currentLap;
+		protected LineSeg ln;
+		protected Vector2D vCrossDir;
+	}
+	private static class SpeedSplitDecider extends BaseSplitDecider
+	{
+		SpeedSplitDecider(boolean fArmedByDefault, float flSpeed, Prefs.UNIT_SYSTEM eUnitSystem, String strStartFinish)
+		{
+			this.fArmed = fArmedByDefault;
+			this.flCrossSpeed = flSpeed;
+			this.eSystem = eUnitSystem;
+			this.strStartFinish = strStartFinish;
+		}
+		@Override
+		public boolean NotifyPoint(LapAccumulator currentLap, Point2D ptLast, Point2D ptCurrent, float flCurrentVel)
+		{
+			if(super.NotifyPoint(currentLap, ptLast, ptCurrent, flCurrentVel)) return true;
+			
+			if(!IsReady() && fArmed && flLastSpeed >= 0)
+			{
+				float flLastDiff = flLastSpeed - flCrossSpeed;
+				float flThisDiff = flCurrentVel - flCrossSpeed;
+				if(flLastDiff * flThisDiff <= 0)
+				{
+					// this means that we have just changed sign in our difference-from-target-speed.
+					// therefore, we just crossed it.
+					if(currentLap.GetPositionCount() > 3)
+					{
+						vCrossDir = new Vector2D(0,0); // allocate a vector2D so that MakeSplitAtIndex can edit it for us
+						ln = currentLap.MakeSplitAtIndex(currentLap.GetPositionCount()-1, vCrossDir);
+						return true;
+					}
+				}
+				
+			}
+			flLastSpeed = flCurrentVel;
+			return false;
+		}
+		@Override
+		public String[] GetUnReadyStrings()
+		{
+			String str[] = new String[2];
+			if(fArmed)
+			{
+				str[0] = strStartFinish + " will be set when speed";
+				str[1] = "crosses " + Prefs.FormatMetersPerSecond(flCrossSpeed, null, eSystem, true) + " (current: " + Prefs.FormatMetersPerSecond(flLastSpeed, null, eSystem, false) + ")";
+			}
+			else
+			{
+				str[0] = "Tap screen to arm speed";
+				str[1] = "";
+			}
+			return str;
+		}
+		public void Tap()
+		{
+			fArmed = true;
+		}
+		
+		private boolean fArmed; // we aren't ready to go until we're armed
+		private String strStartFinish;
+		Prefs.UNIT_SYSTEM eSystem;
+		private float flCrossSpeed;
+		private float flLastSpeed = -1;
+	}
+	private static class LineSplitDecider extends BaseSplitDecider
+	{
+		LineSplitDecider(String strSetupLine)
+		{
+			this.strSetupLine = strSetupLine;
+		}
+		LineSplitDecider(LineSeg ln, Vector2D vDir)
+		{
+			this.ln = ln;
+			this.vCrossDir = vDir;
+		}
+		@Override
+		public boolean NotifyPoint(LapAccumulator currentLap, Point2D ptLast, Point2D ptCurrent, float flCurrentVel)
+		{
+			if(super.NotifyPoint(currentLap,ptLast,ptCurrent, flCurrentVel)) return true;
+			
+			LineSeg.IntersectData intersect = new LineSeg.IntersectData();
+			LapAccumulator.CrossData cross = new LapAccumulator.CrossData();
+			if(currentLap.IsNowCrossingSelf(intersect,cross))
+			{
+				if(cross.flSpeedOfCrossedLine > 5)
+				{
+					// the car crossed a line where it was going fast, while the car was going fast.  therefore, we should set start/finish lines
+					// we need to fish out pairs of points so we can do proper start/finish setting
+					vCrossDir = new Vector2D(0,0);
+					ln = currentLap.MakeSplitAtIndex(cross.ixCrossedLine,vCrossDir);
+					return true;
+				}
+			}
+			return false;
+		}
+		@Override
+		public String[] GetUnReadyStrings()
+		{
+			String str[] = new String[2];
+			
+			str[0] = strSetupLine;
+			str[1] = "Tap screen to force start/finish and splits";
+			
+			return str;
+		}
+		
+		@Override
+		public void Tap()
+		{
+			vCrossDir = new Vector2D(0,0); // allocate a vector2D so that MakeSplitAtIndex can edit it for us
+			ln = currentLap.MakeSplitAtIndex(currentLap.GetPositionCount()-1, vCrossDir);
+		}
+
+		private String strSetupLine;
+	}
+	
 	private Location m_pLastLocation;
 	public Location GetLastPosition()
-	{
+	{ 
 		return m_pLastLocation;
 	}
 	
@@ -1379,6 +1510,7 @@ class MoveToStartLineView extends View
 	Paint paintTrack;
 	Paint paintSmallText;
 	ApiDemos myApp;
+	NumberFormat num;
 	
 	public MoveToStartLineView(Context context)
 	{
@@ -1394,6 +1526,8 @@ class MoveToStartLineView extends View
 	}
 	public void DoInit(ApiDemos app)
 	{
+
+		num = NumberFormat.getInstance();
 		myApp = app;
 		paintSmallText = new Paint();
 		paintSmallText.setARGB(255,255,255,255);
@@ -1410,93 +1544,44 @@ class MoveToStartLineView extends View
 		canvas.setMatrix(new Matrix());
 		//canvas.scale(1.5f,1.5f);
 		canvas.clipRect(getLeft(),getTop(),getRight(),getBottom(),Op.REPLACE);
-		
-		String str = "Proceed to start/finish line";
-		Rect rcScreen = new Rect(this.getLeft(), getTop(), getRight(), getBottom());
-		
-		LapAccumulator lap = myApp.GetCurrentLap();
-		if(lap != null)
+		Rect rcAll = new Rect();
+		rcAll.set(getLeft(),getTop(),getRight(), getBottom());
+
+		String strMsg = myApp.GetMessage();
+		if(myApp.GetTimeSinceLastSplit() < 2.0)
 		{
-			FloatRect rcInWorld = lap.GetBounds(false);
-			Rect rcOnScreen = new Rect();
-			rcOnScreen.left = getLeft();
-			rcOnScreen.top = getTop();
-			rcOnScreen.right = getRight();
-			rcOnScreen.bottom = getBottom();
+			// draw the last split
+			num.setMaximumFractionDigits(2);
+			num.setMinimumFractionDigits(2);
 			
-			List<LineSeg> lstSF = lap.GetSplitPoints(true);
-			if(lstSF != null && lstSF.size() > 0)
+			paintSmallText.setARGB(255,255,255,255); // just use white if they're going for absolute times
+			
+			final int cxLabels = getWidth()/10;
+			final int cxSplit = getRight() - cxLabels;
+			
+			Rect rcLapTime = new Rect(getLeft(),getTop(),cxSplit,getBottom());
+			Rect rcLapLabel = new Rect(cxSplit, getTop(),getRight(),getBottom());
+			// curent lap has no splits, so we must have just finished a lap
+			LapAccumulator lapLast = myApp.GetLastLap();
+			if(lapLast != null)
 			{
-				FloatRect rcSF = lstSF.get(0).GetBounds();
-				rcInWorld = rcInWorld.Union(rcSF);
-				float flSFX = rcSF.ExactCenterX();
-				float flSFY = rcSF.ExactCenterY();
-				
-				float rg[] = new float[2];
-				Location.distanceBetween(flSFY, flSFX, lap.GetLastPoint().pt.y, lap.GetLastPoint().pt.x, rg);
-				
-				str += " (" + (int)rg[0] + " meters away)";
+				final double dLastLap = lapLast.GetLapTime();
+				String strLapText = Utility.FormatSeconds((float)dLastLap);
+				Utility.DrawFontInBox(canvas, strLapText, paintSmallText, rcLapTime);
+				Utility.DrawFontInBox(canvas, "Lap", paintSmallText, rcLapLabel);
 			}
-			
-			LapAccumulator.DrawLap(lap, false, myApp.GetSF(), rcInWorld, canvas, paintTrack, paintLines, new Rect(rcOnScreen));
 		}
-		Utility.DrawFontInBox(canvas, str, paintSmallText, rcScreen);
-	}
-}
-
-// this is the view that sets the start/finish lines
-class StartFinishSetView extends View
-{
-	Paint paintText;
-	Paint paintLines;
-	Paint paintTrack;
-	Paint paintSmallText;
-	ApiDemos myApp;
-	public StartFinishSetView(Context context)
-	{
-		super(context);
-		DoInit();
-	}
-	public StartFinishSetView(Context context, AttributeSet attrs)
-	{
-		super(context,attrs);
-		DoInit();
-	}
-	public StartFinishSetView(Context context, AttributeSet attrs, int defStyle)
-	{
-		super(context,attrs,defStyle);
-		DoInit();
-	}
-	void SetData(ApiDemos api)
-	{
-		myApp = api;
-	}
-	private void DoInit()
-	{
-		paintText = new Paint();
-		paintText.setARGB(255,255,255,255);
-		paintText.setTextSize(40);
-
-		paintSmallText = new Paint();
-		paintSmallText.setARGB(255,255,255,255);
-		paintSmallText.setTextSize(20);
-		
-		paintLines = new Paint();
-		paintLines.setARGB(255,255,0,0);
-		
-		paintTrack = new Paint();
-		paintTrack.setARGB(255,255,255,255);
-	}
-	public void onDraw(Canvas canvas)
-	{
-		canvas.setMatrix(new Matrix());
-		//canvas.scale(1.5f,1.5f);
-		canvas.clipRect(getLeft(),getTop(),getRight(),getBottom(),Op.REPLACE);
-		
-		LapAccumulator lap = myApp.GetCurrentLap();
-		if(lap != null)
+		else if(strMsg != null)
 		{
-			if(myApp.IsReadyForLineSet())
+			Paint p = new Paint();
+			Utility.DrawFontInBox(canvas, strMsg, paintSmallText, rcAll);
+		}
+		else
+		{
+			String str = "Proceed to start/finish line";
+			
+			LapAccumulator lap = myApp.GetCurrentLap();
+			if(lap != null)
 			{
 				FloatRect rcInWorld = lap.GetBounds(false);
 				Rect rcOnScreen = new Rect();
@@ -1505,58 +1590,46 @@ class StartFinishSetView extends View
 				rcOnScreen.right = getRight();
 				rcOnScreen.bottom = getBottom();
 				
-				int cSF = myApp.GetSFCount();
-				LapAccumulator.DrawLap(lap, false, myApp.GetSF(), rcInWorld, canvas, paintTrack, paintLines, new Rect(rcOnScreen));
-				
-				String str = "";
-				switch(cSF)
+				List<LineSeg> lstSF = lap.GetSplitPoints(true);
+				if(lstSF != null && lstSF.size() > 0)
 				{
-				case 0: // we're setting start/finish
-					str = "Tap to set start/finish";
-					break;
-				case 1: // we're setting split 1
-					str = "Tap to set split 1";
-					break;
-				case 2: // we're setting split 2
-					str = "Tap to set split 2";
-					break;
+					FloatRect rcSF = lstSF.get(0).GetBounds();
+					rcInWorld = rcInWorld.Union(rcSF);
+					float flSFX = rcSF.ExactCenterX();
+					float flSFY = rcSF.ExactCenterY();
+					
+					float rg[] = new float[2];
+					Location.distanceBetween(flSFY, flSFX, lap.GetLastPoint().pt.y, lap.GetLastPoint().pt.x, rg);
+					
+					str += " (" + (int)rg[0] + " meters away)";
 				}
-				Utility.DrawFontInBox(canvas, str, paintSmallText, rcOnScreen);
+				
+				LapAccumulator.DrawLap(lap, false, rcInWorld, canvas, paintTrack, paintLines, new Rect(rcOnScreen));
 			}
-			else
-			{
-				final String str1 = "You must be moving to set";
-				final String str2 = "start/finish and split points";
-				final int mid = getTop() + getHeight()/2;
-				Utility.DrawFontInBox(canvas, str1, paintSmallText, new Rect(getLeft(),getTop(),getRight(),mid));
-				Utility.DrawFontInBox(canvas, str2, paintSmallText, new Rect(getLeft(),mid,getRight(),getBottom()));
-			}
+			Utility.DrawFontInBox(canvas, str, paintSmallText, rcAll);
 		}
-		//canvas.drawText("Wifi: " + pStateMan.GetState(), 50.0f, 110.0f, paintText);
-		//canvas.drawText("GPS: " + (int)myApp.GetGPSRate() + "hz", 50.0f, 130.0f, paintText);
 	}
-	
 }
 
 //this is the view that sets the start/finish lines
-class StartFinishAutoSetView extends View
+class DeciderWaitingView extends View
 {
 	Paint paintText;
 	Paint paintLines;
 	Paint paintTrack;
 	Paint paintSmallText;
 	ApiDemos myApp;
-	public StartFinishAutoSetView(Context context)
+	public DeciderWaitingView(Context context)
 	{
 		super(context);
 		DoInit();
 	}
-	public StartFinishAutoSetView(Context context, AttributeSet attrs)
+	public DeciderWaitingView(Context context, AttributeSet attrs)
 	{
 		super(context,attrs);
 		DoInit();
 	}
-	public StartFinishAutoSetView(Context context, AttributeSet attrs, int defStyle)
+	public DeciderWaitingView(Context context, AttributeSet attrs, int defStyle)
 	{
 		super(context,attrs,defStyle);
 		DoInit();
@@ -1599,15 +1672,14 @@ class StartFinishAutoSetView extends View
 				rcOnScreen.right = getRight();
 				rcOnScreen.bottom = getBottom();
 				
-				int cSF = myApp.GetSFCount();
-				LapAccumulator.DrawLap(lap, false, myApp.GetSF(), rcInWorld, canvas, paintTrack, paintLines, new Rect(rcOnScreen));
+				LapAccumulator.DrawLap(lap, false, rcInWorld, canvas, paintTrack, paintLines, new Rect(rcOnScreen));
 				
-				String str1 = "Start/finish will auto-set once after 1 lap";
-				String str2 = "Tap screen to force start/finish and splits";
+				String str[] = myApp.GetDeciderWaitingStrings();
+				
 				final int mid = getTop() + getHeight()/2;
 
-				Utility.DrawFontInBox(canvas, str1, paintSmallText, new Rect(getLeft(),getTop(),getRight(),mid));
-				Utility.DrawFontInBox(canvas, str2, paintSmallText, new Rect(getLeft(),mid,getRight(),getBottom()));
+				Utility.DrawFontInBox(canvas, str[0], paintSmallText, new Rect(getLeft(),getTop(),getRight(),mid));
+				Utility.DrawFontInBox(canvas, str[1], paintSmallText, new Rect(getLeft(),mid,getRight(),getBottom()));
 			}
 			else
 			{
@@ -1668,12 +1740,9 @@ class MapPaintView extends View
 	{
 		Paint paintLap = new Paint();
 		Paint paintSplits = new Paint();
-		Vector<LineSeg> lstLines = myApp.GetSF();
 		
 		if(lap != null)
 		{
-			int ixSplit = lap.GetLastSplitIndex()+1;
-			
 			FloatRect rcWindow = lapBest != null ? lapBest.GetBounds(true) : lap.GetBounds(true);
 			if(lap != null) rcWindow = rcWindow.Union(lap.GetBounds(true));
 			if(lapBest != null && lap != null)
@@ -1692,7 +1761,7 @@ class MapPaintView extends View
 				paintLap.setARGB(255, 255, 0, 255);
 				paintLap.setStrokeWidth(6);
 				paintSplits.setARGB(255, 255, 0, 0);
-				LapAccumulator.DrawLap(lapBest, true, lstLines, rcWindow, canvas, paintLap, paintSplits, new Rect(rcOnScreen));
+				LapAccumulator.DrawLap(lapBest, true, rcWindow, canvas, paintLap, paintSplits, new Rect(rcOnScreen));
 			}
 			if(lap != null)
 			{
@@ -1700,7 +1769,7 @@ class MapPaintView extends View
 				paintLap.setARGB(255, 255, 255, 255); // current lap in white if we're doing speed-distance
 				paintLap.setStrokeWidth(6);
 				paintSplits.setARGB(255, 255, 0, 0);
-				LapAccumulator.DrawLap(lap, true, lstLines, rcWindow, canvas, paintLap, paintSplits, new Rect(rcOnScreen));
+				LapAccumulator.DrawLap(lap, true, rcWindow, canvas, paintLap, paintSplits, new Rect(rcOnScreen));
 			}
 		}
 	}
@@ -1764,7 +1833,7 @@ class MapPaintView extends View
 			final TimePoint2D ptCurrent = lap.GetLastPoint();
 			
 			final float flSpeed = (float)ptCurrent.dVelocity;
-			String strSpeed = Prefs.FormatMetersPerSecond(flSpeed,num,eDisplayUnitSystem);
+			String strSpeed = Prefs.FormatMetersPerSecond(flSpeed,num,eDisplayUnitSystem,false);
 			Utility.DrawFontInBox(canvas, strSpeed, p, rcTop);
 		}
 		if(lapBest != null)
@@ -1773,7 +1842,7 @@ class MapPaintView extends View
 			p.setARGB(255, 255, 0, 255);
 			final TimePoint2D ptCurrent = lap.GetLastPoint();
 			final float flBestSpeed = (float)lapBest.GetSpeedAtPosition(ptCurrent);
-			String strSpeed = Prefs.FormatMetersPerSecond(flBestSpeed,num,eDisplayUnitSystem);
+			String strSpeed = Prefs.FormatMetersPerSecond(flBestSpeed,num,eDisplayUnitSystem,false);
 			Utility.DrawFontInBox(canvas, strSpeed, p, rcBottom);
 		}
 	}
@@ -1790,37 +1859,25 @@ class MapPaintView extends View
 		if(myApp.GetTimeSinceLastSplit() < 2.0)
 		{
 			// draw the last split
-			final double dSplit = myApp.GetLastSplit();
 			num.setMaximumFractionDigits(2);
 			num.setMinimumFractionDigits(2);
 			
-			String strSplitText;
 			paintBigText.setARGB(255,255,255,255); // just use white if they're going for absolute times
-			strSplitText = Utility.FormatSeconds((float)dSplit);
 			
 			final int cxLabels = getWidth()/10;
 			final int cxSplit = getRight() - cxLabels;
-			final int cyMiddle = getTop() + getHeight()/2;
-			Rect rcLeftTop = new Rect(getLeft(),getTop(),cxSplit,cyMiddle);
-			Rect rcLeftBottom = new Rect(getLeft(),cyMiddle,cxSplit,getBottom());
-			Rect rcRightTop = new Rect(cxSplit,getTop(),getRight(),cyMiddle);
-			Rect rcRightBottom = new Rect(cxSplit,cyMiddle,getRight(),getBottom());
 			
-			if(myApp.GetCurrentLap().GetLastSplitIndex() < 0)
+			Rect rcLapTime = new Rect(getLeft(),getTop(),cxSplit,getBottom());
+			Rect rcLapLabel = new Rect(cxSplit, getTop(),getRight(),getBottom());
+			// curent lap has no splits, so we must have just finished a lap
+			LapAccumulator lapLast = myApp.GetLastLap();
+			if(lapLast != null)
 			{
-				// curent lap has no splits, so we must have just finished a lap
-				LapAccumulator lapLast = myApp.GetLastLap();
-				if(lapLast != null)
-				{
-					final double dLastLap = lapLast.GetLapTime();
-					String strLapText = Utility.FormatSeconds((float)dLastLap);
-					Utility.DrawFontInBox(canvas, strLapText, paintBigText, rcLeftTop);
-					Utility.DrawFontInBox(canvas, "Lap", paintBigText, rcRightTop);
-				}
+				final double dLastLap = lapLast.GetLapTime();
+				String strLapText = Utility.FormatSeconds((float)dLastLap);
+				Utility.DrawFontInBox(canvas, strLapText, paintBigText, rcLapTime);
+				Utility.DrawFontInBox(canvas, "Lap", paintBigText, rcLapLabel);
 			}
-			// always gotta draw the split
-			Utility.DrawFontInBox(canvas, strSplitText, paintBigText, rcLeftBottom);
-			Utility.DrawFontInBox(canvas, "Split", paintBigText, rcRightBottom);
 		}
 		else if(strMsg != null)
 		{

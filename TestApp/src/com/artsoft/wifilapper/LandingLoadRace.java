@@ -129,13 +129,15 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
 		private int id;
 		private float laptime;
 		private long unixStartTimeSeconds;
-		public ListRaceData(String strRaceName, int cLaps, int id, float laptime, int iStartTime)
+		private boolean fUsePointToPoint;
+		public ListRaceData(String strRaceName, int cLaps, int id, float laptime, int iStartTime, boolean fUsePointToPoint)
 		{
 			this.strRaceName = strRaceName;
 			this.cLaps = cLaps;
 			this.id = id;
 			this.laptime = laptime;
 			this.unixStartTimeSeconds = iStartTime;
+			this.fUsePointToPoint = fUsePointToPoint;
 		}
 		public String toString()
 		{
@@ -219,14 +221,16 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
 			int ixId = cursor.getColumnIndex(RaceDatabase.KEY_RACEID);
 			int ixLapTime = cursor.getColumnIndex(RaceDatabase.KEY_LAPTIME);
 			int ixStartTime = cursor.getColumnIndex(RaceDatabase.KEY_STARTTIME);
+			int ixP2P = cursor.getColumnIndex(RaceDatabase.KEY_P2P);
 			
 			String strRaceName = cursor.getString(ixName);
 			int cLaps = cursor.getInt(ixCount);
 			int id = cursor.getInt(ixId);
 			float flLapTime = cursor.getFloat(ixLapTime);
 			int iStartTime = cursor.getInt(ixStartTime);
+			boolean fUsePointToPoint = cursor.getInt(ixP2P) != 0;
 			
-			lstRaceData.add(new ListRaceData(strRaceName, cLaps, id, flLapTime, iStartTime));
+			lstRaceData.add(new ListRaceData(strRaceName, cLaps, id, flLapTime, iStartTime, fUsePointToPoint));
 		}
 
 		cursor.close();
@@ -346,6 +350,12 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
     		String strPrivacy = settings.getString(Prefs.PREF_PRIVACYPREFIX_STRING, Prefs.DEFAULT_PRIVACYPREFIX);
     		int iButtonPin = settings.getInt(Prefs.PREF_IOIOBUTTONPIN, Prefs.DEFAULT_IOIOBUTTONPIN);
     		
+    		boolean fUseP2P = listData.fUsePointToPoint;
+    		final int iStartMode = settings.getInt(Prefs.PREF_P2P_STARTMODE, Prefs.DEFAULT_P2P_STARTMODE);
+    		final float flStartParam = settings.getFloat(Prefs.PREF_P2P_STARTPARAM, Prefs.DEFAULT_P2P_STARTPARAM);
+    		final int iStopMode = settings.getInt(Prefs.PREF_P2P_STOPMODE, Prefs.DEFAULT_P2P_STOPMODE);
+    		final float flStopMode = settings.getFloat(Prefs.PREF_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM);
+    		
     		List<Integer> lstSelectedPIDs = new ArrayList<Integer>();
     		Prefs.LoadOBD2PIDs(settings, lstSelectedPIDs);
 
@@ -353,7 +363,7 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
     		IOIOManager.PinParams rgPulsePins[] = Prefs.LoadIOIOPulsePins(settings);
     		
 			ApiDemos.SaveSharedPrefs(settings, strIP, strSSID, null, null);
-			Intent i = ApiDemos.BuildStartIntent(rgAnalPins, rgPulsePins, iButtonPin, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, r.rgSF, r.rgSFDir, strRaceName, strPrivacy, fAckSMS, fUseAccel, r.fTestMode, listData.id, idModeSelected, strBTGPS, strOBD2, strSpeedoStyle, eUnitSystem.toString());
+			Intent i = ApiDemos.BuildStartIntent(rgAnalPins, rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopMode, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, r.lapParams, strRaceName, strPrivacy, fAckSMS, fUseAccel, r.fTestMode, listData.id, idModeSelected, strBTGPS, strOBD2, strSpeedoStyle, eUnitSystem.toString());
 			startActivity(i);
 		}
 		else

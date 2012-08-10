@@ -29,6 +29,8 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.artsoft.wifilapper.IOIOManager.PinParams;
+
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -39,42 +41,122 @@ import android.location.Location;
 import android.os.Debug;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
 public class LapAccumulator 
 {
-	public LapAccumulator(List<LineSeg> lstLines, List<Vector2D> lstLineDirections, Point2D ptStart, int iUnixStartTime, int iLapId, int iStartTime, double dVelocity)
+	public static class LapAccumulatorParams implements Parcelable
 	{
-		Init(lstLines, lstLineDirections, ptStart, iUnixStartTime, iLapId, iStartTime, dVelocity);
+		LapAccumulatorParams()
+		{
+			lnStart = new LineSeg();
+			lnStop = new LineSeg();
+			vStart = new Vector2D(0,0);
+			vStop = new Vector2D(0,0);
+		}
+		LapAccumulatorParams(Parcel in)
+		{
+			lnStart = new LineSeg(in);
+			lnStop = new LineSeg(in);
+			vStart = new Vector2D(in);
+			vStop = new Vector2D(in);
+		}
+		public LineSeg lnStart;
+		public LineSeg lnStop;
+		public Vector2D vStart;
+		public Vector2D vStop;
+		
+		public boolean IsValid(boolean fP2P)
+		{
+			if(fP2P)
+			{
+				return lnStart != null && vStart != null && lnStart.GetLength() > 0 && vStart.GetLength() > 0;
+			}
+			else
+			{
+				return lnStart != null && vStart != null && lnStart.GetLength() > 0 && vStart.GetLength() > 0 &&
+					   lnStop != null && vStop != null && lnStop.GetLength() > 0 && vStop.GetLength() > 0;
+				
+			}
+		}
+		public void InitFromRaw(float[] rgSF, float[] rgSFDir)
+		{
+			lnStart = new LineSeg(new Point2D((float)rgSF[0],(float)rgSF[1]),new Point2D((float)rgSF[2],(float)rgSF[3]));
+    		vStart = new Vector2D((float)rgSFDir[0], (float)rgSFDir[1]);
+			
+    		lnStop = new LineSeg(new Point2D((float)rgSF[4],(float)rgSF[5]),new Point2D((float)rgSF[6],(float)rgSF[7]));
+    		vStop = new Vector2D((float)rgSFDir[2], (float)rgSFDir[3]);
+		}
+		@Override
+		public int describeContents() 
+		{
+			return 0;
+		}
+		@Override
+		public void writeToParcel(Parcel arg0, int arg1) 
+		{
+			arg0.writeFloat(lnStart.GetP1().x);
+			arg0.writeFloat(lnStart.GetP1().y);
+			arg0.writeFloat(lnStart.GetP2().x);
+			arg0.writeFloat(lnStart.GetP2().y);
+			
+			arg0.writeFloat(lnStop.GetP1().x);
+			arg0.writeFloat(lnStop.GetP1().y);
+			arg0.writeFloat(lnStop.GetP2().x);
+			arg0.writeFloat(lnStop.GetP2().y);
+			
+			arg0.writeFloat(vStart.GetX());
+			arg0.writeFloat(vStart.GetY());
+			
+			arg0.writeFloat(vStop.GetX());
+			arg0.writeFloat(vStop.GetY());
+		}
+		public static final Parcelable.Creator<LapAccumulatorParams> CREATOR
+		        = new Parcelable.Creator<LapAccumulatorParams>() 
+		        {
+		    public LapAccumulatorParams createFromParcel(Parcel in) 
+		    {
+		        return new LapAccumulatorParams(in);
+		    }
+		
+		    public LapAccumulatorParams[] newArray(int size) 
+		    {
+		        return new LapAccumulatorParams[size];
+		    }
+		};
+	}
+	public LapAccumulator(LapAccumulatorParams lapParams, Point2D ptStart, int iUnixStartTime, int iLapId, int iStartTime, double dVelocity)
+	{
+		Init(lapParams, ptStart, iUnixStartTime, iLapId, iStartTime, dVelocity);
 	}
 	// used for the first lap, when we don't have a unixstarttime or a lapid
-	public LapAccumulator(List<LineSeg> lstLines, List<Vector2D> lstLineDirections, Point2D ptStart, double dVelocity)
+	public LapAccumulator(LapAccumulatorParams lapParams, Point2D ptStart, double dVelocity)
 	{
 		int iUnixStartTime = (int)(System.currentTimeMillis() / 1000);
-		Init(lstLines, lstLineDirections, ptStart, iUnixStartTime, -1, 0, dVelocity);
+		Init(lapParams, ptStart, iUnixStartTime, -1, 0, dVelocity);
 	}
 	
 	// used for laps we load from the DB, and want to defer point-loading
-	public LapAccumulator(List<LineSeg> lstLines, List<Vector2D> lstLineDirections, int iUnixStartTime, int lLapId)
+	public LapAccumulator(LapAccumulatorParams lapParams, int iUnixStartTime, int lLapId)
 	{
 		m_fDeferredLoad = true;
-		Init(lstLines, lstLineDirections, null, iUnixStartTime, lLapId, 0, 0);
+		Init(lapParams, null, iUnixStartTime, lLapId, 0, 0);
 	}
 	public ArrayList<TimePoint2D> GetPoints()
 	{
 		return this.m_lstPositions;
 	}
-	private void Init(List<LineSeg> lstLines, List<Vector2D> lstLineDirections, Point2D ptStart, int iUnixStartTime, int iLapId, int iStartTime, double dVelocity)
+	private void Init(LapAccumulatorParams lapParams, Point2D ptStart, int iUnixStartTime, int iLapId, int iStartTime, double dVelocity)
 	{
 		m_lstChannels = new ArrayList<DataChannel>();
 		
 		m_iUnixStartTime = (int)(iUnixStartTime);
 		m_iLapId = iLapId;
-		m_lstLines = lstLines;
-		m_lstLineDirections = lstLineDirections;
+		m_lapParams = lapParams;
 		m_iStartTime = iStartTime;
 		m_lstPositions = new ArrayList<TimePoint2D>();
-		m_lstCrossTimes = new ArrayList<Integer>();
 
 		m_dCumulativeDistance = 0;
 		assert(ptStart != null);
@@ -88,7 +170,7 @@ public class LapAccumulator
 		DoDeferredLoad(null, 0, true);
 		
 		TimePoint2D pt = m_lstPositions.get(0);
-		LapAccumulator lap = new LapAccumulator(m_lstLines, m_lstLineDirections, pt.pt, m_iUnixStartTime, m_iLapId, m_iStartTime, pt.dVelocity);
+		LapAccumulator lap = new LapAccumulator(m_lapParams, pt.pt, m_iUnixStartTime, m_iLapId, m_iStartTime, pt.dVelocity);
 
 		for(int x = 0;x < m_lstPositions.size(); x++)
 		{
@@ -375,38 +457,31 @@ public class LapAccumulator
 			out.writeFloat((float)GetLapTime());
 			out.writeInt(m_iUnixStartTime);
 			
-			for(int x = 0;x < 3; x++)
-			{
-				if(x < m_lstLines.size())
-				{
-					LineSeg ln = m_lstLines.get(x);
-					out.writeFloat(ln.GetP1().x);
-					out.writeFloat(ln.GetP1().y);
-					out.writeFloat(ln.GetP2().x);
-					out.writeFloat(ln.GetP2().y);
-				}
-				else
-				{
-					out.writeFloat(0);
-					out.writeFloat(0);
-					out.writeFloat(0);
-					out.writeFloat(0);
-				}
-			}
-			for(int x = 0;x < 3; x++)
-			{
-				if(x < m_lstLineDirections.size())
-				{
-					Vector2D v = m_lstLineDirections.get(x);
-					out.writeFloat(v.GetX());
-					out.writeFloat(v.GetY());
-				}
-				else
-				{
-					out.writeFloat(0);
-					out.writeFloat(0);
-				}
-			}
+
+			out.writeFloat(m_lapParams.lnStart.GetP1().x);
+			out.writeFloat(m_lapParams.lnStart.GetP1().y);
+			out.writeFloat(m_lapParams.lnStart.GetP2().x);
+			out.writeFloat(m_lapParams.lnStart.GetP2().y);
+
+			out.writeFloat(m_lapParams.lnStop.GetP1().x);
+			out.writeFloat(m_lapParams.lnStop.GetP1().y);
+			out.writeFloat(m_lapParams.lnStop.GetP2().x);
+			out.writeFloat(m_lapParams.lnStop.GetP2().y);
+
+			out.writeFloat(0);
+			out.writeFloat(0);
+			out.writeFloat(0);
+			out.writeFloat(0);
+
+			out.writeFloat(m_lapParams.vStart.GetX());
+			out.writeFloat(m_lapParams.vStart.GetY());
+			
+			out.writeFloat(m_lapParams.vStop.GetX());
+			out.writeFloat(m_lapParams.vStop.GetY());
+			
+			out.writeFloat(0);
+			out.writeFloat(0);
+			
 			for(int x = 0;x < m_lstPositions.size(); x++)
 			{
 				TimePoint2D t = m_lstPositions.get(x);
@@ -535,23 +610,22 @@ public class LapAccumulator
 	}
 	public List<LineSeg> GetSplitPoints(boolean fStartOnly)
 	{
-		if(fStartOnly)
+		if(!m_lapParams.IsValid(!fStartOnly)) return null;
+		
+		List<LineSeg> lstLines = new ArrayList<LineSeg>();
+		if(!fStartOnly)
 		{
-			List<LineSeg> lstLines = new ArrayList<LineSeg>();
-			lstLines.add(m_lstLines.get(m_lstLines.size()-1));
-			return lstLines;
+			lstLines.add(m_lapParams.lnStop);
 		}
-		else
-		{
-			return this.m_lstLines;
-		}
+		lstLines.add(m_lapParams.lnStart);
+		return lstLines;
 	}
 	public void AddPosition(Point2D ptNewRaw, int iTime, double dVelocity)
 	{
 		if(m_lstPositions.size() == 0)
 		{
 			assert(m_fDeferredLoad);
-			Init(m_lstLines, m_lstLineDirections, ptNewRaw, m_iUnixStartTime, m_iLapId, iTime, dVelocity);
+			Init(m_lapParams, ptNewRaw, m_iUnixStartTime, m_iLapId, iTime, dVelocity);
 			return; // we're done here.
 		}
 		TimePoint2D ptLast = m_lstPositions.get(m_lstPositions.size() - 1);
@@ -584,38 +658,26 @@ public class LapAccumulator
 			m_rcMapBounds.bottom = Math.max(m_rcMapBounds.bottom,ptNew.pt.y);
 		}
 		
-		if(m_lstPositions.size() >= 3)
+		if(m_lstPositions.size() >= 3 && m_lapParams != null)
 		{
 			// it is now possible that we'll have a triangle, so we need to check to see if the last line segment
-			// overlaps the start/finish line segment
+			// overlaps the stop line segment
 			
 			float dLastInSeconds = ((float)ptLast.iTime / 1000.0f);
 			
-			final int cLines = m_lstLines.size(); 
 			LineSeg.IntersectData intersect = new LineSeg.IntersectData();
-			for(int ixLine = 0; ixLine < cLines; ixLine++)
+			if(lnLast.Intersect(m_lapParams.lnStop,intersect, true, true))
 			{
-				if(ixLine == m_lstLines.size() - 1 && iTime - this.m_iStartTime < DISARM_TIME)
+				Vector2D vDir = Vector2D.P1MinusP2(ptNewRaw, ptLast.pt);
+				if(vDir.DotProduct(m_lapParams.vStop) > 0)
 				{
-					continue; // don't even try to intersect with the finish line if we're not more than 3 seconds into a lap
-				}
-				if(lnLast.Intersect(m_lstLines.get(ixLine),intersect, true, true))
-				{
-					Vector2D vDir = Vector2D.P1MinusP2(ptNewRaw, ptLast.pt);
-					if(vDir.DotProduct(m_lstLineDirections.get(ixLine)) > 0)
-					{
-						// we've crossed a line, so let's add a time to the report
-						float dTimeInSeconds = ((float)iTime / 1000.0f);
-						float dIntersectTime = (intersect.GetThisFraction() * dLastInSeconds) + ((1 - intersect.GetThisFraction()) * dTimeInSeconds);
-						int iIntersectTime = (int)(dIntersectTime * 1000);
-						assert(iIntersectTime > m_iStartTime);
-						while(m_lstCrossTimes.size() <= ixLine) m_lstCrossTimes.add(null);
-						m_lstCrossTimes.set(ixLine, new Integer(iIntersectTime));
-						if(IsDoneLap())
-						{
-							m_ptFinishPoint = intersect.GetPoint();
-						}
-					}
+					// we've crossed the finish line, and we were going the correct direction
+					float dTimeInSeconds = ((float)iTime / 1000.0f);
+					float dIntersectTime = (intersect.GetThisFraction() * dLastInSeconds) + ((1 - intersect.GetThisFraction()) * dTimeInSeconds);
+					int iIntersectTime = (int)(dIntersectTime * 1000);
+					assert(iIntersectTime > m_iStartTime);
+					m_finishTime = new Integer(iIntersectTime);
+					m_ptFinishPoint = intersect.GetPoint();
 				}
 			}
 		}
@@ -630,25 +692,21 @@ public class LapAccumulator
 	}
 	public boolean IsDoneLap()
 	{
-		return m_lstCrossTimes != null && m_lstCrossTimes.size() == m_lstLines.size();
+		return this.m_ptFinishPoint != null && this.m_finishTime != null;
 	}
 	public int GetLastCrossTime()
 	{
-		if(m_lstCrossTimes.size() > 0)
+		if(m_finishTime != null)
 		{
-			return m_lstCrossTimes.get(m_lstCrossTimes.size() - 1).intValue();
+			return m_finishTime.intValue();
 		}
-		else
-		{
-			assert(false); // you shouldn't be asking about this!
-			return 0;
-		}
+		return 0;
 	}
 	public double GetLapTime()
 	{
-		if(m_lstCrossTimes.size() == m_lstLines.size())
+		if(m_finishTime != null)
 		{
-			return (GetLastCrossTime() - m_iStartTime)/1000.0;
+			return (m_finishTime.intValue() - m_iStartTime)/1000.0;
 		}
 		return 0.0;
 	}
@@ -656,7 +714,7 @@ public class LapAccumulator
 	// the input here is in milliseconds since the app start
 	public float GetTimeSinceLastSplit(int iCurrentTime)
 	{
-		if(m_lstCrossTimes.size() == 0)
+		if(m_finishTime == null)
 		{
 			// we haven't hit a split yet, since the time since last split will
 			// be the time since we were created
@@ -665,8 +723,7 @@ public class LapAccumulator
 		else
 		{
 			// m_lstCrossTimes are in absolute time
-			int ixLast = m_lstCrossTimes.size() - 1;
-			return (iCurrentTime - m_lstCrossTimes.get(ixLast).intValue()) / 1000.0f;
+			return (iCurrentTime - m_finishTime.intValue()) / 1000.0f;
 		}
 	}
 	private int FindPointIndexClosestToTime(final int iCrossTime)
@@ -693,28 +750,6 @@ public class LapAccumulator
 		}
 		return ixBest;
 	}
-	private int GetSplitStartIndex(final int ixSplit)
-	{
-		if(ixSplit < 0) return 0;
-		if(ixSplit == 0) return 0; // the first split always starts at index zero
-		if(ixSplit > m_lstCrossTimes.size()) return m_lstPositions.size();
-		Integer iCrossTime = m_lstCrossTimes.get(ixSplit-1);
-		if(iCrossTime == null) return 0; // we haven't made it to this split yet...
-		// now let's do a binary search to find the point closest to but less than the cross time
-		
-		return FindPointIndexClosestToTime(iCrossTime.intValue());
-	}
-	private int GetSplitEndIndex(final int ixSplit)
-	{
-		if(ixSplit < 0) return m_lstPositions.size();
-		if(ixSplit >= m_lstCrossTimes.size()) return m_lstPositions.size();
-		
-		Integer iCrossTime = m_lstCrossTimes.get(ixSplit);
-		if(iCrossTime == null) return m_lstPositions.size(); // we haven't made it to this split yet...
-		// now let's do a binary search to find the point closest to but less than the cross time
-	
-		return FindPointIndexClosestToTime(iCrossTime.intValue());
-	}
 	public FloatRect GetBounds(final boolean fSpeedDistance)
 	{
 		if(m_fBoundsValid)
@@ -726,7 +761,7 @@ public class LapAccumulator
 			return new FloatRect(0.0f,0.0f,0.0f,0.0f);
 		}
 	}
-	private static void DrawMapStyle(LapAccumulator lap, List<LineSeg> lstSF, FloatRect rcInWorld, Canvas canvas, Paint paintLap, Paint paintSplits, final Rect rcOnScreen)
+	private static void DrawMapStyle(LapAccumulator lap, FloatRect rcInWorld, Canvas canvas, Paint paintLap, Paint paintSplits, final Rect rcOnScreen)
 	{
 		canvas.save();
 		
@@ -812,6 +847,7 @@ public class LapAccumulator
 				final int ixY = rgflPoints.length - 1;
 				canvas.drawRect(rgflPoints[ixX]-5,rgflPoints[ixY]-5, rgflPoints[ixX]+5,rgflPoints[ixY]+5, paintLap);
 	
+				List<LineSeg> lstSF = lap.GetSplitPoints(false);
 				if(lstSF != null && paintSplits != null)
 				{
 					for(int ix = 0; ix < lstSF.size(); ix++)
@@ -838,7 +874,7 @@ public class LapAccumulator
 		}
 		canvas.restore();
 	}
-	private static void DrawSpeedDistance(LapAccumulator lap, List<LineSeg> lstSF, FloatRect rcInWorld, Canvas canvas, Paint paintLap, Paint paintSplits, final Rect rcOnScreen)
+	private static void DrawSpeedDistance(LapAccumulator lap, FloatRect rcInWorld, Canvas canvas, Paint paintLap, Paint paintSplits, final Rect rcOnScreen)
 	{
 		// rcInWorld will be:
 		// left = distance in whatever units to start drawing
@@ -899,7 +935,7 @@ public class LapAccumulator
 			canvas.drawRect(rgflPoints[ixX]-3,rgflPoints[ixY]-3, rgflPoints[ixX]+3,rgflPoints[ixY]+3, paintLap);
 		}
 	}
-	public static void DrawLap(LapAccumulator lap, boolean fSpeedDist, List<LineSeg> lstSF, final FloatRect _rcInWorld, Canvas canvas, Paint paintLap, Paint paintSplits, final Rect _rcOnScreen)
+	public static void DrawLap(LapAccumulator lap, boolean fSpeedDist, final FloatRect _rcInWorld, Canvas canvas, Paint paintLap, Paint paintSplits, final Rect _rcOnScreen)
 	{
 		//canvas.clipRect(rcOnScreen,Region.Op.REPLACE);
 	
@@ -908,39 +944,17 @@ public class LapAccumulator
 		
 		if(fSpeedDist)
 		{
-			DrawSpeedDistance(lap,lstSF,rcInWorld,canvas,paintLap,paintSplits, rcOnScreen);
+			DrawSpeedDistance(lap,rcInWorld,canvas,paintLap,paintSplits, rcOnScreen);
 		}
 		else
 		{
-			DrawMapStyle(lap,lstSF,rcInWorld,canvas,paintLap,paintSplits,rcOnScreen);
+			DrawMapStyle(lap,rcInWorld,canvas,paintLap,paintSplits,rcOnScreen);
 		}
 		
-	}
-	public int GetLastSplitIndex()
-	{
-		return m_lstCrossTimes.size() - 1;
 	}
 	public int GetPositionCount()
 	{
 		return m_lstPositions.size();
-	}
-	public double GetSplit(int ixIndex)
-	{
-		if(ixIndex == 0)
-		{
-			if(m_lstCrossTimes.get(0) != null)
-			{
-				return (m_lstCrossTimes.get(0).intValue() - m_iStartTime)/1000.0;
-			}
-		}
-		else if(ixIndex > 0)
-		{
-			if(m_lstCrossTimes.get(ixIndex) != null && m_lstCrossTimes.get(ixIndex-1) != null)
-			{
-				return (m_lstCrossTimes.get(ixIndex).intValue() - m_lstCrossTimes.get(ixIndex-1).intValue())/1000.0;
-			}
-		}
-		return 0.0;
 	}
 	private TimePoint2D GetInterpolatedPointAtPosition(final TimePoint2D p, double dPercentage)
 	{
@@ -1051,10 +1065,6 @@ public class LapAccumulator
 			return m_lstPositions.get(m_lstPositions.size()-1);
 		}
 		return null;
-	}
-	public double GetLastSplit()
-	{
-		return GetSplit(GetLastSplitIndex());
 	}
 	public static class DataChannel
 	{
@@ -1249,9 +1259,8 @@ public class LapAccumulator
 	private byte				m_pPrecachedToNetwork[]; 
 	
 	Point2D					m_ptFinishPoint;
-	private List<LineSeg> m_lstLines;
-	private List<Vector2D> m_lstLineDirections;
-	private List<Integer> m_lstCrossTimes; // times we crossed various splits, given in milliseconds since the first location was received
+	private Integer			m_finishTime;
+	private LapAccumulator.LapAccumulatorParams m_lapParams;
 	
 	private boolean m_fBoundsValid;
 	private FloatRect m_rcSDBounds; // cached bounds of the speed/distance graph
