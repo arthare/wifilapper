@@ -414,6 +414,10 @@ public class LapAccumulator
 			return (float)m_lstPositions.get(m_lstPositions.size()-1).dDistance;
 		}
 	}
+	public float GetDistanceMeters()
+	{
+		return m_dDistanceMeters;
+	}
 	public synchronized boolean IsPruned()
 	{
 		return m_fPruned;
@@ -432,6 +436,14 @@ public class LapAccumulator
 		this.m_lstPositions.clear();
 		m_lstPositions = null;
 		m_pPrecachedToNetwork = null;
+	}
+	public void ForceFinish()
+	{
+		if(m_finishTime == null && m_ptFinishPoint == null)
+		{
+			m_finishTime = new Integer(m_lstPositions.get(m_lstPositions.size()-1).iTime);
+			m_ptFinishPoint = m_lstPositions.get(m_lstPositions.size()-1).pt;
+		}
 	}
 	private synchronized void BuildByteArray()
 	{
@@ -634,6 +646,12 @@ public class LapAccumulator
 		assert(ptNew != null && ptLast.pt != null);
 		LineSeg lnLast = new LineSeg(ptNewRaw, ptLast.pt);
 		if(lnLast.GetLength() <= 0) return; // don't add it if it isn't new
+		
+		{ // update distance in meters
+			float rg[] = new float[2];
+			Location.distanceBetween(ptNew.pt.GetY(), ptNew.pt.GetX(), ptLast.pt.GetY(), ptLast.pt.GetX(), rg);
+			this.m_dDistanceMeters += rg[0];
+		}
 		
 		m_dCumulativeDistance += lnLast.GetLength(); // add how far we've travelled here
 		
@@ -1241,6 +1259,7 @@ public class LapAccumulator
 	{
 		m_lstChannels.add(data);
 	}
+	
 	private int					m_iUnixStartTime; // unix time (seconds since 1970) that this lap started
 	private int 				m_iLapId; // the DB id for this lap
 	private ArrayList<TimePoint2D> m_lstPositions; // vector of the positions we've seen this lap
@@ -1249,6 +1268,7 @@ public class LapAccumulator
 	private int  				m_iStartTime; // when this lap started (in milliseconds since the first location ever was received by the app)
 	private static final int 	DISARM_TIME = 3000; // how long we wait before allowing a lap to actually complete.  This so that jittery 10hz GPSes don't cross the finish line several times a second if you're going slow
 	private double				m_dCumulativeDistance; // how long this lap has taken
+	private float 				m_dDistanceMeters; // how far is this lap, in meters?
 	private boolean				m_fDeferredLoad; // whether we're deferring the loading of points from the DB
 	private boolean				m_fPruned; // whether this is a pruned lap - a pruned lap never re-loads from the DB, as it is too old for people to care.
 	

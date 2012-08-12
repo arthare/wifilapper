@@ -185,6 +185,11 @@ public class Prefs
 	// output is in km, miles, or meters
 	public static String FormatDistance(float fl, NumberFormat num, UNIT_SYSTEM eSystem, boolean fIncludeSuffix)
 	{
+		if(num == null)
+		{
+			num = NumberFormat.getInstance();
+			num.setMaximumFractionDigits(2);
+		}
 		float flConverted = 0;
 		String strSuffix;
 		switch(eSystem)

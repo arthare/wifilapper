@@ -108,3 +108,15 @@ bool ArtAtoi(LPCSTR lpsz, int cch, int* pOut)
   *pOut = atoi(lpsz);
   return true;
 }
+
+
+bool DoesFileExist(LPCTSTR lpsz)
+{
+  HANDLE hFile = CreateFile(lpsz,GENERIC_READ,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+  if(hFile != INVALID_HANDLE_VALUE)
+  {
+    CloseHandle(hFile);
+    return true;
+  }
+  return false;
+}

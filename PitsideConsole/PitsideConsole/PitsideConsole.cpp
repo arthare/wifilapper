@@ -1369,17 +1369,26 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   TCHAR szDBPath[MAX_PATH];
   if(ArtGetSaveFileName(NULL,L"Select .wflp to open or save to",szDBPath,NUMCHARS(szDBPath),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
   {
+    const bool fFileIsNew = !DoesFileExist(szDBPath);
     // they chose one to open, so open it.
     if(sfLaps.Init(szDBPath))
     {
-      // show the race-selection dialog
-      RACESELECT_RESULT sfRaceResult;
-      CRaceSelectDlg sfRaceSelect(&sfLaps,&sfRaceResult);
-      ::ArtShowDialog<IDD_SELECTRACE>(&sfRaceSelect);
-      if(!sfRaceResult.fCancelled)
+      if(!fFileIsNew)
       {
-        iRaceId = sfRaceResult.iRaceId;
-        fDBOpened = true;
+        // show the race-selection dialog
+        RACESELECT_RESULT sfRaceResult;
+        CRaceSelectDlg sfRaceSelect(&sfLaps,&sfRaceResult);
+        ::ArtShowDialog<IDD_SELECTRACE>(&sfRaceSelect);
+        if(!sfRaceResult.fCancelled)
+        {
+          iRaceId = sfRaceResult.iRaceId;
+          fDBOpened = true;
+        }
+      }
+      else
+      {
+        fDBOpened = sfLaps.InitRaceSession(&iRaceId,L"New Race");
+        sfLaps.SetReceiveId(iRaceId);
       }
     }
     

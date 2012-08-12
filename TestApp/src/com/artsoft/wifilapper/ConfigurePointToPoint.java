@@ -76,7 +76,6 @@ public class ConfigurePointToPoint extends Activity implements OnItemSelectedLis
 
 		lstStartModes.add(new StartMode("Screen: Start when user taps", Prefs.P2P_STARTMODE_SCREEN));
 		lstStartModes.add(new StartMode("Speed: Start when speed exceeds...", Prefs.P2P_STARTMODE_SPEED));
-		lstStartModes.add(new StartMode("G-force: Start when car's acceleration exceeds...", Prefs.P2P_STARTMODE_ACCEL));
 
 		ArrayAdapter<StartMode> adapter = new ArrayAdapter<StartMode>(this, R.layout.simplelistitem_blacktext, lstStartModes);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);

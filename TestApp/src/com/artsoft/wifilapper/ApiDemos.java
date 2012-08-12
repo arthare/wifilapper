@@ -618,6 +618,7 @@ implements
     				{
     					m_lapParams.lnStop = m_stopDecider.GetLine();
     					m_lapParams.vStop = m_stopDecider.GetDir();
+    					TrackLastLap(m_myLaps,true,false);
     				}
     				SetState(State.WAITINGFORSTOP);
     			}
@@ -632,6 +633,7 @@ implements
     			{
     				m_lapParams.lnStop = m_stopDecider.GetLine();
     				m_lapParams.vStop = m_stopDecider.GetDir();
+					TrackLastLap(m_myLaps,true,false);
     				SetState(State.MOVING_TO_STARTLINE);
     			}
     		}
@@ -672,18 +674,19 @@ implements
     			m_startDecider = new LineSplitDecider("Tap to set start line");
     			break;
     		case Prefs.P2P_STARTMODE_SPEED:
-    			m_startDecider = new SpeedSplitDecider(false, m_flP2PStartParam, m_eUnitSystem, "Start");
+    			m_startDecider = new SpeedSplitDecider(false, false, m_flP2PStartParam, m_eUnitSystem, "Start");
     			break;
     		}
     		switch(m_iP2PStopMode)
     		{
     		case Prefs.P2P_STOPMODE_DISTANCE:
+    			m_stopDecider = new DistanceSplitDecider(m_flP2PStopParam, m_eUnitSystem);
     			break;
     		case Prefs.P2P_STOPMODE_SCREEN:
     			m_stopDecider = new LineSplitDecider("Tap to set finish line");
     			break;
     		case Prefs.P2P_STOPMODE_SPEED:
-    			m_stopDecider = new SpeedSplitDecider(true, m_flP2PStopParam, m_eUnitSystem, "Finish");
+    			m_stopDecider = new SpeedSplitDecider(true, true, m_flP2PStopParam, m_eUnitSystem, "Finish");
     			break;
     		}
     	}
@@ -719,20 +722,26 @@ implements
     }
     private void TrackLastLap(LapAccumulator lap, boolean fTransmit, boolean fSaveAsLastLap)
     {
+    	lap.ForceFinish();
+		if(m_lRaceId < 0 && m_lapParams.IsValid(m_fUseP2P))
+		{
+			m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lapParams, this.m_fTestMode, m_fUseP2P);
+			m_lapSender.SetRaceId(m_lRaceId);
+		}
     	m_tmLastLap = System.currentTimeMillis();
     	if(m_lapSender != null)
     	{
     		if(fSaveAsLastLap)
     		{
     			m_lastLap = lap.CreateCopy();
-    		}
-	    	if(m_driverBest == null || lap.GetLapTime() < m_driverBest.GetLapTime())
-	    	{
-	    		m_driverBest = lap.CreateCopy();
-	    	}
-	    	if(m_best == null || lap.GetLapTime() < m_best.GetLapTime())
-	    	{
-	    		m_best = lap.CreateCopy();
+		    	if(m_driverBest == null || lap.GetLapTime() < m_driverBest.GetLapTime())
+		    	{
+		    		m_driverBest = lap.CreateCopy();
+		    	}
+		    	if(m_best == null || lap.GetLapTime() < m_best.GetLapTime())
+		    	{
+		    		m_best = lap.CreateCopy();
+		    	}
 	    	}
 	    	if(fTransmit)
 	    	{
@@ -855,6 +864,8 @@ implements
 	    		{
 	    			m_lapParams.lnStop = m_stopDecider.GetLine();
 	    			m_lapParams.vStop = m_stopDecider.GetDir();
+		    		TrackLastLap(m_myLaps, true, false);
+	    			SetState(State.MOVING_TO_STARTLINE);
 	    		}
 	    		m_myLaps = new LapAccumulator(m_lapParams, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
 	    	}
@@ -864,6 +875,7 @@ implements
 	    		{
 		    		m_lapParams.lnStop = m_stopDecider.GetLine();
 		    		m_lapParams.vStop = m_stopDecider.GetDir();
+		    		TrackLastLap(m_myLaps, true, false);
 	    			SetState(State.MOVING_TO_STARTLINE);
 	    		}
 	    	}
@@ -1032,11 +1044,6 @@ implements
     	}
     	case MOVING_TO_STARTLINE:
     	{
-    		if(m_lRaceId < 0 && m_lapParams.IsValid(m_fUseP2P))
-    		{
-    			m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lapParams, this.m_fTestMode, m_fUseP2P);
-    			m_lapSender.SetRaceId(m_lRaceId);
-    		}
     		View vStartline = View.inflate(this, R.layout.lapping_movetostartline, null);
     		MoveToStartLineView vView = (MoveToStartLineView)vStartline.findViewById(R.id.movetostartline);
     		vView.DoInit(this);
@@ -1172,7 +1179,7 @@ implements
 			return false;
 		}
 		public abstract String[] GetUnReadyStrings(); // returns the string we display when this split decider isn't ready (example: "tap to set start line")
-		public abstract void Tap(); // user tapped the screen.  absorb this input
+		public void Tap() {}; // user tapped the screen.  absorb this input
 
 		@Override
 		public final boolean IsReady()	{return ln != null && vCrossDir != null && vCrossDir.GetLength() > 0 && ln.GetLength() > 0;	}
@@ -1187,9 +1194,10 @@ implements
 	}
 	private static class SpeedSplitDecider extends BaseSplitDecider
 	{
-		SpeedSplitDecider(boolean fArmedByDefault, float flSpeed, Prefs.UNIT_SYSTEM eUnitSystem, String strStartFinish)
+		SpeedSplitDecider(boolean fArmedByDefault, boolean fOnSlowDown, float flSpeed, Prefs.UNIT_SYSTEM eUnitSystem, String strStartFinish)
 		{
 			this.fArmed = fArmedByDefault;
+			this.fOnSlowDown = fOnSlowDown;
 			this.flCrossSpeed = flSpeed;
 			this.eSystem = eUnitSystem;
 			this.strStartFinish = strStartFinish;
@@ -1203,10 +1211,13 @@ implements
 			{
 				float flLastDiff = flLastSpeed - flCrossSpeed;
 				float flThisDiff = flCurrentVel - flCrossSpeed;
-				if(flLastDiff * flThisDiff <= 0)
+				
+				final boolean fCross = flLastDiff * flThisDiff <= 0; // did we cross the setpoint?
+				final boolean fSlowDownCross = fCross && flThisDiff < 0; // did we cross the setpoint while decelerating?
+				final boolean fSpeedUpCross = fCross && flThisDiff > 0; // did we cross the setpoint while accelerating?
+				if(fSpeedUpCross && !fOnSlowDown || fSlowDownCross && fOnSlowDown)
 				{
-					// this means that we have just changed sign in our difference-from-target-speed.
-					// therefore, we just crossed it.
+					// this means we have cross the targeted speed, and crossed it in the direction this SplitDecider has been looking for
 					if(currentLap.GetPositionCount() > 3)
 					{
 						vCrossDir = new Vector2D(0,0); // allocate a vector2D so that MakeSplitAtIndex can edit it for us
@@ -1245,6 +1256,50 @@ implements
 		Prefs.UNIT_SYSTEM eSystem;
 		private float flCrossSpeed;
 		private float flLastSpeed = -1;
+		private boolean fOnSlowDown; // whether we're looking for the vehicle slowing down (true) or speeding up (false)
+	}
+
+	private static class DistanceSplitDecider extends BaseSplitDecider
+	{
+		DistanceSplitDecider(float flNeededDistance, Prefs.UNIT_SYSTEM eUnitSystem)
+		{
+			this.flNeededDistance = flNeededDistance;
+			this.eSystem = eUnitSystem;
+		}
+		@Override
+		public boolean NotifyPoint(LapAccumulator currentLap, Point2D ptLast, Point2D ptCurrent, float flCurrentVel)
+		{
+			if(super.NotifyPoint(currentLap, ptLast, ptCurrent, flCurrentVel)) return true;
+			
+			if(!IsReady())
+			{
+				if(currentLap.GetDistanceMeters() > flNeededDistance)
+				{
+					// this means that we have just changed sign in our difference-from-target-speed.
+					// therefore, we just crossed it.
+					if(currentLap.GetPositionCount() > 3)
+					{
+						vCrossDir = new Vector2D(0,0); // allocate a vector2D so that MakeSplitAtIndex can edit it for us
+						ln = currentLap.MakeSplitAtIndex(currentLap.GetPositionCount()-1, vCrossDir);
+						return true;
+					}
+				}
+				
+			}
+			return false;
+		}
+		@Override
+		public String[] GetUnReadyStrings()
+		{
+			String str[] = new String[2];
+			str[0] = "Finish will be set when distance";
+			str[1] = "crosses " + Prefs.FormatDistance(flNeededDistance, null, eSystem, true) + " (current: " + Prefs.FormatDistance(currentLap.GetDistanceMeters(), null, eSystem, true) + ")";
+			return str;
+		}
+		
+		Prefs.UNIT_SYSTEM eSystem;
+		private float flNeededDistance; // how far do we need to go (in meters)?
+		private float flGoneDistance; // how far have we gone? (in meters)
 	}
 	private static class LineSplitDecider extends BaseSplitDecider
 	{
