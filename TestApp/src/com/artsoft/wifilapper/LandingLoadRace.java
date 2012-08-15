@@ -331,7 +331,13 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
 	
 	private void ShowNextActivity(ListRaceData listData, String strRaceName, int idModeSelected)
 	{
-		RaceDatabase.RaceData r = RaceDatabase.GetRaceData(RaceDatabase.Get(),listData.GetId());
+		SharedPreferences settings = getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
+		
+		int iCarNumber = settings.getInt(Prefs.PREF_CARNUMBER, Prefs.DEFAULT_CARNUMBER);
+		
+		RaceDatabase.RaceData r = RaceDatabase.GetRaceData(RaceDatabase.Get(),listData.GetId(), iCarNumber);
+		r.lapParams.iCarNumber = iCarNumber;
+		r.lapParams.iSecondaryCarNumber = (int)(Math.random() * 100000);
 		if(r != null)
 		{
 			EditText txtIP = (EditText)findViewById(R.id.txtIP);
@@ -340,7 +346,6 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
 			String strIP = txtIP.getText().toString();
 			String strSSID = (spnSSID.isEnabled() && spnSSID.getSelectedItem() != null) ? spnSSID.getSelectedItem().toString() : "";
 			
-			SharedPreferences settings = getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
     		String strSpeedoStyle = settings.getString(Prefs.PREF_SPEEDOSTYLE_STRING, Prefs.DEFAULT_SPEEDOSTYLE_STRING);
     		Prefs.UNIT_SYSTEM eUnitSystem = Prefs.UNIT_SYSTEM.valueOf(settings.getString(Prefs.PREF_UNITS_STRING, Prefs.DEFAULT_UNITS_STRING.toString()));
 			String strBTGPS = settings.getString(Prefs.PREF_BTGPSNAME_STRING, Prefs.DEFAULT_GPS_STRING);

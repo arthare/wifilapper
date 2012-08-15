@@ -144,7 +144,11 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		IOIOManager.PinParams rgAnalPins[] = Prefs.LoadIOIOAnalPins(settings);
     		IOIOManager.PinParams rgPulsePins[] = Prefs.LoadIOIOPulsePins(settings);
     		
-    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopMode, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, new LapAccumulator.LapAccumulatorParams(), strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
+    		LapAccumulator.LapAccumulatorParams lapParams = new LapAccumulator.LapAccumulatorParams();
+    		lapParams.iCarNumber = settings.getInt(Prefs.PREF_CARNUMBER, Prefs.DEFAULT_CARNUMBER);
+    		lapParams.iSecondaryCarNumber = (int)(Math.random() * 100000); 
+    		
+    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopMode, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, lapParams, strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
     		if(fTestMode)
     		{
     			// they're about to start a run in test mode.  Test mode sucks for real users, so warn them

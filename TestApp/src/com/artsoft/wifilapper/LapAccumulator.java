@@ -55,6 +55,7 @@ public class LapAccumulator
 			lnStop = new LineSeg();
 			vStart = new Vector2D(0,0);
 			vStop = new Vector2D(0,0);
+			iCarNumber = -1;
 		}
 		LapAccumulatorParams(Parcel in)
 		{
@@ -62,17 +63,20 @@ public class LapAccumulator
 			lnStop = new LineSeg(in);
 			vStart = new Vector2D(in);
 			vStop = new Vector2D(in);
+			iCarNumber = in.readInt();
 		}
 		public LineSeg lnStart;
 		public LineSeg lnStop;
 		public Vector2D vStart;
 		public Vector2D vStop;
+		public int iCarNumber;
+		public int iSecondaryCarNumber; // a randomly-generated ID that we use to break ties between cars in pitside.  If we get two (-1) car numbers, then we use their secondary IDs to make sure shit ends up in separate races
 		
 		public boolean IsValid(boolean fP2P)
 		{
 			if(fP2P)
 			{
-				return lnStart != null && vStart != null && lnStart.GetLength() > 0 && vStart.GetLength() > 0;
+				return lnStart != null && vStart != null && lnStart.GetLength() > 0 && vStart.GetLength() > 0 && iCarNumber >= 0;
 			}
 			else
 			{
@@ -81,13 +85,15 @@ public class LapAccumulator
 				
 			}
 		}
-		public void InitFromRaw(float[] rgSF, float[] rgSFDir)
+		public void InitFromRaw(float[] rgSF, float[] rgSFDir, int iCarNumber)
 		{
 			lnStart = new LineSeg(new Point2D((float)rgSF[0],(float)rgSF[1]),new Point2D((float)rgSF[2],(float)rgSF[3]));
     		vStart = new Vector2D((float)rgSFDir[0], (float)rgSFDir[1]);
 			
     		lnStop = new LineSeg(new Point2D((float)rgSF[4],(float)rgSF[5]),new Point2D((float)rgSF[6],(float)rgSF[7]));
     		vStop = new Vector2D((float)rgSFDir[2], (float)rgSFDir[3]);
+    		
+    		this.iCarNumber = iCarNumber;
 		}
 		@Override
 		public int describeContents() 
@@ -112,6 +118,8 @@ public class LapAccumulator
 			
 			arg0.writeFloat(vStop.GetX());
 			arg0.writeFloat(vStop.GetY());
+			
+			arg0.writeInt(iCarNumber);
 		}
 		public static final Parcelable.Creator<LapAccumulatorParams> CREATOR
 		        = new Parcelable.Creator<LapAccumulatorParams>() 
@@ -445,7 +453,7 @@ public class LapAccumulator
 			m_ptFinishPoint = m_lstPositions.get(m_lstPositions.size()-1).pt;
 		}
 	}
-	private synchronized void BuildByteArray()
+	private synchronized void BuildByteArray_v1()
 	{
 		if(m_pPrecachedToNetwork != null) return; // work has already been done!
 		if(IsPruned()) return; // we're a pruned lap, and don't need to precache network stuff!
@@ -526,9 +534,96 @@ public class LapAccumulator
 			m_pPrecachedToNetwork = null;
 		}
 	}
+	private synchronized void BuildByteArray_v2()
+	{
+		if(m_pPrecachedToNetwork != null) return; // work has already been done!
+		if(IsPruned()) return; // we're a pruned lap, and don't need to precache network stuff!
+		DoDeferredLoad(null, 0, true);
+		
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream(100000);
+		DataOutputStream out = new DataOutputStream(bytes);
+		try
+		{
+			out.writeByte('s');
+			out.writeByte('l');
+			out.writeByte('m');
+			out.writeByte('r'); // slimer 4 ever yall!
+			out.writeByte('4');
+			out.writeByte('e');
+			out.writeByte('v');
+			out.writeByte('a');
+
+			out.writeInt(2); // version!  extensibility!
+			out.writeInt(2); // version!  redundancy!
+			
+			out.writeInt(this.m_lapParams.iCarNumber); // car number
+			out.writeInt(this.m_lapParams.iSecondaryCarNumber);
+			
+			out.writeInt((int)m_iLapId);
+			out.writeInt(this.m_lstPositions.size());
+			out.writeFloat((float)GetLapTime());
+			out.writeInt(m_iUnixStartTime);
+			
+
+			out.writeFloat(m_lapParams.lnStart.GetP1().x);
+			out.writeFloat(m_lapParams.lnStart.GetP1().y);
+			out.writeFloat(m_lapParams.lnStart.GetP2().x);
+			out.writeFloat(m_lapParams.lnStart.GetP2().y);
+
+			out.writeFloat(m_lapParams.lnStop.GetP1().x);
+			out.writeFloat(m_lapParams.lnStop.GetP1().y);
+			out.writeFloat(m_lapParams.lnStop.GetP2().x);
+			out.writeFloat(m_lapParams.lnStop.GetP2().y);
+
+			out.writeFloat(0);
+			out.writeFloat(0);
+			out.writeFloat(0);
+			out.writeFloat(0);
+
+			out.writeFloat(m_lapParams.vStart.GetX());
+			out.writeFloat(m_lapParams.vStart.GetY());
+			
+			out.writeFloat(m_lapParams.vStop.GetX());
+			out.writeFloat(m_lapParams.vStop.GetY());
+			
+			out.writeFloat(0);
+			out.writeFloat(0);
+			
+			for(int x = 0;x < m_lstPositions.size(); x++)
+			{
+				TimePoint2D t = m_lstPositions.get(x);
+				if(!t.SendToOutput(out))
+				{
+					m_pPrecachedToNetwork = null;
+					return;
+				}
+			}
+			
+			out.writeByte('e');
+			out.writeByte('m');
+			out.writeByte('i');
+			out.writeByte('l'); // 'dunslime' is the v2 tail
+			out.writeByte('s');
+			out.writeByte('n');
+			out.writeByte('u');
+			out.writeByte('d');
+			out.flush();
+
+			for(int x = 0; x < this.m_lstChannels.size(); x++)
+			{
+				m_lstChannels.get(x).SendToOutput(out);
+			}
+			m_pPrecachedToNetwork = bytes.toByteArray();
+		}
+		catch(Exception e)
+		{
+			// outputstream failed, probably lost network
+			m_pPrecachedToNetwork = null;
+		}
+	}
 	public boolean SendToOutput(OutputStream os)
 	{
-		BuildByteArray();
+		BuildByteArray_v2();
 		
 		byte pPrecached[] = null;
 		synchronized(this)
@@ -566,7 +661,7 @@ public class LapAccumulator
 	}
 	public void PrepareForNetwork()
 	{
-		BuildByteArray();
+		BuildByteArray_v2();
 	}
 	public boolean SendToDB(SQLiteDatabase db, long lRaceId, boolean fTransmitted) throws SQLiteException
 	{

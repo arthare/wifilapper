@@ -11,7 +11,11 @@ public:
   virtual ~CSQLiteLap() {};
 
 public: // ILap overrides
-  virtual void Load(InputLapRaw* pLap) override
+  virtual void Load(V1InputLapRaw* pLap) override
+  {
+    DASSERT(false); // this should never be called - memory laps should be loaded instead.
+  }
+  virtual void Load(V2InputLapRaw* pLap) override
   {
     DASSERT(false); // this should never be called - memory laps should be loaded instead.
   }
@@ -60,7 +64,14 @@ public: // ILap overrides
     return lstPoints;
   }
   virtual const StartFinish* GetSF() const override {return m_rgSF;}
-
+  virtual CARNUMBERCOMBO GetCarNumbers() const override
+  {
+    DASSERT(FALSE); // nobody should be calling this on an SQLite lap
+    CARNUMBERCOMBO sfCars;
+    sfCars.iCarNumber = -1;
+    sfCars.iSecondaryCarNumber = -1;
+    return sfCars;
+  }
 public: // general CSQLiteLap functioning
 
 private:
@@ -248,7 +259,7 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
         }
       }
 
-      if(!ixFoundVersion < 0)
+      if(ixFoundVersion < 0)
       {
         DASSERT(FALSE);
         // we didn't find or create all our required tables...
@@ -450,20 +461,36 @@ set<DATA_CHANNEL> CSQLiteLapDB::GetAvailableChannels(int iLapId) const
   return setRet;
 }
 //////////////////////////////////////////////////////////////
-void CSQLiteLapDB::AddLap(const ILap* pLap, int iRaceId)
+void CSQLiteLapDB::AddLap(const ILap* pLap, int _iRaceId)
 {
-  if(iRaceId < 0)
+  CARNUMBERCOMBO sfCarNumber = pLap->GetCarNumbers();
+  int iSaveRaceId = -1;
+  if(mapCarNumberRaceIds.find(sfCarNumber) == mapCarNumberRaceIds.end())
   {
-    if(m_iReceiveId < 0)
+    // we've never seen this car number combo before.  Time for a new race.
+    TCHAR szRaceName[200];
+    if(sfCarNumber.IsOldVersion())
     {
-      // we aren't set up to receive.
-      m_pUI->NotifyChange(NOTIFY_NEEDRECVCONFIG,(LPARAM)this);
-      return; // do nothing, rather than wreck an opened DB
+      _snwprintf(szRaceName,NUMCHARS(szRaceName),L"Received from old wifilappers");
     }
     else
     {
-      iRaceId = m_iReceiveId;
+      _snwprintf(szRaceName,NUMCHARS(szRaceName),L"Received laps (car %d) - (%d)", sfCarNumber.iCarNumber, sfCarNumber.iSecondaryCarNumber);
     }
+    int iNewRaceId = -1;
+    if(InitRaceSession(&iNewRaceId,szRaceName))
+    {
+      mapCarNumberRaceIds[sfCarNumber] = iNewRaceId;
+      iSaveRaceId = iNewRaceId;
+    }
+    else
+    {
+      return;
+    }
+  }
+  else
+  {
+    iSaveRaceId = mapCarNumberRaceIds[sfCarNumber];
   }
 
   m_sfDB.StartTransaction();
@@ -476,7 +503,7 @@ void CSQLiteLapDB::AddLap(const ILap* pLap, int iRaceId)
     sfQuery.BindValue(pLap->GetTime());
     sfQuery.BindValue(pLap->GetStartTime());
     sfQuery.BindValue(0);
-    sfQuery.BindValue(iRaceId);
+    sfQuery.BindValue(iSaveRaceId);
     if(sfQuery.Next() || sfQuery.IsDone())
     {
       // inserted new data, hooray!

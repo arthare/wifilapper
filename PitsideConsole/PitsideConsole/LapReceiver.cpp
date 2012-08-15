@@ -247,12 +247,63 @@ void CDataChannel::Lock()
   }
 }
 
-void CMemoryLap::Load(InputLapRaw* pLap)
+void CMemoryLap::Load(V2InputLapRaw* pLap)
+{
+  FLIP(pLap->iVersion_1);
+  FLIP(pLap->iVersion_2);
+  if(pLap->iVersion_1 != 2 || pLap->iVersion_2 != 2) return; // bad lap
+
+  FLIP(pLap->iCarNumber);
+  FLIP(pLap->iSecondaryCarNumber);
+  FLIP(pLap->cCount);
+  FLIP(pLap->dTime);
+  FLIP(pLap->iLapId);
+  FLIP(pLap->iStartTime);
+
+  sfCarNumbers.iCarNumber = pLap->iCarNumber;
+  sfCarNumbers.iSecondaryCarNumber = pLap->iSecondaryCarNumber;
+
+	for(int x = 0;x < pLap->cCount; x++)
+	{
+    TimePoint2D newPt(&pLap->rgPoints[x]);
+    if(newPt.IsValid())
+    {
+			lstPoints.push_back(newPt);
+    }
+    else
+    {
+      newPt.flX++;
+      newPt.flX--;
+    }
+	}
+  for(int x = 0;x < NUMITEMS(pLap->rgSF); x++)
+  {
+    FLIP(pLap->rgSF[x]);
+  }
+  for(int x = 0; x < NUMITEMS(pLap->rgSFDir); x++)
+  {
+    FLIP(pLap->rgSFDir[x]);
+  }
+  for(int x = 0;x < NUMITEMS(rgSF); x++)
+  {
+    // pass each waypoint a block of 4 floats indicating its position
+    rgSF[x] = StartFinish(&pLap->rgSF[x*4]);
+    vDir[x] = V2D(pLap->rgSFDir[x*2], pLap->rgSFDir[x*2+1]);
+  }
+	dTime = pLap->dTime;
+	iLapId = pLap->iLapId;
+  iStartTime = pLap->iStartTime;
+}
+void CMemoryLap::Load(V1InputLapRaw* pLap)
 {
   FLIP(pLap->cCount);
   FLIP(pLap->dTime);
   FLIP(pLap->iLapId);
   FLIP(pLap->iStartTime);
+
+  sfCarNumbers.iCarNumber = -1;
+  sfCarNumbers.iSecondaryCarNumber = -1;
+
 	for(int x = 0;x < pLap->cCount; x++)
 	{
     TimePoint2D newPt(&pLap->rgPoints[x]);
@@ -317,9 +368,16 @@ bool CMemoryLap::Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& 
 }
 
 //////////////////////////////////////////////////////////////////////////////
-bool ProcessLapData(vector<char>& buf, int* piLapId, ILap* pOutputLap)
+bool ProcessV1LapData(vector<char>& buf, int* piLapId, ILap* pOutputLap)
 {
-	InputLapRaw* pLap = (InputLapRaw*)&buf[0];
+	V1InputLapRaw* pLap = (V1InputLapRaw*)&buf[0];
+	pOutputLap->Load(pLap);
+	return pOutputLap->IsValid();
+}
+//////////////////////////////////////////////////////////////////////////////
+bool ProcessV2LapData(vector<char>& buf, int* piLapId, ILap* pOutputLap)
+{
+	V2InputLapRaw* pLap = (V2InputLapRaw*)&buf[0];
 	pOutputLap->Load(pLap);
 	return pOutputLap->IsValid();
 }
@@ -442,15 +500,17 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
   vector<char> lstLapBuf; // for incoming lap-data stuff
   vector<char> lstDataBuf; // for incoming data-channel stuff
   vector<char> lstDBBuf;
-  TextMatcher<8> aStart("jndadere");
-  TextMatcher<8> aEnd("donelap_");
+  TextMatcher<8> aV1Start("jndadere");
+  TextMatcher<8> aV1End("donelap_");
+  TextMatcher<8> aV2Start("slmr4eva");
+  TextMatcher<8> aV2End("emilsnud");
   TextMatcher<4> aHTBT("htbt");
   TextMatcher<8> aDataStart("datachan");
   TextMatcher<8> aDataEnd("donedata");
   TextMatcher<16> aDBIncoming("racingdbincoming");
   TextMatcher<16> aDBDone("racingdbcomplete");
 
-  enum CURRENTRECV {RECV_NONE,RECV_LAP,RECV_DATA,RECV_DB}; // keeps track of which type of data we're currently receiving so we can report progress about it.
+  enum CURRENTRECV {RECV_NONE,RECV_V1_LAP, RECV_V2_LAP,RECV_DATA,RECV_DB}; // keeps track of which type of data we're currently receiving so we can report progress about it.
   CURRENTRECV eRecv = RECV_NONE;
 
   while(true)
@@ -470,21 +530,21 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 		  for(int x = 0;x < cbRead; x++)
 		  {
         lstLapBuf.push_back(buf[x]);
-			  if(aStart.Process(buf[x]))
+			  if(aV1Start.Process(buf[x]))
 			  {
-          eRecv = RECV_LAP;
-				  aStart.Reset();
+          eRecv = RECV_V1_LAP;
+				  aV1Start.Reset();
 				  // we have detected the start of a new lap
 				  lstLapBuf.clear();
 			  }
-			  if(aEnd.Process(buf[x]))
+			  if(aV1End.Process(buf[x]))
 			  {
           eRecv = RECV_NONE;
-				  aEnd.Reset();
+				  aV1End.Reset();
 				  // we have found the end of a lap
 				  int iLapId = 0;
 				  ILap* pLap = pLaps->AllocateLap(true);
-				  if(ProcessLapData(lstLapBuf, &iLapId, pLap))
+				  if(ProcessV1LapData(lstLapBuf, &iLapId, pLap))
 				  {
 					  pLaps->AddLap(pLap, 0xffffffff);
 				  }
@@ -494,6 +554,23 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 				  }
           lstLapBuf.clear();
 			  }
+        if(aV2Start.Process(buf[x]))
+        {
+          eRecv = RECV_V2_LAP;
+          aV2Start.Reset();
+          lstLapBuf.clear();
+        }
+        if(aV2End.Process(buf[x]))
+        {
+          eRecv = RECV_NONE;
+          aV2End.Reset();
+          int iLapId = 0;
+          ILap* pLap = pLaps->AllocateLap(true);
+          if(ProcessV2LapData(lstLapBuf, &iLapId, pLap))
+          {
+            pLaps->AddLap(pLap, 0xffffffff);
+          }
+        }
 
         lstDataBuf.push_back(buf[x]);
         if(aDataStart.Process(buf[x]))
@@ -556,7 +633,11 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
       TCHAR szStatus[MAX_PATH];
       switch(eRecv)
       {
-      case RECV_LAP:   
+      case RECV_V1_LAP:   
+        cbRecved = lstLapBuf.size(); 
+        swprintf(szStatus,L"Receiving lap: %dkb",cbRecved/1024);
+        break;
+      case RECV_V2_LAP:   
         cbRecved = lstLapBuf.size(); 
         swprintf(szStatus,L"Receiving lap: %dkb",cbRecved/1024);
         break;

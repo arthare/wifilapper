@@ -941,7 +941,7 @@ public class SummaryActivity extends Activity implements OnClickListener
 			DrawCornerImages(res, null, canvas, rcLogo);
 			
 			// get DB info
-			RaceData rd = RaceDatabase.GetRaceData(db, lRaceId);
+			RaceData rd = RaceDatabase.GetRaceData(db, lRaceId, -1);
 			
 			// figure out percentile data
 			LapData[] rgLaps = RaceDatabase.GetLapDataList(db, lRaceId);

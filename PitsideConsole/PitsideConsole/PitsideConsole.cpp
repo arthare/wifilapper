@@ -496,23 +496,6 @@ public:
             }
             return TRUE;
           }
-          case ID_DATA_NEWSESSION:
-          {
-            ClearUILaps();
-
-            // creates a new race session
-            if(!g_pLapDB->InitRaceSession(&m_iRaceId,L"Received Data"))
-            {
-              MessageBox(NULL,L"Pitside was unable to create a new race session.  This is extremely unexpected and you should complain on the forums",L"Failed in session creation",0);
-            }
-            else
-            {
-              g_pLapDB->SetReceiveId(m_iRaceId);
-            }
-            LoadLaps(::g_pLapDB);
-            UpdateUI(UPDATE_ALL);
-            break;
-          }
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -1387,8 +1370,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       }
       else
       {
-        fDBOpened = sfLaps.InitRaceSession(&iRaceId,L"New Race");
-        sfLaps.SetReceiveId(iRaceId);
       }
     }
     
@@ -1403,11 +1384,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if(sfLaps.Init(szTempPath))
     {
       // success!
-      if(sfLaps.InitRaceSession(&iRaceId,L"Received Data"))
-      {
-        sfLaps.SetReceiveId(iRaceId);
-        fDBOpened = true;
-      }
     }
   }
   if(!fDBOpened)
