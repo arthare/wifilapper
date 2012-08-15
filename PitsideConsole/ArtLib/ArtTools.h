@@ -90,3 +90,5 @@ SYSTEMTIME SecondsSince1970ToSYSTEMTIME(int cSeconds);
 int GetSecondsSince1970();
 
 bool ArtAtoi(LPCSTR lpsz, int cch, int* pOut);
+
+bool DoesFileExist(LPCTSTR lpsz);

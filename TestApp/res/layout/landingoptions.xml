@@ -44,6 +44,13 @@
 	    	<Button android:text="Configure IOIO" android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/btnConfigureIOIO"></Button>
     </TableRow>
     <TableRow
+        android:id="@+id/tableRow3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" >
+			<TextView android:text="Point-to-point" android:layout_weight="1" android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/lblP2P"></TextView>
+	    	<Button android:text="Configure Point-to-point" android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/btnConfigureP2P"></Button>
+    </TableRow>
+    <TableRow
         android:id="@+id/tableRow4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" >

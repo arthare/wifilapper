@@ -16,12 +16,19 @@
 
 package com.artsoft.wifilapper;
 
+import android.os.Parcel;
+
 public class Point2D
 {
 	public Point2D(float x, float y)
 	{
 		this.x = x;
 		this.y = y;
+	}
+	public Point2D(Parcel in)
+	{
+		this.x = in.readFloat();
+		this.y = in.readFloat();
 	}
 	public Point2D Add(Vector2D vec)
 	{

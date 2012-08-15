@@ -490,7 +490,7 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 				  }
 				  else
 				  {
-					  pLaps->FreeLap(pLap);
+            pLap->Free();
 				  }
           lstLapBuf.clear();
 			  }

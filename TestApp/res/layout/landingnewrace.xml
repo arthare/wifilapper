@@ -37,6 +37,30 @@
 			<TextView android:text="Race Name" android:id="@+id/lblRaceName" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
 	    	<EditText android:text="testrace" android:id="@+id/txtRaceName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:inputType="text" android:layout_weight="1"></EditText>
 	    </TableRow>
+		<TableRow android:id="@+id/tableRow3" android:layout_width="wrap_content" android:layout_height="wrap_content" >
+			<TextView android:text="Race Mode" android:id="@+id/lblRaceMode" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+
+			<RadioGroup
+			    android:id="@+id/rgRaceMode"
+			    android:layout_width="wrap_content"
+			    android:layout_height="wrap_content"
+			    android:orientation="horizontal" >
+
+			    <RadioButton
+			        android:id="@+id/rbLapping"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:checked="true"
+			        android:text="Lapping" />
+
+			    <RadioButton
+			        android:id="@+id/rbPointToPoint"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:text="Point-to-Point" />
+			</RadioGroup>
+
+	    </TableRow>
 	</TableLayout>
 	<Button android:text="Start Race" android:id="@+id/btnApply" android:layout_width="fill_parent" android:layout_height="wrap_content"></Button>
 </LinearLayout>

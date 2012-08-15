@@ -444,7 +444,7 @@ public class SummaryActivity extends Activity implements OnClickListener
 		{
 			canvas.drawLine(rc.left,rcPercentile[x].exactCenterY(),rc.left+cxLegendLine,rcPercentile[x].exactCenterY(),paintPercentiles[x]);
 			Utility.DrawFontInBox(canvas, rgText[x], paintPercentiles[x], rcPercentile[x]);
-			LapAccumulator.DrawLap(laps[x], true, lstSF, rcInWorld, canvas, paintPercentiles[x], paintPercentiles[x], rcGraph);
+			LapAccumulator.DrawLap(laps[x], true, rcInWorld, canvas, paintPercentiles[x], paintPercentiles[x], rcGraph);
 		}
 		
 	}
@@ -491,7 +491,7 @@ public class SummaryActivity extends Activity implements OnClickListener
 		paintLine[3].setStrokeWidth(1);
 		return paintLine;
 	}
-	private static LapAccumulator[] GetPercentileLaps(SQLiteDatabase db, List<LineSeg> lstLines, List<Vector2D> lstSD, int cSplits, LapData[] rgLaps)
+	private static LapAccumulator[] GetPercentileLaps(SQLiteDatabase db, LapAccumulator.LapAccumulatorParams lapParams, int cSplits, LapData[] rgLaps)
 	{
 		LapAccumulator laps[] = new LapAccumulator[cSplits];
 		{
@@ -503,7 +503,7 @@ public class SummaryActivity extends Activity implements OnClickListener
 			for(int x = 0;x < cSplits; x++)
 			{
 				int ix = (rgLaps.length * x) / cSplits;
-				laps[x] = RaceDatabase.GetLap(db, lstLines, lstSD, rgLaps[ix].lLapId);
+				laps[x] = RaceDatabase.GetLap(db, lapParams, rgLaps[ix].lLapId);
 				if(laps[x] != null)
 				{
 					laps[x].DoDeferredLoad(null, 0, x == 0); // load data for the fastest lap and for no others
@@ -534,7 +534,7 @@ public class SummaryActivity extends Activity implements OnClickListener
 		
 		for(int x = rgLaps.length-1;x >= 0; x--)
 		{
-			LapAccumulator.DrawLap(rgLaps[x], false, lstSF, rcInWorld, canvas, paints[x], paintSplits, rcMap);
+			LapAccumulator.DrawLap(rgLaps[x], false, rcInWorld, canvas, paints[x], paintSplits, rcMap);
 		}
 	}
 	
@@ -942,15 +942,13 @@ public class SummaryActivity extends Activity implements OnClickListener
 			
 			// get DB info
 			RaceData rd = RaceDatabase.GetRaceData(db, lRaceId);
-			List<LineSeg> lstLines = rd.GetLines();
-			List<Vector2D> lstSD = rd.GetLineDirs();
 			
 			// figure out percentile data
-			LapData[] rgLaps = RaceDatabase.GetLapDataList(db, lstLines, lstSD, lRaceId);
+			LapData[] rgLaps = RaceDatabase.GetLapDataList(db, lRaceId);
 			Arrays.sort(rgLaps, new LapDataLapTimeSorter());
 			
 			Paint paintLine[] = GetPercentilePaints();
-			LapAccumulator lapPercentiles[] = GetPercentileLaps(db, lstLines, lstSD, 4, rgLaps);
+			LapAccumulator lapPercentiles[] = GetPercentileLaps(db, rd.lapParams, 4, rgLaps);
 			
 			if(lapPercentiles.length < 4) return null;
 			for(int x = 0;x < 4; x++) { if(lapPercentiles[x] == null) return null;}

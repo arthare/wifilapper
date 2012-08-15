@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import com.artsoft.wifilapper.LapAccumulator.LapAccumulatorParams;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
@@ -37,6 +39,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
@@ -107,6 +110,7 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		EditText txtIP = (EditText)findViewById(R.id.txtIP);
     		Spinner spnSSID = (Spinner)findViewById(R.id.spnSSID);
     		EditText txtRaceName = (EditText)findViewById(R.id.txtRaceName);
+    		RadioGroup rgMode = (RadioGroup)findViewById(R.id.rgRaceMode);
     		
     		String strIP = txtIP.getText().toString();
     		String strSSID = (spnSSID.isEnabled() && spnSSID.getSelectedItem() != null) ? spnSSID.getSelectedItem().toString() : "";
@@ -124,6 +128,12 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		String strPrivacy = settings.getString(Prefs.PREF_PRIVACYPREFIX_STRING, Prefs.DEFAULT_PRIVACYPREFIX);
     		int iButtonPin = settings.getInt(Prefs.PREF_IOIOBUTTONPIN, Prefs.DEFAULT_IOIOBUTTONPIN);
     		
+    		boolean fUseP2P = rgMode.getCheckedRadioButtonId() == R.id.rbPointToPoint;
+    		final int iStartMode = settings.getInt(Prefs.PREF_P2P_STARTMODE, Prefs.DEFAULT_P2P_STARTMODE);
+    		final float flStartParam = settings.getFloat(Prefs.PREF_P2P_STARTPARAM, Prefs.DEFAULT_P2P_STARTPARAM);
+    		final int iStopMode = settings.getInt(Prefs.PREF_P2P_STOPMODE, Prefs.DEFAULT_P2P_STOPMODE);
+    		final float flStopMode = settings.getFloat(Prefs.PREF_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM);
+    		
     		eUnitSystem = Prefs.UNIT_SYSTEM.valueOf(strUnitSystem);
     		
     		ApiDemos.SaveSharedPrefs(settings, strIP, strSSID, strBTGPS, strRaceName);
@@ -134,7 +144,7 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		IOIOManager.PinParams rgAnalPins[] = Prefs.LoadIOIOAnalPins(settings);
     		IOIOManager.PinParams rgPulsePins[] = Prefs.LoadIOIOPulsePins(settings);
     		
-    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, iButtonPin, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, null, null, strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
+    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopMode, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, new LapAccumulator.LapAccumulatorParams(), strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
     		if(fTestMode)
     		{
     			// they're about to start a run in test mode.  Test mode sucks for real users, so warn them

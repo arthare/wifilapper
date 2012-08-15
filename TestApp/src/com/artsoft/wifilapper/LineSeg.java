@@ -16,8 +16,20 @@
 
 package com.artsoft.wifilapper;
 
+import android.os.Parcel;
+
 public class LineSeg 
 {
+	public LineSeg()
+	{
+		this.p1 = new Point2D(0,0);
+		this.p2 = new Point2D(0,0);
+	}
+	public LineSeg(Parcel in)
+	{
+		this.p1 = new Point2D(in);
+		this.p2 = new Point2D(in);
+	}
 	public LineSeg(Point2D p1, Point2D p2)
 	{
 		assert(p1 != null && p2 != null);

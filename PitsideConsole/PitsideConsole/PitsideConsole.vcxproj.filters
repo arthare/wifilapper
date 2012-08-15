@@ -63,6 +63,9 @@
     <ClInclude Include="DlgSplash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SQLiteLapDB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -96,6 +99,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DlgSplash.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SQLiteLapDB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

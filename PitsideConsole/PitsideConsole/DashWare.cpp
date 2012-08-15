@@ -12,16 +12,16 @@ namespace DashWare
   {
     return lap1->GetStartTime() < lap2->GetStartTime();
   }
-  void WriteChannelHeaders(wofstream& out, const vector<const ILap*>& lstLaps, set<DATA_CHANNEL>& setData)
+  void WriteChannelHeaders(wofstream& out, const vector<const ILap*>& lstLaps, map<DATA_CHANNEL, const IDataChannel*>& mapData)
   {
     // if you update this function, update the dashware.xml file too!
     out<<L"Lap,Time,x,y";
 
     // column headers
-    for(set<DATA_CHANNEL>::iterator i = begin(setData); i != end(setData); i++)
+    for(map<DATA_CHANNEL, const IDataChannel*>::iterator i = begin(mapData); i != end(mapData); i++)
     {
       TCHAR szDataChannelName[MAX_PATH];
-      const DATA_CHANNEL eChannel = *i;
+      const DATA_CHANNEL eChannel = i->first;
       GetDataChannelName(eChannel, szDataChannelName, NUMCHARS(szDataChannelName));
       out<<","<<szDataChannelName;
     }
@@ -39,7 +39,7 @@ namespace DashWare
     wofstream out;
     out.open(lpszFilename);
 
-    set<DATA_CHANNEL> setChannels;
+    map<DATA_CHANNEL,const IDataChannel*> mapChannels;
 
     for(int ixLap = 0;ixLap < lstLaps.size(); ixLap++)
     {
@@ -48,12 +48,13 @@ namespace DashWare
         const IDataChannel* pChannel = g_pLapDB->GetDataChannel(lstLaps[ixLap]->GetLapId(),(DATA_CHANNEL)y);
         if(pChannel)
         {
-          setChannels.insert((DATA_CHANNEL)y);
+          mapChannels[(DATA_CHANNEL)y] = pChannel;
         }
       }
     }
 
-    WriteChannelHeaders(out, lstSortedLaps, setChannels);
+    WriteChannelHeaders(out, lstSortedLaps, mapChannels);
+
 
     int msLastLine = 0;
     float flStartTime = 0; // start time in seconds;
@@ -63,9 +64,9 @@ namespace DashWare
       int msStartTime = INT_MAX; // start time and end time for this lap (gotten by looking at start and end time for data channels)
       int msEndTime = -INT_MAX;
 
-      for(set<DATA_CHANNEL>::iterator i = begin(setChannels); i != end(setChannels); i++)
+      for(map<DATA_CHANNEL, const IDataChannel*>::iterator i = begin(mapChannels); i != end(mapChannels); i++)
       {
-        const IDataChannel* pDC = g_pLapDB->GetDataChannel(pLap->GetLapId(),*i);
+        const IDataChannel* pDC = mapChannels[i->first];
         if(pDC)
         {
           msStartTime = min(pDC->GetStartTimeMs(),msStartTime);
@@ -95,18 +96,17 @@ namespace DashWare
           _snwprintf(szTemp,NUMCHARS(szTemp),L"%4.6f",pt.flY);
           out<<","<<szTemp;
 
-          for(set<DATA_CHANNEL>::iterator i = begin(setChannels); i != end(setChannels); i++)
+          for(map<DATA_CHANNEL,const IDataChannel*>::iterator i = begin(mapChannels); i != end(mapChannels); i++)
           {
-            const DATA_CHANNEL eDC = *i;
-            const IDataChannel* pDC = g_pLapDB->GetDataChannel(pLap->GetLapId(),eDC);
+            const IDataChannel* pDC = i->second;
             if(pDC)
             {
               float flValue = pDC->GetValue(msQuery);
-              if(fUseRunningAverage[eDC])
+              if(fUseRunningAverage[i->first])
               {
-                flRunningAverage[eDC] = 0.7*flValue + 0.3*flRunningAverage[eDC];
+                flRunningAverage[i->first] = 0.7*flValue + 0.3*flRunningAverage[i->first];
               }
-              _snwprintf(szTemp,NUMCHARS(szTemp),L"%5.2f",fUseRunningAverage[eDC] ? flRunningAverage[eDC] : flValue);
+              _snwprintf(szTemp,NUMCHARS(szTemp),L"%5.2f",fUseRunningAverage[i->first] ? flRunningAverage[i->first] : flValue);
               out<<","<<szTemp;
             }
             else

@@ -3,6 +3,7 @@
 #include "PitsideConsole.h"
 #include "ArtUI.h"
 #include "SQLiteLapDB.h"
+#include "LapData.h"
 class CSQLiteLap : public ILap
 {
 public:
@@ -24,6 +25,7 @@ public: // ILap overrides
 
     return fSuccess;
   }
+  virtual void Free()override {delete this;};
 
   virtual bool IsValid() const override {return m_flLapTime < 3600 && m_flLapTime > 3.0 && m_iLapId != -1;};
   virtual int GetStartTime() const override {return m_iStartTime;}
@@ -71,46 +73,9 @@ private:
   float m_flLapTime;
   StartFinish m_rgSF[3];
 };
-class CSQLiteChannel : public IDataChannel
-{
-public:
-  CSQLiteChannel();
-  virtual ~CSQLiteChannel();
-
-  virtual void Load(InputChannelRaw* pData) override;
-  virtual bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc) override;
-  virtual void Init(int iLapId, DATA_CHANNEL eChannel) override;
-  virtual bool IsValid() const override;
-  virtual bool IsSameChannel(const IDataChannel* pOther) const override;
-
-  virtual int GetLapId() const override;
-
-  // random-access version: slower
-  virtual float GetValue(int iTime) const override;
-  // the iterator points to the DataPoint with time greater than the current time
-  virtual float GetValue(int iTime, const vector<DataPoint>::const_iterator& i) const override;
-  virtual float GetMin() const override;
-  virtual float GetMax() const override;
-  virtual int GetEndTimeMs() const override;
-  virtual int GetStartTimeMs() const override;
-
-  virtual const vector<DataPoint>& GetData() const override;
-
-  virtual void AddPoint(int iTime, float flValue) override;
-  virtual DATA_CHANNEL GetChannelType() const override;
-  // when you lock a data channel, it means that no more points may be added to it ever.
-  // it also sorts the vector
-  virtual void Lock() override;
-  virtual bool IsLocked() const override;
-
-private:
-  bool m_fLoaded;
-  int m_iLapId;
-  DATA_CHANNEL m_eType;
-};
 
 //////////////////////////////////////////////////////////////
-static LPCTSTR CREATE_RACE_SQL =  L"create table races (	_id integer primary key asc autoincrement, " \
+static LPCTSTR CREATE_RACE_SQL_V20 =  L"create table races (	_id integer primary key asc autoincrement, " \
 																						L"\"name\" string, " \
 																						L"\"date\" string, " \
 																						L"\"testmode\" integer, " \
@@ -131,7 +96,31 @@ static LPCTSTR CREATE_RACE_SQL =  L"create table races (	_id integer primary key
 																						L"vx2 real," \
 																						L"vy2 real," \
 																						L"vx3 real," \
-																						L"vy3 real)";
+																						L"vy3 real);";
+
+static LPCTSTR CREATE_RACE_SQL_V21 =  L"create table races (	_id integer primary key asc autoincrement, " \
+																						L"\"name\" string, " \
+																						L"\"date\" string, " \
+																						L"\"testmode\" integer, " \
+																						L"x1 real, " \
+																						L"y1 real, " \
+																						L"x2 real, " \
+																						L"y2 real, " \
+																						L"x3 real, " \
+																						L"y3 real, " \
+																						L"x4 real, " \
+																						L"y4 real, " \
+																						L"x5 real, " \
+																						L"y5 real, " \
+																						L"x6 real, " \
+																						L"y6 real, " \
+																						L"vx1 real," \
+																						L"vy1 real," \
+																						L"vx2 real," \
+																						L"vy2 real," \
+																						L"vx3 real," \
+																						L"vy3 real," \
+                                            L" p2p integer not null default 0)";
 	
 static LPCTSTR CREATE_LAPS_SQL = L"create table laps " \
 												L"(_id integer primary key asc autoincrement, " \
@@ -166,31 +155,51 @@ static LPCTSTR CREATE_INDICES =L"create index data_channelid on data(channelid);
 											L"create index if not exists points_lapid on points(lapid);" \
 											L"create index if not exists laps_raceid on laps(raceid)";
 
-static LPCTSTR rgRequiredTables[] = {CREATE_RACE_SQL, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL};
+static LPCTSTR rgRequiredTables20[] = {CREATE_RACE_SQL_V20, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL};
+static LPCTSTR rgRequiredTables21[] = {CREATE_RACE_SQL_V21, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL};
+
+static LPCTSTR* rgSchemaList[] = 
+{
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables20,
+  rgRequiredTables21
+};
+
+const static int iMinSupportedVersion = 0;
+const static int iMaxSupportedVersion = 21;
 //////////////////////////////////////////////////////////////
 bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
 {
-  vector<wstring> lstSQL;
-  HRESULT hr = m_sfDB.Open(lpszPath, lstSQL);
-  if(SUCCEEDED(hr))
+  if(!DoesFileExist(lpszPath))
   {
-    bool fFoundAll = true;
-    for(int x = 0; x < 5 && fFoundAll; x++)
+    vector<wstring> lstSQL;
+    HRESULT hr = m_sfDB.Open(lpszPath, lstSQL);
+    if(SUCCEEDED(hr))
     {
-      bool fFound = false;
-      for(int y = 0; y < lstSQL.size(); y++)
-      {
-        if(_wcsicmp(lstSQL[y].c_str(),rgRequiredTables[x]) == 0)
-        {
-          fFound = true;
-          break;
-        }
-      }
-      if(!fFound)
+      for(int x = 0;x < 5; x++)
       {
         hr = E_FAIL;
         CSfArtSQLiteQuery sfInsert(m_sfDB);
-        if(sfInsert.Init(rgRequiredTables[x]))
+        if(sfInsert.Init(rgSchemaList[iMaxSupportedVersion][x]))
         {
           if(sfInsert.Next())
           {
@@ -199,20 +208,56 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
           if(sfInsert.IsDone())
           {
             hr = S_OK;
-            fFound = true; // we didn't find it at first, but it exists now...
           }
         }
+        if(FAILED(hr))
+          break;
       }
-      fFoundAll = fFoundAll && fFound;
     }
-
-    if(!fFoundAll)
-    {
-      // we didn't find or create all our required tables...
-      hr = E_FAIL;
-    }
+    return SUCCEEDED(hr);
   }
-  return SUCCEEDED(hr);
+  else
+  {
+    int ixFoundVersion = -1;
+    vector<wstring> lstSQL;
+    HRESULT hr = m_sfDB.Open(lpszPath, lstSQL);
+    if(SUCCEEDED(hr))
+    {
+      // find a schema version that matches
+      for(int ixVersion = iMinSupportedVersion; ixVersion <= iMaxSupportedVersion; ixVersion++)
+      {
+        bool fFoundAll = true;
+        for(int x = 0; x < 5 && fFoundAll; x++)
+        {
+          bool fFound = false;
+          for(int y = 0; y < lstSQL.size(); y++)
+          {
+            if(_wcsicmp(lstSQL[y].c_str(),rgSchemaList[ixVersion][x]) == 0)
+            {
+              fFound = true;
+              break;
+            }
+          }
+        
+          fFoundAll = fFoundAll && fFound;
+        }
+        if(fFoundAll)
+        {
+          ixFoundVersion = ixVersion;
+          break;
+        }
+      }
+
+      if(!ixFoundVersion < 0)
+      {
+        DASSERT(FALSE);
+        // we didn't find or create all our required tables...
+        hr = E_FAIL;
+      }
+    }
+    return SUCCEEDED(hr);
+  }
+  
 }
 //////////////////////////////////////////////////////////////
 bool CSQLiteLapDB::InitRaceSession(int* piRaceId, LPCTSTR lpszRaceName)
@@ -249,12 +294,6 @@ ILap* CSQLiteLapDB::AllocateLap(bool fMemory)
   {
     return new CSQLiteLap(m_sfDB);
   }
-}
-//////////////////////////////////////////////////////////////
-void CSQLiteLapDB::FreeLap(ILap* p) const
-{
-  CSQLiteLap* pLap = (CSQLiteLap*)p;
-  delete pLap;
 }
 //////////////////////////////////////////////////////////////
 IDataChannel* CSQLiteLapDB::AllocateDataChannel() const
@@ -349,18 +388,42 @@ const ILap* CSQLiteLapDB::GetLap(int iLapId)
 //////////////////////////////////////////////////////////////
 const IDataChannel* CSQLiteLapDB::GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const
 {
-  CSfArtSQLiteQuery sfQuery(m_sfDB);
-  TCHAR szQuery[MAX_PATH];
-  _snwprintf(szQuery, NUMCHARS(szQuery), L"select channels._id, channels.lapid, channels.channeltype from channels where channels.lapid = %d and channels.channeltype=%d", iLapId, eChannel);
-  if(sfQuery.Init(szQuery))
+  if(eChannel == DATA_CHANNEL_VELOCITY)
   {
-    if(sfQuery.Next())
+    // since velocity is stored as part of the points table, it is a bit different than the normal data channels
+    CSfArtSQLiteQuery sfQuery(m_sfDB);
+    TCHAR szQuery[MAX_PATH];
+    _snwprintf(szQuery, NUMCHARS(szQuery), L"select points.time, points.velocity from points where lapid=%d", iLapId);
+    if(sfQuery.Init(szQuery))
     {
-      CSQLiteChannel* pChannel = (CSQLiteChannel*)AllocateDataChannel();
-      pChannel->Load(m_sfDB,sfQuery);
-      pChannel->Lock();
-      // warning: massive memory leaks here
+      IDataChannel* pChannel = AllocateDataChannel();
+      while(sfQuery.Next())
+      {
+        int iTime = 0;
+        double dVel = 0;
+        if(sfQuery.GetCol(0,&iTime) && sfQuery.GetCol(1,&dVel))
+        {
+          pChannel->AddPoint(iTime, dVel);
+        }
+      }
       return pChannel;
+    }
+  }
+  else
+  {
+    CSfArtSQLiteQuery sfQuery(m_sfDB);
+    TCHAR szQuery[MAX_PATH];
+    _snwprintf(szQuery, NUMCHARS(szQuery), L"select channels._id, channels.lapid, channels.channeltype from channels where channels.lapid = %d and channels.channeltype=%d", iLapId, eChannel);
+    if(sfQuery.Init(szQuery))
+    {
+      if(sfQuery.Next())
+      {
+        IDataChannel* pChannel = AllocateDataChannel();
+        pChannel->Load(m_sfDB,sfQuery);
+        pChannel->Lock();
+        // warning: massive memory leaks here
+        return pChannel;
+      }
     }
   }
   return NULL;
