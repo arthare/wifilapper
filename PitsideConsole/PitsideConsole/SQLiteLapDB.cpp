@@ -107,7 +107,7 @@ static LPCTSTR CREATE_RACE_SQL_V20 =  L"create table races (	_id integer primary
 																						L"vx2 real," \
 																						L"vy2 real," \
 																						L"vx3 real," \
-																						L"vy3 real);";
+																						L"vy3 real)";
 
 static LPCTSTR CREATE_RACE_SQL_V21 =  L"create table races (	_id integer primary key asc autoincrement, " \
 																						L"\"name\" string, " \

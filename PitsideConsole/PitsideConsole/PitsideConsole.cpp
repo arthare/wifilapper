@@ -1367,6 +1367,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
           iRaceId = sfRaceResult.iRaceId;
           fDBOpened = true;
         }
+        else
+        {
+          iRaceId = -1;
+          fDBOpened = true;
+        }
       }
       else
       {
