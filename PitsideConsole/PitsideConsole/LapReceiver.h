@@ -84,8 +84,22 @@ struct InputChannelRaw
   DataPoint rgPoints[1];
 };
 
-struct InputLapRaw
+struct V1InputLapRaw
 {
+	int iLapId;
+	int cCount;
+	float dTime;
+  int iStartTime; // start time of the lap in unix time (seconds since 1970)
+  float rgSF[12]; // the 6 points (in 3 pairs) designating split 1, split 2, and start/finish.
+  float rgSFDir[6]; // the 3 vectors (x1,y1,x2,y2,x3,y3) showing direction of the SF lines
+	TimePoint2D rgPoints[1];
+};
+struct V2InputLapRaw
+{
+  int iVersion_1; // redundant versions.  we don't want to get it wrong
+  int iVersion_2;
+  int iCarNumber;
+  int iSecondaryCarNumber;
 	int iLapId;
 	int cCount;
 	float dTime;
@@ -188,11 +202,29 @@ private:
   Vector2D m_pt1;
   Vector2D m_pt2;
 };
+
+struct CARNUMBERCOMBO
+{
+  int iCarNumber;
+  int iSecondaryCarNumber;
+  bool IsOldVersion() const {return iCarNumber == -1 && iSecondaryCarNumber == -1;}
+  bool operator <(const CARNUMBERCOMBO& sfOther) const
+  {
+    return Hash() < sfOther.Hash();
+  }
+private:
+  int Hash() const
+  {
+    return (iCarNumber<<16) | iSecondaryCarNumber;
+  }
+};
+
 // a more civilized lap, constructed from InputLapRaw and sent to the user's ILapReceiver
 interface ILap
 {
 public:
-  virtual void Load(InputLapRaw* pLap) = 0;
+  virtual void Load(V1InputLapRaw* pLap) = 0;
+  virtual void Load(V2InputLapRaw* pLap) = 0;
   virtual bool Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line) = 0;
   virtual void Free() = 0; // delete the lap
 
@@ -202,6 +234,7 @@ public:
   virtual float GetTime() const = 0;
   virtual const vector<TimePoint2D> GetPoints() const = 0;
   virtual const StartFinish* GetSF() const = 0;
+  virtual CARNUMBERCOMBO GetCarNumbers() const = 0;
 private:
 };
 class CMemoryLap : public ILap
@@ -211,7 +244,8 @@ public:
 	{
 
 	}
-  void Load(InputLapRaw* pLap);
+  void Load(V1InputLapRaw* pLap);
+  void Load(V2InputLapRaw* pLap);
   bool Load(CSfArtSQLiteDB& db, StartFinish* rgSF, CSfArtSQLiteQuery& line);
   virtual void Free()override {delete this;};
 
@@ -224,6 +258,10 @@ public:
   float GetTime() const {return dTime;}
   const vector<TimePoint2D> GetPoints() const {return lstPoints;}
   const StartFinish* GetSF() const {return rgSF;}
+  virtual CARNUMBERCOMBO GetCarNumbers() const override
+  {
+    return sfCarNumbers;
+  }
 private:
 	vector<TimePoint2D> lstPoints;
   StartFinish rgSF[3];
@@ -231,6 +269,7 @@ private:
 	float dTime;
 	int iLapId;
   int iStartTime; // seconds since Jan 1 1970
+  CARNUMBERCOMBO sfCarNumbers;
 };
 template<int cToMatch>
 struct TextMatcher
@@ -317,7 +356,6 @@ public:
   virtual void Clear() = 0;
 
   // status strings
-  virtual void SetReceiveId(int iRaceId) = 0; // if we receive a lap with a race id < 0, this tells us the race that we should stick it in.  This is pretty much temporary until we get multi-cars working
   virtual void NotifyDBArrival(LPCTSTR lpszPath) = 0;
   virtual void SetNetStatus(NETSTATUSSTRING eString, LPCTSTR szData) = 0; // network man tells us the latest status
   virtual LPCTSTR GetNetStatus(NETSTATUSSTRING eString) const = 0;

@@ -42,6 +42,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -90,12 +91,23 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		Spinner spnSpeedo = (Spinner)findViewById(R.id.spnDisplayMode);
 		Spinner spnUnits = (Spinner)findViewById(R.id.spnUnits);
 		RadioButton chkInternal = (RadioButton)findViewById(R.id.chkDBInternal);
+		EditText edtCarNumber = (EditText)findViewById(R.id.edtCarNumber);
 		
 		// get data
 		String strSpeedoStyle = spnSpeedo.getSelectedItem().toString();
 		boolean fTestMode = chkTestMode.isChecked();
 		Prefs.UNIT_SYSTEM eUnits = Prefs.UNIT_SYSTEM.valueOf(spnUnits.getSelectedItem().toString());
 		boolean fInternal = chkInternal.isChecked();
+		
+		int iCarNumber = -1;
+		try
+		{
+			iCarNumber = Integer.parseInt(edtCarNumber.getText().toString());
+		}
+		catch(Exception e)
+		{
+			iCarNumber = -1;
+		}
 		
 		// save data
 		SharedPreferences settings = getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
@@ -105,6 +117,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		  .putString(Prefs.PREF_SPEEDOSTYLE_STRING, strSpeedoStyle)
 		  .putString(Prefs.PREF_UNITS_STRING, eUnits.toString())
 		  .putBoolean(Prefs.PREF_DBLOCATION_BOOL, fInternal)
+		  .putInt(Prefs.PREF_CARNUMBER, iCarNumber)
 		  .commit();
 	}
 	
@@ -332,6 +345,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		TextView chkIOIO = (TextView)findViewById(R.id.lblUseIOIO);
 		TextView chkAccel = (TextView)findViewById(R.id.lblUseAccel);
 		TextView txtP2P = (TextView)findViewById(R.id.lblP2P);
+		EditText edtCarNumber = (EditText)findViewById(R.id.edtCarNumber);
 		
 		
 		// load settings
@@ -342,6 +356,8 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		boolean fInternalDB = settings.getBoolean(Prefs.PREF_DBLOCATION_BOOL, Prefs.DEFAULT_DBLOCATION_BOOL);
 		String strBTGPS = settings.getString(Prefs.PREF_BTGPSNAME_STRING,Prefs.DEFAULT_GPS_STRING);
 		String strBTOBD2 = settings.getString(Prefs.PREF_BTOBD2NAME_STRING, Prefs.DEFAULT_OBD2_STRING);
+		int iCarNumber = settings.getInt(Prefs.PREF_CARNUMBER, Prefs.DEFAULT_CARNUMBER);
+		
 		
 		BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
 		final boolean fBTWorking = ba != null && ba.isEnabled();
@@ -358,6 +374,8 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		chkIOIO.setClickable(false);
 		
 		txtP2P.setText(MakeP2PText(settings));
+		
+		edtCarNumber.setText("" + iCarNumber);
 		
 		chkAccel.setText(MakeAccelText(settings));
 		

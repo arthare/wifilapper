@@ -167,7 +167,7 @@ public class RaceDatabase extends BetterOpenHelper
 		public long lLapId;
 		public long lRaceId;
 	}
-	public synchronized static RaceData GetRaceData(SQLiteDatabase db, long id)
+	public synchronized static RaceData GetRaceData(SQLiteDatabase db, long id, int iCarNumber)
 	{
 		Cursor cur = db.rawQuery("select x1,y1,x2,y2,x3,y3,x4,y4,x5,y5,x6,y6,vx1,vy1,vx2,vy2,vx3,vy3,name,testmode from races where _id = " + id, null);
 		if(cur != null)
@@ -187,7 +187,7 @@ public class RaceDatabase extends BetterOpenHelper
 			{
 				rgSFDir[x] = (float)cur.getDouble(x+12);
 			}
-			ret.lapParams.InitFromRaw(rgSF,rgSFDir);
+			ret.lapParams.InitFromRaw(rgSF,rgSFDir, iCarNumber);
 			
 			cur.close();
 			
@@ -371,7 +371,7 @@ public class RaceDatabase extends BetterOpenHelper
 	}
 	public synchronized static Bitmap GetRaceOutlineImage(SQLiteDatabase db, long lRaceId, int width, int height)
 	{
-		RaceData raceData = GetRaceData(db, lRaceId);
+		RaceData raceData = GetRaceData(db, lRaceId, -1);
 		if(raceData != null)
 		{
 			LapAccumulator.LapAccumulatorParams lapParams = raceData.lapParams;
