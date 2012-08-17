@@ -1375,6 +1375,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       }
       else
       {
+        iRaceId = -1;
+        fDBOpened = true;
       }
     }
     
