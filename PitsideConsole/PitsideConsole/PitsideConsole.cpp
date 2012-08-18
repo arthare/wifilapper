@@ -28,6 +28,7 @@
 #include "PitsideHTTP.h"
 #include "DlgSplash.h"
 #include "SQLiteLapDB.h"
+#include "UnitTests.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -1334,6 +1335,10 @@ DWORD ReceiveThreadProc(LPVOID param)
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+  if(strcmp(lpCmdLine,"unit") == 0)
+  {
+    return UnitTests();
+  }
   INITCOMMONCONTROLSEX initCtrls;
   initCtrls.dwICC = ICC_LISTVIEW_CLASSES;
   initCtrls.dwSize = sizeof(initCtrls);
@@ -1380,6 +1385,10 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       }
     }
     
+  }
+  else
+  {
+    return 0;
   }
   
   if(!fDBOpened)

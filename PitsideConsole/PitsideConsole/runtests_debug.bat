@@ -1,0 +1,2 @@
+cd ../debug
+pitsideconsole unit

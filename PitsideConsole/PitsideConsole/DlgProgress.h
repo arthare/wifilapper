@@ -2,6 +2,7 @@
 
 #include "ArtUI.h"
 #include "ArtTools.h"
+#include "resource.h"
 
 interface IProgress
 {

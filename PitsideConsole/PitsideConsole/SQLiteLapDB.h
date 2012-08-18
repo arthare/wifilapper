@@ -1,4 +1,5 @@
 #include "LapReceiver.h"
+#include "ArtUI.h"
 
 class CSQLiteLapDB : public ILapReceiver
 {
