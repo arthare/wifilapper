@@ -7,13 +7,57 @@
  * Graphs:      BEB1A4 
  *    
 */
+table {
+    width: 100%;
+    border-width: 1px;
+    border-spacing: 0px;
+    border-style: solid;
+    border-color: black;
+    border-collapse: collapse;
+}
+
+table td {
+        padding: 0;
+	line-height: 20px;
+	color: #ffffff;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size: 12px;
+}
+
+tr:nth-child(even) {
+    background: #333333
+}
+
+tr:nth-child(odd) {
+    background: #555555
+}
+
+#legendTable thead tr {
+    background: #111111;
+    color: #ffffff;    
+}
+
+#channelTable thead tr {
+    background: #111111;
+    color: #ffffff;    
+}
+
+#fullPageOnClick {
+    background: black;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    opacity: .5;
+}
+
 #datamenuframe {
     background: none repeat scroll 0 0 transparent;
+    z-index: 9999;
     height: 100%;
-    margin-left: -275px;
+    margin-left: -475px;
     position: absolute;
     top: 0;
-    width: 275px;
+    width: 475px;
 }
 #datamenu {
     background: none repeat scroll 0 0 grey;
@@ -23,7 +67,7 @@
     height: 100%;
     padding: 10px;
     position: relative;
-    width: 251px;
+    width: 451px;
 }
 #datamenutab {
     background: none repeat scroll 0 0 grey;
@@ -40,10 +84,10 @@
 #settingsmenuframe {
     background: none repeat scroll 0 0 transparent;
     height: 100%;
-    margin-left: -275px;
+    margin-left: -475px;
     position: absolute;
     top: 0;
-    width: 275px;
+    width: 475px;
 }
 #settingsmenu {
     background: none repeat scroll 0 0 grey;
@@ -53,7 +97,7 @@
     height: 100%;
     padding: 10px;
     position: relative;
-    width: 251px;
+    width: 451px;
 }
 #settingsmenutab {
     background: none repeat scroll 0 0 grey;
@@ -194,8 +238,11 @@ div.menu_search div.menu ul li a:hover {
     width: 193px;
 }
 #trackArea {
-    height: 100%;
-    width: 100%;
+    position: absolute;
+    top: 0;
+    right:0;
+    left: 0;
+    bottom: 0;
 }
 #graphContainer {
     background: none repeat scroll 0 0 #050505;

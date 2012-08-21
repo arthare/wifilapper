@@ -53,72 +53,78 @@ TrackMap.prototype.drawTrack = function(data) {
   var t = 0;
   this.coords = data.points;
   // initialize the min and max values with the first row of data
-  this.minX = this.coords[0][1][1];
-  this.minY = this.coords[0][1][2];
-  this.maxX = this.coords[0][1][1];
-  this.maxY = this.coords[0][1][2];
+  this.minX = this.coords[0][1].longitude;
+  this.minY = this.coords[0][1].latitude;
+  this.maxX = this.coords[0][1].longitude;
+  this.maxY = this.coords[0][1].latitude;
   //step though each lap
   for (var lapix = 0; lapix < data.idx.length; lapix++) {
 //    alert(data.idx[lapix]);
     points[lapix] = [];
-    points[lapix].push(this.coords[lapix][1][1]);
-    points[lapix].push(this.coords[lapix][1][2]);
+    points[lapix].push(this.coords[lapix][1].longitude);
+    points[lapix].push(this.coords[lapix][1].latitude);
   // we're doing two things here; getting the min and max values from the GPS
   // data and creating the point array for drawspline
     var len = this.coords[lapix].length;
     for (var row = 2; row < len; row++) {
       var numcols = this.coords[lapix][row].length;
-      this.minX = Math.min(this.minX, this.coords[lapix][row][1]);
-      this.minY = Math.min(this.minY, this.coords[lapix][row][2]);
-      this.maxX = Math.max(this.maxX, this.coords[lapix][row][1]);
-      this.maxY = Math.max(this.maxY, this.coords[lapix][row][2]);
-      points[lapix].push(this.coords[lapix][row][1]);
-      points[lapix].push(this.coords[lapix][row][2]);
+      this.minX = Math.min(this.minX, this.coords[lapix][row].longitude);
+      this.minY = Math.min(this.minY, this.coords[lapix][row].latitude);
+      this.maxX = Math.max(this.maxX, this.coords[lapix][row].longitude);
+      this.maxY = Math.max(this.maxY, this.coords[lapix][row].latitude);
+      points[lapix].push(this.coords[lapix][row].longitude);
+      points[lapix].push(this.coords[lapix][row].latitude);
     }
   }
   
   // get the midpoint and size of the map
   var meanX = (this.minX + this.maxX) / 2;
   var meanY = (this.minY + this.maxY) / 2;
-  var deltaX = this.maxX - this.minX;
-  var deltaY = this.maxY - this.minY;
+  this.deltaX = this.maxX - this.minX;
+  this.deltaY = this.maxY - this.minY;
   // the biggest scale value that will still fit.. plus a buffer of 5%
-  var scaleX = Math.min((this.width *.95)/deltaX , (this.height *.95)/deltaY);
-  // translate and scale.. this took me WAY too long to figure out
-  var translateY = (this.height/2) - (meanY* scaleX);
-  var translateX = (this.width/2) - (meanX * scaleX);
-  if(!this.canvas_ctx){return}
+  this.scaleX = Math.min((this.width *.95)/this.deltaX , (this.height *.95)/this.deltaY);
+
+  
+//   // translate and scale.. this took me WAY too long to figure out
+//   var translateY = (this.height/2) - (meanY* this.scaleX);
+//   var translateX = (this.width/2) - (meanX * this.scaleX);
+//   if(!this.canvas_ctx){return}
   this.canvas_ctx.setTransform(1, 0, 0, 1, 0, 0);
   this.dots_ctx.setTransform(1, 0, 0, 1, 0, 0);
   
   this.canvas_ctx.clearRect(0,0,this.width,this.height);
-  this.canvas_ctx.translate(translateX,translateY);
-  this.canvas_ctx.scale(scaleX,scaleX);
-  // 0,0 is at the top left... which means we need to flip this.  
-  this.canvas_ctx.translate(0,meanY);
+  this.canvas_ctx.translate(0,this.height);
   this.canvas_ctx.scale(1,-1);
-  this.canvas_ctx.translate(0,-meanY);
-  
-  // repeat that last bit for the dots canvas so everything will line up
-  if(!this.dots_ctx){return}
-  this.dots_ctx.clearRect(0,0,this.width,this.height);
-  this.dots_ctx.translate(translateX,translateY);
-  this.dots_ctx.scale(scaleX,scaleX);
-  // 0,0 is at the top left... which means we need to flip this.  
-  this.dots_ctx.translate(0,meanY);
+  this.dots_ctx.translate(0,this.height);
   this.dots_ctx.scale(1,-1);
-  this.dots_ctx.translate(0,-meanY);
-  //   Drawing a spline takes one call.  The points are an array [x0,y0,x1,y1,...],
-  //   the tension is t (typically 0.33 to 0.5), and true/false tells whether to
-  //   connect the endpoints of the data to make a closed curve.
-  
-  var lnwidth = 1.5;
-  var inlnwidth = lnwidth / scaleX;
-  var outlnwidth = (lnwidth + 2) / scaleX;
+//   this.canvas_ctx.translate(translateX,translateY);
+//   this.canvas_ctx.scale(this.scaleX,this.scaleX);
+//   // 0,0 is at the top left... which means we need to flip this.  
+//   this.canvas_ctx.translate(0,meanY);
+//   this.canvas_ctx.scale(1,-1);
+//   this.canvas_ctx.translate(0,-meanY);
+//   
+//   // repeat that last bit for the dots canvas so everything will line up
+//   if(!this.dots_ctx){return}
+//   this.dots_ctx.clearRect(0,0,this.width,this.height);
+//   this.dots_ctx.translate(translateX,translateY);
+//   this.dots_ctx.scale(this.scaleX,this.scaleX);
+//   // 0,0 is at the top left... which means we need to flip this.  
+//   this.dots_ctx.translate(0,meanY);
+//   this.dots_ctx.scale(1,-1);
+//   this.dots_ctx.translate(0,-meanY);
+//   //   Drawing a spline takes one call.  The points are an array [x0,y0,x1,y1,...],
+//   //   the tension is t (typically 0.33 to 0.5), and true/false tells whether to
+//   //   connect the endpoints of the data to make a closed curve.
+//   
+   var lnwidth = prefs.trackMap.strokeWidth;
+//   var inlnwidth = lnwidth / this.scaleX;
+//   var outlnwidth = (lnwidth + 2) / this.scaleX;
   for (var lapix = 0; lapix < points.length; lapix++){
     //drawSpline(this.canvas_ctx,points[lapix],t,false);
-    drawLine(this.canvas_ctx,this.coords[lapix],outlnwidth, "black");
-    drawLine(this.canvas_ctx,this.coords[lapix],inlnwidth, "red");
+//    drawLine(this,this.coords[lapix],(lnwidth + 3), "red");
+    drawLine(this,this.coords[lapix],lnwidth, "white");
 //    alert(points[lapix]);
   }
   
@@ -139,7 +145,8 @@ TrackMap.prototype.drawDots = function(dotArray) {
   var deltaY = this.maxY - this.minY;
   var x = this.minX - (deltaX * .1);
   var y = this.minY - (deltaY * .1);
-  this.dots_ctx.clearRect(x,y,(deltaX * 1.5),(deltaY * 1.5));
+//  this.dots_ctx.clearRect(x,y,(deltaX * 1.5),(deltaY * 1.5));
+  this.dots_ctx.clearRect(0,0,this.height,this.width);
   var ctx = this.dots_ctx;
   for (var lap = 0; lap < dotArray.length; lap++) {
 //  for (var pnt in dotArray) {
@@ -147,9 +154,12 @@ TrackMap.prototype.drawDots = function(dotArray) {
 //    alert(dot + " " + this.coords[dot][1] + "," + this.coords[dot][2]);
     // save canvas properties first
 //    this.dots_ctx.save();
+  var lnwidth = prefs.trackMap.dotSize;
+  var inlnwidth = lnwidth / this.scaleX;
+  
     if (dot) {
-    
-      drawPoint(ctx,this.coords[lap][dot][1],this.coords[lap][dot][2],0.0001,"#FF0000");
+      var myPnt = this.pntToMap(this.coords[lap][dot]);
+      drawPoint(ctx,myPnt.longitude,myPnt.latitude,lnwidth,"#00FF00");
     }
     
     // restore back to our previously saves state
@@ -157,16 +167,31 @@ TrackMap.prototype.drawDots = function(dotArray) {
   }
 }
 
-function drawLine(ctx,points,width,color) {
+TrackMap.prototype.pntToMap =  function (pnt) {
+  var outPt = {};
+  var paddingX = ((this.height) - (this.deltaX * this.scaleX)) / 2;
+  var paddingY = ((this.width) - (this.deltaY * this.scaleX)) / 2;
+  outPt.longitude = ((pnt.longitude - (+this.minX)) * this.scaleX) + paddingX;
+  outPt.latitude = ((pnt.latitude - (+this.minY)) * this.scaleX) + paddingY;
+  
+  
+  
+  return outPt; 
+}
+
+function drawLine(_this,points,width,color) {
   if (!color) {
     color = "black";
-  } 
+  }
+  var ctx = _this.canvas_ctx 
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.beginPath();
-  ctx.moveTo(points[0][1],points[0][2]);
+  var myPnt = _this.pntToMap(points[0]);
+  ctx.moveTo(myPnt.longitude,myPnt.latitude);
   for (var i = 1; i < points.length; i++) {
-    ctx.lineTo(points[i][1],points[i][2]);
+    var myPnt = _this.pntToMap(points[i]);
+    ctx.lineTo(myPnt.longitude,myPnt.latitude);
   }
   ctx.closePath();
   ctx.stroke();
@@ -179,30 +204,4 @@ function advanceDot(x) {
   }
   trk1.drawDots([dotPos]);
 }
-      
-var toArray = function(data) {
-  var lines = data.split("\n");
-  var arry = [];
-  for (var idx = 0; idx < lines.length; idx++) {
-    var line = lines[idx];
-    // Oftentimes there's a blank line at the end. Ignore it.
-    if (line.length == 0) {
-      continue;
-    }
-    var row = line.split(",");
-    // Special processing for every row except the header.
-    if (idx > 0) {
-//      row[0] = new Date(row[0]); // Turn the string date into a Date.
-      for (var rowIdx = 0; rowIdx < row.length; rowIdx++) {
-        // Turn "123" into 123.
-        row[rowIdx] = parseFloat(row[rowIdx]);
-        if (isNaN(row[rowIdx])) {
-//          alert("NaN detected at "+idx+" "+rowIdx);
-          row[rowIdx] = null;
-        }
-      }    
-    }     
-    arry.push(row);
-  }     
-  return arry;
-}
+

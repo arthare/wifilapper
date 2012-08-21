@@ -531,14 +531,14 @@ Dygraph.prototype.toString = function() {
  */
 Dygraph.prototype.attr_ = function(name, seriesName) {
 // <REMOVE_FOR_COMBINED>
-  if (typeof(Dygraph.OPTIONS_REFERENCE) === 'undefined') {
-    this.error('Must include options reference JS for testing');
-  } else if (!Dygraph.OPTIONS_REFERENCE.hasOwnProperty(name)) {
-    this.error('Dygraphs is using property ' + name + ', which has no entry ' +
-               'in the Dygraphs.OPTIONS_REFERENCE listing.');
-    // Only log this error once.
-    Dygraph.OPTIONS_REFERENCE[name] = true;
-  }
+//   if (typeof(Dygraph.OPTIONS_REFERENCE) === 'undefined') {
+//     this.error('Must include options reference JS for testing');
+//   } else if (!Dygraph.OPTIONS_REFERENCE.hasOwnProperty(name)) {
+//     this.error('Dygraphs is using property ' + name + ', which has no entry ' +
+//                'in the Dygraphs.OPTIONS_REFERENCE listing.');
+//     // Only log this error once.
+//     Dygraph.OPTIONS_REFERENCE[name] = true;
+//   }
 // </REMOVE_FOR_COMBINED>
 
   var sources = [];
@@ -1969,6 +1969,10 @@ Dygraph.prototype.setSelection = function(row, opt_seriesName) {
 //           this.selPoints_.push(afterPnt);
 //           this.selPoints_.push(beforePnt);
           // step 2: interpolate the y value
+           if (beforePnt === null || afterPnt === null) {
+        // data before the first or after the last lap position is useless!
+          continue;
+        }
           var xval_delta = afterPnt.xval - beforePnt.xval;
           var yval_delta = afterPnt.yval - beforePnt.yval;
           var canvasx_delta = afterPnt.canvasx - beforePnt.canvasx; 
