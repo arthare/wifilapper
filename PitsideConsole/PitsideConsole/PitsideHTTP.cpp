@@ -391,23 +391,23 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
               msEnd = max(msEnd,pChannel->GetEndTimeMs());
             }
           }
-          out<<"time";
+          out<<"lapid,time";
           for(int x = 0; x < lstChannels.size(); x++)
           {
             if(lstChannels[x])
             {
-              out<<",value"<<x;
+              out<<","<<lstChannelTypes[x];
             }
           }
           out<<endl;
           for(int ms = msStart; ms < msEnd; ms += 250)
           {
-            out<<ms<<",";
+            out<<strLapId<<","<<ms;
             for(int chan = 0; chan < lstChannels.size(); chan++)
             {
               if(lstChannels[chan])
               {
-                out<<lstChannels[chan]->GetValue(ms)<<",";
+                out<<","<<lstChannels[chan]->GetValue(ms);
               }
             }
             out<<endl;
