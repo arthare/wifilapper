@@ -89,7 +89,8 @@
       <Command>runtests_release.bat</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>copyjs_rel.bat</Command>
+      <Command>$(MSBuildBinPath)\msbuild.exe "$(ProjectDir)..\MSBuild\MSBuild.xml" /p:JavaScriptOutputFile="$(TargetDir)\pitside.min.js" /p:SourceLocation=$(ProjectDir)
+copyjs_rel.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
