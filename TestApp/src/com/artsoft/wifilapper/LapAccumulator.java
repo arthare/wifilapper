@@ -64,6 +64,7 @@ public class LapAccumulator
 			vStart = new Vector2D(in);
 			vStop = new Vector2D(in);
 			iCarNumber = in.readInt();
+			iSecondaryCarNumber = in.readInt();
 		}
 		public LineSeg lnStart;
 		public LineSeg lnStop;
@@ -120,6 +121,7 @@ public class LapAccumulator
 			arg0.writeFloat(vStop.GetY());
 			
 			arg0.writeInt(iCarNumber);
+			arg0.writeInt(iSecondaryCarNumber);
 		}
 		public static final Parcelable.Creator<LapAccumulatorParams> CREATOR
 		        = new Parcelable.Creator<LapAccumulatorParams>() 

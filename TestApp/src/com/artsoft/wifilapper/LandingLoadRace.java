@@ -337,7 +337,7 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
 		
 		RaceDatabase.RaceData r = RaceDatabase.GetRaceData(RaceDatabase.Get(),listData.GetId(), iCarNumber);
 		r.lapParams.iCarNumber = iCarNumber;
-		r.lapParams.iSecondaryCarNumber = (int)(Math.random() * 100000);
+		r.lapParams.iSecondaryCarNumber = (int)(Math.random() * 100000.0);
 		if(r != null)
 		{
 			EditText txtIP = (EditText)findViewById(R.id.txtIP);
