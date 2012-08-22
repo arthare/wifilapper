@@ -11,16 +11,6 @@
  */         
 
 // autoloader borrowed from dygraph-dev.js
-(function() {
-  var src=document.getElementsByTagName('script');
-  var script = src[src.length-1].getAttribute("src");
-  var source_files = [
-    "drawspline.js",
-  ];
-  for (var i = 0; i < source_files.length; i++) {
-    document.write('<script type="text/javascript" src="' + script.replace('trackmap.js', source_files[i]) + '"></script>\n');
-  }
-})();
 
 var TrackMap = function(div, data) {
 // "data" format:
@@ -195,6 +185,26 @@ function drawLine(_this,points,width,color) {
   }
   ctx.closePath();
   ctx.stroke();
+}
+function hexToCanvasColor(hexColor,opacity){
+    // Convert #AA77CC to rbga() format for Firefox
+    opacity=opacity || "1.0";
+    hexColor=hexColor.replace("#","");
+    var r=parseInt(hexColor.substring(0,2),16);
+    var g=parseInt(hexColor.substring(2,4),16);
+    var b=parseInt(hexColor.substring(4,6),16);
+    return "rgba("+r+","+g+","+b+","+opacity+")";
+}
+function drawPoint(ctx,x,y,r,color){
+    ctx.save();  
+    ctx.beginPath();
+    ctx.lineWidth=r;
+    ctx.fillStyle=hexToCanvasColor(color,1);
+    ctx.arc(x,y,r,0.0,2*Math.PI,false);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
 }
 
 function advanceDot(x) {
