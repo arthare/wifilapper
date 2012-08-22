@@ -78,6 +78,10 @@ bool WriteFile(LPCTSTR lpszFile, ostream& out)
 
     CloseHandle(hFile);
   }
+  else
+  {
+    return false;
+  }
   return false;
 }
 

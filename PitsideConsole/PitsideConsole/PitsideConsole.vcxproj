@@ -59,10 +59,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EntryPointSymbol>
       </EntryPointSymbol>
-      <AdditionalDependencies>zlib.lib;comctl32.lib; Iphlpapi.lib; kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies) opengl32.lib;glu32.lib;ws2_32.lib;winmm.lib</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib; Iphlpapi.lib; kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies) opengl32.lib;glu32.lib;ws2_32.lib;winmm.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>copyjs_dbg.bat</Command>
+      <Command>$(MSBuildBinPath)\msbuild.exe "$(ProjectDir)..\MSBuild\MSBuild.xml" /p:JavaScriptOutputFile="$(TargetDir)\pitside.min.js" /p:SourceLocation=$(ProjectDir)
+copyjs_dbg.bat</Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>runtests_debug</Command>
