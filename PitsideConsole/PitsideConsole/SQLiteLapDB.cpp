@@ -319,6 +319,38 @@ void CSQLiteLapDB::FreeDataChannel(IDataChannel* pChannel) const
   delete pChannel;
 }
 //////////////////////////////////////////////////////////////
+int CSQLiteLapDB::GetLastReceivedRaceId() const
+{
+  DASSERT(m_iLastRaceId >= 0); // you shouldn't be calling this unless there's evidence we've received a lap!
+  return m_iLastRaceId;
+}
+//////////////////////////////////////////////////////////////
+bool CSQLiteLapDB::IsActivelyReceiving(int iRaceId) const
+{
+  return this->m_setReceivingIds.find(iRaceId) != m_setReceivingIds.end();
+}
+//////////////////////////////////////////////////////////////
+int CSQLiteLapDB::GetLapCount(int iRaceId) const
+{
+  vector<RACEDATA> lstRaces;
+  CSfArtSQLiteQuery sfQuery(m_sfDB);
+  TCHAR szQuery[MAX_PATH];
+  _snwprintf(szQuery, NUMCHARS(szQuery), L"select count(laps._id) from races,laps where races._id = %d and laps.raceid=races._id group by races._id", iRaceId);
+
+  if(sfQuery.Init(szQuery))
+  {
+    while(sfQuery.Next())
+    {
+      int cLaps = 0;
+      if(sfQuery.GetCol(0,&cLaps))
+      {
+        return cLaps;
+      }
+    }
+  }
+  return 0;
+}
+//////////////////////////////////////////////////////////////
 vector<RACEDATA> CSQLiteLapDB::GetRaces()
 {
   vector<RACEDATA> lstRaces;
@@ -492,6 +524,9 @@ void CSQLiteLapDB::AddLap(const ILap* pLap, int _iRaceId)
   {
     iSaveRaceId = mapCarNumberRaceIds[sfCarNumber];
   }
+
+  m_setReceivingIds.insert(iSaveRaceId); // this race ID received a lap
+  m_iLastRaceId = iSaveRaceId;
 
   m_sfDB.StartTransaction();
 

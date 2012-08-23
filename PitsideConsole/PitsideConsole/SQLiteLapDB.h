@@ -4,7 +4,7 @@
 class CSQLiteLapDB : public ILapReceiver
 {
 public:
-  CSQLiteLapDB(IUI* pUI) : cChannels(0), m_pUI(pUI) {};
+  CSQLiteLapDB(IUI* pUI) : cChannels(0), m_pUI(pUI),m_iLastRaceId(-1) {};
   virtual ~CSQLiteLapDB() {};
 
   virtual bool Init(LPCTSTR lpszPath) override;
@@ -19,6 +19,9 @@ public:
   // data access
   // I chose to access all the laps at once to avoid race condition issues if the network thread updates
   // the databank while the UI is displaying it
+  virtual int GetLastReceivedRaceId() const override; // gets the race ID of the last race that received a lap
+  virtual bool IsActivelyReceiving(int iRaceId) const override; // returns whether a given raceId is receiving new laps this session
+  virtual int GetLapCount(int iRaceId) const override; // gets the lap count for a given race
   virtual vector<RACEDATA> GetRaces() override;
   virtual vector<const ILap*> GetLaps(int iRaceId) override;
   virtual const ILap* GetLap(int iLapId) override;
@@ -38,6 +41,9 @@ private:
 private:
   mutable CSfArtSQLiteDB m_sfDB;
   StartFinish m_rgSF[3];
+
+  set<int> m_setReceivingIds; // which race IDs have actually received laps from afar this session?
+  int m_iLastRaceId; // what was the last race ID to receive a lap?
 
   mutable int cChannels;
 

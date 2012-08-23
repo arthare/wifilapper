@@ -662,9 +662,24 @@ public:
           return TRUE;
         }
         case NOTIFY_NEWLAP:
-          LoadLaps((ILapReceiver*)lParam);
-          UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD);
+        {
+          ILapReceiver* pLapDB = (ILapReceiver*)lParam;
+          int iLastRaceId = pLapDB->GetLastReceivedRaceId();
+          if(m_iRaceId < 0 || pLapDB->GetLapCount(m_iRaceId) || // if we don't have a race or our current race has no laps (aka sucks)
+            (pLapDB->IsActivelyReceiving(iLastRaceId) && !pLapDB->IsActivelyReceiving(m_iRaceId))) // or if the new race ID is receiving and the current race ID isn't...
+          {
+            m_iRaceId = pLapDB->GetLastReceivedRaceId(); // since we just got told there's a new lap, there must be a last-received-race
+            ClearUILaps();
+            LoadLaps(g_pLapDB);
+            UpdateUI(UPDATE_ALL);
+          }
+          else
+          {
+            LoadLaps((ILapReceiver*)lParam);
+            UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD);
+          }
           return TRUE;
+        }
         case NOTIFY_NEWDATABASE:
         {
           // a new database has shown up!
@@ -1333,6 +1348,20 @@ DWORD ReceiveThreadProc(LPVOID param)
   return 0;
 }
 
+int str_ends_with(const TCHAR * str, const TCHAR * suffix) 
+{
+  if( str == NULL || suffix == NULL )
+    return 0;
+
+  size_t str_len = wcslen(str);
+  size_t suffix_len = wcslen(suffix);
+
+  if(suffix_len > str_len)
+    return 0;
+
+  return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
+}
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
   if(strcmp(lpCmdLine,"unit") == 0)
@@ -1358,6 +1387,14 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   if(ArtGetSaveFileName(NULL,L"Select .wflp to open or save to",szDBPath,NUMCHARS(szDBPath),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
   {
     const bool fFileIsNew = !DoesFileExist(szDBPath);
+    if(fFileIsNew)
+    {
+      // let's make sure there's a .wflp suffix on that bugger.
+      if(!str_ends_with(szDBPath,L".wflp"))
+      {
+        wcsncat(szDBPath,L".wflp", NUMCHARS(szDBPath));
+      }
+    }
     // they chose one to open, so open it.
     if(sfLaps.Init(szDBPath))
     {

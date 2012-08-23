@@ -344,6 +344,9 @@ public:
   // data access
   // I chose to access all the laps at once to avoid race condition issues if the network thread updates
   // the databank while the UI is displaying it
+  virtual bool IsActivelyReceiving(int iRaceId) const = 0; // returns whether a given raceId is receiving new laps this session
+  virtual int GetLastReceivedRaceId() const = 0; // gets the race ID of the last race that received a lap
+  virtual int GetLapCount(int iRaceId) const = 0; // gets the lap count for a given race
   virtual vector<RACEDATA> GetRaces() = 0;
   virtual vector<const ILap*> GetLaps(int iRaceId) = 0;
   virtual const ILap* GetLap(int iLapId) = 0;

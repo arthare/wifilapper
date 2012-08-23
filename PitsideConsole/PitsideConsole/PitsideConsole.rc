@@ -90,7 +90,6 @@ BEGIN
     END
     POPUP "&Data"
     BEGIN
-        MENUITEM "New Race Session", ID_DATA_NEWSESSION
         MENUITEM "Switch Race Session", ID_DATA_SWITCHSESSION
         MENUITEM "Open .wflp DB", ID_DATA_OPENDB
 		MENUITEM "Export selected laps to CSV format", ID_DATA_DASHWARE
