@@ -60,7 +60,19 @@ public class Utility
 		});  
 		ad.show();  
 	}
-	
+	public static int ParseInt(String str, int iDefault)
+	{
+		int iRet = 0;
+		try
+		{
+			iRet = Integer.parseInt(str);
+		}
+		catch(NumberFormatException e)
+		{
+			iRet = iDefault;
+		}
+		return iRet;
+	}
 	// true -> a change was made
 	// false -> no changes were made
 	public static boolean ConnectToSSID(String strSSID, WifiManager pWifi)
