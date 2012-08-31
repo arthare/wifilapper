@@ -61,8 +61,9 @@ bool WriteFile(LPCTSTR lpszFile, ostream& out)
       BOOL fSuccess = ReadFile(hFile,buf,cbDesiredRead,&cbRead,NULL);
       if(fSuccess)
       {
-        buf[cbRead] = 0;
-        out<<buf;
+//        buf[cbRead] = 0;
+//        out<<buf;
+		out.write(buf,cbRead);
         if(cbRead < cbDesiredRead)
         {
           CloseHandle(hFile);
@@ -431,6 +432,18 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     else if(pReq.strPage.find(".js") != string::npos)
     {
       pReq.strResponseType = "text/javascript";
+    }
+	else if(pReq.strPage.find(".png") != string::npos)
+    {
+      pReq.strResponseType = "image/png";
+    }
+	else if(pReq.strPage.find(".jpg") != string::npos)
+    {
+      pReq.strResponseType = "image/jpeg";
+    }
+	else if(pReq.strPage.find(".gif") != string::npos)
+    {
+      pReq.strResponseType = "image/gif";
     }
     wstring widePage(pReq.strPage.length(),0);
     std::copy(pReq.strPage.begin(),pReq.strPage.end(),widePage.begin());

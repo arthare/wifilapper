@@ -160,7 +160,7 @@ void SimpleHTTPServer::ThreadProc()
       
           buf[cbRead] = '\0';
           cout<<buf;
-          stringstream ss;
+          stringstream ss (stringstream::in | stringstream::out | stringstream::binary);
           stringstream ssHeader;
           HTTPREQUEST aData;
           if(ParseRequest(buf,cbRead,&aData))
