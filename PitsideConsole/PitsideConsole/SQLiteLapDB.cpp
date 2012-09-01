@@ -330,6 +330,35 @@ bool CSQLiteLapDB::IsActivelyReceiving(int iRaceId) const
   return this->m_setReceivingIds.find(iRaceId) != m_setReceivingIds.end();
 }
 //////////////////////////////////////////////////////////////
+void CSQLiteLapDB::GetLastLapTimeStamp(const vector<int>& lstCarNumbers, vector<unsigned int>& lstTimeStamps) const
+{
+  for(int x = 0;x < lstCarNumbers.size(); x++)
+  {
+    const int iCar = lstCarNumbers[x];
+    unsigned int msLatestTime = 0;
+    {
+      for(map<CARNUMBERCOMBO,int>::const_iterator i = mapCarNumberRaceIds.begin(); i != mapCarNumberRaceIds.end(); i++)
+      {
+        if(i->first.iCarNumber == iCar)
+        {
+          const int iRaceId = i->second;
+          map<int,unsigned int>::const_iterator found = mapLastRaceTimes.find(iRaceId);
+          if(found != mapLastRaceTimes.end())
+          {
+            const int msLastLapTime = found->second;
+            msLatestTime = max(msLatestTime, msLastLapTime); // figures out which one came later
+          }
+          else
+          {
+            // nothing to do, this race doesn't have a last lap time
+          }
+        }
+      }
+      lstTimeStamps.push_back(msLatestTime);
+    }
+  }
+}
+//////////////////////////////////////////////////////////////
 int CSQLiteLapDB::GetLapCount(int iRaceId) const
 {
   vector<RACEDATA> lstRaces;
@@ -571,6 +600,7 @@ void CSQLiteLapDB::AddLap(const ILap* pLap, int _iRaceId)
 
   if(fSuccess)
   {
+    mapLastRaceTimes[iSaveRaceId] = timeGetTime();
     m_pUI->NotifyChange(NOTIFY_NEWLAP,(LPARAM)this);
   }
 

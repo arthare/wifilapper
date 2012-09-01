@@ -21,6 +21,7 @@ public:
   // the databank while the UI is displaying it
   virtual int GetLastReceivedRaceId() const override; // gets the race ID of the last race that received a lap
   virtual bool IsActivelyReceiving(int iRaceId) const override; // returns whether a given raceId is receiving new laps this session
+  virtual void GetLastLapTimeStamp(const vector<int>& lstCarNumbers, vector<unsigned int>& lstTimeStamps) const;
   virtual int GetLapCount(int iRaceId) const override; // gets the lap count for a given race
   virtual vector<RACEDATA> GetRaces() override;
   virtual vector<const ILap*> GetLaps(int iRaceId) override;
@@ -50,4 +51,5 @@ private:
   IUI* m_pUI;
   TCHAR szLastNetStatus[NETSTATUS_COUNT][200];
   map<CARNUMBERCOMBO,int> mapCarNumberRaceIds; // a mapping from car numbers to the raceIDs we assign for them.
+  map<int,unsigned int> mapLastRaceTimes; // remembers the timestamp for the last lap received for any race
 };

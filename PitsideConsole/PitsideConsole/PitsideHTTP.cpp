@@ -247,6 +247,25 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
       out<<"no laps selected"<<endl<<"error"<<endl;
     }
   }
+  else if(pReq.strPage == "/lastlaptimestamp")
+  {
+    vector<int> carNumbers = ParseCSL(pReq.mapParams["cars"]);
+    vector<unsigned int> lstTimeStamps;
+    m_pLapsDB->GetLastLapTimeStamp(carNumbers,lstTimeStamps);
+
+    if(lstTimeStamps.size() == carNumbers.size())
+    {
+      for(int x = 0;x < carNumbers.size(); x++)
+      {
+        out<<carNumbers[x]<<",";
+      }
+      for(int x = 0; x < lstTimeStamps.size(); x++)
+      {
+        out<<lstTimeStamps[x]<<",";
+      }
+    }
+    return true;
+  }
   else if(pReq.strPage == "/getdata")
   {
     out.precision(8);
