@@ -259,10 +259,12 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
       {
         out<<carNumbers[x]<<",";
       }
+      out<<endl;
       for(int x = 0; x < lstTimeStamps.size(); x++)
       {
         out<<lstTimeStamps[x]<<",";
       }
+      out<<endl;
     }
     return true;
   }
