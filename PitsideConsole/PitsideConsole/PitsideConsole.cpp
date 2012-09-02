@@ -665,7 +665,7 @@ public:
         {
           ILapReceiver* pLapDB = (ILapReceiver*)lParam;
           int iLastRaceId = pLapDB->GetLastReceivedRaceId();
-          if(m_iRaceId < 0 || pLapDB->GetLapCount(m_iRaceId) || // if we don't have a race or our current race has no laps (aka sucks)
+          if(m_iRaceId < 0 || pLapDB->GetLapCount(m_iRaceId) <= 0 || // if we don't have a race or our current race has no laps (aka sucks)
             (pLapDB->IsActivelyReceiving(iLastRaceId) && !pLapDB->IsActivelyReceiving(m_iRaceId))) // or if the new race ID is receiving and the current race ID isn't...
           {
             m_iRaceId = pLapDB->GetLastReceivedRaceId(); // since we just got told there's a new lap, there must be a last-received-race
