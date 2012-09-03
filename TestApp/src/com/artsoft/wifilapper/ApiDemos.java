@@ -502,7 +502,7 @@ implements
 	    else if(m_lRaceId == -1 && m_lapParams.IsValid(m_fUseP2P))
 	    {
 	    	// they're running a new race with old splits
-	    	m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lapParams, fTestMode, m_fUseP2P);
+	    	m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lapParams, fTestMode, m_fUseP2P, m_lapParams.iFinishCount);
 	    	m_lapSender.SetRaceId(m_lRaceId);
 	    }
 	    
@@ -722,10 +722,12 @@ implements
     }
     private void TrackLastLap(LapAccumulator lap, boolean fTransmit, boolean fSaveAsLastLap)
     {
+    	if(lap.GetFinishesNeeded() > 1 && lap.GetFinishCount() < lap.GetFinishesNeeded()) return; // don't track laps that don't have the right number of finishes
+    	
     	lap.ForceFinish();
 		if(m_lRaceId < 0 && m_lapParams.IsValid(m_fUseP2P))
 		{
-			m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lapParams, this.m_fTestMode, m_fUseP2P);
+			m_lRaceId = RaceDatabase.CreateRaceIfNotExist(RaceDatabase.Get(), this.m_strRaceName, m_lapParams, this.m_fTestMode, m_fUseP2P, this.m_lapParams.iFinishCount);
 			m_lapSender.SetRaceId(m_lRaceId);
 		}
     	m_tmLastLap = System.currentTimeMillis();
@@ -1162,19 +1164,25 @@ implements
 	}
 	private abstract static class BaseSplitDecider implements SplitDecider
 	{
+		protected BaseSplitDecider()
+		{
+		}
 		@Override
 		public boolean NotifyPoint(LapAccumulator currentLap, Point2D ptLast, Point2D ptCurrent, float flCurrentVel)
 		{
 			// handles the case that all NotifyPoints have to handle: did this point cross the line and direction we have set?
 			this.currentLap = currentLap;
 			
-			if(IsReady())
+			if(IsReady() && ptCurrent != null && ptLast != null)
 			{
 				LineSeg lnPoints = new LineSeg(ptCurrent,ptLast);
 				LineSeg.IntersectData data = new LineSeg.IntersectData();
 				
 				Vector2D vNewDir = Vector2D.P1MinusP2(ptCurrent, ptLast);
-				return lnPoints.Intersect(ln, data, true, true) && vNewDir.DotProduct(vCrossDir) > 0;
+				if(lnPoints.Intersect(ln, data, true, true) && vNewDir.DotProduct(vCrossDir) > 0)
+				{
+					return true;
+				}
 			}
 			return false;
 		}
@@ -1191,11 +1199,14 @@ implements
 		protected LapAccumulator currentLap;
 		protected LineSeg ln;
 		protected Vector2D vCrossDir;
+		
+		private int iLapsToGo;
 	}
 	private static class SpeedSplitDecider extends BaseSplitDecider
 	{
 		SpeedSplitDecider(boolean fArmedByDefault, boolean fOnSlowDown, float flSpeed, Prefs.UNIT_SYSTEM eUnitSystem, String strStartFinish)
 		{
+			super();
 			this.fArmed = fArmedByDefault;
 			this.fOnSlowDown = fOnSlowDown;
 			this.flCrossSpeed = flSpeed;
@@ -1263,6 +1274,8 @@ implements
 	{
 		DistanceSplitDecider(float flNeededDistance, Prefs.UNIT_SYSTEM eUnitSystem)
 		{
+			super();
+			
 			this.flNeededDistance = flNeededDistance;
 			this.eSystem = eUnitSystem;
 		}
@@ -1305,10 +1318,12 @@ implements
 	{
 		LineSplitDecider(String strSetupLine)
 		{
+			super();
 			this.strSetupLine = strSetupLine;
 		}
 		LineSplitDecider(LineSeg ln, Vector2D vDir)
 		{
+			super();
 			this.ln = ln;
 			this.vCrossDir = vDir;
 		}
@@ -1319,7 +1334,7 @@ implements
 			
 			LineSeg.IntersectData intersect = new LineSeg.IntersectData();
 			LapAccumulator.CrossData cross = new LapAccumulator.CrossData();
-			if(currentLap.IsNowCrossingSelf(intersect,cross))
+			if(!IsReady() && currentLap.IsNowCrossingSelf(intersect,cross) && currentLap.GetFinishesNeeded() == 1)
 			{
 				if(cross.flSpeedOfCrossedLine > 5)
 				{

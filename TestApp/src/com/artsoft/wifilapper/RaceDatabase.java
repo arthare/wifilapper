@@ -52,7 +52,7 @@ public class RaceDatabase extends BetterOpenHelper
 	// 15->16: messed everything up, need freshness
 	// 16->17: adding accelerometer data in DB
 	// 20->21: adding "point-to-point" member in races table
-	private static final int m_iVersion = 21;
+	private static final int m_iVersion = 22;
 	private static final String DATABASE_NAME_INTERNAL = "races";
 	
 	public static final String KEY_RACENAME = "name";
@@ -61,6 +61,7 @@ public class RaceDatabase extends BetterOpenHelper
 	public static final String KEY_LAPTIME = "laptime";
 	public static final String KEY_STARTTIME = "starttime";
 	public static final String KEY_P2P = "p2p";
+	public static final String KEY_FINISHCOUNT = "finishcount";
 	public static boolean CreateInternal(Context ctx, String strBasePath)
 	{
 		String strPath = strBasePath + "/" + DATABASE_NAME_INTERNAL;
@@ -90,7 +91,7 @@ public class RaceDatabase extends BetterOpenHelper
 		return g_raceDB.getWritableDatabase();
 	}
 	
-	public synchronized static long CreateRaceIfNotExist(SQLiteDatabase db, String strRaceName, LapAccumulator.LapAccumulatorParams lapParams, boolean fTestMode, boolean fP2P)
+	public synchronized static long CreateRaceIfNotExist(SQLiteDatabase db, String strRaceName, LapAccumulator.LapAccumulatorParams lapParams, boolean fTestMode, boolean fP2P, int iFinishCount)
 	{
 		if(db == null)
 		{
@@ -126,11 +127,20 @@ public class RaceDatabase extends BetterOpenHelper
 			content.put("vx3", 0);
 			content.put("vy3", 0);
 			
+			
 			content.put("\"testmode\"", fTestMode);
 			content.put("p2p", fP2P ? 1 : 0);
+			content.put("finishcount", iFinishCount);
 			
-			long id = db.insertOrThrow("races", null, content);
-			return id;
+			try
+			{
+				long id = db.insertOrThrow("races", null, content);
+				return id;
+			}
+			catch(SQLiteException e)
+			{
+				return -1;
+			}
 		}
 		return -1;
 	}
@@ -169,14 +179,14 @@ public class RaceDatabase extends BetterOpenHelper
 	}
 	public synchronized static RaceData GetRaceData(SQLiteDatabase db, long id, int iCarNumber)
 	{
-		Cursor cur = db.rawQuery("select x1,y1,x2,y2,x3,y3,x4,y4,x5,y5,x6,y6,vx1,vy1,vx2,vy2,vx3,vy3,name,testmode from races where _id = " + id, null);
+		Cursor cur = db.rawQuery("select x1,y1,x2,y2,x3,y3,x4,y4,x5,y5,x6,y6,vx1,vy1,vx2,vy2,vx3,vy3,name,testmode,finishcount from races where _id = " + id, null);
 		if(cur != null)
 		{
 			cur.moveToFirst();
 			RaceData ret = new RaceData();
 			ret.strRaceName = cur.getString(18);
 			ret.fTestMode = cur.getInt(19) != 0;
-			
+			final int iFinishCount = cur.getInt(20);
 			float rgSF[] = new float[12];
 			float rgSFDir[] = new float [6];
 			for(int x = 0; x < 12; x++)
@@ -187,7 +197,7 @@ public class RaceDatabase extends BetterOpenHelper
 			{
 				rgSFDir[x] = (float)cur.getDouble(x+12);
 			}
-			ret.lapParams.InitFromRaw(rgSF,rgSFDir, iCarNumber);
+			ret.lapParams.InitFromRaw(rgSF,rgSFDir, iCarNumber, iFinishCount);
 			
 			cur.close();
 			
@@ -406,7 +416,7 @@ public class RaceDatabase extends BetterOpenHelper
 	{
 		try
 		{
-			Cursor cur = db.rawQuery("select races.p2p as " + KEY_P2P + ", races._id as raceid,min(laps.laptime) as " + KEY_LAPTIME + ", races.name as name,count(laps._id) as lapcount, min(laps.unixtime) as " + KEY_STARTTIME + " from races left join laps on races._id = laps.raceid group by races._id order by races._id", null);
+			Cursor cur = db.rawQuery("select races.finishcount as " + KEY_FINISHCOUNT + ", races.p2p as " + KEY_P2P + ", races._id as raceid,min(laps.laptime) as " + KEY_LAPTIME + ", races.name as name,count(laps._id) as lapcount, min(laps.unixtime) as " + KEY_STARTTIME + " from races left join laps on races._id = laps.raceid group by races._id order by races._id", null);
 
 			return cur;
 		}
@@ -441,7 +451,8 @@ public class RaceDatabase extends BetterOpenHelper
 																						"vy2 real," +
 																						"vx3 real," +
 																						"vy3 real," +
-																						"p2p integer not null default 0)";
+																						"p2p integer not null default 0," +
+																						"finishcount integer not null default 1)";
 	
 	private final static String CREATE_LAPS_SQL = "create table if not exists laps " +
 													"(_id integer primary key asc autoincrement, " +
@@ -521,6 +532,12 @@ public class RaceDatabase extends BetterOpenHelper
 				// upgrade more...
 				db.execSQL("alter table races add column p2p integer not null default 0");
 				oldVersion = 21;
+			}
+			if(oldVersion == 21 && newVersion == 22)
+			{
+				// upgrade more...
+				db.execSQL("alter table races add column finishcount integer not null default 1");
+				oldVersion = 22;
 			}
 		}
 	}

@@ -56,6 +56,7 @@ public class LapAccumulator
 			vStart = new Vector2D(0,0);
 			vStop = new Vector2D(0,0);
 			iCarNumber = -1;
+			iFinishCount = 1;
 		}
 		LapAccumulatorParams(Parcel in)
 		{
@@ -65,6 +66,7 @@ public class LapAccumulator
 			vStop = new Vector2D(in);
 			iCarNumber = in.readInt();
 			iSecondaryCarNumber = in.readInt();
+			iFinishCount = in.readInt();
 		}
 		public LineSeg lnStart;
 		public LineSeg lnStop;
@@ -72,6 +74,7 @@ public class LapAccumulator
 		public Vector2D vStop;
 		public int iCarNumber;
 		public int iSecondaryCarNumber; // a randomly-generated ID that we use to break ties between cars in pitside.  If we get two (-1) car numbers, then we use their secondary IDs to make sure shit ends up in separate races
+		public int iFinishCount;
 		
 		public boolean IsValid(boolean fP2P)
 		{
@@ -86,7 +89,7 @@ public class LapAccumulator
 				
 			}
 		}
-		public void InitFromRaw(float[] rgSF, float[] rgSFDir, int iCarNumber)
+		public void InitFromRaw(float[] rgSF, float[] rgSFDir, int iCarNumber, int iFinishCount)
 		{
 			lnStart = new LineSeg(new Point2D((float)rgSF[0],(float)rgSF[1]),new Point2D((float)rgSF[2],(float)rgSF[3]));
     		vStart = new Vector2D((float)rgSFDir[0], (float)rgSFDir[1]);
@@ -95,6 +98,7 @@ public class LapAccumulator
     		vStop = new Vector2D((float)rgSFDir[2], (float)rgSFDir[3]);
     		
     		this.iCarNumber = iCarNumber;
+    		this.iFinishCount = iFinishCount;
 		}
 		@Override
 		public int describeContents() 
@@ -122,6 +126,7 @@ public class LapAccumulator
 			
 			arg0.writeInt(iCarNumber);
 			arg0.writeInt(iSecondaryCarNumber);
+			arg0.writeInt(iFinishCount);
 		}
 		public static final Parcelable.Creator<LapAccumulatorParams> CREATOR
 		        = new Parcelable.Creator<LapAccumulatorParams>() 
@@ -172,8 +177,17 @@ public class LapAccumulator
 		assert(ptStart != null);
 		if(ptStart != null)
 		{
-			 m_lstPositions.add(new TimePoint2D(ptStart, iStartTime, dVelocity, m_dCumulativeDistance));
+			 m_lstPositions.add(new TimePoint2D(ptStart, iStartTime, dVelocity, m_dCumulativeDistance, 0));
 		}
+		m_iLapsToGo = m_lapParams.iFinishCount;
+	}
+	public int GetFinishesNeeded()
+	{
+		return m_lapParams.iFinishCount;
+	}
+	public int GetFinishCount()
+	{
+		return m_lapParams.iFinishCount - m_iLapsToGo;
 	}
 	public LapAccumulator CreateCopy()
 	{
@@ -738,7 +752,7 @@ public class LapAccumulator
 			return; // we're done here.
 		}
 		TimePoint2D ptLast = m_lstPositions.get(m_lstPositions.size() - 1);
-		TimePoint2D ptNew = new TimePoint2D(ptNewRaw,iTime, dVelocity, m_dCumulativeDistance);
+		TimePoint2D ptNew = new TimePoint2D(ptNewRaw,iTime, dVelocity, m_dCumulativeDistance, GetFinishCount());
 		
 		assert(ptNew != null && ptLast.pt != null);
 		LineSeg lnLast = new LineSeg(ptNewRaw, ptLast.pt);
@@ -786,13 +800,17 @@ public class LapAccumulator
 				Vector2D vDir = Vector2D.P1MinusP2(ptNewRaw, ptLast.pt);
 				if(vDir.DotProduct(m_lapParams.vStop) > 0)
 				{
-					// we've crossed the finish line, and we were going the correct direction
-					float dTimeInSeconds = ((float)iTime / 1000.0f);
-					float dIntersectTime = (intersect.GetThisFraction() * dLastInSeconds) + ((1 - intersect.GetThisFraction()) * dTimeInSeconds);
-					int iIntersectTime = (int)(dIntersectTime * 1000);
-					assert(iIntersectTime > m_iStartTime);
-					m_finishTime = new Integer(iIntersectTime);
-					m_ptFinishPoint = intersect.GetPoint();
+					m_iLapsToGo--;
+					if(m_iLapsToGo <= 0)
+					{
+						// we've crossed the finish line enough times, and we were going the correct direction
+						float dTimeInSeconds = ((float)iTime / 1000.0f);
+						float dIntersectTime = (intersect.GetThisFraction() * dLastInSeconds) + ((1 - intersect.GetThisFraction()) * dTimeInSeconds);
+						int iIntersectTime = (int)(dIntersectTime * 1000);
+						assert(iIntersectTime > m_iStartTime);
+						m_finishTime = new Integer(iIntersectTime);
+						m_ptFinishPoint = intersect.GetPoint();
+					}
 				}
 			}
 		}
@@ -1085,6 +1103,7 @@ public class LapAccumulator
 			
 				ptThis = ptNext;
 				ptNext = m_lstPositions.get(ixNext);
+				if(ptThis.iLapCount != p.iLapCount) continue; // we only want to match with points on the same lap...
 				
 				final float dx1 = ptThis.pt.x - p.pt.x;
 				final float dx2 = ptNext.pt.x - p.pt.x;
@@ -1119,7 +1138,7 @@ public class LapAccumulator
 			
 			if(pt1.EqualsPoint(pt2))
 			{
-				return new TimePoint2D(pt1.GetPT(), pt1.iTime, pt1.dVelocity, pt1.dDistance);
+				return new TimePoint2D(pt1.GetPT(), pt1.iTime, pt1.dVelocity, pt1.dDistance, pt1.iLapCount);
 			}
 			else
 			{
@@ -1147,7 +1166,7 @@ public class LapAccumulator
 			          double dThisTime = (pt1.iTime * (1-dPercent)) + (pt2.iTime * dPercent);
 			          double dThisVelocity = (pt1.dVelocity * (1-dPercent)) + (pt2.dVelocity * dPercent);
 			          double dThisDistance = (pt1.dDistance * (1-dPercent)) + (pt2.dDistance * dPercent);
-			          TimePoint2D ptRet = new TimePoint2D(pIntersect.GetPoint(), (int)dThisTime, dThisVelocity, dThisDistance);
+			          TimePoint2D ptRet = new TimePoint2D(pIntersect.GetPoint(), (int)dThisTime, dThisVelocity, dThisDistance, p.iLapCount);
 			          return ptRet;
 		          }
 		        }
@@ -1369,6 +1388,7 @@ public class LapAccumulator
 	private boolean				m_fDeferredLoad; // whether we're deferring the loading of points from the DB
 	private boolean				m_fPruned; // whether this is a pruned lap - a pruned lap never re-loads from the DB, as it is too old for people to care.
 	
+	private int					m_iLapsToGo; // how many laps we have to go
 	// an array of bytes all ready to be sent over the network.
 	// if this doesn't exist pre-network, then call "BuildByteArray()".
 	// this should be built as soon as the lap is completed, so that
@@ -1385,18 +1405,19 @@ public class LapAccumulator
 }
 class TimePoint2D 
 {
-	public TimePoint2D(Point2D pt, int iTime, double dVelocity, double dDistance)
+	public TimePoint2D(Point2D pt, int iTime, double dVelocity, double dDistance, int iLapCount)
 	{
 		assert(pt != null);
 		this.pt = pt;
 		this.iTime = iTime;
 		this.dVelocity = dVelocity;
 		this.dDistance = dDistance;
+		this.iLapCount = iLapCount;
 		
 	}
 	public boolean EqualsPoint(TimePoint2D pt)
 	{
-		return this.pt.x == pt.pt.x && this.pt.y == pt.pt.y;
+		return this.pt.x == pt.pt.x && this.pt.y == pt.pt.y && pt.iLapCount == this.iLapCount;
 	}
 	Point2D GetPT() {return pt;}
 	double GetTime() {return iTime;}
@@ -1435,4 +1456,5 @@ class TimePoint2D
 	public int iTime;
 	public double dVelocity;
 	public double dDistance;
+	public int iLapCount;
 }

@@ -40,11 +40,13 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.Spinner;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.Toast;
 
-public class LandingNewRace extends LandingRaceBase implements OnClickListener, DialogInterface.OnClickListener
+public class LandingNewRace extends LandingRaceBase implements OnClickListener, DialogInterface.OnClickListener, OnCheckedChangeListener
 {
 	private Button m_btnApply;
 	private DialogInterface m_dlgAlert;
@@ -86,17 +88,24 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
 
 		Button btnIP = (Button)findViewById(R.id.btnAutoIP);
 		btnIP.setOnClickListener(this);
+		Button btnFinishCountHelp = (Button)findViewById(R.id.btnFinishHelp);
+		btnFinishCountHelp.setOnClickListener(this);
 		
 		
 		EditText txtIP = (EditText)findViewById(R.id.txtIP);
 		Spinner spnSSID = (Spinner)findViewById(R.id.spnSSID);
 		EditText txtRaceName = (EditText)findViewById(R.id.txtRaceName);
+		EditText edtFinishCount = (EditText)findViewById(R.id.edtFinishCount);
+		RadioGroup rg = (RadioGroup)findViewById(R.id.rgRaceMode);
+		rg.setOnCheckedChangeListener(this);
 		
 		SharedPreferences settings = getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
 		String strIP = settings.getString(Prefs.PREF_IP_STRING,Prefs.DEFAULT_IP_STRING);
 		String strSSID = settings.getString(Prefs.PREF_SSID_STRING, Prefs.DEFAULT_SSID_STRING);
 		String strRaceName = settings.getString(Prefs.PREF_RACENAME_STRING, Prefs.DEFAULT_RACENAME_STRING);
 		
+
+		edtFinishCount.setText("1"); // the consequences of messing this up are so substantial I'm not even going to pref it.
 		txtIP.setText(strIP);
 		SetupSSIDSpinner(spnSSID, strSSID);
 		txtRaceName.setText(strRaceName);
@@ -111,6 +120,7 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		Spinner spnSSID = (Spinner)findViewById(R.id.spnSSID);
     		EditText txtRaceName = (EditText)findViewById(R.id.txtRaceName);
     		RadioGroup rgMode = (RadioGroup)findViewById(R.id.rgRaceMode);
+    		EditText edtFinishCount = (EditText)findViewById(R.id.edtFinishCount);
     		
     		String strIP = txtIP.getText().toString();
     		String strSSID = (spnSSID.isEnabled() && spnSSID.getSelectedItem() != null) ? spnSSID.getSelectedItem().toString() : "";
@@ -132,7 +142,9 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		final int iStartMode = settings.getInt(Prefs.PREF_P2P_STARTMODE, Prefs.DEFAULT_P2P_STARTMODE);
     		final float flStartParam = settings.getFloat(Prefs.PREF_P2P_STARTPARAM, Prefs.DEFAULT_P2P_STARTPARAM);
     		final int iStopMode = settings.getInt(Prefs.PREF_P2P_STOPMODE, Prefs.DEFAULT_P2P_STOPMODE);
-    		final float flStopMode = settings.getFloat(Prefs.PREF_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM);
+    		final float flStopParam = settings.getFloat(Prefs.PREF_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM);
+    		
+    		final int iFinishCount = Utility.ParseInt(edtFinishCount.getText().toString(), 1);
     		
     		eUnitSystem = Prefs.UNIT_SYSTEM.valueOf(strUnitSystem);
     		
@@ -147,8 +159,9 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		LapAccumulator.LapAccumulatorParams lapParams = new LapAccumulator.LapAccumulatorParams();
     		lapParams.iCarNumber = settings.getInt(Prefs.PREF_CARNUMBER, Prefs.DEFAULT_CARNUMBER);
     		lapParams.iSecondaryCarNumber = (int)(Math.random() * 100000.0); 
+    		lapParams.iFinishCount = iFinishCount;
     		
-    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopMode, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, lapParams, strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
+    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopParam, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, lapParams, strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
     		if(fTestMode)
     		{
     			// they're about to start a run in test mode.  Test mode sucks for real users, so warn them
@@ -165,6 +178,10 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     			startActivity(i);
     		}
     	}
+		else if(v.getId() == R.id.btnFinishHelp)
+		{
+			Toast.makeText(this, "Once you've set the start and finish lines, this is how many times you'll have to cross the finish in a run before WifiLapper stops recording.  This is for routes that cross the finish more than once.",Toast.LENGTH_LONG).show();
+		}
 		else if(v.getId() == R.id.btnAutoIP)
 		{
 			ShowAutoIPActivity();
@@ -208,6 +225,23 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
 			}
 			dlg = null;
 			m_startIntent = null;
+		}
+	}
+	@Override
+	public void onCheckedChanged(RadioGroup arg0, int arg1) 
+	{
+		if(arg0.getId() == R.id.rgRaceMode)
+		{
+			View v = findViewById(R.id.rowFinishCount);
+			if(arg1 == R.id.rbLapping)
+			{
+				// they're in lapping mode.  So we want to hide the "finish count" table row
+				v.setVisibility(View.GONE);
+			}
+			else if(arg1 == R.id.rbPointToPoint)
+			{
+				v.setVisibility(View.VISIBLE);
+			}
 		}
 	}
 	
