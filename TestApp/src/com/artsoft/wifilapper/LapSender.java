@@ -432,6 +432,7 @@ public class LapSender
 			{
 				// we're not connected to any network
 			}
+			listener.SetConnectionLevel(LapSenderListener.CONNLEVEL.SEARCHING);
 			
 			// ok, we should now be fully disconnected from the network we had before (if any)
 			List<WifiConfiguration> lstNetworks = pWifi.getConfiguredNetworks();
@@ -463,7 +464,7 @@ public class LapSender
 							}
 						}
 						cAttempts++;
-						Thread.sleep(100);
+						Thread.sleep(250);
 						SaveLapsToDB();
 					}
 				}
@@ -628,7 +629,6 @@ public class LapSender
 				}
 				catch(IOException e)
 				{
-					listener.SetConnectionLevel(LapSenderListener.CONNLEVEL.SEARCHING);
 					// not in range anymore.  That's fine, we'll get it later
 					System.out.println(e.toString());
 				} catch (InterruptedException e) 
