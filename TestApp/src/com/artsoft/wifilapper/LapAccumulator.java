@@ -1205,7 +1205,8 @@ public class LapAccumulator
 		public static final int CHANNEL_ACCEL_X = 5; // see LapData.h in PitsideConsole for constants
 		public static final int CHANNEL_ACCEL_Y = 6; // see LapData.h in PitsideConsole for constants
 		public static final int CHANNEL_TEMP = 7;
-		public static final int CHANNEL_SIGSTRENGTH = 8;
+		public static final int CHANNEL_RECEPTION_X = 8;
+		public static final int CHANNEL_RECEPTION_Y = 9;
 		public static final int CHANNEL_PID_START = 0x100;
 		public static final int CHANNEL_PID_END = 0x200;
 		public static final int CHANNEL_IOIO_START = 0x200;

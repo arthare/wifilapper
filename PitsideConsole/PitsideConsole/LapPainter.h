@@ -13,7 +13,8 @@ enum LAPDISPLAYSTYLE
 {
   LAPDISPLAYSTYLE_MAP,
   LAPDISPLAYSTYLE_PLOT,
-  LAPDISPLAYSTYLE_NOLAPS,
+  LAPDISPLAYSTYLE_NOLAPS, // what we display if there are no laps selected
+  LAPDISPLAYSTYLE_RECEPTION, // display a map of wireless reception data
 
   LAPDISPLAYSTYLE_COUNT,
 };
@@ -71,6 +72,7 @@ private:
   void DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
   void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map
   void DrawSelectLapsPrompt() const;
+  void DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const;
 private:
   ILapSupplier* m_pLapSupplier;
 

@@ -67,6 +67,7 @@ import java.util.Vector;
 
 import com.artsoft.wifilapper.IOIOManager.IOIOListener;
 import com.artsoft.wifilapper.LapAccumulator.DataChannel;
+import com.artsoft.wifilapper.LapSender.LapSenderListener;
 
 public class ApiDemos 
 extends Activity 
@@ -77,7 +78,7 @@ implements
 	Handler.Callback, 
 	SensorEventListener,
 	MessageMan.MessageReceiver, 
-	OBDThread.OBDListener, IOIOListener
+	OBDThread.OBDListener, IOIOListener, LapSenderListener
 {
 	public enum RESUME_MODE {NEW_RACE, REUSE_SPLITS, RESUME_RACE};
 	
@@ -117,6 +118,8 @@ implements
 	private LapAccumulator m_myLaps = null; // current lap
 	private LapAccumulator.DataChannel m_XAccel;
 	private LapAccumulator.DataChannel m_YAccel;
+	private LapAccumulator.DataChannel m_XReception;
+	private LapAccumulator.DataChannel m_YReception;
 	private Map<Integer,DataChannel> m_mapPIDS;
 	private Map<Integer,DataChannel> m_mapPins;
 	
@@ -134,6 +137,8 @@ implements
 	
 	float m_dLastSpeed; // how fast (in m/s) we were going at the last GPS point
 	float m_dLastTime; // the time (in seconds) of the last point we received
+	
+	private boolean m_fRecordReception; // whether we're currently recording reception.  This gets set when the wifi class tells us it is connected/disconnected
 	
 	// data about this race
 	private String m_strRaceName;
@@ -484,7 +489,7 @@ implements
 	    
 		WifiManager pWifi = (WifiManager)getSystemService(Context.WIFI_SERVICE);
 
-	    m_lapSender = new LapSender(this, pWifi, strIP, strSSID);
+	    m_lapSender = new LapSender(this, this, pWifi, strIP, strSSID);
 	    m_msgMan = new MessageMan(this);
 	    
 	    if(m_lRaceId != -1 && m_lapParams.IsValid(m_fUseP2P))
@@ -722,7 +727,7 @@ implements
     }
     private void TrackLastLap(LapAccumulator lap, boolean fTransmit, boolean fSaveAsLastLap)
     {
-    	if(lap.GetFinishesNeeded() > 1 && lap.GetFinishCount() < lap.GetFinishesNeeded()) return; // don't track laps that don't have the right number of finishes
+    	if(lap == null) return;
     	
     	lap.ForceFinish();
 		if(m_lRaceId < 0 && m_lapParams.IsValid(m_fUseP2P))
@@ -812,6 +817,17 @@ implements
     	m_ptCurrent = new Point2D((float)location.getLongitude(), (float)location.getLatitude());
     	m_tmCurrent = dNow;
     
+    	
+    	if(this.m_fRecordReception && m_myLaps != null)
+    	{
+    		if(m_XReception == null || !m_XReception.IsParent(m_myLaps)) m_XReception = new DataChannel(DataChannel.CHANNEL_RECEPTION_X,m_myLaps);
+    		if(m_YReception == null || !m_YReception.IsParent(m_myLaps)) m_YReception = new DataChannel(DataChannel.CHANNEL_RECEPTION_Y,m_myLaps);
+
+    		int iTimeSinceAppStart = (int)((System.nanoTime()/1000000) - this.m_tmAppStartUptime);
+    		
+    		m_XReception.AddData((float)location.getLongitude(), iTimeSinceAppStart);
+    		m_YReception.AddData((float)location.getLatitude(), iTimeSinceAppStart);
+    	}
     	
     	m_dLastSpeed = location.getSpeed();
     	
@@ -1535,6 +1551,11 @@ implements
 	public void NotifyIOIOButton() 
 	{
 		this.m_pHandler.sendEmptyMessage(MSG_IOIO_BUTTON);
+	}
+	@Override
+	public void SetConnectionLevel(CONNLEVEL eLevel) 
+	{
+		this.m_fRecordReception = (eLevel == CONNLEVEL.CONNECTED) || (eLevel == CONNLEVEL.FULLYCONNECTED);
 	}
 }
 

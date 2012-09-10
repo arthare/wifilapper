@@ -127,6 +127,8 @@ public class StatusBarView extends LinearLayout implements OnClickListener
 	@Override
 	public void onClick(View v) 
 	{
+		if(mapButtons == null) return;
+		
 		Iterator<Entry<Class,ButtonData>> i = mapButtons.entrySet().iterator();
 		while(i.hasNext())
 		{

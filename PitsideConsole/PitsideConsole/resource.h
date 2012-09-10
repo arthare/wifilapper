@@ -3,6 +3,7 @@
 #define IDC_DISPLAY 3
 #define IDC_DISPLAYTYPE_LINE 4
 #define IDC_DISPLAYTYPE_PLOT 5
+#define IDC_DISPLAYTYPE_RECEPTION 6
 // don't use 5-10, we might want more radiobuttons
 #define IDC_DISPLAYTYPE_LAST 10
 

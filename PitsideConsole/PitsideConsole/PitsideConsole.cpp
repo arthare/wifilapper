@@ -565,6 +565,17 @@ public:
             }
             return TRUE;
           }
+          case IDC_DISPLAYTYPE_RECEPTION:
+          {
+            switch(HIWORD(wParam))
+            {
+            case BN_CLICKED:
+              m_eLapDisplayStyle = LAPDISPLAYSTYLE_RECEPTION;
+              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+              break;
+            }
+            return TRUE;
+          }
           case IDC_DISPLAYTYPE_PLOT:
           {
             switch(HIWORD(wParam))
@@ -831,11 +842,12 @@ public:
         }
       }
 
-      CASSERT(LAPDISPLAYSTYLE_COUNT == 3);
+      CASSERT(LAPDISPLAYSTYLE_COUNT == 4);
       switch(m_eLapDisplayStyle)
       {
       case LAPDISPLAYSTYLE_MAP:            CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_LINE); break;
       case LAPDISPLAYSTYLE_PLOT:           CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_PLOT); break;
+      case LAPDISPLAYSTYLE_RECEPTION:      CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_RECEPTION); break;
       default: DASSERT(FALSE); break;
       }
     

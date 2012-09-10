@@ -65,11 +65,17 @@ public class LapSender
 	private SendThd m_thd;
 	private boolean m_fDBDead = false;
 	
-	public LapSender(Utility.MultiStateObject pStateMan,WifiManager pWifi, String strIP, String strSSID)
+	public interface LapSenderListener
+	{
+		public enum CONNLEVEL {SEARCHING,CONNECTED,FULLYCONNECTED};
+		public abstract void SetConnectionLevel(CONNLEVEL eLevel);
+	}
+	
+	public LapSender(Utility.MultiStateObject pStateMan,LapSenderListener listener, WifiManager pWifi, String strIP, String strSSID)
 	{
 		lstLapsToSend = new Vector<LapAccumulator>();
 		fContinue = true;
-		m_thd = new SendThd(pStateMan, pWifi, strIP, strSSID);
+		m_thd = new SendThd(pStateMan, listener, pWifi, strIP, strSSID);
 		m_thd.start();
 	}
 	public int GetLapSentCount()
@@ -282,6 +288,8 @@ public class LapSender
 	}
 	private class SendThd extends Thread implements Runnable, SocketWatchdogInterface
 	{
+		private LapSenderListener listener;
+		
 		private int cLapsSent;
 		private String strIP;
 		private String strSSID;
@@ -291,11 +299,11 @@ public class LapSender
 		private SocketWatchdog m_watchdog;
 		private int m_cLoops;
 		
-		public SendThd(Utility.MultiStateObject pWifiStateReceiver, WifiManager pWifi, String strIP, String strSSID)
+		public SendThd(Utility.MultiStateObject pWifiStateReceiver, LapSenderListener listener, WifiManager pWifi, String strIP, String strSSID)
 		{
 			this.pStateMan = pWifiStateReceiver;
 			pStateMan.SetState(LapSender.class, STATE.TROUBLE_GOOD, "Starting...");
-			
+			this.listener = listener;
 			this.pWifi = pWifi;
 			this.strIP = strIP;
 			this.strSSID = strSSID;
@@ -357,6 +365,7 @@ public class LapSender
 				{
 					cSuccessfulBeats++;
 					pStateMan.SetState(LapSender.class, Utility.MultiStateObject.STATE.ON, "Connected");
+					listener.SetConnectionLevel(LapSenderListener.CONNLEVEL.FULLYCONNECTED);
 					return true;
 				}
 				else
@@ -402,6 +411,7 @@ public class LapSender
 							if(pDHCPInfo.ipAddress != 0)
 							{
 								// we're good!
+								listener.SetConnectionLevel(LapSenderListener.CONNLEVEL.CONNECTED);
 								pStateMan.SetState(LapSender.class, Utility.MultiStateObject.STATE.TROUBLE_GOOD, "Connected to " + strLocalSSID + ", searching for Pitside @ " + this.strIP);
 								return;
 							}
@@ -438,7 +448,8 @@ public class LapSender
 					{
 						String strLocalSSID = GetSSID();
 						if(!strLocalSSID.equals(strPickedSSID)) break; // they must have changed their target SSID.  break out of this attempt to connect to the old one and look for the other one
-						
+
+						listener.SetConnectionLevel(LapSenderListener.CONNLEVEL.SEARCHING);
 						pStateMan.SetState(LapSender.class, Utility.MultiStateObject.STATE.TROUBLE_GOOD, "Trying to connect to " + strLocalSSID + ", " + cAttempts + " attempts so far.");
 						pInfo = pWifi.getConnectionInfo();
 						if(pInfo != null)
@@ -446,6 +457,7 @@ public class LapSender
 							String strCurrentSSID = pInfo.getSSID();
 							if(strCurrentSSID != null)
 							{	
+								listener.SetConnectionLevel(LapSenderListener.CONNLEVEL.CONNECTED);
 								pStateMan.SetState(LapSender.class, Utility.MultiStateObject.STATE.TROUBLE_GOOD, "Connected to " + strLocalSSID + ", searching for Pitside @ " + this.strIP);
 								return;
 							}
@@ -516,6 +528,7 @@ public class LapSender
 					s = BuildSocket(addr,63939);
 					in = s.getInputStream();
 					out = s.getOutputStream();
+					listener.SetConnectionLevel(LapSenderListener.CONNLEVEL.CONNECTED);
 					while(fContinue) // inner loop: now that we have a socket, let's send laps until we can't anymore
 					{
 						m_cLoops++;
@@ -615,6 +628,7 @@ public class LapSender
 				}
 				catch(IOException e)
 				{
+					listener.SetConnectionLevel(LapSenderListener.CONNLEVEL.SEARCHING);
 					// not in range anymore.  That's fine, we'll get it later
 					System.out.println(e.toString());
 				} catch (InterruptedException e) 

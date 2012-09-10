@@ -41,6 +41,9 @@ void CLapPainter::OGL_Paint()
   case LAPDISPLAYSTYLE_PLOT:
     DrawGeneralGraph(sfLapOpts, true);
     break;
+  case LAPDISPLAYSTYLE_RECEPTION:
+    DrawReceptionMap(sfLapOpts);
+    break;
   case LAPDISPLAYSTYLE_NOLAPS:
     // user doesn't have any laps selected, so we should tell them to select some
     DrawSelectLapsPrompt();
@@ -50,6 +53,86 @@ void CLapPainter::OGL_Paint()
 	SwapBuffers( OGL_GetDC() );
 }
   
+void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
+{
+  // we need to get all the DATA_CHANNEL_RECEPTION channels for each of the selected laps, then draw them
+  FLOATRECT rcAllLaps = m_pLapSupplier->GetAllLapsBounds();
+
+  RECT rcClient;
+  GetClientRect(OGL_GetHWnd(), &rcClient);
+  double dClientAspect = ((double)RECT_WIDTH(&rcClient)) / ((double)RECT_HEIGHT(&rcClient));
+  double dMapAspect = abs(RECT_WIDTH(&rcAllLaps)) / abs(RECT_HEIGHT(&rcAllLaps));
+
+  if(dClientAspect > dMapAspect)
+  {
+    // the window is wider than the map is.  we'll want to widen the map space we show appropriately
+    const double dCentreX = (rcAllLaps.left + rcAllLaps.right)/2;
+    rcAllLaps.left -= dCentreX;
+    rcAllLaps.right -= dCentreX;
+    rcAllLaps.left *= (dClientAspect / dMapAspect);
+    rcAllLaps.right *= (dClientAspect / dMapAspect);
+    rcAllLaps.left += dCentreX;
+    rcAllLaps.right += dCentreX;
+  }
+  else
+  {
+    // the window is taller than the map points are.  we'll want to tallen map bounds
+    const double dCentreY = (rcAllLaps.top + rcAllLaps.bottom)/2;
+    rcAllLaps.top -= dCentreY;
+    rcAllLaps.bottom -= dCentreY;
+    rcAllLaps.top *= (dMapAspect / dClientAspect);
+    rcAllLaps.bottom *= (dMapAspect / dClientAspect);
+    rcAllLaps.top += dCentreY;
+    rcAllLaps.bottom += dCentreY;
+
+  }
+  // we have now determined the bounds of the thing we're going to draw
+	glPushMatrix();
+  glLoadIdentity();
+  glOrtho(rcAllLaps.right, rcAllLaps.left,rcAllLaps.top, rcAllLaps.bottom,-1.0,1.0);
+  
+  GLdouble rgModelviewMatrix[16];
+  GLdouble rgProjMatrix[16];
+  GLint rgViewport[4];
+
+  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+  glGetIntegerv(GL_VIEWPORT, rgViewport);
+
+  
+  vector<CExtendedLap*> lstLaps = m_pLapSupplier->GetLapsToShow();
+  for(int x = 0; x < lstLaps.size(); x++)
+  {
+    CExtendedLap* pLap = lstLaps[x];
+    srand((int)pLap);
+
+    const IDataChannel* pReceptionX = pLap->GetChannel(DATA_CHANNEL_RECEPTION_X);
+    const IDataChannel* pReceptionY = pLap->GetChannel(DATA_CHANNEL_RECEPTION_Y);
+    if(pReceptionX && pReceptionY)
+    {
+      glPointSize(5.0f);
+      glBegin(GL_POINTS);
+
+      const vector<DataPoint>& lstPointsX = pReceptionX->GetData();
+      const vector<DataPoint>& lstPointsY = pReceptionY->GetData();
+      if(lstPointsX.size() == lstPointsY.size())
+      {
+        for(int ix = 0; ix < lstPointsX.size(); ix++)
+        {
+          glVertex2f(lstPointsX[ix].flValue,lstPointsY[ix].flValue);
+        }
+      }
+		  glEnd();
+    }
+
+  }
+
+
+
+	glPopMatrix(); // popping us out of map-coords space.
+
+}
+
 void CLapPainter::DrawSelectLapsPrompt() const
 {
   RECT rcClient;
