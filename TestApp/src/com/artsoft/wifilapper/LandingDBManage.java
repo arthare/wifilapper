@@ -27,6 +27,7 @@ import java.util.Vector;
 import com.artsoft.wifilapper.LandingRaceBase.RenameDialog;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnDismissListener;
@@ -51,7 +52,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.TextView.OnEditorActionListener;
 
-public class LandingDBManage extends Activity implements OnClickListener, OnEditorActionListener, OnKeyListener, OnItemClickListener, OnDismissListener
+public class LandingDBManage extends Activity implements OnClickListener, OnEditorActionListener, OnKeyListener, OnItemClickListener, OnDismissListener, android.content.DialogInterface.OnClickListener
 {
 	private String m_strTargetFilename;
 	
@@ -325,6 +326,10 @@ public class LandingDBManage extends Activity implements OnClickListener, OnEdit
 		}
 		return false;
 	}
+	
+	File m_copyThis=null;
+	AlertDialog m_dbWarning=null;
+	
 	@Override
 	public void onItemClick(AdapterView<?> list, View view, int position, long id) 
 	{
@@ -339,21 +344,13 @@ public class LandingDBManage extends Activity implements OnClickListener, OnEdit
 				File fPicked = new File(strFilename);
 				if(fPicked.exists())
 				{
-					String strDBPath = RaceDatabase.Get().getPath();
-					RaceDatabase.Get().close();
-					
-					try
-					{
-						if(CopyFile(fPicked, new File(strDBPath)))
-						{
-							RaceDatabase.CreateOnPath(getApplicationContext(), strDBPath);
-							Toast.makeText(this, "Successfully imported database", Toast.LENGTH_LONG).show();
-						}
-					}
-					catch(IOException e)
-					{
-						Toast.makeText(this, "Failed to import database: " + e.toString(), Toast.LENGTH_LONG).show();
-					}
+					AlertDialog ad = new AlertDialog.Builder(this).create();
+	    			ad.setMessage("You are about to overwrite all your recorded race sessions.  Data will be lost.  Make sure to back them up using the save button (right side) first.");
+	    			ad.setButton(AlertDialog.BUTTON_POSITIVE,"Ok", this);
+	    			ad.setButton(AlertDialog.BUTTON_NEGATIVE,"Cancel", this);
+					m_copyThis = fPicked;
+					m_dbWarning = ad;
+	    			ad.show();
 				}
 				else
 				{
@@ -390,6 +387,33 @@ public class LandingDBManage extends Activity implements OnClickListener, OnEdit
 				}
 			}
 			FirstTimeSetup(); // refresh the list
+		}
+	}
+
+	@Override
+	public void onClick(DialogInterface arg0, int choice) 
+	{
+		// only one alert dialog for this sucker at this point
+		if(arg0 == m_dbWarning)
+		{
+			if(choice == AlertDialog.BUTTON_POSITIVE)
+			{
+				try
+				{
+					String strDBPath = RaceDatabase.Get().getPath();
+					RaceDatabase.Get().close();
+					if(CopyFile(m_copyThis, new File(strDBPath)))
+					{
+						RaceDatabase.CreateOnPath(getApplicationContext(), strDBPath);
+						Toast.makeText(this, "Successfully imported database", Toast.LENGTH_LONG).show();
+					}
+				}
+				catch(IOException e)
+				{
+					Toast.makeText(this, "Failed to import database: " + e.toString(), Toast.LENGTH_LONG).show();
+				}
+			}
+			m_dbWarning = null;
 		}
 	}
 }
