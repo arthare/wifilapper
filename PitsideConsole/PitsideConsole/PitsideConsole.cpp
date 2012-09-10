@@ -505,7 +505,7 @@ public:
           case ID_DATA_OPENDB:
           {
             TCHAR szFilename[MAX_PATH];
-            if(ArtGetOpenFileName(hWnd, L"Choose WFLP file", szFilename, NUMCHARS(szFilename)))
+            if(ArtGetOpenFileName(hWnd, L"Choose WFLP file", szFilename, NUMCHARS(szFilename),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
             {
               if(g_pLapDB->Init(szFilename))
               {

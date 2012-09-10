@@ -97,14 +97,14 @@ void KillFont(GLuint base)									// Delete The Font List
 // shows the open file dialog, sticks result in szPath...
 // true -> path is good
 // false -> was cancelled
-bool ArtGetOpenFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int cchPath)
+bool ArtGetOpenFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int cchPath, LPCTSTR lpszFilter)
 {
   lpszPath[0] = '\0';
   OPENFILENAME ofn;
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = hWndOwner;
   ofn.hInstance = NULL;
-  ofn.lpstrFilter = NULL;
+  ofn.lpstrFilter = lpszFilter;
   ofn.lpstrCustomFilter = NULL;
   ofn.nMaxCustFilter = 0;
   ofn.nFilterIndex = 0;

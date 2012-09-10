@@ -363,5 +363,5 @@ void ArtShowDialog(IUI* pDlg)
 // shows the open file dialog, sticks result in szPath...
 // true -> path is good
 // false -> was cancelled
-bool ArtGetOpenFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int cchPath);
+bool ArtGetOpenFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int cchPath, LPCTSTR lpszFilter);
 bool ArtGetSaveFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int cchPath, LPCTSTR lpszFilter);
