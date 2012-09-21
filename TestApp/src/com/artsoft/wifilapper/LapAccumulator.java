@@ -433,6 +433,7 @@ public class LapAccumulator
 	}
 	public float GetDistance()
 	{
+		if(m_lstPositions == null || m_lstPositions.size() <= 0) return 0;
 		synchronized(this)
 		{
 			return (float)m_lstPositions.get(m_lstPositions.size()-1).dDistance;
