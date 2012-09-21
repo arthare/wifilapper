@@ -243,7 +243,8 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
           bool fFound = false;
           for(int y = 0; y < lstSQL.size(); y++)
           {
-            if(_wcsicmp(lstSQL[y].c_str(),rgSchemaList[ixVersion][x]) == 0)
+            if(_wcsicmp(lstSQL[y].c_str(),rgSchemaList[ixVersion][x]) == 0 
+              || wcsstr(lstSQL[y].c_str(),L"android_metadata") != NULL)
             {
               fFound = true;
               break;
