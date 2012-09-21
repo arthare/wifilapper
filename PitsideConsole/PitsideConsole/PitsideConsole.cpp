@@ -1213,6 +1213,7 @@ private:
       }
       case DATA_CHANNEL_X_ACCEL:
       case DATA_CHANNEL_Y_ACCEL:
+      case DATA_CHANNEL_Z_ACCEL:
       {
         int iMin = (int)(flMin);
         return (float)(iMin-1);
@@ -1254,6 +1255,7 @@ private:
     }
     case DATA_CHANNEL_X_ACCEL: return 0.5f;
     case DATA_CHANNEL_Y_ACCEL: return 0.5f;
+    case DATA_CHANNEL_Z_ACCEL: return 0.5f;
     case DATA_CHANNEL_TEMP: return 10.0f;
     case (DATA_CHANNEL_PID_START+0x5): return 25;
     case (DATA_CHANNEL_PID_START+0xA): return 100;

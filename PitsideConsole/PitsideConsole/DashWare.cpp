@@ -79,6 +79,7 @@ namespace DashWare
       bool fUseRunningAverage[DATA_CHANNEL_COUNT] = {0};
       fUseRunningAverage[DATA_CHANNEL_X_ACCEL] = true;
       fUseRunningAverage[DATA_CHANNEL_Y_ACCEL] = true;
+      fUseRunningAverage[DATA_CHANNEL_Z_ACCEL] = true;
 
       for(int msQuery = msStartTime; msQuery < msEndTime; msQuery += 100)
       {

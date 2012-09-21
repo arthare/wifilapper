@@ -118,6 +118,8 @@ implements
 	private LapAccumulator m_myLaps = null; // current lap
 	private LapAccumulator.DataChannel m_XAccel;
 	private LapAccumulator.DataChannel m_YAccel;
+	private LapAccumulator.DataChannel m_ZAccel;
+	
 	private LapAccumulator.DataChannel m_XReception;
 	private LapAccumulator.DataChannel m_YReception;
 	private Map<Integer,DataChannel> m_mapPIDS;
@@ -774,10 +776,13 @@ implements
 		{
 			if(m_XAccel == null || !m_XAccel.IsParent(m_myLaps)) m_XAccel = new DataChannel(DataChannel.CHANNEL_ACCEL_X,m_myLaps);
 			if(m_YAccel == null || !m_YAccel.IsParent(m_myLaps)) m_YAccel = new DataChannel(DataChannel.CHANNEL_ACCEL_Y,m_myLaps);
-			if(m_XAccel != null && m_YAccel != null)
+			if(m_ZAccel == null || !m_ZAccel.IsParent(m_myLaps)) m_ZAccel = new DataChannel(DataChannel.CHANNEL_ACCEL_Z,m_myLaps);
+			
+			if(m_XAccel != null && m_YAccel != null && m_ZAccel != null)
 			{
 				m_XAccel.AddData(event.values[1] / 9.81f,iTimeSinceAppStart);
 				m_YAccel.AddData(event.values[2] / 9.81f,iTimeSinceAppStart);
+				m_ZAccel.AddData(event.values[0] / 9.81f,iTimeSinceAppStart);
 			}
 		}
 	}

@@ -238,6 +238,7 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
   case DATA_CHANNEL_TIMESLIP: lpszDataName = L"Time-slip"; break;
   case DATA_CHANNEL_X_ACCEL: lpszDataName = L"X accel"; break;
   case DATA_CHANNEL_Y_ACCEL: lpszDataName = L"Y accel"; break;
+  case DATA_CHANNEL_Z_ACCEL: lpszDataName = L"Z accel"; break;
   case DATA_CHANNEL_TEMP: lpszDataName = L"Temperature"; break;
   case DATA_CHANNEL_RECEPTION_X: lpszDataName = L"Wifi Dots X"; break;
   case DATA_CHANNEL_RECEPTION_Y: lpszDataName = L"Wifi Dots Y"; break;
@@ -340,6 +341,11 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
       break;
     }
     case DATA_CHANNEL_Y_ACCEL:
+    {
+      sprintf(lpsz, "%4.4fg", flValue);
+      break;
+    }
+    case DATA_CHANNEL_Z_ACCEL:
     {
       sprintf(lpsz, "%4.4fg", flValue);
       break;
