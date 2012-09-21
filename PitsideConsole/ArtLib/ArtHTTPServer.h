@@ -29,8 +29,10 @@ bool ParseRequest(const char* pRequest, int cbRequest, HTTPREQUEST* pParsed);
 class SimpleHTTPServer
 {
 public:
-  SimpleHTTPServer(int iPort, ArtHTTPResponder* pResponder);
+  SimpleHTTPServer();
   virtual ~SimpleHTTPServer();
+
+  bool Init(int iPort, ArtHTTPResponder* pResponder);
 
   void ThreadProc();
 
@@ -39,4 +41,7 @@ private:
   int m_iPort;
   DWORD m_dwId;
   ArtHTTPResponder* m_pResponder;
+
+  HANDLE m_hInitEvent;
+  bool m_fInitSuccess;
 };

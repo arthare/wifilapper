@@ -1,0 +1,6 @@
+1
+80
+
+order of settings:
+-whether to run the http server (0 = don't.  1 = do)
+-http server port (port 80 makes for easiest use.  big port numbers like 63938 are less likely to be blocked)

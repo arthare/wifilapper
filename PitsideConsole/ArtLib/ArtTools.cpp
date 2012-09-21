@@ -109,6 +109,19 @@ bool ArtAtoi(LPCSTR lpsz, int cch, int* pOut)
   return true;
 }
 
+bool GetAppFolder(LPTSTR lpszBuf, const int cch)
+{
+  GetModuleFileName(NULL,lpszBuf,cch);
+  // now we should have a path like "c:\blah\pitsideconsole.exe".  We want to remove the PitsideConsole.exe and append the user's lpszFile (which will probably be WebSide.js)
+  int cchEnd = wcslen(lpszBuf)-1;
+  for(;cchEnd >= 0;cchEnd--)
+  {
+    if(lpszBuf[cchEnd] == '\\') break;
+  }
+  lpszBuf[cchEnd+1] = (TCHAR)0; // kill the string after the slash
+
+  return true;
+}
 
 bool DoesFileExist(LPCTSTR lpsz)
 {

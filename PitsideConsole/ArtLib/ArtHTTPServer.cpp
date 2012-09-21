@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ArtHTTPServer.h"
+#include "ArtTools.h"
 
 bool ParseRequest(const char* pRequest, int cbRequest, HTTPREQUEST* pParsed)
 {
@@ -101,14 +102,35 @@ DWORD ThreadProcStub(LPVOID pvParam);
 
 int c = 0;
 
-SimpleHTTPServer::SimpleHTTPServer(int iPort, ArtHTTPResponder* pResponder) : m_iPort(iPort), m_pResponder(pResponder)
+SimpleHTTPServer::SimpleHTTPServer() : m_iPort(0), m_pResponder(NULL),m_hInitEvent(NULL),m_fInitSuccess(false)
 {
-  m_hThread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)ThreadProcStub,(LPVOID)this,0,&m_dwId);
 }
 SimpleHTTPServer::~SimpleHTTPServer() 
 {
   WaitForSingleObject(m_hThread,INFINITE);
 };
+
+bool SimpleHTTPServer::Init(int iPort, ArtHTTPResponder* pResponder)
+{
+  m_iPort = iPort;
+  m_pResponder = pResponder;
+
+  m_fInitSuccess = false;
+  WaitForSingleObject(m_hThread,INFINITE);
+
+  if(m_hInitEvent != NULL)
+  {
+    CloseHandle(m_hInitEvent);
+    m_hInitEvent = NULL;
+  }
+  m_hInitEvent = CreateEvent(NULL,FALSE,FALSE,NULL);
+
+  m_hThread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)ThreadProcStub,(LPVOID)this,0,&m_dwId);
+  DWORD dwRet = WaitForSingleObject(m_hInitEvent,INFINITE);
+  
+  DASSERT(dwRet == WAIT_OBJECT_0);
+  return m_fInitSuccess;
+}
 
 void SimpleHTTPServer::ThreadProc()
 {
@@ -130,7 +152,11 @@ void SimpleHTTPServer::ThreadProc()
       // From all interface (0.0.0.0)
       ReceiverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
       err = bind(aSocket, (SOCKADDR*)&ReceiverAddr, sizeof(ReceiverAddr));
-      while(true)
+
+      m_fInitSuccess = (err == 0);
+      SetEvent(m_hInitEvent);
+
+      while(m_fInitSuccess)
       {
         c++;
         SOCKET sDataSocket = NULL;
@@ -153,7 +179,7 @@ void SimpleHTTPServer::ThreadProc()
         }
     
         bool fConnectionLost = false;
-        while(!fConnectionLost)
+        while(!fConnectionLost && m_fInitSuccess)
         {
 	        char buf[1024];
 	        int cbRead = TimeoutRead(sDataSocket,buf,sizeof(buf)-1,0,10000, &fConnectionLost);
@@ -204,6 +230,11 @@ void SimpleHTTPServer::ThreadProc()
 
       } // listening loop
     }
+    else
+    {
+      m_fInitSuccess = false;
+      SetEvent(m_hInitEvent);
+    }
     
     if(aSocket != INVALID_SOCKET)
     {
@@ -215,6 +246,8 @@ void SimpleHTTPServer::ThreadProc()
   else
   {
     // failed to start up winsock
+    m_fInitSuccess = false;
+    SetEvent(m_hInitEvent);
   }
 } // end of function
 

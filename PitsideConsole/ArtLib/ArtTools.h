@@ -91,4 +91,6 @@ int GetSecondsSince1970();
 
 bool ArtAtoi(LPCSTR lpsz, int cch, int* pOut);
 
+bool GetAppFolder(LPTSTR lpszBuf, const int cch);
+
 bool DoesFileExist(LPCTSTR lpsz);

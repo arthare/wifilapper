@@ -36,17 +36,9 @@ void WriteData(const vector<DataPoint>& data, ostream& out, bool fTime, float* p
 bool WriteFile(LPCTSTR lpszFile, ostream& out)
 {
   TCHAR szModule[MAX_PATH];
-  GetModuleFileName(NULL,szModule,NUMCHARS(szModule));
-  // now we should have a path like "c:\blah\pitsideconsole.exe".  We want to remove the PitsideConsole.exe and append the user's lpszFile (which will probably be WebSide.js)
-  int cchEnd = wcslen(szModule)-1;
-  for(;cchEnd >= 0;cchEnd--)
-  {
-    if(szModule[cchEnd] == '\\') break;
-  }
-  if(cchEnd > 0)
+  if(GetAppFolder(szModule,NUMCHARS(szModule)))
   {
     // found the slash
-    szModule[cchEnd+1] = (TCHAR)0; // kill the string after the slash
     wcsncat(szModule,lpszFile, NUMCHARS(szModule));
   }
 

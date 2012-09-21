@@ -29,11 +29,15 @@
 #include "DlgSplash.h"
 #include "SQLiteLapDB.h"
 #include "UnitTests.h"
+#include <fstream>
+
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
 
 ILapReceiver* g_pLapDB = NULL;
+
+SimpleHTTPServer* g_pHTTPServer = NULL;
 
 struct COMPUTERDESC
 {
@@ -1374,6 +1378,43 @@ int str_ends_with(const TCHAR * str, const TCHAR * suffix)
   return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
 }
 
+struct PITSIDE_SETTINGS
+{
+  void Default()
+  {
+    fRunHTTP = true;
+    iHTTPPort = 80;
+  }
+
+  int fRunHTTP;
+  int iHTTPPort;
+};
+
+void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
+{
+  pSettings->Default();
+
+  TCHAR szModule[MAX_PATH];
+  if(GetAppFolder(szModule,NUMCHARS(szModule)))
+  {
+    wcsncat(szModule,L"settings.txt", NUMCHARS(szModule));
+
+    ifstream in;
+    in.open(szModule);
+    if(!in.eof() && !in.fail())
+    {
+      in>>pSettings->fRunHTTP;
+      in>>pSettings->iHTTPPort;
+      in.close();
+    }
+  }
+  else
+  {
+    // trouble.  just bail.
+    return;
+  }
+}
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
   if(strcmp(lpCmdLine,"unit") == 0)
@@ -1465,8 +1506,43 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   CSplashDlg splash;
   ArtShowDialog<IDD_DLGSPLASH>(&splash);
 
+  PITSIDE_SETTINGS sfSettings;
+  LoadPitsideSettings(&sfSettings);
+
   PitsideHTTP aResponder(g_pLapDB,&sfUI);
-  SimpleHTTPServer aServer(80,&aResponder);
+  if(sfSettings.fRunHTTP && sfSettings.iHTTPPort > 0 && sfSettings.iHTTPPort < 65536)
+  {
+    g_pHTTPServer = new SimpleHTTPServer();
+
+    bool fTryAgain = false;
+    do
+    {
+      fTryAgain = false;
+      if(!g_pHTTPServer->Init(sfSettings.iHTTPPort,&aResponder))
+      {
+        TCHAR szMsg[200];
+        _snwprintf(szMsg,NUMCHARS(szMsg),L"Pitside was unable to start the HTTP server on port %d.  Do you want to open settings.txt to try another port or disable the server?",sfSettings.iHTTPPort);
+        int iRet = MessageBox(NULL,szMsg,L"Failed to start HTTP server",MB_ICONERROR | MB_YESNO);
+        if(iRet == IDYES)
+        {
+          TCHAR szPath[MAX_PATH];
+          if(GetAppFolder(szPath,NUMCHARS(szPath)))
+          {
+            wcscat(szPath,L"settings.txt");
+            _wsystem(szPath);
+
+            LoadPitsideSettings(&sfSettings);
+            fTryAgain = sfSettings.fRunHTTP;
+          }
+        }
+      }
+    }
+    while(fTryAgain);
+  }
+  else
+  {
+    g_pHTTPServer = NULL;
+  }
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 
