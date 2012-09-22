@@ -18,17 +18,36 @@
 // a simple activity to view the IOIO's inputs
 package com.artsoft.IOIODiagnostics;
 
+import java.text.NumberFormat;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import ioio.lib.api.AnalogInput;
+import ioio.lib.api.DigitalInput;
+import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.IOIOFactory;
+import ioio.lib.api.IcspMaster;
 import ioio.lib.api.PulseInput;
+import ioio.lib.api.PwmOutput;
+import ioio.lib.api.SpiMaster;
+import ioio.lib.api.TwiMaster;
+import ioio.lib.api.Uart;
+import ioio.lib.api.IOIO.VersionType;
 import ioio.lib.api.PulseInput.PulseMode;
+import ioio.lib.api.TwiMaster.Rate;
+import ioio.lib.api.Uart.Parity;
+import ioio.lib.api.Uart.StopBits;
 import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.api.exception.IncompatibilityException;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.widget.ProgressBar;
+import android.widget.SeekBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class IOIODiagnosticsActivity extends Activity implements Handler.Callback
 {
@@ -37,14 +56,61 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 	private PinWrapper m_pins[];
 	private Handler m_handler;
 	
+	private float m_rgValues[] = new float[48];
+	
 	private static final int MSG_CONNECTATTEMPTDONE = 50;
+	private static final int MSG_REFRESHED = 51;
 	
 	@Override
 	public void onCreate(Bundle extras)
 	{
+		super.onCreate(extras);
 		m_handler = new Handler(this);
 		m_pins = new PinWrapper[48];
 		m_ioio = IOIOFactory.create();
+		
+		ConnectThread ct = new ConnectThread(m_ioio, m_handler);
+		ct.start();
+		
+		Timer t = new Timer();
+		t.scheduleAtFixedRate(new CheckerTask(), 100, 33);
+		
+		this.setContentView(R.layout.main);
+	}
+	
+	private class CheckerTask extends TimerTask
+	{
+		private float flMin = 1e30f;
+		private float flMax = -1e30f;
+		@Override
+		public void run() 
+		{
+			try
+			{
+				if(m_pins[33] != null)
+				{
+					m_rgValues[33] = m_pins[33].GetValue();
+				}
+				if(m_pins[34] != null)
+				{
+					m_rgValues[34] = m_pins[34].GetValue();
+				}
+				m_handler.sendEmptyMessage(MSG_REFRESHED);
+			}
+			catch(Exception e)
+			{
+				Toast.makeText(IOIODiagnosticsActivity.this, "Failed to get value", Toast.LENGTH_LONG).show();
+			}
+			
+		}
+		
+	}
+	public static String FormatFloat(float fl, int digits)
+	{
+		NumberFormat num = NumberFormat.getInstance();
+		num.setMaximumFractionDigits(digits);
+		num.setMinimumFractionDigits(digits);
+		return num.format(fl);
 	}
 	
 	@Override
@@ -54,6 +120,36 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		if(msg.what == MSG_CONNECTATTEMPTDONE)
 		{
 			// they've finished attempting to connect to the IOIO, so let's populate all our pins
+			try
+			{
+				m_pins[34] = new PinWrapper(m_ioio, 34, true);
+				m_pins[33] = new PinWrapper(m_ioio, 33, false);
+			}
+			catch(Exception e)
+			{
+				Toast.makeText(this, "Failed to connect :( " + e.toString(), Toast.LENGTH_LONG).show();
+			}
+			
+		}
+		else if(msg.what == MSG_REFRESHED)
+		{
+			{
+				SeekBar seek = (SeekBar)findViewById(R.id.seek33);
+				seek.setMax(500);
+				seek.setProgress((int)(m_rgValues[33]*100));
+				
+				TextView txt = (TextView)findViewById(R.id.label33);
+				txt.setText(FormatFloat(m_rgValues[33],2) + "V");
+			}
+			
+			{
+				SeekBar seek = (SeekBar)findViewById(R.id.seek34);
+				seek.setMax(100);
+				seek.setProgress((int)m_rgValues[34]);
+				
+				TextView txt = (TextView)findViewById(R.id.label34);
+				txt.setText(FormatFloat(m_rgValues[34],2) + "hz");
+			}
 		}
 		return false;
 	}
@@ -147,4 +243,195 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		
 	}
 
+}
+
+class FakeIOIO implements IOIO
+{
+	public void waitForConnect() throws ConnectionLostException,
+			IncompatibilityException
+	{
+		try
+		{
+			Thread.sleep(500);
+		}
+		catch(InterruptedException e)
+		{
+			
+		}
+		return;
+	}
+	
+	public void disconnect()
+	{
+		return;
+	}
+	public void waitForDisconnect() throws InterruptedException
+	{
+		return;
+	}
+	public void softReset() throws ConnectionLostException
+	{
+		return;
+	}
+	public void hardReset() throws ConnectionLostException
+	{
+		return;
+	}
+	public String getImplVersion(VersionType v) throws ConnectionLostException
+	{
+		return "";
+	}
+	public DigitalInput openDigitalInput(DigitalInput.Spec spec)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public DigitalInput openDigitalInput(int pin)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public DigitalInput openDigitalInput(int pin, DigitalInput.Spec.Mode mode)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public DigitalOutput openDigitalOutput(DigitalOutput.Spec spec,
+			boolean startValue) throws ConnectionLostException
+	{
+		return null;
+	}
+	public DigitalOutput openDigitalOutput(int pin,
+			DigitalOutput.Spec.Mode mode, boolean startValue)throws ConnectionLostException
+	{
+		return null;
+	}
+			
+	public DigitalOutput openDigitalOutput(int pin, boolean startValue)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public DigitalOutput openDigitalOutput(int pin)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public AnalogInput openAnalogInput(int pin) throws ConnectionLostException
+	{
+		return new FakeAnalogInput(pin);
+	}
+	public PwmOutput openPwmOutput(DigitalOutput.Spec spec, int freqHz)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public PwmOutput openPwmOutput(int pin, int freqHz)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public PulseInput openPulseInput(DigitalInput.Spec spec,
+			PulseInput.ClockRate rate, PulseInput.PulseMode mode,
+			boolean doublePrecision) throws ConnectionLostException
+	{
+		return null;
+	}
+	public PulseInput openPulseInput(int pin, PulseMode mode)
+			throws ConnectionLostException
+	{
+		return new FakePulseInput(pin);
+	}
+	public Uart openUart(DigitalInput.Spec rx, DigitalOutput.Spec tx, int baud,
+			Parity parity, StopBits stopbits) throws ConnectionLostException
+	{
+		return null;
+	}
+	public Uart openUart(int rx, int tx, int baud, Parity parity,
+			StopBits stopbits) throws ConnectionLostException
+	{
+		return null;
+	}
+	public SpiMaster openSpiMaster(DigitalInput.Spec miso,
+			DigitalOutput.Spec mosi, DigitalOutput.Spec clk,
+			DigitalOutput.Spec[] slaveSelect, SpiMaster.Config config)throws ConnectionLostException
+	{
+		return null;
+	}
+			
+	public SpiMaster openSpiMaster(int miso, int mosi, int clk,
+			int[] slaveSelect, SpiMaster.Rate rate)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+
+	public SpiMaster openSpiMaster(int miso, int mosi, int clk,
+			int slaveSelect, SpiMaster.Rate rate)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public TwiMaster openTwiMaster(int twiNum, Rate rate, boolean smbus)
+			throws ConnectionLostException
+	{
+		return null;
+	}
+	public IcspMaster openIcspMaster() throws ConnectionLostException
+	{
+		return null;
+	}
+	
+	private class FakeAnalogInput implements AnalogInput
+	{
+		private int pin;
+		public FakeAnalogInput(int pin)
+		{
+			this.pin = pin;
+		}
+		@Override
+		public void close() {}
+
+		@Override
+		public float getReference() {return 0;}
+
+		@Override
+		public float getVoltage() throws InterruptedException,ConnectionLostException 
+		{
+			double dTime = (System.currentTimeMillis()%10000) / 10000.0;
+			return (float)(Math.sin(dTime * pin) * 2 + 2.5);
+		}
+
+		@Override
+		public float read() throws InterruptedException, ConnectionLostException 
+		{
+			double dTime = (System.currentTimeMillis()%10000) / 10000.0;
+			return (float)(Math.sin(dTime * pin) * 2 + 2.5);
+		}
+	}
+	private class FakePulseInput implements PulseInput
+	{
+		private int pin;
+		public FakePulseInput(int pin)
+		{
+			this.pin = pin;
+		}
+		@Override
+		public void close() {}
+		@Override
+		public float getDuration() throws InterruptedException,ConnectionLostException 
+		{
+			return 0;
+		}
+		@Override
+		public float getFrequency() throws InterruptedException,ConnectionLostException 
+		{
+			return (float)(((System.currentTimeMillis()%10000) / 10000.0) * pin);
+		}
+		@Override
+		public float waitPulseGetDuration() throws InterruptedException,ConnectionLostException 
+		{
+			return 0;
+		}
+	}
 }
