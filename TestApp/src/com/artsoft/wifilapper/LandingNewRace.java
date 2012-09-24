@@ -103,8 +103,11 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
 		String strIP = settings.getString(Prefs.PREF_IP_STRING,Prefs.DEFAULT_IP_STRING);
 		String strSSID = settings.getString(Prefs.PREF_SSID_STRING, Prefs.DEFAULT_SSID_STRING);
 		String strRaceName = settings.getString(Prefs.PREF_RACENAME_STRING, Prefs.DEFAULT_RACENAME_STRING);
-		
 
+		boolean fRequireWifi = settings.getBoolean(Prefs.PREF_REQUIRE_WIFI, Prefs.DEFAULT_REQUIRE_WIFI);
+		View vRowSSID = findViewById(R.id.rowSSID);
+		vRowSSID.setVisibility(fRequireWifi ? View.VISIBLE : View.GONE);
+		
 		edtFinishCount.setText("1"); // the consequences of messing this up are so substantial I'm not even going to pref it.
 		txtIP.setText(strIP);
 		SetupSSIDSpinner(spnSSID, strSSID);
@@ -143,6 +146,7 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		final float flStartParam = settings.getFloat(Prefs.PREF_P2P_STARTPARAM, Prefs.DEFAULT_P2P_STARTPARAM);
     		final int iStopMode = settings.getInt(Prefs.PREF_P2P_STOPMODE, Prefs.DEFAULT_P2P_STOPMODE);
     		final float flStopParam = settings.getFloat(Prefs.PREF_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM);
+    		final boolean fRequireWifi = settings.getBoolean(Prefs.PREF_REQUIRE_WIFI, Prefs.DEFAULT_REQUIRE_WIFI);
     		
     		final int iFinishCount = Utility.ParseInt(edtFinishCount.getText().toString(), 1);
     		
@@ -161,7 +165,7 @@ public class LandingNewRace extends LandingRaceBase implements OnClickListener, 
     		lapParams.iSecondaryCarNumber = (int)(Math.random() * 100000.0); 
     		lapParams.iFinishCount = iFinishCount;
     		
-    		Intent i = ApiDemos.BuildStartIntent(rgAnalPins,rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopParam, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, lapParams, strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
+    		Intent i = ApiDemos.BuildStartIntent(fRequireWifi, rgAnalPins,rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopParam, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, lapParams, strRaceName, strPrivacy, fAckSMS, fUseAccel, fTestMode, -1, -1, strBTGPS, strBTOBD2, strSpeedoStyle, eUnitSystem.toString());
     		if(fTestMode)
     		{
     			// they're about to start a run in test mode.  Test mode sucks for real users, so warn them

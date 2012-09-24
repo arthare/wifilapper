@@ -32,6 +32,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -55,6 +56,7 @@ import android.widget.Toast;
 public abstract class LandingRaceBase extends Activity implements OnItemSelectedListener
 {
 	private BroadcastListener m_listener;
+	private boolean m_fRequireWifi;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState)
@@ -66,19 +68,28 @@ public abstract class LandingRaceBase extends Activity implements OnItemSelected
 	public void onResume()
 	{
 		super.onResume();
-		m_listener = new BroadcastListener();
 		
-		IntentFilter wifiFilter = new IntentFilter();
-		wifiFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-		wifiFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-		this.registerReceiver(m_listener, wifiFilter);
+		SharedPreferences settings = getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
+		m_fRequireWifi = settings.getBoolean(Prefs.PREF_REQUIRE_WIFI, Prefs.DEFAULT_REQUIRE_WIFI);
+		
+		if(CareAboutWifi())
+		{
+			m_listener = new BroadcastListener();
+			IntentFilter wifiFilter = new IntentFilter();
+			wifiFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+			wifiFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+			this.registerReceiver(m_listener, wifiFilter);
+		}
 	}
 	@Override
 	public void onPause()
 	{
 		super.onResume();
 		
-		this.unregisterReceiver(m_listener);
+		if(CareAboutWifi())
+		{
+			this.unregisterReceiver(m_listener);
+		}
 	}
 	
 	private static class BTListItem extends Object
@@ -158,6 +169,8 @@ public abstract class LandingRaceBase extends Activity implements OnItemSelected
 
     protected void SetupSSIDSpinner(Spinner spn, String strDefault)
     {
+    	if(!CareAboutWifi()) return;
+    	
     	try
     	{
     		WifiManager pWifi = (WifiManager)getSystemService(Context.WIFI_SERVICE);
@@ -191,10 +204,16 @@ public abstract class LandingRaceBase extends Activity implements OnItemSelected
         	spn.setEnabled(false);
         }
     }
+    
+    private boolean CareAboutWifi()
+    {
+    	return m_fRequireWifi;
+    }
+    
     @Override
     public void onItemSelected(AdapterView<?> arg0, View arg1,int arg2, long arg3) 
     {
-    	if(arg0.getId() == R.id.spnSSID)
+    	if(arg0.getId() == R.id.spnSSID && CareAboutWifi())
     	{
     		WifiManager pWifi = (WifiManager)getSystemService(Context.WIFI_SERVICE);
     		

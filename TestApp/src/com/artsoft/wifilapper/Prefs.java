@@ -59,6 +59,7 @@ public class Prefs
 	public static String PREF_P2P_STOPMODE = "p2pstopmode";
 	public static String PREF_P2P_STOPPARAM = "p2pstopparam";
 	public static String PREF_CARNUMBER = "carnumber";
+	public static String PREF_REQUIRE_WIFI = "reqwifi";
 	
 	// the strings we use in for defaults when a SharedPreference isn't available
 	public static String DEFAULT_IP_STRING = "192.168.1.100";
@@ -79,6 +80,7 @@ public class Prefs
 	public static float DEFAULT_P2P_STOPPARAM = 0.5f;
 	public static int DEFAULT_P2P_STOPMODE = P2P_STOPMODE_SCREEN;
 	public static int DEFAULT_CARNUMBER = -1;
+	public static boolean DEFAULT_REQUIRE_WIFI = true;
 	
 	
 	// strings we use for extra data in intents
@@ -106,6 +108,7 @@ public class Prefs
 	public static String IT_P2P_STOPPARAM = PREF_P2P_STOPMODE;
 	public static String IT_P2P_STOPMODE = PREF_P2P_STOPPARAM;
 	public static String IT_DEFAULT_CARNUMBER = PREF_CARNUMBER;
+	public static String IT_REQUIRE_WIFI = PREF_REQUIRE_WIFI;
 	
 	public enum UNIT_SYSTEM {KMH, MPH, MS};
 	

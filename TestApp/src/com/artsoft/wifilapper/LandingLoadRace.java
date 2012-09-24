@@ -66,6 +66,7 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
 	private static final int MSG_NEW_IMAGE = 151;
 	private static final int MSG_RESENT_RACE_SUCCESS = 152;
 	private static final int MSG_RESENT_RACE_ERROR = 153;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState)
 	{
@@ -120,6 +121,11 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
 		
     	SetupSSIDSpinner(spnSSID, strSSID);
 		txtIP.setText(strIP);
+		
+
+		boolean fRequireWifi = settings.getBoolean(Prefs.PREF_REQUIRE_WIFI, Prefs.DEFAULT_REQUIRE_WIFI);
+		View vRowSSID = findViewById(R.id.rowSSID);
+		vRowSSID.setVisibility(fRequireWifi ? View.VISIBLE : View.GONE);
     }
 	
 	private static class ListRaceData
@@ -368,6 +374,8 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
     		final float flStartParam = settings.getFloat(Prefs.PREF_P2P_STARTPARAM, Prefs.DEFAULT_P2P_STARTPARAM);
     		final int iStopMode = settings.getInt(Prefs.PREF_P2P_STOPMODE, Prefs.DEFAULT_P2P_STOPMODE);
     		final float flStopParam = settings.getFloat(Prefs.PREF_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM);
+    		final boolean fRequireWifi = settings.getBoolean(Prefs.PREF_REQUIRE_WIFI, Prefs.DEFAULT_REQUIRE_WIFI);
+    		
     		
     		List<Integer> lstSelectedPIDs = new ArrayList<Integer>();
     		Prefs.LoadOBD2PIDs(settings, lstSelectedPIDs);
@@ -376,7 +384,7 @@ public class LandingLoadRace extends LandingRaceBase implements OnDismissListene
     		IOIOManager.PinParams rgPulsePins[] = Prefs.LoadIOIOPulsePins(settings);
     		
 			ApiDemos.SaveSharedPrefs(settings, strIP, strSSID, null, null);
-			Intent i = ApiDemos.BuildStartIntent(rgAnalPins, rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopParam, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, r.lapParams, strRaceName, strPrivacy, fAckSMS, fUseAccel, r.fTestMode, listData.id, idModeSelected, strBTGPS, strOBD2, strSpeedoStyle, eUnitSystem.toString());
+			Intent i = ApiDemos.BuildStartIntent(fRequireWifi, rgAnalPins, rgPulsePins, iButtonPin, fUseP2P, iStartMode, flStartParam, iStopMode, flStopParam, lstSelectedPIDs, getApplicationContext(), strIP,strSSID, r.lapParams, strRaceName, strPrivacy, fAckSMS, fUseAccel, r.fTestMode, listData.id, idModeSelected, strBTGPS, strOBD2, strSpeedoStyle, eUnitSystem.toString());
 			startActivity(i);
 		}
 		else

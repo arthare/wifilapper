@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     >
 <CheckBox android:text="Test Mode" android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/chkTestMode"></CheckBox>
-
+<CheckBox android:text="Use cellular data instead of wifi" android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/chkCellular"></CheckBox>
 <!-- bluetooth gps spinner -->
 
 <TableLayout

@@ -210,6 +210,7 @@ implements
     	m_flP2PStartParam = i.getFloatExtra(Prefs.IT_P2P_STARTPARAM, Prefs.DEFAULT_P2P_STARTPARAM);
     	m_iP2PStopMode = i.getIntExtra(Prefs.IT_P2P_STOPMODE, Prefs.DEFAULT_P2P_STOPMODE);
     	m_flP2PStopParam = i.getFloatExtra(Prefs.IT_P2P_STOPPARAM, Prefs.DEFAULT_P2P_STOPPARAM);
+    	boolean fRequireWifi = i.getBooleanExtra(Prefs.IT_REQUIRE_WIFI, Prefs.DEFAULT_REQUIRE_WIFI);
     	
     	if(m_strPrivacyPrefix == null) m_strPrivacyPrefix = Prefs.DEFAULT_PRIVACYPREFIX;
     	
@@ -249,11 +250,12 @@ implements
     	
     	m_lapParams = (LapAccumulator.LapAccumulatorParams)i.getParcelableExtra(Prefs.IT_LAPPARAMS);
     	
-    	StartupTracking(rgSelectedAnalPins, rgSelectedPulsePins, iButtonPin, rgSelectedPIDs, strIP, strSSID, strBTGPS, strOBD2, fUseAccel, m_fTestMode, idLapLoadMode);
+    	StartupTracking(fRequireWifi, rgSelectedAnalPins, rgSelectedPulsePins, iButtonPin, rgSelectedPIDs, strIP, strSSID, strBTGPS, strOBD2, fUseAccel, m_fTestMode, idLapLoadMode);
     }
-    public static Intent BuildStartIntent(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, boolean fPointToPoint, int iStartMode, float flStartParam, int iStopMode, float flStopParam, List<Integer> lstSelectedPIDs, Context ctxApp, String strIP, String strSSID, LapAccumulator.LapAccumulatorParams lapParams, String strRaceName, String strPrivacy, boolean fAckSMS, boolean fUseAccel, boolean fTestMode, long idRace, long idModeSelected, String strBTGPS, String strBTOBD2, String strSpeedoStyle, String strUnitSystem)
+    public static Intent BuildStartIntent(boolean fRequireWifi, IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, boolean fPointToPoint, int iStartMode, float flStartParam, int iStopMode, float flStopParam, List<Integer> lstSelectedPIDs, Context ctxApp, String strIP, String strSSID, LapAccumulator.LapAccumulatorParams lapParams, String strRaceName, String strPrivacy, boolean fAckSMS, boolean fUseAccel, boolean fTestMode, long idRace, long idModeSelected, String strBTGPS, String strBTOBD2, String strSpeedoStyle, String strUnitSystem)
     {
     	Intent myIntent = new Intent(ctxApp, ApiDemos.class);
+    	myIntent.putExtra(Prefs.IT_REQUIRE_WIFI, fRequireWifi);
 		myIntent.putExtra(Prefs.IT_IP_STRING, strIP).putExtra("SSID", strSSID);
 		myIntent.putExtra(Prefs.IT_LAPPARAMS, lapParams);
 		myIntent.putExtra(Prefs.IT_RACENAME_STRING, strRaceName);
@@ -453,7 +455,7 @@ implements
     	super.onConfigurationChanged(con);
     }
     // only called once the user has done all their settings stuff
-    private void StartupTracking(IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, int rgSelectedPIDs[], String strIP, String strSSID, String strBTGPS, String strBTOBD2, boolean fUseAccel, boolean fTestMode, int idLapLoadMode)
+    private void StartupTracking(boolean fRequireWifi, IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, int rgSelectedPIDs[], String strIP, String strSSID, String strBTGPS, String strBTOBD2, boolean fUseAccel, boolean fTestMode, int idLapLoadMode)
     {
     	ApiDemos.State eEndState = ApiDemos.State.WAITING_FOR_GPS;
 
@@ -491,7 +493,7 @@ implements
 	    
 		WifiManager pWifi = (WifiManager)getSystemService(Context.WIFI_SERVICE);
 
-	    m_lapSender = new LapSender(this, this, pWifi, strIP, strSSID);
+	    m_lapSender = new LapSender(this, this, pWifi, strIP, strSSID, fRequireWifi);
 	    m_msgMan = new MessageMan(this);
 	    
 	    if(m_lRaceId != -1 && m_lapParams.IsValid(m_fUseP2P))

@@ -10,7 +10,7 @@
 	    android:layout_height="wrap_content" >
 	
 	    <TableRow
-	        android:id="@+id/tableRow1"
+	        android:id="@+id/rowSSID"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:layout_gravity="center_vertical" >

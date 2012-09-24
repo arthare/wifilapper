@@ -92,12 +92,14 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		Spinner spnUnits = (Spinner)findViewById(R.id.spnUnits);
 		RadioButton chkInternal = (RadioButton)findViewById(R.id.chkDBInternal);
 		EditText edtCarNumber = (EditText)findViewById(R.id.edtCarNumber);
+		CheckBox chkCellular = (CheckBox)findViewById(R.id.chkCellular);
 		
 		// get data
 		String strSpeedoStyle = spnSpeedo.getSelectedItem().toString();
 		boolean fTestMode = chkTestMode.isChecked();
 		Prefs.UNIT_SYSTEM eUnits = Prefs.UNIT_SYSTEM.valueOf(spnUnits.getSelectedItem().toString());
 		boolean fInternal = chkInternal.isChecked();
+		boolean fRequireWifi = !chkCellular.isChecked();
 		
 		int iCarNumber = -1;
 		try
@@ -118,6 +120,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		  .putString(Prefs.PREF_UNITS_STRING, eUnits.toString())
 		  .putBoolean(Prefs.PREF_DBLOCATION_BOOL, fInternal)
 		  .putInt(Prefs.PREF_CARNUMBER, iCarNumber)
+		  .putBoolean(Prefs.PREF_REQUIRE_WIFI, fRequireWifi)
 		  .commit();
 	}
 	
@@ -346,7 +349,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		TextView chkAccel = (TextView)findViewById(R.id.lblUseAccel);
 		TextView txtP2P = (TextView)findViewById(R.id.lblP2P);
 		EditText edtCarNumber = (EditText)findViewById(R.id.edtCarNumber);
-		
+		CheckBox chkCellular = (CheckBox)findViewById(R.id.chkCellular);
 		
 		// load settings
 		SharedPreferences settings = getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
@@ -357,7 +360,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		String strBTGPS = settings.getString(Prefs.PREF_BTGPSNAME_STRING,Prefs.DEFAULT_GPS_STRING);
 		String strBTOBD2 = settings.getString(Prefs.PREF_BTOBD2NAME_STRING, Prefs.DEFAULT_OBD2_STRING);
 		int iCarNumber = settings.getInt(Prefs.PREF_CARNUMBER, Prefs.DEFAULT_CARNUMBER);
-		
+		boolean fRequireWifi = settings.getBoolean(Prefs.PREF_REQUIRE_WIFI, Prefs.DEFAULT_REQUIRE_WIFI);
 		
 		BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
 		final boolean fBTWorking = ba != null && ba.isEnabled();
@@ -372,6 +375,9 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		
 		chkIOIO.setText(MakeIOIOText(settings,fIOIO));
 		chkIOIO.setClickable(false);
+		
+		chkCellular.setChecked(!fRequireWifi);
+		
 		
 		txtP2P.setText(MakeP2PText(settings));
 		

@@ -64,18 +64,18 @@ public class LapSender
 	private boolean fContinue;
 	private SendThd m_thd;
 	private boolean m_fDBDead = false;
-	
+
 	public interface LapSenderListener
 	{
 		public enum CONNLEVEL {SEARCHING,CONNECTED,FULLYCONNECTED};
 		public abstract void SetConnectionLevel(CONNLEVEL eLevel);
 	}
 	
-	public LapSender(Utility.MultiStateObject pStateMan,LapSenderListener listener, WifiManager pWifi, String strIP, String strSSID)
+	public LapSender(Utility.MultiStateObject pStateMan,LapSenderListener listener, WifiManager pWifi, String strIP, String strSSID, boolean fRequireWifi)
 	{
 		lstLapsToSend = new Vector<LapAccumulator>();
 		fContinue = true;
-		m_thd = new SendThd(pStateMan, listener, pWifi, strIP, strSSID);
+		m_thd = new SendThd(pStateMan, listener, pWifi, strIP, strSSID, fRequireWifi);
 		m_thd.start();
 	}
 	public int GetLapSentCount()
@@ -298,8 +298,9 @@ public class LapSender
 		private InetAddress addr;
 		private SocketWatchdog m_watchdog;
 		private int m_cLoops;
+		private boolean fRequireWifi;
 		
-		public SendThd(Utility.MultiStateObject pWifiStateReceiver, LapSenderListener listener, WifiManager pWifi, String strIP, String strSSID)
+		public SendThd(Utility.MultiStateObject pWifiStateReceiver, LapSenderListener listener, WifiManager pWifi, String strIP, String strSSID, boolean fRequireWifi)
 		{
 			this.pStateMan = pWifiStateReceiver;
 			pStateMan.SetState(LapSender.class, STATE.TROUBLE_GOOD, "Starting...");
@@ -307,6 +308,7 @@ public class LapSender
 			this.pWifi = pWifi;
 			this.strIP = strIP;
 			this.strSSID = strSSID;
+			this.fRequireWifi = fRequireWifi;
 		}
 		public int GetLapSentCount()
 		{
@@ -474,7 +476,11 @@ public class LapSender
 		private Socket BuildSocket(InetAddress addr, int iPort) throws IOException,InterruptedException
 		{
 			if(m_watchdog != null) m_watchdog.Shutdown();
-			AcquireWIFI();
+			
+			if(fRequireWifi)
+			{
+				AcquireWIFI();
+			}
 
 			Socket s = null;
 			SocketAddress sConnect = null;

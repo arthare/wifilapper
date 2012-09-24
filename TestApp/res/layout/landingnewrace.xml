@@ -18,7 +18,7 @@
 	    android:layout_width="match_parent"
 	    android:layout_height="wrap_content" >
 	
-	    <TableRow android:id="@+id/tableRow1" android:layout_width="wrap_content" android:layout_height="wrap_content" >
+	    <TableRow android:id="@+id/rowSSID" android:layout_width="wrap_content" android:layout_height="wrap_content" >
 			<TextView android:text="Wifi SSID" android:id="@+id/lblSSID" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
 			<Spinner android:id="@+id/spnSSID" android:layout_width="0dip" android:layout_height="wrap_content" android:layout_weight="1"></Spinner>
 	    </TableRow>
