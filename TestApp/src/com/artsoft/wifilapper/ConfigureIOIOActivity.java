@@ -81,6 +81,8 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			default:
 				// don't change anything
 			}
+	    	TextView txtCurrentFilter = (TextView)findViewById(R.id.lblCurrentFilter);
+			txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(m_iLastFilterType, this.m_dLastParam1, this.m_dLastParam2, true));
 		}
 	}
 	
@@ -143,6 +145,60 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		
 		UpdateList();
 	}
+	
+	// sets up the main controls to match the given pin
+	// note that iPinType is the id of the radiobutton control that needs to be checked to represent pin type (analog, pulse, digital, etc)
+	private void SetPinControls(IOIOManager.PinParams pin, int iPinType)
+	{
+	    {
+		    SeekBar seek = (SeekBar)findViewById(R.id.seekSampleRate);
+	    	TextView txtRate = (TextView)findViewById(R.id.txtSampleRate);
+	    	final double dPeriod = pin.iPeriod; // sample spread in milliseconds
+			final double dSeek = (Math.log(dPeriod) - Math.log(10000))/-4.605;
+			final double dRate = 1000 / dPeriod;
+			txtRate.setText("Sample Rate (" + Utility.FormatFloat((float)dRate, 1) + "hz):");
+			
+	    	seek.setProgress((int)(dSeek*seek.getMax()));
+	    	seek.invalidate();
+	    }
+
+	    { // radio buttons
+	    	RadioGroup rg = (RadioGroup)findViewById(R.id.rgPinType);
+	    	rg.check(iPinType);
+	    	rg.invalidate();
+	    }
+	    
+	    { // pin #s
+	    	Spinner spnPin = (Spinner)findViewById(R.id.spnPin);
+	    	for(int x = 0;x < spnPin.getCount(); x++)
+	    	{
+	    		Object objSelected = spnPin.getItemAtPosition(x);
+	    		if(objSelected != null)
+	    		{
+	    			long lPinNumber = Long.parseLong(objSelected.toString());
+	    			if(lPinNumber == pin.iPin)
+	    			{
+	    				spnPin.setSelection(x);
+	    				break;
+	    			}
+	    		}
+	    	}
+	    	spnPin.invalidate();
+	    }
+	    
+	    { // filter display
+			this.m_iLastCustomType = pin.iCustomType;
+			this.m_iLastFilterType = pin.iFilterType;
+			this.m_dLastParam1 = pin.dParam1;
+			this.m_dLastParam2 = pin.dParam2;
+			
+	    	TextView txtCurrentFilter = (TextView)findViewById(R.id.lblCurrentFilter);
+			txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(pin.iFilterType, pin.dParam1, pin.dParam2, true));
+			
+			txtCurrentFilter.invalidate();
+	    }
+	}
+	// builds a view to put in the list of pins
 	private View BuildPinView(String strName, IOIOManager.PinParams pin)
 	{
 		TableRow.LayoutParams layout = new TableRow.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, 1.0f);
@@ -196,8 +252,8 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		}
 		pinList.invalidate();
 		
-		TextView txtCurrentFilter = (TextView)findViewById(R.id.lblCurrentFilter);
-		txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(this.m_iLastFilterType, m_dLastParam1, m_dLastParam2, true));
+    	TextView txtCurrentFilter = (TextView)findViewById(R.id.lblCurrentFilter);
+		txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(m_iLastFilterType, this.m_dLastParam1, this.m_dLastParam2, true));
 	}
 	
 	@Override
@@ -299,11 +355,15 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		}
 		else
 		{
+			IOIOManager.PinParams pinRemoved = null;
+			int iTypeId = -1;
 			// they must have clicked a 'remove' button.  Find all pins that match the id (the id being the pin # they want to remove)
 			for(int x = 0; x < lstAnalPins.size(); x++)
 			{
 				if(lstAnalPins.get(x).iPin == arg0.getId())
 				{
+					pinRemoved = lstAnalPins.get(x);
+					iTypeId = R.id.rbAnalog;
 					lstAnalPins.remove(x);
 				}
 			}
@@ -311,12 +371,19 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			{
 				if(lstPulsePins.get(x).iPin == arg0.getId())
 				{
+					pinRemoved = lstPulsePins.get(x);
+					iTypeId = R.id.rbPulse;
 					lstPulsePins.remove(x);
 				}
+			}
+			if(pinRemoved != null)
+			{
+				SetPinControls(pinRemoved, iTypeId);
 			}
 		}
 		UpdateList();
 	}
+
 
 	@Override
 	public void onProgressChanged(SeekBar arg0, int arg1, boolean arg2) 
