@@ -234,6 +234,9 @@ public:
   virtual float GetTime() const = 0;
   virtual const vector<TimePoint2D> GetPoints() const = 0;
   virtual const StartFinish* GetSF() const = 0;
+  virtual wstring GetComment() const = 0;
+  virtual void SetComment(wstring strComment) const = 0;
+  
   virtual CARNUMBERCOMBO GetCarNumbers() const = 0;
 private:
 };
@@ -258,6 +261,9 @@ public:
   float GetTime() const {return dTime;}
   const vector<TimePoint2D> GetPoints() const {return lstPoints;}
   const StartFinish* GetSF() const {return rgSF;}
+  wstring GetComment() const {return strComment;}
+  void SetComment(wstring strComment) const override {this->strComment = strComment;}
+
   virtual CARNUMBERCOMBO GetCarNumbers() const override
   {
     return sfCarNumbers;
@@ -269,6 +275,7 @@ private:
 	float dTime;
 	int iLapId;
   int iStartTime; // seconds since Jan 1 1970
+  mutable wstring strComment;
   CARNUMBERCOMBO sfCarNumbers;
 };
 template<int cToMatch>
@@ -353,11 +360,13 @@ public:
   virtual const ILap* GetLap(int iLapId) = 0;
   virtual const IDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
   virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const = 0;
+  virtual void GetComments(int iLapId, vector<wstring>& lstComments) const = 0;
 
   // modifying data
 	virtual void AddLap(const ILap* pLap, int iRaceId) = 0;
   virtual void AddDataChannel(const IDataChannel* pChannel) = 0;
   virtual void Clear() = 0;
+  virtual void AddComment(int iLapId, LPCTSTR strComment) = 0;
 
   // status strings
   virtual void NotifyDBArrival(LPCTSTR lpszPath) = 0;

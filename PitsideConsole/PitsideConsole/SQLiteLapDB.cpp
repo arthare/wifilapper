@@ -7,7 +7,7 @@
 class CSQLiteLap : public ILap
 {
 public:
-  CSQLiteLap(CSfArtSQLiteDB& sfDB) : m_sfDB(sfDB), m_fLoaded(false) {};
+  CSQLiteLap(CSfArtSQLiteDB& sfDB, ILapReceiver* pWriteBack) : m_sfDB(sfDB),m_pWriteBack(pWriteBack), m_fLoaded(false) {};
   virtual ~CSQLiteLap() {};
 
 public: // ILap overrides
@@ -25,6 +25,12 @@ public: // ILap overrides
     fSuccess &= (line.GetCol(0, &m_iLapId));
     fSuccess &= (line.GetCol(1, &m_flLapTime));
     fSuccess &= (line.GetCol(2, &m_iStartTime));
+
+    TCHAR szComment[200];
+    szComment[0] = 0;
+    fSuccess &= (line.GetCol(3, szComment, NUMCHARS(szComment)));
+    m_strComment = wstring(szComment);
+
     memcpy(this->m_rgSF, rgSF, sizeof(this->m_rgSF));
 
     return fSuccess;
@@ -35,6 +41,12 @@ public: // ILap overrides
   virtual int GetStartTime() const override {return m_iStartTime;}
   virtual int GetLapId() const override {return m_iLapId;}
   virtual float GetTime() const override {return m_flLapTime;}
+  virtual wstring GetComment() const override {return m_strComment;}
+  virtual void SetComment(wstring strComment) const override 
+  {
+    m_strComment = strComment;
+    m_pWriteBack->AddComment(m_iLapId,strComment.c_str());
+  }
   virtual const vector<TimePoint2D> GetPoints() const override
   {
     vector<TimePoint2D> lstPoints;
@@ -76,12 +88,14 @@ public: // general CSQLiteLap functioning
 
 private:
   CSfArtSQLiteDB& m_sfDB;
+  mutable ILapReceiver* m_pWriteBack;
 
   bool m_fLoaded;
 
   int m_iStartTime;
   int m_iLapId;
   float m_flLapTime;
+  mutable wstring m_strComment;
   StartFinish m_rgSF[3];
 };
 
@@ -162,12 +176,20 @@ static LPCTSTR CREATE_DATA_SQL =L"create table data " \
 														L"value real NOT NULL," \
 														L"channelid integer NOT NULL," \
 														L"foreign key (channelid) references channels(_id))";
+
+static LPCTSTR CREATE_EXTRA_SQL =L"create table extras " \
+														L"(_id integer primary key asc autoincrement," \
+														L"comment string," \
+                            L"lapid integer NOT NULL unique on conflict fail," \
+														L"foreign key (lapid) references laps(_id))";
+
 static LPCTSTR CREATE_INDICES =L"create index data_channelid on data(channelid);" \
 											L"create index if not exists points_lapid on points(lapid);" \
 											L"create index if not exists laps_raceid on laps(raceid)";
 
-static LPCTSTR rgRequiredTables20[] = {CREATE_RACE_SQL_V20, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL};
-static LPCTSTR rgRequiredTables21[] = {CREATE_RACE_SQL_V21, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL};
+static LPCTSTR rgRequiredTables20[] = {CREATE_RACE_SQL_V20, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL, NULL};
+static LPCTSTR rgRequiredTables21[] = {CREATE_RACE_SQL_V21, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL, NULL};
+static LPCTSTR rgRequiredTables23[] = {CREATE_RACE_SQL_V21, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL, CREATE_EXTRA_SQL};
 
 static LPCTSTR* rgSchemaList[] = 
 {
@@ -192,11 +214,13 @@ static LPCTSTR* rgSchemaList[] =
   rgRequiredTables20,
   rgRequiredTables20,
   rgRequiredTables20,
-  rgRequiredTables21
+  rgRequiredTables21,
+  rgRequiredTables21,
+  rgRequiredTables23
 };
 
 const static int iMinSupportedVersion = 0;
-const static int iMaxSupportedVersion = 21;
+const static int iMaxSupportedVersion = 23;
 //////////////////////////////////////////////////////////////
 bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
 {
@@ -206,7 +230,7 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
     HRESULT hr = m_sfDB.Open(lpszPath, lstSQL);
     if(SUCCEEDED(hr))
     {
-      for(int x = 0;x < 5; x++)
+      for(int x = 0;x < 6; x++)
       {
         hr = E_FAIL;
         CSfArtSQLiteQuery sfInsert(m_sfDB);
@@ -229,26 +253,34 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
   }
   else
   {
+    int iFindFailures = 0;
     int ixFoundVersion = -1;
     vector<wstring> lstSQL;
     HRESULT hr = m_sfDB.Open(lpszPath, lstSQL);
     if(SUCCEEDED(hr))
     {
       // find a schema version that matches
-      for(int ixVersion = iMinSupportedVersion; ixVersion <= iMaxSupportedVersion; ixVersion++)
+      for(int ixVersion = iMaxSupportedVersion; ixVersion >= iMinSupportedVersion; ixVersion--)
       {
         bool fFoundAll = true;
-        for(int x = 0; x < 5 && fFoundAll; x++)
+        for(int x = 0; x < 6 && fFoundAll; x++)
         {
+          // we want to find rgSchemaList[ixVersion][x] in the lstSQL that we got from the DB.
+          if(!rgSchemaList[ixVersion][x]) continue; // don't need to find this one
+
           bool fFound = false;
           for(int y = 0; y < lstSQL.size(); y++)
           {
-            if(_wcsicmp(lstSQL[y].c_str(),rgSchemaList[ixVersion][x]) == 0 
-              || wcsstr(lstSQL[y].c_str(),L"android_metadata") != NULL)
+            if(wcsstr(lstSQL[y].c_str(),L"android_metadata") != NULL) continue; // don't care about this table
+            if(_wcsicmp(lstSQL[y].c_str(),rgSchemaList[ixVersion][x]) == 0)
             {
               fFound = true;
               break;
             }
+          }
+          if(!fFound)
+          {
+            iFindFailures++;
           }
         
           fFoundAll = fFoundAll && fFound;
@@ -266,6 +298,23 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
         // we didn't find or create all our required tables...
         hr = E_FAIL;
       }
+
+
+      if(ixFoundVersion < 23)
+      {
+        // upgrade!
+        CSfArtSQLiteQuery sfQuery(m_sfDB);
+        if(sfQuery.Init(CREATE_EXTRA_SQL))
+        {
+          while(sfQuery.Next())
+          {
+          }
+          DASSERT(sfQuery.IsDone());
+        }
+      }
+      /*if(ixFoundVersion < ...) future upgrades...
+      {
+      }*/
     }
     return SUCCEEDED(hr);
   }
@@ -304,7 +353,7 @@ ILap* CSQLiteLapDB::AllocateLap(bool fMemory)
   }
   else
   {
-    return new CSQLiteLap(m_sfDB);
+    return new CSQLiteLap(m_sfDB, this);
   }
 }
 //////////////////////////////////////////////////////////////
@@ -425,7 +474,7 @@ vector<const ILap*> CSQLiteLapDB::GetLaps(int iRaceId)
   // gotta load all the laps that are in the DB, but we don't want to fully load them, just their laptimes and other directly lap-related data
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   TCHAR szQuery[MAX_PATH];
-  _snwprintf(szQuery, NUMCHARS(szQuery), L"Select laps._id,laps.laptime, laps.unixtime from laps where laps.raceid = %d", iRaceId);
+  _snwprintf(szQuery, NUMCHARS(szQuery), L"Select laps._id,laps.laptime, laps.unixtime,extras.comment from laps left join extras on extras.lapid = laps._id where laps.raceid=%d", iRaceId);
   if(sfQuery.Init(szQuery))
   {
     while(sfQuery.Next())
@@ -521,6 +570,24 @@ set<DATA_CHANNEL> CSQLiteLapDB::GetAvailableChannels(int iLapId) const
     }
   }
   return setRet;
+}
+//////////////////////////////////////////////////////////////
+void CSQLiteLapDB::GetComments(int iLapId, vector<wstring>& lstComments) const
+{
+  CSfArtSQLiteQuery sfQuery(m_sfDB);
+  TCHAR szQuery[MAX_PATH];
+  _snwprintf(szQuery, NUMCHARS(szQuery), L"select extras.comment from extras where extras.lapid = %d", iLapId);
+  if(sfQuery.Init(szQuery))
+  {
+    while(sfQuery.Next())
+    {
+      TCHAR szComment[500];
+      if(sfQuery.GetCol(0,szComment, NUMCHARS(szComment)))
+      {
+        lstComments.push_back(szComment);
+      }
+    }
+  }
 }
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::AddLap(const ILap* pLap, int _iRaceId)
@@ -657,6 +724,20 @@ void CSQLiteLapDB::AddDataChannel(const IDataChannel* pChannel)
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::Clear()
 {
+}
+//////////////////////////////////////////////////////////////
+void CSQLiteLapDB::AddComment(int iLapId, LPCTSTR strComment)
+{
+  CSfArtSQLiteQuery sfQuery(m_sfDB);
+  if(sfQuery.Init(L"insert or replace into extras (comment,lapid) values (?,?)"))
+  {
+    sfQuery.BindValue(strComment);
+    sfQuery.BindValue(iLapId);
+    if(!sfQuery.Next() && !sfQuery.IsDone())
+    {
+      DASSERT(FALSE);
+    }
+  }
 }
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::SetNetStatus(NETSTATUSSTRING eString, LPCTSTR sz)

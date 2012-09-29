@@ -52,7 +52,7 @@ public class RaceDatabase extends BetterOpenHelper
 	// 15->16: messed everything up, need freshness
 	// 16->17: adding accelerometer data in DB
 	// 20->21: adding "point-to-point" member in races table
-	private static final int m_iVersion = 22;
+	private static final int m_iVersion = 23;
 	private static final String DATABASE_NAME_INTERNAL = "races";
 	
 	public static final String KEY_RACENAME = "name";
@@ -228,6 +228,7 @@ public class RaceDatabase extends BetterOpenHelper
 		db.execSQL("delete from data where channelid in (select dataid from tempdataid);"); // deletes all data depending on the orphaned channels
 		db.execSQL("delete from points where lapid in (select lapid from templapid);"); // deletes all points that depend on the targeted laps
 		db.execSQL("delete from channels where _id in (select dataid from tempdataid);"); // deletes all channels that need deleting
+		db.execSQL("delete from extras where _id in (select dataid from tempdataid);"); // deletes all channels that need deleting
 		db.execSQL("delete from laps where _id in (select lapid from templapid);"); // deletes all targeted laps
 		
 		db.execSQL("delete from points where lapid not in (select _id from laps);"); // deletes all points that depend on nonexistent laps
@@ -251,6 +252,7 @@ public class RaceDatabase extends BetterOpenHelper
 		db.execSQL("delete from data where channelid in (select dataid from tempdataid);"); // deletes all raw data that depends on those channels
 		db.execSQL("delete from points where lapid in (select lapid from templapid);"); // deletes all the points that depend on the doomed laps
 		db.execSQL("delete from channels where lapid in (select lapid from templapid);"); // deletes all the channels that depend on the doomed laps
+		db.execSQL("delete from extras where lapid in (select lapid from templapid);"); // deletes all the channels that depend on the doomed laps
 		db.execSQL("delete from laps where raceid in (select raceid from tempraceid);"); // deletes all the laps that depend on the doomed races
 		db.execSQL("delete from races where _id in (select raceid from tempraceid);"); // deletes all the doomed races
 		db.execSQL("commit transaction;");
@@ -483,6 +485,13 @@ public class RaceDatabase extends BetterOpenHelper
 														 "value real NOT NULL," +
 														 "channelid integer NOT NULL," +
 														 "foreign key (channelid) references channels(_id));";
+	
+	private final static String CREATE_EXTRA_SQL =	"create table extras " +
+													"(_id integer primary key asc autoincrement," +
+													"comment string," +
+													"lapid integer NOT NULL unique on conflict fail," +
+													"foreign key (lapid) references laps(_id))";
+	
 	private final static String CREATE_INDICES ="create index if not exists data_channelid on data(channelid);" +
 												"create index if not exists points_lapid on points(lapid);" +
 												"create index if not exists laps_raceid on laps(raceid);";
@@ -495,6 +504,7 @@ public class RaceDatabase extends BetterOpenHelper
 		db.execSQL(CREATE_CHANNELS_SQL);
 		db.execSQL(CREATE_DATA_SQL);
 		db.execSQL(CREATE_INDICES);
+		db.execSQL(CREATE_EXTRA_SQL);
 	}
 	private void ExecAndIgnoreException(SQLiteDatabase db, String strSQL)
 	{
@@ -517,27 +527,33 @@ public class RaceDatabase extends BetterOpenHelper
 			ExecAndIgnoreException(db,"drop table points");
 			ExecAndIgnoreException(db,"drop table channels");
 			ExecAndIgnoreException(db,"drop table data");
+			ExecAndIgnoreException(db,"drop table extras");
 			onCreate(db);
 		}
 		else
 		{
-			if(oldVersion == 19 && newVersion == 20)
+			if(oldVersion == 19 && newVersion > 19)
 			{
 				// 19->20: added indices for more speed
 				db.execSQL(CREATE_INDICES);
 				oldVersion = 20;
 			}
-			if(oldVersion == 20 && newVersion == 21)
+			if(oldVersion == 20 && newVersion > 20)
 			{
 				// upgrade more...
 				db.execSQL("alter table races add column p2p integer not null default 0");
 				oldVersion = 21;
 			}
-			if(oldVersion == 21 && newVersion == 22)
+			if(oldVersion == 21 && newVersion > 21)
 			{
 				// upgrade more...
 				db.execSQL("alter table races add column finishcount integer not null default 1");
 				oldVersion = 22;
+			}
+			if(oldVersion == 22 && newVersion > 22)
+			{
+				db.execSQL(CREATE_EXTRA_SQL); // add the "extras" table
+				oldVersion = 23;
 			}
 		}
 	}

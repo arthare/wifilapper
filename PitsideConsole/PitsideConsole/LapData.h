@@ -55,7 +55,6 @@ public:
   CExtendedLap(const ILap* pLap, CExtendedLap* pReferenceLap, ILapReceiver* pLapDB, bool fComputeTimeSlip) : m_pLap(pLap), m_fComputeTimeSlip(fComputeTimeSlip)
   {
     DASSERT(pReferenceLap);
-    m_szComment[0] = '\0';
     GetLocalTime(&m_tmRecv);
     m_tmStart = SecondsSince1970ToSYSTEMTIME(pLap->GetStartTime());
 
@@ -87,13 +86,13 @@ public:
   {
       TCHAR szTime[100];
       FormatTimeMinutesSecondsMs(m_pLap->GetTime(),szTime,NUMCHARS(szTime));
-      if(m_szComment[0] != '\0')
+      if(GetLap()->GetComment().size() > 0)
       {
-        swprintf(lpszBuffer, cchBuffer, L"%02d:%02d:%02d - Laptime: %s - \"%s\"", m_tmStart.wHour, m_tmStart.wMinute, m_tmStart.wSecond, szTime, m_szComment);
+        swprintf(lpszBuffer, cchBuffer, L"%02d:%02d:%02d - Laptime: %s - \"%s\"", m_tmStart.wHour, m_tmStart.wMinute, m_tmStart.wSecond, szTime, GetLap()->GetComment().c_str());
       }
       else
       {
-        swprintf(lpszBuffer, cchBuffer, L"%02d:%02d:%02d - Laptime: %s", m_tmStart.wHour, m_tmStart.wMinute, m_tmStart.wSecond, szTime, m_szComment);
+        swprintf(lpszBuffer, cchBuffer, L"%02d:%02d:%02d - Laptime: %s", m_tmStart.wHour, m_tmStart.wMinute, m_tmStart.wSecond, szTime);
       }
   }
   static void GetStringHeaders(vector<wstring>& lstCols, vector<int>& lstWidths)
@@ -114,15 +113,14 @@ public:
     FormatTimeMinutesSecondsMs(m_pLap->GetTime(),szTime,NUMCHARS(szTime));
     lstStrings.push_back(szTime); // pushes the laptime
 
-    lstStrings.push_back(m_szComment);
-  }
-  wstring GetComment() const
-  {
-    return wstring(m_szComment);
-  }
-  void SetComment(LPCTSTR lpsz)
-  {
-    wcscpy_s(m_szComment, NUMCHARS(m_szComment), lpsz);
+    if(GetLap()->GetComment().size() > 0)
+    {
+      lstStrings.push_back(GetLap()->GetComment());
+    }
+    else
+    {
+      lstStrings.push_back(L"");
+    }
   }
   const vector<TimePoint2D>& GetPoints() 
   {
@@ -178,7 +176,6 @@ private:
   ILapReceiver* m_pLapDB;
   CExtendedLap* m_pReferenceLap;
   const ILap* m_pLap;
-  TCHAR m_szComment[512];
   SYSTEMTIME m_tmRecv; // when was this thing constructed?
   SYSTEMTIME m_tmStart; // when was this thing started on-track?
   vector<TimePoint2D> m_lstPoints;

@@ -620,7 +620,7 @@ public:
             switch(HIWORD(wParam))
             {
             case BN_CLICKED:
-              ApplyDriverNameToSelectedLaps();
+              ApplyDriverNameToSelectedLaps(::g_pLapDB);
               UpdateUI(UPDATE_ALL); //the list causes everything to redraw
               break;
             }
@@ -1054,19 +1054,22 @@ private:
         {
           m_pReferenceLap = pNewLap; // by default, make the first lap received the reference lap
         }
-        pNewLap->SetComment(m_szCommentText);
+        if(pLap->GetComment().size() <= 0)
+        {
+          pLap->SetComment(m_szCommentText);
+        }
         m_mapLaps[pLap->GetLapId()] = pNewLap;
       }
     }
   }
-  void ApplyDriverNameToSelectedLaps()
+  void ApplyDriverNameToSelectedLaps(ILapReceiver* pLapDB)
   {
     set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
     for(set<LPARAM>::iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
     {
       // the ints of this set are actually pointers to CExtendedLap objects
       CExtendedLap* pLap = (CExtendedLap*)(*i);
-      pLap->SetComment(m_szCommentText);
+      pLap->GetLap()->SetComment(m_szCommentText);
     }
   }
 
@@ -1121,9 +1124,9 @@ private:
     for(map<int,CExtendedLap*>::const_iterator i = m_mapLaps.begin(); i != m_mapLaps.end(); i++)
     {
       CExtendedLap* pLap = i->second;
-      if(m_fShowDriverBests && (mapFastestDriver.count(pLap->GetComment()) == 0 || pLap->GetLap()->GetTime() < mapFastestDriver[pLap->GetComment()]->GetLap()->GetTime()))
+      if(m_fShowDriverBests && (mapFastestDriver.count(pLap->GetLap()->GetComment()) == 0 || pLap->GetLap()->GetTime() < mapFastestDriver[pLap->GetLap()->GetComment()]->GetLap()->GetTime()))
       {
-        mapFastestDriver[pLap->GetComment()] = pLap;
+        mapFastestDriver[pLap->GetLap()->GetComment()] = pLap;
       }
       if(m_fShowBests)
       {

@@ -28,11 +28,13 @@ public:
   virtual const ILap* GetLap(int iLapId) override;
   virtual const IDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const override;
   virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const override;
+  virtual void GetComments(int iLapId, vector<wstring>& lstComments) const override;
 
   // modifying data
 	virtual void AddLap(const ILap* pLap, int iRaceId) override;
   virtual void AddDataChannel(const IDataChannel* pChannel) override;
   virtual void Clear() override;
+  virtual void AddComment(int iLapId, LPCTSTR strComment) override;
 
   virtual void NotifyDBArrival(LPCTSTR lpszPath) override;
   virtual void SetNetStatus(NETSTATUSSTRING eString, LPCTSTR szData) override; // network man tells us the latest status
