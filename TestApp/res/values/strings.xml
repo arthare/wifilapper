@@ -40,5 +40,8 @@
         <item>RF Brake Temperature</item>
         <item>LR Brake Temperature</item>
         <item>RR Brake Temperature</item>
+        <item>Oil Pressure</item>
+        <item>Oil Temperature</item>
+        <item>Oil Coolant Temperature</item>
     </string-array>
 </resources>

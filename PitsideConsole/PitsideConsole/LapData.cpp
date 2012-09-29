@@ -224,6 +224,9 @@ PIDDATA g_rgIOIOCustomData[] = {
   {L"RF Brake Temperature","%3.0f"},
   {L"LR Brake Temperature","%3.0f"},
   {L"RR Brake Temperature","%3.0f"},
+  {L"Oil Pressure","%3.0f"},
+  {L"Oil Temperature","%3.0f"},
+  {L"Coolant Temperature","%3.0f"},
 };
 
 void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
