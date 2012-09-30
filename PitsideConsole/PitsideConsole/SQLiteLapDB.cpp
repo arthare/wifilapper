@@ -146,6 +146,31 @@ static LPCTSTR CREATE_RACE_SQL_V21 =  L"create table races (	_id integer primary
 																						L"vx3 real," \
 																						L"vy3 real," \
                                             L"p2p integer not null default 0)";
+
+static LPCTSTR CREATE_RACE_SQL_V22 =  L"create table races (	_id integer primary key asc autoincrement, " \
+																						L"\"name\" string, " \
+																						L"\"date\" string, " \
+																						L"\"testmode\" integer, " \
+																						L"x1 real, " \
+																						L"y1 real, " \
+																						L"x2 real, " \
+																						L"y2 real, " \
+																						L"x3 real, " \
+																						L"y3 real, " \
+																						L"x4 real, " \
+																						L"y4 real, " \
+																						L"x5 real, " \
+																						L"y5 real, " \
+																						L"x6 real, " \
+																						L"y6 real, " \
+																						L"vx1 real," \
+																						L"vy1 real," \
+																						L"vx2 real," \
+																						L"vy2 real," \
+																						L"vx3 real," \
+																						L"vy3 real," \
+                                            L"p2p integer not null default 0," \
+                                            L" finishcount integer not null default 1)";
 	
 static LPCTSTR CREATE_LAPS_SQL = L"create table laps " \
 												L"(_id integer primary key asc autoincrement, " \
@@ -189,7 +214,7 @@ static LPCTSTR CREATE_INDICES =L"create index data_channelid on data(channelid);
 
 static LPCTSTR rgRequiredTables20[] = {CREATE_RACE_SQL_V20, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL, NULL};
 static LPCTSTR rgRequiredTables21[] = {CREATE_RACE_SQL_V21, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL, NULL};
-static LPCTSTR rgRequiredTables23[] = {CREATE_RACE_SQL_V21, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL, CREATE_EXTRA_SQL};
+static LPCTSTR rgRequiredTables23[] = {CREATE_RACE_SQL_V22, CREATE_LAPS_SQL, CREATE_POINTS_SQL, CREATE_CHANNELS_SQL, CREATE_DATA_SQL, CREATE_EXTRA_SQL};
 
 static LPCTSTR* rgSchemaList[] = 
 {
@@ -300,7 +325,7 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
       }
 
 
-      if(ixFoundVersion < 23)
+      if(SUCCEEDED(hr) && ixFoundVersion < 23)
       {
         // upgrade!
         CSfArtSQLiteQuery sfQuery(m_sfDB);
