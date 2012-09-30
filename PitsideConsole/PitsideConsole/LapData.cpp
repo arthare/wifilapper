@@ -254,7 +254,14 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
     else if(eDC >= DATA_CHANNEL_IOIOCUSTOM_START && eDC <= DATA_CHANNEL_IOIOCUSTOM_END)
     {
       const int custom = eDC - DATA_CHANNEL_IOIOCUSTOM_START;
-      lpszDataName = ::g_rgIOIOCustomData[custom].pListDesc;
+      if(custom >= 0 && custom < NUMITEMS(g_rgIOIOCustomData))
+      {
+        lpszDataName = ::g_rgIOIOCustomData[custom].pListDesc;
+      }
+      else
+      {
+        lpszDataName = L"Unrecognized IOIO pin";
+      }
     }
     else
     {
