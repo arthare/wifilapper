@@ -42,6 +42,6 @@
         <item>RR Brake Temperature</item>
         <item>Oil Pressure</item>
         <item>Oil Temperature</item>
-        <item>Oil Coolant Temperature</item>
+        <item>Coolant Temperature</item>
     </string-array>
 </resources>
