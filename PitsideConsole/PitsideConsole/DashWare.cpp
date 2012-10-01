@@ -46,9 +46,14 @@ namespace DashWare
       for(int y = 0; y < DATA_CHANNEL_COUNT; y++)
       {
         const IDataChannel* pChannel = g_pLapDB->GetDataChannel(lstLaps[ixLap]->GetLapId(),(DATA_CHANNEL)y);
-        if(pChannel)
+        DASSERT(pChannel->IsLocked() && pChannel->IsValid());
+        if(pChannel && pChannel->IsLocked() && pChannel->IsValid())
         {
           mapChannels[(DATA_CHANNEL)y] = pChannel;
+        }
+        else
+        {
+          DASSERT(FALSE);
         }
       }
     }
@@ -64,6 +69,20 @@ namespace DashWare
       int msStartTime = INT_MAX; // start time and end time for this lap (gotten by looking at start and end time for data channels)
       int msEndTime = -INT_MAX;
 
+      for(int y = 0; y < DATA_CHANNEL_COUNT; y++)
+      {
+        const IDataChannel* pChannel = g_pLapDB->GetDataChannel(pLap->GetLapId(),(DATA_CHANNEL)y);
+        DASSERT(pChannel->IsLocked() && pChannel->IsValid());
+        if(pChannel && pChannel->IsLocked() && pChannel->IsValid())
+        {
+          mapChannels[(DATA_CHANNEL)y] = pChannel;
+        }
+        else
+        {
+          DASSERT(FALSE);
+        }
+      }
+
       for(map<DATA_CHANNEL, const IDataChannel*>::iterator i = begin(mapChannels); i != end(mapChannels); i++)
       {
         const IDataChannel* pDC = mapChannels[i->first];
@@ -73,6 +92,7 @@ namespace DashWare
           msEndTime = max(pDC->GetEndTimeMs(),msEndTime);
         }
       }
+      msEndTime = max(msEndTime, msStartTime + pLap->GetTime()*1000);
 
       const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
       float flRunningAverage[DATA_CHANNEL_COUNT];
