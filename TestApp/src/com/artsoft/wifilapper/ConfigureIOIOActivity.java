@@ -307,6 +307,8 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			RadioGroup rg = (RadioGroup)findViewById(R.id.rgPinType);
 			SeekBar seek = (SeekBar)findViewById(R.id.seekSampleRate);
 			Spinner spnPin = (Spinner)findViewById(R.id.spnPin);
+			CheckBox chkIOIO = (CheckBox)findViewById(R.id.chkIOIO);
+			chkIOIO.setChecked(true);
 			
 			double dSeek = (double)seek.getProgress() / (double)seek.getMax();
 			
