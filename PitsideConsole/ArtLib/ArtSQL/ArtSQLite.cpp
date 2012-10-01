@@ -13,12 +13,12 @@ HRESULT CSfArtSQLiteDB::Open(LPCTSTR filename, vector<wstring>& lstTables)
   {
     // hooray!.  Let's get the table list
     CSfArtSQLiteQuery sfQuery(*this);
-    if(sfQuery.Init(L"select * from sqlite_master order by tbl_name,type desc"))
+    if(sfQuery.Init(L"select sql from sqlite_master order by tbl_name,type desc"))
     {
       while(sfQuery.Next())
       {
         TCHAR szSQL[1000];
-        if(sfQuery.GetCol(4,szSQL,NUMCHARS(szSQL)))
+        if(sfQuery.GetCol(0,szSQL,NUMCHARS(szSQL)))
         {
           lstTables.push_back(wstring(szSQL));
         }
