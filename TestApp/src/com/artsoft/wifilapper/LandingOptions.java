@@ -164,13 +164,13 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		{
 			RaceDatabase.CreateInternal(getApplicationContext(),getFilesDir().toString());
 			SharedPreferences settings = getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
-			settings.edit().clear().putBoolean(Prefs.PREF_DBLOCATION_BOOL, true).commit();
+			settings.edit().putBoolean(Prefs.PREF_DBLOCATION_BOOL, true).commit();
 		}
 		else if(arg0.getId() == R.id.chkDBExternal && arg1)
 		{
 			RaceDatabase.CreateExternal(getApplicationContext());
 			SharedPreferences settings = getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
-			settings.edit().clear().putBoolean(Prefs.PREF_DBLOCATION_BOOL, false).commit();
+			settings.edit().putBoolean(Prefs.PREF_DBLOCATION_BOOL, false).commit();
 		}
 	}
 	
