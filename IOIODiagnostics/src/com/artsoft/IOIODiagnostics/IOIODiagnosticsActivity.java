@@ -44,12 +44,14 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class IOIODiagnosticsActivity extends Activity implements Handler.Callback
+public class IOIODiagnosticsActivity extends Activity implements Handler.Callback, OnClickListener
 {
 	private IOIO m_ioio;
 	
@@ -67,7 +69,8 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		super.onCreate(extras);
 		m_handler = new Handler(this);
 		m_pins = new PinWrapper[48];
-		m_ioio = IOIOFactory.create();
+		//m_ioio = IOIOFactory.create();
+		m_ioio = new FakeIOIO();
 		
 		ConnectThread ct = new ConnectThread(m_ioio, m_handler);
 		ct.start();
@@ -87,13 +90,13 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		{
 			try
 			{
-				if(m_pins[33] != null)
+				for(int x = 31; x <= 39; x++)
 				{
-					m_rgValues[33] = m_pins[33].GetValue();
-				}
-				if(m_pins[34] != null)
-				{
-					m_rgValues[34] = m_pins[34].GetValue();
+					if(m_pins[x] != null)
+					{
+						m_rgValues[x] = m_pins[x].GetValue();
+					}
+					
 				}
 				m_handler.sendEmptyMessage(MSG_REFRESHED);
 			}
@@ -116,39 +119,83 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 	@Override
 	public boolean handleMessage(Message msg) 
 	{
-		// TODO Auto-generated method stub
+		final int rgPinLabels[] = {R.id.lblPin31,
+				R.id.lblPin32,
+				R.id.lblPin33,
+				R.id.lblPin34,
+				R.id.lblPin35,
+				R.id.lblPin36,
+				R.id.lblPin37,
+				R.id.lblPin38,
+				R.id.lblPin39
+		};
+		final int rgSeeks[] = {R.id.seek31,
+				R.id.seek32,
+				R.id.seek33,
+				R.id.seek34,
+				R.id.seek35,
+				R.id.seek36,
+				R.id.seek37,
+				R.id.seek38,
+				R.id.seek39};
+		
+		final int rgLabels[] = {R.id.label31,
+				R.id.label32,
+				R.id.label33,
+				R.id.label34,
+				R.id.label35,
+				R.id.label36,
+				R.id.label37,
+				R.id.label38,
+				R.id.label39};
+		
 		if(msg.what == MSG_CONNECTATTEMPTDONE)
 		{
 			// they've finished attempting to connect to the IOIO, so let's populate all our pins
-			try
+			for(int x = 31; x <= 39; x++)
 			{
-				m_pins[34] = new PinWrapper(m_ioio, 34, true);
-				m_pins[33] = new PinWrapper(m_ioio, 33, false);
-			}
-			catch(Exception e)
-			{
-				Toast.makeText(this, "Failed to connect :( " + e.toString(), Toast.LENGTH_LONG).show();
+				try{
+					m_pins[x] = new PinWrapper(m_ioio,x,false);
+				}
+				catch(Exception e)
+				{
+					// oh well, couldn't connect this pin
+					m_pins[x] = null;
+				}
+				
+				TextView pinLabel = (TextView)findViewById(rgPinLabels[x-31]);
+				pinLabel.setOnClickListener(this);
 			}
 			
 		}
 		else if(msg.what == MSG_REFRESHED)
 		{
-			{
-				SeekBar seek = (SeekBar)findViewById(R.id.seek33);
-				seek.setMax(500);
-				seek.setProgress((int)(m_rgValues[33]*100));
-				
-				TextView txt = (TextView)findViewById(R.id.label33);
-				txt.setText(FormatFloat(m_rgValues[33],2) + "V");
-			}
 			
+			for(int x = 0;x < rgSeeks.length;x++)
 			{
-				SeekBar seek = (SeekBar)findViewById(R.id.seek34);
-				seek.setMax(100);
-				seek.setProgress((int)m_rgValues[34]);
+				SeekBar seek = (SeekBar)findViewById(rgSeeks[x]);
+				TextView txt = (TextView)findViewById(rgLabels[x]);
+				TextView pinLabel = (TextView)findViewById(rgPinLabels[x]);
 				
-				TextView txt = (TextView)findViewById(R.id.label34);
-				txt.setText(FormatFloat(m_rgValues[34],2) + "hz");
+				if(m_pins[x+31] != null && m_pins[x+31].IsPulse())
+				{
+					seek.setMax(100);
+					seek.setProgress((int)m_rgValues[x+31]);
+					txt.setText(FormatFloat(m_rgValues[x+31],2) + "hz");
+					pinLabel.setText("Pulse " + (x+31));
+				}
+				else if(m_pins[x+31] != null)
+				{
+					seek.setMax(500);
+					seek.setProgress((int)(m_rgValues[x+31]*100));
+					
+					txt.setText(FormatFloat(m_rgValues[x+31],2) + "V");
+					pinLabel.setText("Analog " + (x+31));
+				}
+				else
+				{
+					pinLabel.setText("No signal");
+				}
 			}
 		}
 		return false;
@@ -198,6 +245,10 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 			m_pinNumber = pinNumber;
 			InitPin(fPulse);
 		}
+		public boolean IsPulse()
+		{
+			return m_pulse != null;
+		}
 		private void InitPin(boolean fPulse) throws ConnectionLostException
 		{
 			if(m_analog != null)
@@ -238,6 +289,35 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 			else
 			{
 				return 0;
+			}
+		}
+		
+	}
+	@Override
+	public void onClick(View arg0) 
+	{
+		int ix = 0;
+		switch(arg0.getId())
+		{
+		case R.id.lblPin31: ix = 31; break;
+		case R.id.lblPin32: ix = 32; break;
+		case R.id.lblPin33: ix = 33; break;
+		case R.id.lblPin34: ix = 34; break;
+		case R.id.lblPin35: ix = 35; break;
+		case R.id.lblPin36: ix = 36; break;
+		case R.id.lblPin37: ix = 37; break;
+		case R.id.lblPin38: ix = 38; break;
+		case R.id.lblPin39: ix = 39; break;
+		}
+		if(ix >= 31 && m_pins[ix] != null)
+		{
+			try
+			{
+				m_pins[ix].SetPinParams(!m_pins[ix].IsPulse());
+			}
+			catch(Exception e)
+			{
+				Toast.makeText(this, "Failed to switch pin type", Toast.LENGTH_LONG).show();
 			}
 		}
 		
