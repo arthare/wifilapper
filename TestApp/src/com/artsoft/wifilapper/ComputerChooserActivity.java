@@ -83,7 +83,14 @@ public class ComputerChooserActivity extends ListActivity implements Callback
 		public void run() 
 		{
 			m_finder.StartFindComputers();
-			m_timer.schedule(new RefreshTask(), 1000);
+			try
+			{
+				m_timer.schedule(new RefreshTask(), 1000);
+			}
+			catch(Exception e)
+			{
+				// timer is dead or something.  whatever
+			}
 		}
 		
 	}
