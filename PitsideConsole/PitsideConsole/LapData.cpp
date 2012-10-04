@@ -227,6 +227,7 @@ PIDDATA g_rgIOIOCustomData[] = {
   {L"Oil Pressure","%3.2f"},
   {L"Oil Temperature","%3.2f"},
   {L"Coolant Temperature","%3.2f"},
+  {L"Alternator voltage","%3.2fV"},
 };
 
 void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
@@ -428,7 +429,7 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
     const double dPct = (double)ixCheck / (double)cSize;
     const double dPctDiff = abs(dPct - dInputPercentage);
 
-    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.5)
+    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.25)
     {
       dClosest = dAvg;
       ixBestIndex = ixCheck;
@@ -503,7 +504,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
         Line<2> lnPerp(p.V2D(),vD.RotateAboutOrigin(PI/2));
 
         double dHitLength;
-        if(lnD.IntersectLine(lnPerp, &dHitLength))
+        if(lnD.IntersectLine(lnPerp, &dHitLength) && dHitLength >= 0 && dHitLength <= 1.0)
         {
           // hooray, they intersect
           const double dPercent = dHitLength;
