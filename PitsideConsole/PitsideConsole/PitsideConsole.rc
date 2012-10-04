@@ -86,6 +86,8 @@ BEGIN
         MENUITEM "Show driver bests",ID_OPTIONS_SHOWDRIVERBESTS
         MENUITEM SEPARATOR
         MENUITEM "Draw lines between data points",ID_OPTIONS_DRAWLINES
+        MENUITEM SEPARATOR
+        MENUITEM "Force IOIO data to 0-5V scales",ID_OPTIONS_IOIO5VSCALE
 
 
     END

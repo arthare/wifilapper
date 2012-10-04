@@ -480,6 +480,12 @@ public:
             UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
             return TRUE;
           }
+          case ID_OPTIONS_IOIO5VSCALE:
+          {
+            m_sfLapOpts.fIOIOHardcoded = !m_sfLapOpts.fIOIOHardcoded;
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            return TRUE;
+          }
           case ID_OPTIONS_SHOWDRIVERBESTS:
           {
             m_fShowDriverBests = !m_fShowDriverBests;
@@ -1022,6 +1028,7 @@ private:
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_DRAWLINES, m_sfLapOpts.fDrawLines);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_IOIO5VSCALE, m_sfLapOpts.fIOIOHardcoded);
   }
   vector<CExtendedLap*> GetSortedLaps()
   {
@@ -1199,6 +1206,24 @@ private:
     }
     return m_eLapDisplayStyle;
   }
+  virtual float GetDataHardcodedMin(DATA_CHANNEL eChannel) const override
+  {
+    if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
+       eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
+    {
+      return m_sfLapOpts.fIOIOHardcoded ? 0 : 1e30;
+    }
+    return 1e30;
+  }
+  virtual float GetDataHardcodedMax(DATA_CHANNEL eChannel) const override
+  {
+    if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
+       eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
+    {
+      return m_sfLapOpts.fIOIOHardcoded ? 5 : -1e30;
+    }
+    return -1e30;
+  }
   virtual float GetGuideStart(DATA_CHANNEL eChannel, float flMin, float flMax) override
   {
     CASSERT(DATA_CHANNEL_COUNT == 0x401);
@@ -1227,6 +1252,11 @@ private:
       case (DATA_CHANNEL_PID_START+0xA): return 0;
       case (DATA_CHANNEL_PID_START+0x5c): return -40;
       default: 
+        if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
+            eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
+        {
+          return m_sfLapOpts.fIOIOHardcoded ? 0 : 1e30;
+        }
         return 1e30;
     }
   }
@@ -1264,7 +1294,13 @@ private:
     case (DATA_CHANNEL_PID_START+0xA): return 100;
     case (DATA_CHANNEL_PID_START+0xc): return 1000; // rpms
     case (DATA_CHANNEL_PID_START+0x5c): return 25;
-    default: return 1e30;
+    default: 
+      if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
+          eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
+      {
+        return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;
+      }
+      return 1e30;
     }
   }
   virtual const LAPSUPPLIEROPTIONS& GetDisplayOptions() const override

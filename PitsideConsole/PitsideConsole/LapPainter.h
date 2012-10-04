@@ -21,13 +21,14 @@ enum LAPDISPLAYSTYLE
 struct LAPSUPPLIEROPTIONS
 {
 public:
-  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_KMH),fDrawSplitPoints(true),fDrawGuides(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)
+  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_KMH),fDrawSplitPoints(true),fDrawGuides(true),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)
   {
   }
   UNIT_PREFERENCE eUnitPreference;
   bool fDrawSplitPoints;
   bool fDrawGuides;
   bool fDrawLines; // whether to draw lines between data points
+  bool fIOIOHardcoded;
   float flWindowShiftX;
   float flWindowShiftY;
   int iZoomLevels;
@@ -48,6 +49,8 @@ public:
   // guide-parameter functions
   virtual float GetGuideStart(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;
   virtual float GetGuideStep(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;
+  virtual float GetDataHardcodedMin(DATA_CHANNEL eChannel) const = 0;
+  virtual float GetDataHardcodedMax(DATA_CHANNEL eChannel) const = 0;
 
   // highlighting functions
   virtual void SetLapHighlightTime(const CExtendedLap* pLap, int iTimeMs) = 0;

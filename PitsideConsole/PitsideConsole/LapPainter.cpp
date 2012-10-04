@@ -197,14 +197,15 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         const DATA_CHANNEL eType = lstDataY[y];
         if(mapMinY.find(eType) == mapMinY.end())
         {
-          mapMinY[eType] = pChannel->GetMin();
-          mapMaxY[eType] = pChannel->GetMax();
+          mapMinY[eType] = min(pChannel->GetMin(),m_pLapSupplier->GetDataHardcodedMin(eType));
+          mapMaxY[eType] = max(pChannel->GetMax(),m_pLapSupplier->GetDataHardcodedMax(eType));
         }
         else
         {
           mapMinY[eType] = min(pChannel->GetMin(),mapMinY[eType]);
           mapMaxY[eType] = max(pChannel->GetMax(),mapMaxY[eType]);
         }
+        
         setY.insert(eType);
       }
       if(pDataX)
