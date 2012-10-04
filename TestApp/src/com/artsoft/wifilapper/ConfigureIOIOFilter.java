@@ -106,10 +106,13 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 			
 			int iFilterType = IOIOManager.PinParams.FILTERTYPE_NONE;
 			
-			if(idChecked == R.id.rbWheelSpeed)
-			{
-				iFilterType = IOIOManager.PinParams.FILTERTYPE_WHEELSPEED;
-			}
+			if(idChecked == R.id.rbWheelSpeed) iFilterType = IOIOManager.PinParams.FILTERTYPE_WHEELSPEED;
+			else if(idChecked == R.id.rbWheelSpeedRPM) iFilterType = IOIOManager.PinParams.FILTERTYPE_WHEELSPEEDRPM;
+			else if(idChecked == R.id.rbTachometer) iFilterType = IOIOManager.PinParams.FILTERTYPE_TACHOMETER;
+			else if(idChecked == R.id.rb944Coolant) iFilterType = IOIOManager.PinParams.FILTERTYPE_944COOLANT;
+			else if(idChecked == R.id.rb944OilPres) iFilterType = IOIOManager.PinParams.FILTERTYPE_944OILPRES;
+			else if(idChecked == R.id.rb944FuelLevel) iFilterType = IOIOManager.PinParams.FILTERTYPE_944FUELLEVEL;
+			else if(idChecked == R.id.rb944Alternator) iFilterType = IOIOManager.PinParams.FILTERTYPE_944ALTERNATOR;
 			
 			Spinner spnCustom = (Spinner)findViewById(R.id.spnCustom);
 			int iCustomType = spnCustom.getSelectedItemPosition() == 0 ? 0 : spnCustom.getSelectedItemPosition() + LapAccumulator.DataChannel.CHANNEL_IOIOCUSTOM_START;
@@ -170,6 +173,18 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 			strParam2 = "Wheel Diameter (mm)";
 			dDefault1 = 8;
 			dDefault2 = 711.2;
+		}
+		else if(idChecked == R.id.rbTachometer)
+		{
+			strParam1 = "Pulses per revolution";
+			dDefault1= 4;
+		}
+		else if(idChecked == R.id.rb944Coolant || 
+				idChecked == R.id.rb944OilPres ||
+				idChecked == R.id.rb944FuelLevel ||
+				idChecked == R.id.rb944Alternator)
+		{
+			strParam1 = strParam2 = "";
 		}
 		
 		SetupParamText(R.id.lblParam1, R.id.txtParam1, strParam1, dDefault1);

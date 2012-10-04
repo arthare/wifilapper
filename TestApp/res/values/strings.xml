@@ -43,5 +43,6 @@
         <item>Oil Pressure</item>
         <item>Oil Temperature</item>
         <item>Coolant Temperature</item>
+        <item>Alternator Voltage</item>
     </string-array>
 </resources>

@@ -42,6 +42,11 @@ public class IOIOManager
 		public static final int FILTERTYPE_NONE = 0;
 		public static final int FILTERTYPE_WHEELSPEED = 1;
 		public static final int FILTERTYPE_WHEELSPEEDRPM = 2;
+		public static final int FILTERTYPE_944COOLANT = 3;
+		public static final int FILTERTYPE_944OILPRES = 4;
+		public static final int FILTERTYPE_944FUELLEVEL = 5;
+		public static final int FILTERTYPE_944ALTERNATOR = 6;
+		public static final int FILTERTYPE_TACHOMETER = 7;
 		
 		public PinParams(int iPin, int iPeriod, int iFilterType, double dParam1, double dParam2, int iCustomType)
 		{
@@ -68,6 +73,11 @@ public class IOIOManager
 			case PinParams.FILTERTYPE_NONE: return flValue;
 			case PinParams.FILTERTYPE_WHEELSPEED: return (float)(dParam2 * (flValue / dParam1)); // dParam1 = # of pulses per rev.  dParam2 = wheel diameter
 			case PinParams.FILTERTYPE_WHEELSPEEDRPM: return (float)((flValue / dParam1)); // dParam1 = # of pulses per rev.  flValue = # of pulses detected
+			case PinParams.FILTERTYPE_944COOLANT: return 203.3f - 68.6f*flValue;
+			case PinParams.FILTERTYPE_944OILPRES: return -4.63f * 3.00f*flValue + 0.747f*(float)Math.pow(flValue-2.375f,2);
+			case PinParams.FILTERTYPE_944FUELLEVEL: return -0.55f + 0.55f*flValue - 0.157f*(float)Math.pow(flValue-2.07f, 2);
+			case PinParams.FILTERTYPE_944ALTERNATOR: return 5.19f*flValue;
+			case PinParams.FILTERTYPE_TACHOMETER: return (float)(flValue / dParam1);
 			default: return flValue;
 			}
 		}
@@ -81,6 +91,16 @@ public class IOIOManager
 				return fShort ? "Wheelspeed" : "Wheelspeed (" + (int)(dParam1+0.5) + " pulses per rev, " + Utility.FormatFloat((float)dParam2,0) + "mm)";
 			case PinParams.FILTERTYPE_WHEELSPEEDRPM:
 				return fShort ? "Wheelspeed-RPM" : "Wheelspeed-RPM (" + (int)(dParam1+0.5) + " pulses per rev)";
+			case PinParams.FILTERTYPE_944COOLANT:
+				return "944 Coolant";
+			case PinParams.FILTERTYPE_944OILPRES:
+				return "944 Oil pressure";
+			case PinParams.FILTERTYPE_944FUELLEVEL:
+				return "944 fuel level";
+			case PinParams.FILTERTYPE_944ALTERNATOR:
+				return "944 alternator voltage";
+			case PinParams.FILTERTYPE_TACHOMETER:
+				return "Tachometer";
 				
 			}
 			return "";
