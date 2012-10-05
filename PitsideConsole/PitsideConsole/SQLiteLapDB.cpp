@@ -544,6 +544,7 @@ const IDataChannel* CSQLiteLapDB::GetDataChannel(int iLapId, DATA_CHANNEL eChann
     if(sfQuery.Init(szQuery))
     {
       IDataChannel* pChannel = AllocateDataChannel();
+      pChannel->Init(iLapId,DATA_CHANNEL_VELOCITY);
       while(sfQuery.Next())
       {
         int iTime = 0;
@@ -553,6 +554,7 @@ const IDataChannel* CSQLiteLapDB::GetDataChannel(int iLapId, DATA_CHANNEL eChann
           pChannel->AddPoint(iTime, dVel);
         }
       }
+      pChannel->Lock();
       return pChannel;
     }
   }

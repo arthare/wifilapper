@@ -72,7 +72,7 @@ namespace DashWare
       for(int y = 0; y < DATA_CHANNEL_COUNT; y++)
       {
         const IDataChannel* pChannel = g_pLapDB->GetDataChannel(pLap->GetLapId(),(DATA_CHANNEL)y);
-        DASSERT(pChannel->IsLocked() && pChannel->IsValid());
+        DASSERT(pChannel->IsLocked() && pChannel->IsValid() && pChannel->GetChannelType() == (DATA_CHANNEL)y);
         if(pChannel && pChannel->IsLocked() && pChannel->IsValid())
         {
           mapChannels[(DATA_CHANNEL)y] = pChannel;
