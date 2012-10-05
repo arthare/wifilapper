@@ -74,8 +74,8 @@ public class IOIOManager
 			case PinParams.FILTERTYPE_WHEELSPEED: return (float)(dParam2 * (flValue / dParam1)); // dParam1 = # of pulses per rev.  dParam2 = wheel diameter
 			case PinParams.FILTERTYPE_WHEELSPEEDRPM: return (float)((flValue / dParam1)); // dParam1 = # of pulses per rev.  flValue = # of pulses detected
 			case PinParams.FILTERTYPE_944COOLANT: return 203.3f - 68.6f*flValue;
-			case PinParams.FILTERTYPE_944OILPRES: return -4.63f * 3.00f*flValue + 0.747f*(float)Math.pow(flValue-2.375f,2);
-			case PinParams.FILTERTYPE_944FUELLEVEL: return -0.55f + 0.55f*flValue - 0.157f*(float)Math.pow(flValue-2.07f, 2);
+			case PinParams.FILTERTYPE_944OILPRES: return -4.63f + 3.00f*flValue + 0.747f*(float)Math.pow(flValue-2.375f,2);
+			case PinParams.FILTERTYPE_944FUELLEVEL: return -61.4f + 37.2f*(flValue) + 10.9f*(float)Math.pow(flValue-2.44f,2);
 			case PinParams.FILTERTYPE_944ALTERNATOR: return 5.19f*flValue;
 			case PinParams.FILTERTYPE_TACHOMETER: return (float)(flValue / dParam1);
 			default: return flValue;
