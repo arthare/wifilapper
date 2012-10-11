@@ -94,3 +94,6 @@ bool ArtAtoi(LPCSTR lpsz, int cch, int* pOut);
 bool GetAppFolder(LPTSTR lpszBuf, const int cch);
 
 bool DoesFileExist(LPCTSTR lpsz);
+
+// compares two strings, ignoring spaces
+int nospacecompare(LPCTSTR lpsz1, LPCTSTR lpsz2);

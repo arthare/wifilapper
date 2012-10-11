@@ -297,7 +297,7 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
           for(int y = 0; y < lstSQL.size(); y++)
           {
             if(wcsstr(lstSQL[y].c_str(),L"android_metadata") != NULL) continue; // don't care about this table
-            if(_wcsicmp(lstSQL[y].c_str(),rgSchemaList[ixVersion][x]) == 0)
+            if(nospacecompare(lstSQL[y].c_str(),rgSchemaList[ixVersion][x]) == 0)
             {
               fFound = true;
               break;

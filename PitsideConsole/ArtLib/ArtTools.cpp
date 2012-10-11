@@ -133,3 +133,37 @@ bool DoesFileExist(LPCTSTR lpsz)
   }
   return false;
 }
+
+
+#define LOWCASE(x) ((x)& (~0x20))
+
+int nospacecompare(LPCTSTR lpsz1, LPCTSTR lpsz2)
+{
+  int ix1 = 0;
+  int ix2 = 0;
+  while(true)
+  {
+    if(lpsz1[ix1] == ' ')
+    {
+      ix1++; // skip the space
+      continue;
+    }
+    if(lpsz2[ix2] == ' ') 
+    {
+      ix2++; // skip the space
+      continue;
+    }
+    TCHAR c1 = LOWCASE(lpsz1[ix1]);
+    TCHAR c2 = LOWCASE(lpsz2[ix2]);
+    if(c1 != c2) 
+      return 1;
+    DASSERT(lpsz1[ix1] == lpsz2[ix2]); // they must match for this character...
+
+    if(lpsz1[ix1] == 0) 
+      return 0; // we found the end of the string.  we know that lpsz2[ix2] is the same, so this string matches!
+    DASSERT(lpsz1[ix1] != 0 && lpsz2[ix2] != 0); // both these characters are nonzero
+    ix1++;
+    ix2++;
+  }
+  return 0;
+}

@@ -1,2 +1,2 @@
-cd ../debug
+cd ../release
 pitsideconsole unit
