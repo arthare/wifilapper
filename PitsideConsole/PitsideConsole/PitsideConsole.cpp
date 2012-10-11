@@ -447,7 +447,6 @@ public:
           }
 		      case IDOK:
           {
-			      EndDialog(hWnd, 0);
 			      return TRUE;
           }
           case ID_OPTIONS_KMH:
