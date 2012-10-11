@@ -170,7 +170,7 @@ static LPCTSTR CREATE_RACE_SQL_V22 =  L"create table races (	_id integer primary
 																						L"vx3 real," \
 																						L"vy3 real," \
                                             L"p2p integer not null default 0," \
-                                            L" finishcount integer not null default 1)";
+                                            L"finishcount integer not null default 1)";
 	
 static LPCTSTR CREATE_LAPS_SQL = L"create table laps " \
 												L"(_id integer primary key asc autoincrement, " \
