@@ -398,6 +398,12 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
         float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);
 
+        TCHAR szTypeX[256];
+        ::GetDataChannelName(eX,szTypeX,NUMCHARS(szTypeX));
+
+        TCHAR szTypeY[256];
+        ::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szTypeY, NUMCHARS(szTypeY));
+
         char szYString[256];
         GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
 
@@ -405,7 +411,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
 
         char szText[256];
-        sprintf(szText, "%S - %s @ %s", szLapName, szYString, szXString);
+        sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
         DrawText(0.0,(x+1)*GetWindowFontSize(),szText);
 
