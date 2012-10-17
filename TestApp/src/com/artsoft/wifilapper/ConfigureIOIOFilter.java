@@ -97,17 +97,21 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 		TextView txt2  = (TextView)findViewById(R.id.txtParam2);
 		String str2 = txt2.getText().toString();
 		
+		TextView txt3 = (TextView)findViewById(R.id.txtParam3);
+		String str3 = txt3.getText().toString();
+		
 		Intent i = new Intent();
 		
 		try
 		{
-			double d1 = Double.parseDouble(str1);
-			double d2 = Double.parseDouble(str2);
-			
+			final double d1 = Double.parseDouble(str1);
+			final double d2 = Double.parseDouble(str2);
+			final double d3 = Double.parseDouble(str3);
 			int iFilterType = IOIOManager.PinParams.FILTERTYPE_NONE;
 			
 			if(idChecked == R.id.rbWheelSpeed) iFilterType = IOIOManager.PinParams.FILTERTYPE_WHEELSPEED;
 			else if(idChecked == R.id.rbWheelSpeedRPM) iFilterType = IOIOManager.PinParams.FILTERTYPE_WHEELSPEEDRPM;
+			else if(idChecked == R.id.rbPolynomial) iFilterType = IOIOManager.PinParams.FILTERTYPE_POLYNOMIAL;
 			else if(idChecked == R.id.rbTachometer) iFilterType = IOIOManager.PinParams.FILTERTYPE_TACHOMETER;
 			else if(idChecked == R.id.rb944Coolant) iFilterType = IOIOManager.PinParams.FILTERTYPE_944COOLANT;
 			else if(idChecked == R.id.rb944OilPres) iFilterType = IOIOManager.PinParams.FILTERTYPE_944OILPRES;
@@ -120,6 +124,7 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 			i.putExtra("filtertype", iFilterType);
 			i.putExtra("param1", d1);
 			i.putExtra("param2", d2);
+			i.putExtra("param3", d3);
 			i.putExtra("customtype", iCustomType);
 			this.setResult(Activity.RESULT_OK, i);
 			this.finish();
@@ -154,16 +159,19 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 	{
 		String strParam1 = "";
 		String strParam2 = "";
+		String strParam3 = "";
 		double dDefault1 = 0;
 		double dDefault2 = 0;
+		double dDefault3 = 0;
 		if(idChecked == R.id.rbNone)
 		{
-			strParam1 = strParam2 = "";
+			strParam1 = strParam2 = strParam3 = "";
 		}
 		else if(idChecked == R.id.rbWheelSpeedRPM)
 		{
 			strParam1 = "Pulses per revolution";
 			strParam2 = "";
+			strParam3 = "";
 			dDefault1 = 8;
 			dDefault2 = 0;
 		}
@@ -171,12 +179,15 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 		{
 			strParam1 = "Pulses per revolution";
 			strParam2 = "Wheel Diameter (mm)";
+			strParam3 = "";
 			dDefault1 = 8;
 			dDefault2 = 711.2;
 		}
 		else if(idChecked == R.id.rbTachometer)
 		{
 			strParam1 = "Pulses per revolution";
+			strParam2 = "";
+			strParam3 = "";
 			dDefault1= 4;
 		}
 		else if(idChecked == R.id.rb944Coolant || 
@@ -184,11 +195,18 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 				idChecked == R.id.rb944FuelLevel ||
 				idChecked == R.id.rb944Alternator)
 		{
-			strParam1 = strParam2 = "";
+			strParam1 = strParam2 = strParam3 = "";
+		}
+		else if(idChecked == R.id.rbPolynomial)
+		{
+			strParam1 = "a+bx+cx^2 (a)";
+			strParam2 = "a+bx+cx^2 (b)";
+			strParam3 = "a+bx+cx^2 (c)";
 		}
 		
 		SetupParamText(R.id.lblParam1, R.id.txtParam1, strParam1, dDefault1);
 		SetupParamText(R.id.lblParam2, R.id.txtParam2, strParam2, dDefault2);
+		SetupParamText(R.id.lblParam3, R.id.txtParam3, strParam3, dDefault3);
 	}
 
 	@Override

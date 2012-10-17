@@ -51,6 +51,11 @@
                         android:layout_height="wrap_content"
                         android:text="Wheel Speed (RPM)" />
                     <RadioButton
+                        android:id="@+id/rbPolynomial"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Polynomial" />
+                    <RadioButton
                         android:id="@+id/rbTachometer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -86,13 +91,19 @@
             android:layout_height="wrap_content"
             android:layout_weight="1" >
 
-            <LinearLayout
+            <ScrollView
                 android:id="@+id/linCustom"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:orientation="vertical" >
 
+            <LinearLayout
+                android:id="@+id/linCustom"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical" >
                 <TextView
                     android:id="@+id/lbl"
                     android:layout_width="wrap_content"
@@ -131,13 +142,25 @@
                     android:layout_height="wrap_content"
                     android:inputType="numberDecimal" />
 
+                <TextView
+                    android:id="@+id/lblParam3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Param3"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <EditText
+                    android:id="@+id/txtParam3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal" />
                 <Button
                     android:id="@+id/btnApply"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Apply" />
-
-            </LinearLayout>
+				</LinearLayout>
+            </ScrollView>
         </LinearLayout>
 
     </LinearLayout>

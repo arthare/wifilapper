@@ -47,14 +47,16 @@ public class IOIOManager
 		public static final int FILTERTYPE_944FUELLEVEL = 5;
 		public static final int FILTERTYPE_944ALTERNATOR = 6;
 		public static final int FILTERTYPE_TACHOMETER = 7;
+		public static final int FILTERTYPE_POLYNOMIAL = 8;
 		
-		public PinParams(int iPin, int iPeriod, int iFilterType, double dParam1, double dParam2, int iCustomType)
+		public PinParams(int iPin, int iPeriod, int iFilterType, double dParam1, double dParam2, double dParam3, int iCustomType)
 		{
 			this.iPin = iPin;
 			this.iPeriod = iPeriod;
 			this.iFilterType = iFilterType;
 			this.dParam1 = dParam1;
 			this.dParam2 = dParam2;
+			this.dParam3 = dParam3;
 			this.iCustomType = iCustomType;
 		}
 		public PinParams(Parcel in)
@@ -65,8 +67,16 @@ public class IOIOManager
 			dParam1 = in.readDouble();
 			dParam2 = in.readDouble();
 			iCustomType = in.readInt();
+			try
+			{
+				dParam3 = in.readDouble();
+			}
+			catch(Exception e)
+			{
+				dParam3 = 0;
+			}
 		}
-		static float DoFilter(int iType, double dParam1, double dParam2, float flValue)
+		static float DoFilter(int iType, double dParam1, double dParam2, double dParam3, float flValue)
 		{
 			switch(iType)
 			{
@@ -78,10 +88,11 @@ public class IOIOManager
 			case PinParams.FILTERTYPE_944FUELLEVEL: return -61.4f + 37.2f*(flValue) + 10.9f*(float)Math.pow(flValue-2.44f,2);
 			case PinParams.FILTERTYPE_944ALTERNATOR: return 5.19f*flValue;
 			case PinParams.FILTERTYPE_TACHOMETER: return (float)(flValue / dParam1);
+			case PinParams.FILTERTYPE_POLYNOMIAL: return (float)(dParam1 + dParam2 * flValue + dParam3 * Math.pow(flValue, 2));
 			default: return flValue;
 			}
 		}
-		static String BuildDesc(int iType, double dParam1, double dParam2, boolean fShort)
+		static String BuildDesc(int iType, double dParam1, double dParam2, double dParam3, boolean fShort)
 		{
 			switch(iType)
 			{
@@ -101,13 +112,20 @@ public class IOIOManager
 				return "944 alternator voltage";
 			case PinParams.FILTERTYPE_TACHOMETER:
 				return "Tachometer";
-				
+			case PinParams.FILTERTYPE_POLYNOMIAL:
+			{
+				String str1 = Utility.FormatFloat((float)dParam1,1);
+				String str2 = Utility.FormatFloat((float)dParam2,1);
+				String str3 = Utility.FormatFloat((float)dParam3,1);
+				return str1 + " + " + str2 + "x " + str3 + "x^2";
+			}	
 			}
 			return "";
 		}
 		
 		double dParam1;
 		double dParam2; // params.  Interpretation depends on this guy's filter type
+		double dParam3;
 		int iFilterType;
 		int iPin;
 		int iPeriod; // milliseconds between samples
@@ -126,6 +144,7 @@ public class IOIOManager
 			arg0.writeDouble(dParam1);
 			arg0.writeDouble(dParam2);
 			arg0.writeInt(iCustomType);
+			arg0.writeDouble(dParam3);
 		}
 		public static final Parcelable.Creator<PinParams> CREATOR
 		        = new Parcelable.Creator<PinParams>() {
@@ -284,7 +303,7 @@ public class IOIOManager
 								if(rgSpinsUntilQuery[x] == 0)
 								{
 									float flValue = analIn[x].getVoltage();
-									flValue = PinParams.DoFilter(m_rgAnalPins[x].iFilterType, m_rgAnalPins[x].dParam1, m_rgAnalPins[x].dParam2, flValue);
+									flValue = PinParams.DoFilter(m_rgAnalPins[x].iFilterType, m_rgAnalPins[x].dParam1, m_rgAnalPins[x].dParam2, m_rgAnalPins[x].dParam3, flValue);
 									m_listener.NotifyIOIOValue(x, m_rgAnalPins[x].iCustomType, flValue);
 									rgSpinsUntilQuery[x] = rgResetSpinsUntilQuery[x];
 								}
@@ -298,7 +317,7 @@ public class IOIOManager
 								if(rgSpinsUntilQuery[x] == 0)
 								{
 									float flValue = pulseIn[x].getFrequency();
-									flValue = PinParams.DoFilter(m_rgPulsePins[x].iFilterType, m_rgPulsePins[x].dParam1, m_rgPulsePins[x].dParam2, flValue);
+									flValue = PinParams.DoFilter(m_rgPulsePins[x].iFilterType, m_rgPulsePins[x].dParam1, m_rgPulsePins[x].dParam2, m_rgAnalPins[x].dParam3, flValue);
 									m_listener.NotifyIOIOValue(x, m_rgPulsePins[x].iCustomType, flValue);
 									rgSpinsUntilQuery[x] = rgResetSpinsUntilQuery[x];
 								}

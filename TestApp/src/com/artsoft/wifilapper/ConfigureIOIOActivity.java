@@ -51,6 +51,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 	private int m_iLastFilterType = IOIOManager.PinParams.FILTERTYPE_NONE;
 	private double m_dLastParam1;
 	private double m_dLastParam2;
+	private double m_dLastParam3;
 	private int m_iLastCustomType;
 	
 	@Override
@@ -69,6 +70,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			m_iLastFilterType = data.getIntExtra("filtertype", IOIOManager.PinParams.FILTERTYPE_NONE);
 			m_dLastParam1 = data.getDoubleExtra("param1", 0);
 			m_dLastParam2 = data.getDoubleExtra("param2", 0);
+			m_dLastParam3 = data.getDoubleExtra("param3", 0);
 			m_iLastCustomType = data.getIntExtra("customtype", 0);
 			
 			// for convenience sake, if they have select a filter type that only applies to a certain type of pin, then select that type of pin
@@ -82,7 +84,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 				// don't change anything
 			}
 	    	TextView txtCurrentFilter = (TextView)findViewById(R.id.lblCurrentFilter);
-			txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(m_iLastFilterType, this.m_dLastParam1, this.m_dLastParam2, true));
+			txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(m_iLastFilterType, this.m_dLastParam1, this.m_dLastParam2, this.m_dLastParam3, true));
 		}
 	}
 	
@@ -193,7 +195,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			this.m_dLastParam2 = pin.dParam2;
 			
 	    	TextView txtCurrentFilter = (TextView)findViewById(R.id.lblCurrentFilter);
-			txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(pin.iFilterType, pin.dParam1, pin.dParam2, true));
+			txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(pin.iFilterType, pin.dParam1, pin.dParam2, pin.dParam3, true));
 			
 			txtCurrentFilter.invalidate();
 	    }
@@ -218,7 +220,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		txtRate.setLayoutParams(layout);
 		
 		TextView txtFilter = new TextView(this);
-		txtFilter.setText(PinParams.BuildDesc(pin.iFilterType,pin.dParam1,pin.dParam2, true));
+		txtFilter.setText(PinParams.BuildDesc(pin.iFilterType,pin.dParam1,pin.dParam2, pin.dParam3, true));
 		
 		Button btn = new Button(this);
 		btn.setText("Delete");
@@ -253,7 +255,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		pinList.invalidate();
 		
     	TextView txtCurrentFilter = (TextView)findViewById(R.id.lblCurrentFilter);
-		txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(m_iLastFilterType, this.m_dLastParam1, this.m_dLastParam2, true));
+		txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(m_iLastFilterType, this.m_dLastParam1, this.m_dLastParam2, this.m_dLastParam3, true));
 	}
 	
 	@Override
@@ -329,7 +331,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			{
 				if(fPermitted)
 				{
-					IOIOManager.PinParams pin = new IOIOManager.PinParams(iPin,(int)dPeriod, m_iLastFilterType, m_dLastParam1, m_dLastParam2, m_iLastCustomType);
+					IOIOManager.PinParams pin = new IOIOManager.PinParams(iPin,(int)dPeriod, m_iLastFilterType, m_dLastParam1, m_dLastParam2, m_dLastParam3, m_iLastCustomType);
 					if(rg.getCheckedRadioButtonId() == R.id.rbAnalog)
 					{
 						lstAnalPins.add(pin);

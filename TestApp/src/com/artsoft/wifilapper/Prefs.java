@@ -256,6 +256,7 @@ public class Prefs
 			settings = settings.putInt("ioiopintype" + strSuffix + pin.iPin, pin.iFilterType);
 			settings = settings.putFloat("ioiopinparam1" + strSuffix + pin.iPin, (float)pin.dParam1);
 			settings = settings.putFloat("ioiopinparam2" + strSuffix + pin.iPin, (float)pin.dParam2);
+			settings = settings.putFloat("ioiopinparam3" + strSuffix + pin.iPin, (float)pin.dParam3);
 			settings = settings.putInt("ioiopincustomtype" + strSuffix + pin.iPin, pin.iCustomType);
 		}
 		return settings;
@@ -286,8 +287,9 @@ public class Prefs
 				int iType = settings.getInt("ioiopintype" + strSuffix + x, IOIOManager.PinParams.FILTERTYPE_NONE);
 				double dParam1 = settings.getFloat("ioiopinparam1" + strSuffix + x, 0);
 				double dParam2 = settings.getFloat("ioiopinparam2" + strSuffix + x, 0);
+				double dParam3 = settings.getFloat("ioiopinparam3" + strSuffix + x, 0);
 				int iCustomType = settings.getInt("ioiopincustomtype" + strSuffix + x, 0);
-				rgPins[c] = new IOIOManager.PinParams(x,iPeriod, iType, dParam1, dParam2, iCustomType);
+				rgPins[c] = new IOIOManager.PinParams(x,iPeriod, iType, dParam1, dParam2, dParam3, iCustomType);
 				c++;
 			}
 		}
