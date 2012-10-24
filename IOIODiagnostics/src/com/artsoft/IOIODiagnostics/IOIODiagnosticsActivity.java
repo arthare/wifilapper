@@ -69,8 +69,8 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		super.onCreate(extras);
 		m_handler = new Handler(this);
 		m_pins = new PinWrapper[48];
-		//m_ioio = IOIOFactory.create();
-		m_ioio = new FakeIOIO();
+		m_ioio = IOIOFactory.create();
+		//m_ioio = new FakeIOIO();
 		
 		ConnectThread ct = new ConnectThread(m_ioio, m_handler);
 		ct.start();
