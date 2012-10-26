@@ -46,7 +46,8 @@ public class ConfigureOBD2Activity extends Activity implements OnCheckedChangeLi
 {
 	private List<Integer> lstSelectedPIDs;
 	private Handler m_handler;
-
+	private String m_strOBD2Error;
+	
 	private static final int MSG_OBD2 = 50;
 	
 	@Override
@@ -229,6 +230,11 @@ public class ConfigureOBD2Activity extends Activity implements OnCheckedChangeLi
 		switch(msg.what)
 		{
 		case MSG_OBD2:
+			if(m_strOBD2Error != null)
+			{
+				Toast.makeText(this, "OBD2 error: " + m_strOBD2Error, Toast.LENGTH_LONG).show();
+				m_strOBD2Error = null;
+			}
 			List<PIDParameter> lstPIDs = (List<PIDParameter>)msg.obj;
 			if(lstPIDs != null)
 			{
@@ -267,5 +273,12 @@ public class ConfigureOBD2Activity extends Activity implements OnCheckedChangeLi
 				Toast.makeText(this, "You must select a bluetooth device first", Toast.LENGTH_LONG).show();
 			}
 		}
+	}
+
+	@Override
+	public void NotifyOBD2Error(String str) 
+	{
+		m_strOBD2Error = str;
+		this.m_handler.sendEmptyMessage(MSG_OBD2);
 	}
 }

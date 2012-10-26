@@ -16,9 +16,15 @@
 
 package com.artsoft.wifilapper;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringBufferInputStream;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -32,7 +38,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Debug;
+import android.os.Environment;
 import android.util.Log;
+import android.widget.Toast;
 
 public class OBDThread extends Thread implements Runnable 
 {
@@ -660,6 +668,7 @@ public class OBDThread extends Thread implements Runnable
 	public static interface PIDSupportListener
 	{
 		public abstract void NotifyPIDSupport(List<PIDParameter> lst);
+		public abstract void NotifyOBD2Error(String str);
 	}
 	private static class PIDSupportQueryer extends Thread
 	{
@@ -674,11 +683,19 @@ public class OBDThread extends Thread implements Runnable
 		public void run()
 		{
 			Thread.currentThread().setName("Support Queryer");
-			List<PIDParameter> lst = GetSupportedPIDS(m_strBTName);
+			
+			ByteArrayOutputStream baos = new ByteArrayOutputStream(10000);
+			
+			List<PIDParameter> lst = GetSupportedPIDS(m_strBTName, baos);
+			if(baos.size() > 0)
+			{
+				m_pCallback.NotifyOBD2Error(baos.toString());
+			}
 			m_pCallback.NotifyPIDSupport(lst);
+			
 		}
 	}
-	private static List<PIDParameter> GetSupportedPIDS(String strBTName)
+	private static List<PIDParameter> GetSupportedPIDS(String strBTName, OutputStream errorOut)
 	{
 		boolean fSuccess = true;
 		List<PIDParameter> lstRet = null;
@@ -706,13 +723,14 @@ public class OBDThread extends Thread implements Runnable
 		}
 		if(bd == null)
 		{
+			try {errorOut.write(("Couldn't find device " + strBTName).getBytes());} catch (IOException e1) {}
 			fSuccess = false;
 		}
 		
 		if(fSuccess)
 		{
 			String strResponse = "";
-			boolean rgSupport[] = new boolean[256];
+			boolean rgSupport[] = new boolean[257];
 			rgSupport[0] = true;
 			try
 			{
@@ -727,6 +745,7 @@ public class OBDThread extends Thread implements Runnable
 				strResponse = GetResponse(in,5000);
 				if(strResponse == null)
 				{
+					try {errorOut.write("initial setup failed".getBytes());} catch (IOException e1) {}
 					fSuccess = false;
 				}
 				if(fSuccess)
@@ -753,6 +772,7 @@ public class OBDThread extends Thread implements Runnable
 								}
 								else
 								{
+									try {errorOut.write("No response received ".getBytes());} catch (IOException e1) {}
 									fSuccess = false;
 									break;
 								}
@@ -763,6 +783,23 @@ public class OBDThread extends Thread implements Runnable
 			}
 			catch(Exception e)
 			{
+				final Writer result = new StringWriter();
+	    	    final PrintWriter printWriter = new PrintWriter(result);
+	    	    e.printStackTrace(printWriter);
+	    	    String strWrite = result.toString();
+	    	    
+	    	    try
+	    	    {
+	    	    	FileOutputStream fos = new FileOutputStream(Environment.getExternalStorageDirectory() + "/wifilapper/obdcrash.txt");
+	    	    	fos.write(strWrite.getBytes());
+	    	    	fos.close();
+	    	    	try {errorOut.write(("Wrote OBD failure report to wifilapper/obdcrash.txt").getBytes());} catch (IOException e1) {}
+	    	    }
+	    	    catch(IOException e2)
+	    	    {
+					try {errorOut.write(("For more OBD failure details, put in an SD card and mount it").getBytes());} catch (IOException e1) {}
+	    	    }
+	    	    
 				fSuccess = false;
 			}
 			
