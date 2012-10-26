@@ -22,6 +22,7 @@ import android.content.SharedPreferences;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.artsoft.wifilapper.FakeIOIO.FakePulseInput;
 import com.artsoft.wifilapper.Utility.MultiStateObject.STATE;
 
 import ioio.lib.api.*;
@@ -317,7 +318,7 @@ public class IOIOManager
 								if(rgSpinsUntilQuery[x] == 0)
 								{
 									float flValue = pulseIn[x].getFrequency();
-									flValue = PinParams.DoFilter(m_rgPulsePins[x].iFilterType, m_rgPulsePins[x].dParam1, m_rgPulsePins[x].dParam2, m_rgAnalPins[x].dParam3, flValue);
+									flValue = PinParams.DoFilter(m_rgPulsePins[x].iFilterType, m_rgPulsePins[x].dParam1, m_rgPulsePins[x].dParam2, m_rgPulsePins[x].dParam3, flValue);
 									m_listener.NotifyIOIOValue(x, m_rgPulsePins[x].iCustomType, flValue);
 									rgSpinsUntilQuery[x] = rgResetSpinsUntilQuery[x];
 								}
@@ -464,7 +465,7 @@ class FakeIOIO implements IOIO
 			PulseInput.ClockRate rate, PulseInput.PulseMode mode,
 			boolean doublePrecision) throws ConnectionLostException
 	{
-		return null;
+		return new FakePulseInput(spec.pin);
 	}
 	public PulseInput openPulseInput(int pin, PulseMode mode)
 			throws ConnectionLostException
@@ -538,7 +539,7 @@ class FakeIOIO implements IOIO
 			return (float)(Math.sin(dTime * pin) * 2 + 2.5);
 		}
 	}
-	private class FakePulseInput implements PulseInput
+	public class FakePulseInput implements PulseInput
 	{
 		private int pin;
 		public FakePulseInput(int pin)
