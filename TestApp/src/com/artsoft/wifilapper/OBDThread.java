@@ -265,7 +265,7 @@ public class OBDThread extends Thread implements Runnable
 			}
 		}
 		
-		if(strTokens.length != 6) return;
+		if(strTokens == null || strTokens.length != 6) return;
 		
 		String strHex = "";
 		for(int x = 2; x < 6; x++)
@@ -730,6 +730,7 @@ public class OBDThread extends Thread implements Runnable
 		if(fSuccess)
 		{
 			String strResponse = "";
+			String strAllResponse = "";
 			boolean rgSupport[] = new boolean[257];
 			rgSupport[0] = true;
 			try
@@ -768,6 +769,7 @@ public class OBDThread extends Thread implements Runnable
 								strResponse = GetResponse(in, 30000);
 								if(strResponse != null)
 								{
+									strAllResponse += "ix = " + ix +  ":\n" + strResponse;
 									PopulateSupport(ix, strResponse, rgSupport);
 								}
 								else
@@ -791,6 +793,10 @@ public class OBDThread extends Thread implements Runnable
 	    	    try
 	    	    {
 	    	    	FileOutputStream fos = new FileOutputStream(Environment.getExternalStorageDirectory() + "/wifilapper/obdcrash.txt");
+	    	    	if(strResponse != null)
+	    	    	{
+	    	    		fos.write(("Responses: " + strAllResponse + "\n").getBytes());
+	    	    	}
 	    	    	fos.write(strWrite.getBytes());
 	    	    	fos.close();
 	    	    	try {errorOut.write(("Wrote OBD failure report to wifilapper/obdcrash.txt").getBytes());} catch (IOException e1) {}
