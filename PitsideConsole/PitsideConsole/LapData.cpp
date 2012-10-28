@@ -556,7 +556,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pVelocity = NULL;
     }
 
-    if(fComputeTimeSlip)
+    if(fComputeTimeSlip && m_lstPoints.size() > 0)
     {
       IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
       pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);

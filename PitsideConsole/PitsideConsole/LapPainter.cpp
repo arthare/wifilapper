@@ -186,13 +186,13 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       CExtendedLap* pLap = lstLaps[x];
       DATA_CHANNEL eDataX = m_pLapSupplier->GetXChannel();
       const IDataChannel* pDataX = pLap->GetChannel(eDataX);
-      if(!pDataX) continue;
+      if(!pDataX || !pDataX->IsValid() || pDataX->GetData().size() <= 0) continue;
 
       vector<DATA_CHANNEL> lstDataY = m_pLapSupplier->GetYChannels();
       for(int y = 0; y < lstDataY.size(); y++)
       {
         const IDataChannel* pChannel = pLap->GetChannel(lstDataY[y]);
-        if(!pChannel) continue;
+        if(!pChannel || !pChannel->IsValid()) continue;
 
         const DATA_CHANNEL eType = lstDataY[y];
         if(mapMinY.find(eType) == mapMinY.end())
