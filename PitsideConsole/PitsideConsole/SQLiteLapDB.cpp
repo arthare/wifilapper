@@ -568,8 +568,7 @@ const IDataChannel* CSQLiteLapDB::GetDataChannel(int iLapId, DATA_CHANNEL eChann
       if(sfQuery.Next())
       {
         IDataChannel* pChannel = AllocateDataChannel();
-        pChannel->Load(m_sfDB,sfQuery);
-        pChannel->Lock();
+        pChannel->Load(m_sfDB,sfQuery,true);
         // warning: massive memory leaks here
         return pChannel;
       }

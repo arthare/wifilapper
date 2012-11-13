@@ -127,7 +127,7 @@
                     android:id="@+id/txtParam1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="numberDecimal" />
+                    android:inputType="numberDecimal|numberSigned" />
 
                 <TextView
                     android:id="@+id/lblParam2"
@@ -140,7 +140,7 @@
                     android:id="@+id/txtParam2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="numberDecimal" />
+                    android:inputType="numberDecimal|numberSigned" />
 
                 <TextView
                     android:id="@+id/lblParam3"
@@ -153,7 +153,7 @@
                     android:id="@+id/txtParam3"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="numberDecimal" />
+                    android:inputType="numberDecimal|numberSigned" />
                 <Button
                     android:id="@+id/btnApply"
                     android:layout_width="match_parent"

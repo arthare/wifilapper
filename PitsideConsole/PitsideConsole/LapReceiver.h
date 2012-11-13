@@ -113,7 +113,7 @@ class IDataChannel
 {
 public:
   virtual void Load(InputChannelRaw* pData) = 0;
-  virtual bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc) = 0;
+  virtual bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc, bool fLazyLoad) = 0;
   virtual void Init(int iLapId, DATA_CHANNEL eChannel) = 0;
   virtual bool IsValid() const = 0;
   virtual bool IsSameChannel(const IDataChannel* pOther) const = 0;
@@ -145,7 +145,7 @@ public:
   virtual ~CDataChannel();
 
   void Load(InputChannelRaw* pData) override;
-  bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc) override;
+  bool Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc, bool fLazyLoad) override;
   void Init(int iLapId, DATA_CHANNEL eChannel) override;
   bool IsValid() const override;
   bool IsSameChannel(const IDataChannel* pOther) const override;
@@ -170,16 +170,32 @@ public:
   void Lock() override;
   bool IsLocked() const override {return fLocked;}
 private:
+  void DoLoad(CSfArtSQLiteDB& db, int channelId);
+  void CheckLazyLoad() const
+  {
+    CDataChannel* pChan = (CDataChannel*)this; // gross....
+    if(m_fLazyLoad && !fLocked)
+    {
+      pChan->DoLoad(*m_db,m_iChannelId);
+      pChan->Lock();
+    }
+  }
+private:
+  int m_iChannelId;
+
   bool fLocked;
   int iLapId;
   DATA_CHANNEL eChannelType;
-  vector<DataPoint> lstData;
+  mutable vector<DataPoint> lstData;
 
   float m_dMin;
   float m_dMax;
 
   int m_msMin; // start time (milliseconds since app start)
   int m_msMax; // end time (milliseconds since app start)
+
+  bool m_fLazyLoad;
+  mutable CSfArtSQLiteDB* m_db;
 };
 
 

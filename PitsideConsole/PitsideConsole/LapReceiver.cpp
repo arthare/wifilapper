@@ -49,8 +49,32 @@ void CDataChannel::Load(InputChannelRaw* pData)
     lstData.push_back(pt);
   }
 }
-bool CDataChannel::Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc)
+void CDataChannel::DoLoad(CSfArtSQLiteDB& db, int _id)
 {
+  CSfArtSQLiteQuery sfData(db);
+  TCHAR szQuery[MAX_PATH];
+
+  int cRows = 0;
+  _snwprintf(szQuery,NUMCHARS(szQuery), L"select time,value,channelid from data where channelid = %d",_id);
+  if(sfData.Init(szQuery))
+  {
+    while(sfData.Next())
+    {
+      cRows++;
+      int iTimeMs = 0;
+      float flValue = 0;
+      if(sfData.GetCol(0, &iTimeMs) && sfData.GetCol(1, &flValue))
+      {
+        lstData.push_back(DataPoint(iTimeMs, flValue));
+      }
+    }
+  }
+}
+
+bool CDataChannel::Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc, bool fLazyLoad)
+{
+  m_db = &db;
+  m_fLazyLoad = fLazyLoad;
   DASSERT(!fLocked);
   if(fLocked) return false;
 
@@ -63,21 +87,16 @@ bool CDataChannel::Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc)
   if(!dc.GetCol(1,&iLapId)) return false;
   if(!dc.GetCol(2,(int*)&eChannelType)) return false;
 
-  CSfArtSQLiteQuery sfData(db);
-  TCHAR szQuery[MAX_PATH];
 
-  _snwprintf(szQuery,NUMCHARS(szQuery), L"select time,value,channelid from data where channelid = %d",_id);
-  if(sfData.Init(szQuery))
+  if(!m_fLazyLoad)
+  { // if we're not lazy-loading, then let's load now
+    m_iChannelId = _id;
+    DoLoad(db, _id);
+  }
+  else
   {
-    while(sfData.Next())
-    {
-      int iTimeMs = 0;
-      float flValue = 0;
-      if(sfData.GetCol(0, &iTimeMs) && sfData.GetCol(1, &flValue))
-      {
-        lstData.push_back(DataPoint(iTimeMs, flValue));
-      }
-    }
+    // if we ARE lazy-loading, just store the data we'll need
+    m_iChannelId = _id;
   }
   return true;
 }
@@ -104,6 +123,7 @@ int CDataChannel::GetLapId() const
 }
 float CDataChannel::GetValue(int iTime) const
 {
+  CheckLazyLoad();
   const int cSize = lstData.size();
   if(cSize <= 0) return 0;
 
@@ -176,6 +196,7 @@ float CDataChannel::GetValue(int iTime) const
 }
 float CDataChannel::GetValue(int iTime, const vector<DataPoint>::const_iterator& i) const
 {
+  CheckLazyLoad();
   DASSERT(fLocked); // you should only be getting data after the channel is all loaded up!
   const DataPoint& data = (*i);
   DASSERT(data.iTimeMs >= iTime);
@@ -202,18 +223,23 @@ float CDataChannel::GetValue(int iTime, const vector<DataPoint>::const_iterator&
 }
 float CDataChannel::GetMin() const
 {
+  CheckLazyLoad();
+
   return m_dMin;
 }
 float CDataChannel::GetMax() const
 {
+  CheckLazyLoad();
   return m_dMax;
 }
 int CDataChannel::GetEndTimeMs() const
 {
+  CheckLazyLoad();
   return m_msMax;
 }
 int CDataChannel::GetStartTimeMs() const
 {
+  CheckLazyLoad();
   return m_msMin;
 }
 void CDataChannel::AddPoint(int iTime, float flValue)
@@ -788,7 +814,7 @@ DWORD LoadFromSQLiteThreadProc(LPVOID pvParam)
             {
               // going through the laps...
               IDataChannel* pDC = pParams->pRecv->AllocateDataChannel();
-              if(pDC->Load(sfDB, sfQueryDC))
+              if(pDC->Load(sfDB, sfQueryDC, false))
               {
                 pDC->Lock();
                 // yay, the lap loaded!
