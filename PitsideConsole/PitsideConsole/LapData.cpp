@@ -669,6 +669,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pTimeSlip->AddPoint(p.iTime, 0);
     }
 
+    pX->Lock();
+    pY->Lock();
     pDistance->Lock();
     pVelocity->Lock();
     pTimeSlip->Lock();
