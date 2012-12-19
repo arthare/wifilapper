@@ -300,12 +300,23 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		const float r = RandDouble();
 		const float g = RandDouble();
 		const float b = RandDouble();
-		if ((r + g + b) < 1.5) // Keep searching for a color that will provide enough contrast for a black background
+		if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
 		{
-			const float r = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-			const float g = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-			const float b = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+			if (r < 0.5) {
+				const float r = RandDouble() + 0.5;	// <-- Increase the amount of Red
+			}
+			if (g < 0.5) {
+				const float g = RandDouble() + 0.5;	// <-- Increase the amount of Green
+			}
+			if (b < 0.5) {
+				const float b = RandDouble() + 0.5;	// <-- Increase the amount of Blue
+			}
    		}
+		else { // Color is OK. Just load values into RGB constants.
+			const float r = RandDouble();
+			const float g = RandDouble();
+			const float b = RandDouble();
+		}
 		glColor3d( r, g, b ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 
         if(sfLapOpts.fDrawLines)
@@ -399,13 +410,24 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		const float r = RandDouble();
 		const float g = RandDouble();
 		const float b = RandDouble();
-		if ((r + g + b) < 1.5) // Keep searching for a color that will provide enough contrast for a black background
+		if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
 		{
-			const float r = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-			const float g = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-			const float b = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+			if (r < 0.5) {
+				const float r = RandDouble() + 0.5;	// <-- Increase the amount of Red
+			}
+			if (g < 0.5) {
+				const float g = RandDouble() + 0.5;	// <-- Increase the amount of Green
+			}
+			if (b < 0.5) {
+				const float b = RandDouble() + 0.5;	// <-- Increase the amount of Blue
+			}
    		}
-        glColor3d( r, g, b );  // Final color to use.  Tells opengl to draw the following in the colour we just made up
+		else { // Color is OK. Just load values into RGB constants.
+			const float r = RandDouble();
+			const float g = RandDouble();
+			const float b = RandDouble();
+		}
+		glColor3d( r, g, b ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
       
         // if we're the main screen, we want to draw some text data for each point
         TCHAR szLapName[256];
@@ -562,22 +584,27 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       glPointSize(5.0f);
       glBegin(GL_POINTS);
     }
-/*		Commented out by KDJ, in order to improve the map's color contrast.
-    const float r = RandDouble();
-    const float g = RandDouble();
-    const float b = RandDouble();
-    glColor3d( r, g, b ); 
-*/
-//	Code is from above, in order to improve the contrast of the map.
-	const float r = RandDouble();
-	const float g = RandDouble();
-	const float b = RandDouble();
-	if ((r + g + b) < 1.5) // Keep searching for a color that will provide enough contrast for a black background
-	{
-		const float r = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-		const float g = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-		const float b = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-   	}
+//	Code changed to improve the contrast of the map.
+		const float r = RandDouble();
+		const float g = RandDouble();
+		const float b = RandDouble();
+		if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
+		{
+			if (r < 0.5) {
+				const float r = RandDouble() + 0.5;	// <-- Increase the amount of Red
+			}
+			if (g < 0.5) {
+				const float g = RandDouble() + 0.5;	// <-- Increase the amount of Green
+			}
+			if (b < 0.5) {
+				const float b = RandDouble() + 0.5;	// <-- Increase the amount of Blue
+			}
+   		}
+		else { // Color is OK. Just load values into RGB constants.
+			const float r = RandDouble();
+			const float g = RandDouble();
+			const float b = RandDouble();
+		}
 		glColor3d( r, g, b ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 //
     const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
@@ -678,27 +705,29 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       const CExtendedLap* pLap = lstMousePointsToDraw[x].pLap;
       const POINT& ptWindow = lstMousePointsToDraw[x].pt;
 
-/*		Commented out by KDJ, in order to improve the map's color contrast.
-      srand((int)pLap);
-      const float r = RandDouble();
-      const float g = RandDouble();
-      const float b = RandDouble();
-      glColor3d( r, g, b ); 
-*/
-//	Code is from above, in order to improve the contrast of the map.
-
+//	Modified code to improve the contrast of the map.
         srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
 		const float r = RandDouble();
 		const float g = RandDouble();
 		const float b = RandDouble();
-		if ((r + g + b) < 1.5) // Keep searching for a color that will provide enough contrast for a black background
+		if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
 		{
-			const float r = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-			const float g = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
-			const float b = RandDouble() + 0.33;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+			if (r < 0.5) {
+				const float r = RandDouble() + 0.5;	// <-- Increase the amount of Red
+			}
+			if (g < 0.5) {
+				const float g = RandDouble() + 0.5;	// <-- Increase the amount of Green
+			}
+			if (b < 0.5) {
+				const float b = RandDouble() + 0.5;	// <-- Increase the amount of Blue
+			}
    		}
-			glColor3d( r, g, b ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-//
+		else { // Color is OK. Just load values into RGB constants.
+			const float r = RandDouble();
+			const float g = RandDouble();
+			const float b = RandDouble();
+		}
+		glColor3d( r, g, b ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
       
       // we also want to draw a highlighted square
       DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);
