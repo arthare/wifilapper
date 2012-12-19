@@ -1272,7 +1272,8 @@ private:
       switch(m_sfLapOpts.eUnitPreference)
       {
       case UNIT_PREFERENCE_KMH: return KMH_TO_MS(25.0);
-      case UNIT_PREFERENCE_MPH: return MPH_TO_MS(10.0);
+//      case UNIT_PREFERENCE_MPH: return MPH_TO_MS(10.0);	// 	Remarked out by KDJ
+	  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Added by KDJ
       case UNIT_PREFERENCE_MS: return 5;
       }
       return 10.0;
@@ -1280,8 +1281,11 @@ private:
     case DATA_CHANNEL_DISTANCE: return 1e30;
     case DATA_CHANNEL_TIMESLIP: 
     {
-      if(flSpread < 10000) return 1000.0f;
-      if(flSpread < 100000) return 10000.0f;
+	  if(flSpread < 1500) return 100.0f;		//	Added by KDJ to improve TS display
+//      if(flSpread < 10000) return 1000.0f;	//	Commented out by KDJ
+	  if(flSpread < 15000) return 1000.0f;		//	Increased the trigger to improve TS display
+//      if(flSpread < 100000) return 10000.0f;	//	Commented out by KDJ
+      if(flSpread < 150000) return 10000.0f;	// Increased the trigger to improve TS display
       if(flSpread < 1000000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
     }
@@ -1297,7 +1301,16 @@ private:
       if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
           eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
       {
-        return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;
+        if(flSpread < 1) return m_sfLapOpts.fIOIOHardcoded ? 0.1f : 1e30;	//	Added by KDJ
+		if(flSpread < 10) return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;	//	Added by KDJ
+		if(flSpread < 25) return m_sfLapOpts.fIOIOHardcoded ? 2.5f : 1e30;	//	Added by KDJ
+		if(flSpread < 50) return m_sfLapOpts.fIOIOHardcoded ? 5.0f : 1e30;	//	Added by KDJ
+		if(flSpread < 150) return m_sfLapOpts.fIOIOHardcoded ? 20.0f : 1e30;	//	Added by KDJ
+		if(flSpread < 500) return m_sfLapOpts.fIOIOHardcoded ? 50.0f : 1e30;	//	Added by KDJ
+		if(flSpread < 10000) return m_sfLapOpts.fIOIOHardcoded ? 1000.0f : 1e30;	//	Added by KDJ
+		if(flSpread < 100000) return m_sfLapOpts.fIOIOHardcoded ? 5000.0f : 1e30;	//	Added by KDJ
+		if(flSpread < 1000000) return m_sfLapOpts.fIOIOHardcoded ? 50000.0f : 1e30;	//	Added by KDJ
+        return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;		// Original code, and default for non-transformed IOIO data
       }
       return 1e30;
     }

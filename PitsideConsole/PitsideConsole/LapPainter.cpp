@@ -251,7 +251,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     // draw line guides on the background
     for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
-      glColor3d(1.0,1.0,1.0);
+//      glColor3d(1.0,1.0,1.0);	//	Commented out by KDJ
+      glColor3d(0.75,0.75,0.75);	// Reduced the brightness of the guidelines to better see the data lines
       glBegin(GL_LINE_STRIP);
       glVertex2f(dMinX,flLine);
       glVertex2f(dMaxX,flLine);
@@ -296,9 +297,9 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
 
         srand((int)pLap);
-        const float r = RandDouble()/2 + 0.5;
-        const float g = RandDouble()/2 + 0.5;
-        const float b = RandDouble()/2 + 0.5;
+        const float r = RandDouble()*0.55 + 0.45;
+        const float g = RandDouble()*0.55 + 0.45;
+        const float b = RandDouble()*0.55 + 0.45;
         glColor3d( r, g, b ); 
 
         if(sfLapOpts.fDrawLines)
@@ -374,50 +375,61 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
     if(lstMousePointsToDraw.size() > 0)
     {
-      glPushMatrix();
-      glLoadIdentity();
+      glPushMatrix(); // <-- pushes a matrix onto the opengl matrix stack.
+      glLoadIdentity();	//  <-- makes it so that the matrix stack just converts all our coordinates directly to window coordinates
       glOrtho(0, RECT_WIDTH(&rcSpot),0, RECT_HEIGHT(&rcSpot),-1.0,1.0);
+	  /*  <-- tells OpenGL that it should show us the part of the openGL "world" that corresponds to 
+	  (0...window width, 0 ... window height).  This completes the "hey opengl, just draw where we 
+	  tell you to plz" part of the function */
 
-
-      for(int x = 0; x < lstMousePointsToDraw.size(); x++)
+      for(int x = 0; x < lstMousePointsToDraw.size(); x++)	// <-- loops through all the stupid boxes we want to draw
       {
-        const CExtendedLap* pLap = lstMousePointsToDraw[x].m_pLap;
-        const POINT& ptWindow = lstMousePointsToDraw[x].m_ptWindow;
-        const IDataChannel* pDataX = lstMousePointsToDraw[x].m_pDataX;
-        const IDataChannel* pDataY = lstMousePointsToDraw[x].m_pDataY;
+        const CExtendedLap* pLap = lstMousePointsToDraw[x].m_pLap;	//  <-- gets the lap data we want to draw
+        const POINT& ptWindow = lstMousePointsToDraw[x].m_ptWindow;	// <-- gets info about where in the window we want to draw the box
+        const IDataChannel* pDataX = lstMousePointsToDraw[x].m_pDataX;	//  <-- gets the x channel data
+        const IDataChannel* pDataY = lstMousePointsToDraw[x].m_pDataY;	// <-- gets the y channel data
 
-        srand((int)pLap);
-        const float r = RandDouble()/2 + 0.5;
-        const float g = RandDouble()/2 + 0.5;
-        const float b = RandDouble()/2 + 0.5;
-        glColor3d( r, g, b ); 
+        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+        const float r = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+        const float g = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+        const float b = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+        glColor3d( r, g, b );  // Final color to use.  Tells opengl to draw the following in the colour we just made up
       
         // if we're the main screen, we want to draw some text data for each point
         TCHAR szLapName[256];
-        pLap->GetString(szLapName, NUMCHARS(szLapName));
+        pLap->GetString(szLapName, NUMCHARS(szLapName));	// <-- gets the string "10:11:12 - 1:40.59 - Keith", aka the "lap name"
 
-        float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);
+        float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);	//  <-- asks the ILapSupplier interface what we should highlight
 
         TCHAR szTypeX[256];
-        ::GetDataChannelName(eX,szTypeX,NUMCHARS(szTypeX));
+        ::GetDataChannelName(eX,szTypeX,NUMCHARS(szTypeX));	// <-- converts the data channel type into a string, like "Oil Temperature"
 
         TCHAR szTypeY[256];
-        ::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szTypeY, NUMCHARS(szTypeY));
+        ::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szTypeY, NUMCHARS(szTypeY));	// <-- converts the y channel into a string
 
         char szYString[256];
         GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
+		// <-- gets the actual unit string for the data channel.  For speed, this might be "100.0km/h"
 
         char szXString[256];
         GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
+		// <-- same for x channel
 
         char szText[256];
-        sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
+//        sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);	// Remarked out by KDJ in lieu of next line of code.
+        sprintf(szText, "%S - (%S %s)", szLapName, szTypeY, szYString);
 
-        DrawText(0.0,(x+1)*GetWindowFontSize(),szText);
+        DrawText(0.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text
 
         // we also want to draw a highlighted square
-        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);
-      }
+//        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
+        // we also want to draw a highlighted LINE for that individual lap/graph combination
+				glColor3d( 255, 0, 0 );						// Added by Chas
+				glBegin(GL_LINE_STRIP);						// Added by KDJ
+				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
+				glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
+				glEnd();									// Added by KDJ
+	  }
       glPopMatrix();
       glPopMatrix();
     }
@@ -538,10 +550,18 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       glPointSize(5.0f);
       glBegin(GL_POINTS);
     }
+/*		Commented out by KDJ, in order to improve the map's color contrast.
     const float r = RandDouble();
     const float g = RandDouble();
     const float b = RandDouble();
     glColor3d( r, g, b ); 
+*/
+//	Code is from above, in order to improve the contrast of the map.
+    const float r = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+    const float g = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+    const float b = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+    glColor3d( r, g, b ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+//
     const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
     for(int x = 0; x< lstPoints.size(); x++)
     {
@@ -640,11 +660,21 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       const CExtendedLap* pLap = lstMousePointsToDraw[x].pLap;
       const POINT& ptWindow = lstMousePointsToDraw[x].pt;
 
+/*		Commented out by KDJ, in order to improve the map's color contrast.
       srand((int)pLap);
       const float r = RandDouble();
       const float g = RandDouble();
       const float b = RandDouble();
       glColor3d( r, g, b ); 
+*/
+//	Code is from above, in order to improve the contrast of the map.
+
+        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+        const float r = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+        const float g = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+        const float b = RandDouble()*0.55 + 0.45;	// <-- randomizes colours. We need to limit this so that we have good contrast.
+        glColor3d( r, g, b ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+//
       
       // we also want to draw a highlighted square
       DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);
