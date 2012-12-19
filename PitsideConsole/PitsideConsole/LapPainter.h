@@ -38,26 +38,26 @@ public:
 interface ILapSupplier
 {
 public:
-  virtual vector<CExtendedLap*> GetLapsToShow() const = 0;
-  virtual vector<CExtendedLap*> GetAllLaps() const = 0;
-  virtual LAPDISPLAYSTYLE GetLapDisplayStyle(int iSupplierId) const = 0;
-  virtual DATA_CHANNEL GetXChannel() const = 0;
-  virtual vector<DATA_CHANNEL> GetYChannels() const = 0;
-  virtual const IDataChannel* GetChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
-  virtual FLOATRECT GetAllLapsBounds() const = 0;
+  virtual vector<CExtendedLap*> GetLapsToShow() const = 0;	// <-- returns which laps you want painted
+  virtual vector<CExtendedLap*> GetAllLaps() const = 0;		// <-- returns all the laps
+  virtual LAPDISPLAYSTYLE GetLapDisplayStyle(int iSupplierId) const = 0;	// <-- returns how you want the laps shown: this can be a map or a data plot
+  virtual DATA_CHANNEL GetXChannel() const = 0;				//  <-- returns what data channel you want to use for the x-axis
+  virtual vector<DATA_CHANNEL> GetYChannels() const = 0;	//  <-- returns what data channels you want to use for the y-axes (can be 1 or more)
+  virtual const IDataChannel* GetChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;	// <-- returns the actual data channel object for a given lap.
+  virtual FLOATRECT GetAllLapsBounds() const = 0;			//  <-- returns the x and y bounds for all the laps
 
-  // guide-parameter functions
-  virtual float GetGuideStart(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;
-  virtual float GetGuideStep(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;
-  virtual float GetDataHardcodedMin(DATA_CHANNEL eChannel) const = 0;
-  virtual float GetDataHardcodedMax(DATA_CHANNEL eChannel) const = 0;
+  // guide-parameter functions - these configure the background horizontal/vertical lines
+  virtual float GetGuideStart(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	//  <-- returns the position (in the units of whatever data channel you're plotting) of the first line we should draw
+  virtual float GetGuideStep(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	// <-- returns the distance between guidelines (in units of whatever data channel you're plotting)
+  virtual float GetDataHardcodedMin(DATA_CHANNEL eChannel) const = 0;		// <-- returns the absolute lowest value we want to display for a given data channel type
+  virtual float GetDataHardcodedMax(DATA_CHANNEL eChannel) const = 0;		// <-- returns the absolute highest value we want to display for a given data channel type
 
   // highlighting functions
-  virtual void SetLapHighlightTime(const CExtendedLap* pLap, int iTimeMs) = 0;
-  virtual int GetLapHighlightTime(const CExtendedLap* pLap) const = 0;
+  virtual void SetLapHighlightTime(const CExtendedLap* pLap, int iTimeMs) = 0;	//  <-- only call if you are a HighlightSource. Sets the time in milliseconds that should be highlighted.
+  virtual int GetLapHighlightTime(const CExtendedLap* pLap) const = 0;		// <-- gets the time in milliseconds that should be highlighted.
   virtual bool IsHighlightSource(int iSupplierId) const = 0; // returns whether the caller should be a lap highlighter (calling SetLapHighlightTime) or a lap highlight-receiver (calling GetLapHighlightTime)
 
-  virtual const LAPSUPPLIEROPTIONS& GetDisplayOptions() const = 0;
+  virtual const LAPSUPPLIEROPTIONS& GetDisplayOptions() const = 0;		// <-- gets more display options.
 };
 
 class CLapPainter : public ArtOpenGLWindow
