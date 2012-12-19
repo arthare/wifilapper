@@ -424,11 +424,12 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         // we also want to draw a highlighted square
 //        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
         // we also want to draw a highlighted LINE for that individual lap/graph combination
+				glColor3d( 255, 0, 0 );						// Added by Chas
 				glBegin(GL_LINE_STRIP);						// Added by KDJ
-				glVertex3f(ptWindow.x,rcSpot.top,0);		// Added by KDJ
+				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
 				glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
 				glEnd();									// Added by KDJ
-      }
+	  }
       glPopMatrix();
       glPopMatrix();
     }
