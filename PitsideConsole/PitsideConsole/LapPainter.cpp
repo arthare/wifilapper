@@ -294,33 +294,11 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         float dTimeToHighlight = -1;
         const vector<DataPoint>& lstPointsX = pDataX->GetData();
         const vector<DataPoint>& lstPointsY = pDataY->GetData();
-
-
-        srand((int)pLap);
-		const float r = RandDouble();
-		const float g = RandDouble();
-		const float b = RandDouble();
-		if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
-		{
-			float rf, gf, bf;
-			if (r < 0.5) {
-				rf = r + 0.5;	// <-- Increase the amount of Red
-			}
-			if (g < 0.5) {
-				gf = g + 0.5;	// <-- Increase the amount of Green
-			}
-			if (b < 0.5) {
-				bf = b + 0.5;	// <-- Increase the amount of Blue
-			}
-		glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-   		}
-		else { // Color is OK. Just load values into RGB constants.
-			float rf = r;
-			float gf = g;
-			float bf = b;
-		glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-		}
-
+//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+		float r;
+		float g;
+		float b;
+		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
         if(sfLapOpts.fDrawLines)
         {
           glBegin(GL_LINE_STRIP);
@@ -408,32 +386,12 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         const IDataChannel* pDataX = lstMousePointsToDraw[x].m_pDataX;	//  <-- gets the x channel data
         const IDataChannel* pDataY = lstMousePointsToDraw[x].m_pDataY;	// <-- gets the y channel data
 
-	    srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
-		const float r = RandDouble();
-		const float g = RandDouble();
-		const float b = RandDouble();
-		if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
-		{
-			float rf, gf, bf;
-			if (r < 0.5) {
-				rf = r + 0.5;	// <-- Increase the amount of Red
-			}
-			if (g < 0.5) {
-				gf = g + 0.5;	// <-- Increase the amount of Green
-			}
-			if (b < 0.5) {
-				bf = b + 0.5;	// <-- Increase the amount of Blue
-			}
-		glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-   		}
-		else { // Color is OK. Just load values into RGB constants.
-			float rf = r;
-			float gf = g;
-			float bf = b;
-		glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-		}
-      
-        // if we're the main screen, we want to draw some text data for each point
+		float r;
+		float g;
+		float b;
+		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+
+		// if we're the main screen, we want to draw some text data for each point
         TCHAR szLapName[256];
         pLap->GetString(szLapName, NUMCHARS(szLapName));	// <-- gets the string "10:11:12 - 1:40.59 - Keith", aka the "lap name"
 
@@ -482,6 +440,19 @@ struct MAPHIGHLIGHT
   const CExtendedLap* pLap;
   POINT pt;
 };
+
+// Function for setting highlighting color, making sure that there is enough contrast to a black background
+void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float* pB) 
+{ 
+	srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw... 
+	do { 
+		*pR = RandDouble(); 
+		*pG = RandDouble(); 
+		*pB = RandDouble(); 
+	} 
+	while(*pR + *pG + *pB < 1.5); 
+	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+}
 
 void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 {
@@ -573,7 +544,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   for(int x = 0; x < lstLaps.size(); x++)
   {
     CExtendedLap* pLap = lstLaps[x];
-    srand((int)pLap);
+    srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
 
     float dBestLength = -1;
     float dTimeToHighlight = -1;
@@ -588,33 +559,13 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       glPointSize(5.0f);
       glBegin(GL_POINTS);
     }
-    srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
-//	Code changed to improve the contrast of the map.
-	const float r = RandDouble();
-	const float g = RandDouble();
-	const float b = RandDouble();
-	if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
-	{
-		float rf, gf, bf;
-		if (r < 0.5) {
-			rf = r + 0.5;	// <-- Increase the amount of Red
-		}
-		if (g < 0.5) {
-			gf = g + 0.5;	// <-- Increase the amount of Green
-		}
-		if (b < 0.5) {
-			bf = b + 0.5;	// <-- Increase the amount of Blue
-		}
-	glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-   	}
-	else { // Color is OK. Just load values into RGB constants.
-		float rf = r;
-		float gf = g;
-		float bf = b;
-	glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-	}
-//
-    const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
+//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+	float r;
+	float g;
+	float b;
+	MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+
+		const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
     for(int x = 0; x< lstPoints.size(); x++)
     {
       const TimePoint2D& p = lstPoints[x];
@@ -712,31 +663,11 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       const CExtendedLap* pLap = lstMousePointsToDraw[x].pLap;
       const POINT& ptWindow = lstMousePointsToDraw[x].pt;
 
-//	Modified code to improve the contrast of the map.
-    srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
-	const float r = RandDouble();
-	const float g = RandDouble();
-	const float b = RandDouble();
-	if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
-	{
-		float rf, gf, bf;
-		if (r < 0.5) {
-			rf = r + 0.5;	// <-- Increase the amount of Red
-		}
-		if (g < 0.5) {
-			gf = g + 0.5;	// <-- Increase the amount of Green
-		}
-		if (b < 0.5) {
-			bf = b + 0.5;	// <-- Increase the amount of Blue
-		}
-	glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-   	}
-	else { // Color is OK. Just load values into RGB constants.
-		float rf = r;
-		float gf = g;
-		float bf = b;
-	glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-	}
+//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+		float r;
+		float g;
+		float b;
+		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
       
       // we also want to draw a highlighted square
       DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);

@@ -76,6 +76,7 @@ private:
   void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map
   void DrawSelectLapsPrompt() const;
   void DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const;
+  void MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float*pB); 
 private:
   ILapSupplier* m_pLapSupplier;
 
