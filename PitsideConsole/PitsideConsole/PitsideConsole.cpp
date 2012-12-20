@@ -511,6 +511,11 @@ public:
             ShowNetInfo();
             return TRUE;
           }
+          case ID_HELP_ABOUT:
+          {
+			  ShowAbout();
+			  return TRUE;
+          }
           case ID_DATA_OPENDB:
           {
             TCHAR szFilename[MAX_PATH];
@@ -903,6 +908,11 @@ private:
     m_mapLaps.clear();
     m_sfLapList.Clear();
   }
+   void ShowAbout()
+	{
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.001.0001",L"About Pitside Console",MB_OK);
+		return;
+	}
   void ShowNetInfo()
   {
     while(true)

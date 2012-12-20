@@ -252,7 +252,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
 //      glColor3d(1.0,1.0,1.0);	//	Commented out by KDJ
-      glColor3d(0.75,0.75,0.75);	// Reduced the brightness of the guidelines to better see the data lines
+      glColor3d(0.7,0.7,0.7);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
       glBegin(GL_LINE_STRIP);
       glVertex2f(dMinX,flLine);
       glVertex2f(dMaxX,flLine);
@@ -301,7 +301,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
         if(sfLapOpts.fDrawLines)
         {
-          glBegin(GL_LINE_STRIP);
+          glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
+		  glBegin(GL_LINE_STRIP);
         }
         else
         {
@@ -420,7 +421,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         // we also want to draw a highlighted square
 //        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
         // we also want to draw a highlighted LINE for that individual lap/graph combination
-//				glColor3d( 255, 0, 0 );						// Added by Chas to make line Red. Removed to make line same color as graph.
+//				glColor3d( 1.0, 0, 0 );						// Added by Chas to make line Red. Removed to make line same color as graph.
 				glBegin(GL_LINE_STRIP);						// Added by KDJ
 				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
 				glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
@@ -552,6 +553,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
     if(sfLapOpts.fDrawLines)
     {
+      glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
       glBegin(GL_LINE_STRIP);
     }
     else
@@ -565,7 +567,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 	float b;
 	MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
-		const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
+	const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
     for(int x = 0; x< lstPoints.size(); x++)
     {
       const TimePoint2D& p = lstPoints[x];
@@ -662,12 +664,11 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     {
       const CExtendedLap* pLap = lstMousePointsToDraw[x].pLap;
       const POINT& ptWindow = lstMousePointsToDraw[x].pt;
-
-//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
-		float r;
-		float g;
-		float b;
-		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+//      srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+	  float r;
+	  float g;
+	  float b;
+	  MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
       
       // we also want to draw a highlighted square
       DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);
