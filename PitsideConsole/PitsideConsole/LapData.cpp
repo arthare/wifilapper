@@ -461,7 +461,7 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
 
 void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtendedLap* pReferenceLap, const ILapReceiver* pLapDB, bool fComputeTimeSlip)
 {
-  if(lstPoints.size() <= 3) return;
+  if(lstPoints.size() <= 3) return;	//	Check so that following operations don't choke.
 
 
   // for calculating distance and time-slip, we need the reference lap
@@ -484,7 +484,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
     int iStartPoint = 0;
-    for(int x = 0;x < lstPoints.size(); x++)
+    for(int x = 0;x < lstPoints.size() - 1; x++)	// Removed last point to prevent graphing errors.
+//    for(int x = 0;x < lstPoints.size(); x++)	// Remarked out by KDJ
     {
       const TimePoint2D& p = lstPoints[x];
 
@@ -563,7 +564,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 
       const int iStartTime = m_lstPoints[0].iTime;
       const int iReferenceStartTime = lstReference[0].iTime;
-      for(int x = 1;x < m_lstPoints.size(); x++)
+//      for(int x = 1;x < m_lstPoints.size(); x++)	// Remarked out by KDJ
+      for(int x = 1;x < m_lstPoints.size() - 1; x++)	//  Changed to remove graphical errors
       {
         const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
         const double dDistance = pDistance->GetValue(m_lstPoints[x].iTime);
@@ -571,7 +573,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
         // we now need to estimate what the reference lap's time at {dDistance} was, and then we can get our time slip
         double dLastRefDist = 0;
 
-        int iRefCheckStart = 1; // what index should we start at?  this gets changed each loop so that we always start near the point that is most likely to be near the current m_lstPoints point
+        int iRefCheckStart = 1; 
+		/* what index should we start at?  this gets changed each loop so that we always 
+		start near the point that is most likely to be near the current m_lstPoints point */
         int ixCheck = iRefCheckStart;
         const int cReferenceSize = lstReference.size();
         while(true)
