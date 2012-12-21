@@ -46,4 +46,5 @@
 #define IDB_SPLASHIMAGE 47
 #define ID_DATA_SWITCHSESSION 48
 #define ID_OPTIONS_IOIO5VSCALE 49
+#define ID_HELP_ABOUT 50
 // don't put anything below this

@@ -100,5 +100,6 @@ BEGIN
     POPUP "&Help"
     BEGIN
         MENUITEM "Show IPs", ID_HELP_IPS
+        MENUITEM "About", ID_HELP_ABOUT
     END
 END

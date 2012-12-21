@@ -87,9 +87,9 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
 
   }
   // we have now determined the bounds of the thing we're going to draw
-	glPushMatrix();
+  glPushMatrix();
   glLoadIdentity();
-  glOrtho(rcAllLaps.right, rcAllLaps.left,rcAllLaps.top, rcAllLaps.bottom,-1.0,1.0);
+  glOrtho(rcAllLaps.right, rcAllLaps.left, rcAllLaps.top, rcAllLaps.bottom,-1.0,1.0);
   
   GLdouble rgModelviewMatrix[16];
   GLdouble rgProjMatrix[16];
@@ -252,7 +252,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
 //      glColor3d(1.0,1.0,1.0);	//	Commented out by KDJ
-      glColor3d(0.75,0.75,0.75);	// Reduced the brightness of the guidelines to better see the data lines
+      glColor3d(0.7,0.7,0.7);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
+      glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
       glBegin(GL_LINE_STRIP);
       glVertex2f(dMinX,flLine);
       glVertex2f(dMaxX,flLine);
@@ -267,15 +268,42 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     GLdouble rgModelviewMatrix[16];
     GLdouble rgProjMatrix[16];
     GLint rgViewport[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
-    glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
-    glGetIntegerv(GL_VIEWPORT, rgViewport);
+    
+	{
+		glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+		glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+		glGetIntegerv(GL_VIEWPORT, rgViewport);
+
+		POINT ptMouse;
+		if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+		{
+		//		The mouse is in our window, so panning and zooming are active!
+	  
+			const double dCenterX = (dMinX + dMaxX)/2;
+			const double dCenterY = (mapMinY[*i] + mapMaxY[*i])/2;
+			double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+    
+			GLdouble dXShift,dYShift,dZ;
+		//		Project the window shift stuff so we know how far to translate the view
+			dYShift = 0;	// No Y shift or zoom for Map Plot.
+			gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,0,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZ);
+		//		Set up to perform the ZOOM function for DATA PLOT.   
+			const double dTranslateShiftX = dCenterX;
+			glScaled(dScaleAmt,1.0,1.0);	//	No scaling of Y-axis on Data Plot.
+			glTranslated(dMinX+dXShift,0,0);	//	Needed to get the panning in the right direction
+
+		//		Now having shifted, let's get our new model matrices
+		  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+		  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+		  glGetIntegerv(GL_VIEWPORT, rgViewport);
+		}
+	}
 
     Vector2D ptHighlight; // the (x,y) coords in unit-space that we want to highlight.  Example: for a speed-distance graph, x would be in distance units, y in velocities.
     POINT ptMouse;
     if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
     {
-      // the mouse is in our window... we make our own highlighter, ignoring anything that got sent to us
+      //		The mouse is in our window... we make our own highlighter, ignoring anything that got sent to us
       GLdouble dX,dY,dZ;
       gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
       ptHighlight = V2D(dX,0);
@@ -294,36 +322,15 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         float dTimeToHighlight = -1;
         const vector<DataPoint>& lstPointsX = pDataX->GetData();
         const vector<DataPoint>& lstPointsY = pDataY->GetData();
-
-
-        srand((int)pLap);
-		const float r = RandDouble();
-		const float g = RandDouble();
-		const float b = RandDouble();
-		if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
-		{
-			float rf, gf, bf;
-			if (r < 0.5) {
-				rf = r + 0.5;	// <-- Increase the amount of Red
-			}
-			if (g < 0.5) {
-				gf = g + 0.5;	// <-- Increase the amount of Green
-			}
-			if (b < 0.5) {
-				bf = b + 0.5;	// <-- Increase the amount of Blue
-			}
-		glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-   		}
-		else { // Color is OK. Just load values into RGB constants.
-			float rf = r;
-			float gf = g;
-			float bf = b;
-		glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-		}
-
+//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+		float r;
+		float g;
+		float b;
+		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
         if(sfLapOpts.fDrawLines)
         {
-          glBegin(GL_LINE_STRIP);
+          glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
+		  glBegin(GL_LINE_STRIP);
         }
         else
         {
@@ -401,39 +408,19 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	  (0...window width, 0 ... window height).  This completes the "hey opengl, just draw where we 
 	  tell you to plz" part of the function */
 
-      for(int x = 0; x < lstMousePointsToDraw.size(); x++)	// <-- loops through all the stupid boxes we want to draw
+      for(int x = 0; x < lstMousePointsToDraw.size(); x++)	// <-- loops through all the stupid boxes/lines we want to draw
       {
         const CExtendedLap* pLap = lstMousePointsToDraw[x].m_pLap;	//  <-- gets the lap data we want to draw
         const POINT& ptWindow = lstMousePointsToDraw[x].m_ptWindow;	// <-- gets info about where in the window we want to draw the box
         const IDataChannel* pDataX = lstMousePointsToDraw[x].m_pDataX;	//  <-- gets the x channel data
         const IDataChannel* pDataY = lstMousePointsToDraw[x].m_pDataY;	// <-- gets the y channel data
 
-	    srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
-		const float r = RandDouble();
-		const float g = RandDouble();
-		const float b = RandDouble();
-		if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
-		{
-			float rf, gf, bf;
-			if (r < 0.5) {
-				rf = r + 0.5;	// <-- Increase the amount of Red
-			}
-			if (g < 0.5) {
-				gf = g + 0.5;	// <-- Increase the amount of Green
-			}
-			if (b < 0.5) {
-				bf = b + 0.5;	// <-- Increase the amount of Blue
-			}
-		glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-   		}
-		else { // Color is OK. Just load values into RGB constants.
-			float rf = r;
-			float gf = g;
-			float bf = b;
-		glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-		}
-      
-        // if we're the main screen, we want to draw some text data for each point
+		float r;
+		float g;
+		float b;
+		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+
+		// if we're the main screen, we want to draw some text data for each point
         TCHAR szLapName[256];
         pLap->GetString(szLapName, NUMCHARS(szLapName));	// <-- gets the string "10:11:12 - 1:40.59 - Keith", aka the "lap name"
 
@@ -462,14 +449,15 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         // we also want to draw a highlighted square
 //        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
         // we also want to draw a highlighted LINE for that individual lap/graph combination
-//				glColor3d( 255, 0, 0 );						// Added by Chas to make line Red. Removed to make line same color as graph.
+//				glColor3d( 1.0, 0, 0 );						// Added by Chas to make line Red. Removed to make line same color as graph.
+				glLineWidth(1);								// Added by KDJ. Skinny line for Distance markers.
 				glBegin(GL_LINE_STRIP);						// Added by KDJ
 				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
 				glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
 				glEnd();									// Added by KDJ
 	  }
       glPopMatrix();
-      glPopMatrix();
+      glPopMatrix();	//	Should there be two of these here?
     }
     rcSpot.top += iSegmentHeight;
     rcSpot.bottom += iSegmentHeight;
@@ -482,6 +470,19 @@ struct MAPHIGHLIGHT
   const CExtendedLap* pLap;
   POINT pt;
 };
+
+// Function for setting highlighting color, making sure that there is enough contrast to a black background
+void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float* pB) 
+{ 
+	srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw... 
+	do { 
+		*pR = RandDouble(); 
+		*pG = RandDouble(); 
+		*pB = RandDouble(); 
+	} 
+	while(*pR + *pG + *pB < 1.5); 
+	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+}
 
 void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 {
@@ -516,46 +517,47 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     rcAllLaps.bottom += dCentreY;
 
   }
-  // we have now determined the bounds of the thing we're going to draw
-	glPushMatrix();
+  // we have now determined the bounds of the thing we're going to draw, let's draw it
+  glPushMatrix();
   glLoadIdentity();
-  glOrtho(rcAllLaps.right, rcAllLaps.left,rcAllLaps.top, rcAllLaps.bottom,-1.0,1.0);
-  //glOrtho(rcAllLaps.left, rcAllLaps.right,rcAllLaps.bottom,rcAllLaps.top, -1.0,1.0);
+  glOrtho(rcAllLaps.left, rcAllLaps.right,rcAllLaps.bottom,rcAllLaps.top, -1.0,1.0);
   
   GLdouble rgModelviewMatrix[16];
   GLdouble rgProjMatrix[16];
   GLint rgViewport[4];
 
   {
-    glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+//		Set up the non-zoomed/panned view for the map
+//	Now that the matrices are correct, let's graph them.    
+	glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
     glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
     glGetIntegerv(GL_VIEWPORT, rgViewport);
   
-    const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
-    const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-    double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
-    
-    GLdouble dXShift,dYShift,dZ;
-    // project the window shift stuff so we know how far to translate the view
-    gluUnProject(-sfLapOpts.flWindowShiftX/dScaleAmt,-sfLapOpts.flWindowShiftY/dScaleAmt,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZ);
-    
-    const double dTranslateShiftX = dCenterX;
-    const double dTranslateShiftY = dCenterY;
-    glTranslated(dTranslateShiftX,dTranslateShiftY,0);
-    glRotated(180.0, 0.0, 0.0, 1.0);
-    glScaled(dScaleAmt,dScaleAmt,dScaleAmt);
-    glTranslated(-dTranslateShiftX,-dTranslateShiftY,0);
+	POINT ptMouse;
+	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+	{
+	// the mouse is in our window, so let's enable panning and zooming!
+		const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
+		const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
+		double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+		GLdouble dXShift,dYShift,dZ;
+	//		Project the window shift stuff so we know how far to translate the view
+		gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,sfLapOpts.flWindowShiftY/dScaleAmt,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZ);
 
-    glTranslated(dXShift-rcAllLaps.right,dYShift-rcAllLaps.top,0);
+	//		Set up to perform the ZOOM function for MAP.   
+		const double dTranslateShiftX = dCenterX;
+		const double dTranslateShiftY = dCenterY;
+		glScaled(dScaleAmt,dScaleAmt,dScaleAmt);
 
+			glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);
+//			glTranslated(dXShift,dYShift,0);
+
+	  // now having shifted, let's get our new model matrices
+	  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+	  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+	  glGetIntegerv(GL_VIEWPORT, rgViewport);
+	}
   }
-
-
-  // now having shifted, let's get our new model matrices
-  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
-  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
-  glGetIntegerv(GL_VIEWPORT, rgViewport);
-
   POINT ptMouse;
   Vector2D vHighlight;
   if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
@@ -573,7 +575,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   for(int x = 0; x < lstLaps.size(); x++)
   {
     CExtendedLap* pLap = lstLaps[x];
-    srand((int)pLap);
+    srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
 
     float dBestLength = -1;
     float dTimeToHighlight = -1;
@@ -581,6 +583,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
     if(sfLapOpts.fDrawLines)
     {
+      glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
       glBegin(GL_LINE_STRIP);
     }
     else
@@ -588,33 +591,13 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       glPointSize(5.0f);
       glBegin(GL_POINTS);
     }
-    srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
-//	Code changed to improve the contrast of the map.
-	const float r = RandDouble();
-	const float g = RandDouble();
-	const float b = RandDouble();
-	if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
-	{
-		float rf, gf, bf;
-		if (r < 0.5) {
-			rf = r + 0.5;	// <-- Increase the amount of Red
-		}
-		if (g < 0.5) {
-			gf = g + 0.5;	// <-- Increase the amount of Green
-		}
-		if (b < 0.5) {
-			bf = b + 0.5;	// <-- Increase the amount of Blue
-		}
-	glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-   	}
-	else { // Color is OK. Just load values into RGB constants.
-		float rf = r;
-		float gf = g;
-		float bf = b;
-	glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-	}
-//
-    const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
+//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+	float r;
+	float g;
+	float b;
+	MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+
+	const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
     for(int x = 0; x< lstPoints.size(); x++)
     {
       const TimePoint2D& p = lstPoints[x];
@@ -679,17 +662,18 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     {
       Vector2D pt1 = pSF[x].GetPt1();
       Vector2D pt2 = pSF[x].GetPt2();
+      glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
       glBegin(GL_LINE_STRIP);
-      glColor3d(1.0,0.0,0.0);
+      glColor3d(1.0,0.0,0.0);	// Red for S/F line color
       glVertex2f(pt1.m_v[0],pt1.m_v[1]);
       glVertex2f(pt2.m_v[0],pt2.m_v[1]);
       glEnd();
 
       glColor3d(1.0,1.0,1.0);
       LPCSTR lpszText = "";
-      if(x == 0) lpszText = "S1";
-      if(x == 1) lpszText = "S2";
-      if(x == 2) lpszText = "S/F";
+      if(x == 0) lpszText = "S1";	// Segment 1, likely no longer active
+      if(x == 1) lpszText = "S2";	// Segment 2, likely no longer active
+      if(x == 2) lpszText = "S/F";	// Segment 3, likely no longer active
       DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);
       DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);
     }
@@ -711,32 +695,11 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     {
       const CExtendedLap* pLap = lstMousePointsToDraw[x].pLap;
       const POINT& ptWindow = lstMousePointsToDraw[x].pt;
-
-//	Modified code to improve the contrast of the map.
-    srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
-	const float r = RandDouble();
-	const float g = RandDouble();
-	const float b = RandDouble();
-	if ((r + g + b) < 1.5) // Color is too dark. Adjust to a color that will provide enough contrast for a black background
-	{
-		float rf, gf, bf;
-		if (r < 0.5) {
-			rf = r + 0.5;	// <-- Increase the amount of Red
-		}
-		if (g < 0.5) {
-			gf = g + 0.5;	// <-- Increase the amount of Green
-		}
-		if (b < 0.5) {
-			bf = b + 0.5;	// <-- Increase the amount of Blue
-		}
-	glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-   	}
-	else { // Color is OK. Just load values into RGB constants.
-		float rf = r;
-		float gf = g;
-		float bf = b;
-	glColor3d( rf, gf, bf ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
-	}
+//      srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
+	  float r;
+	  float g;
+	  float b;
+	  MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
       
       // we also want to draw a highlighted square
       DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);

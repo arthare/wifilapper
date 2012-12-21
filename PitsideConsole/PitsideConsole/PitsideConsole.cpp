@@ -511,6 +511,11 @@ public:
             ShowNetInfo();
             return TRUE;
           }
+          case ID_HELP_ABOUT:
+          {
+			  ShowAbout();
+			  return TRUE;
+          }
           case ID_DATA_OPENDB:
           {
             TCHAR szFilename[MAX_PATH];
@@ -757,7 +762,7 @@ public:
       {
         m_sfLapOpts.flWindowShiftX = 0;
         m_sfLapOpts.flWindowShiftY = 0;
-        m_sfLapOpts.iZoomLevels = 0;
+//        m_sfLapOpts.iZoomLevels = 0;
         UpdateUI(UPDATE_MAP);
         return TRUE;
       }
@@ -903,6 +908,12 @@ private:
     m_mapLaps.clear();
     m_sfLapList.Clear();
   }
+   void ShowAbout()
+	{
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.001.0001\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+			L"About Pitside Console",MB_OK);
+		return;
+	}
   void ShowNetInfo()
   {
     while(true)
@@ -1056,7 +1067,7 @@ private:
       {
         // we don't have this lap yet, so let's put it in
         CExtendedLap* pNewLap = new CExtendedLap(pLap, m_pReferenceLap, pReceiver, true);
-        if(m_pReferenceLap == NULL)
+        if(m_pReferenceLap == NULL)		// If there is no reference lap currently
         {
           m_pReferenceLap = pNewLap; // by default, make the first lap received the reference lap
         }
@@ -1151,7 +1162,16 @@ private:
     {
       lstLaps.push_back(i->second);
     }
-
+	//	Set up for showing Reference lap similar to how we show Fastest Lap.
+	if(m_pReferenceLap != NULL)
+    {
+      lstLaps.push_back(m_pReferenceLap);
+    }
+    for(map<wstring,CExtendedLap*>::iterator i = mapFastestDriver.begin(); i != mapFastestDriver.end(); i++)
+    {
+      lstLaps.push_back(i->second);
+    }
+// */
     return lstLaps;
   }
   virtual FLOATRECT GetAllLapsBounds() const override
@@ -1272,8 +1292,7 @@ private:
       switch(m_sfLapOpts.eUnitPreference)
       {
       case UNIT_PREFERENCE_KMH: return KMH_TO_MS(25.0);
-//      case UNIT_PREFERENCE_MPH: return MPH_TO_MS(10.0);	// 	Remarked out by KDJ
-	  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Added by KDJ
+	  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Adjusted by KDJ
       case UNIT_PREFERENCE_MS: return 5;
       }
       return 10.0;
@@ -1281,12 +1300,12 @@ private:
     case DATA_CHANNEL_DISTANCE: return 1e30;
     case DATA_CHANNEL_TIMESLIP: 
     {
-	  if(flSpread < 1500) return 100.0f;		//	Added by KDJ to improve TS display
-//      if(flSpread < 10000) return 1000.0f;	//	Commented out by KDJ
-	  if(flSpread < 15000) return 1000.0f;		//	Increased the trigger to improve TS display
-//      if(flSpread < 100000) return 10000.0f;	//	Commented out by KDJ
-      if(flSpread < 150000) return 10000.0f;	// Increased the trigger to improve TS display
-      if(flSpread < 1000000) return 100000.0f;
+	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
+	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
+	  if(flSpread < 10000) return 1000.0f;		//	Increased the trigger to improve TS display
+      if(flSpread < 50000) return 5000.0f;		// Increased the trigger to improve TS display
+	  if(flSpread < 110000) return 10000.0f;	// Increased the trigger to improve TS display
+      if(flSpread < 1100000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
     }
     case DATA_CHANNEL_X_ACCEL: return 0.5f;
