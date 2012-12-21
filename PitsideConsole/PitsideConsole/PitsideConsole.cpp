@@ -1292,12 +1292,14 @@ private:
     case DATA_CHANNEL_DISTANCE: return 1e30;
     case DATA_CHANNEL_TIMESLIP: 
     {
-	  if(flSpread < 1500) return 100.0f;		//	Added by KDJ to improve TS display
+	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
 //      if(flSpread < 10000) return 1000.0f;	//	Commented out by KDJ
-	  if(flSpread < 15000) return 1000.0f;		//	Increased the trigger to improve TS display
+	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
+	  if(flSpread < 10000) return 1000.0f;		//	Increased the trigger to improve TS display
 //      if(flSpread < 100000) return 10000.0f;	//	Commented out by KDJ
-      if(flSpread < 150000) return 10000.0f;	// Increased the trigger to improve TS display
-      if(flSpread < 1000000) return 100000.0f;
+      if(flSpread < 50000) return 5000.0f;	// Increased the trigger to improve TS display
+	  if(flSpread < 110000) return 10000.0f;	// Increased the trigger to improve TS display
+      if(flSpread < 1100000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
     }
     case DATA_CHANNEL_X_ACCEL: return 0.5f;
