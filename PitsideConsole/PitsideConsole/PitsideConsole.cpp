@@ -1489,6 +1489,10 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+//	Show Splash screen as first screen
+  CSplashDlg splash;
+  ArtShowDialog<IDD_DLGSPLASH>(&splash);
+
   if(strcmp(lpCmdLine,"unit") == 0)
   {
     return UnitTests();
@@ -1574,9 +1578,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
   g_pLapDB = &sfLaps;
-
-  CSplashDlg splash;
-  ArtShowDialog<IDD_DLGSPLASH>(&splash);
+//	Removing to put splash screen at program start up
+//  CSplashDlg splash;
+//  ArtShowDialog<IDD_DLGSPLASH>(&splash);
 
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);
