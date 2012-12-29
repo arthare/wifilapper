@@ -24,7 +24,8 @@ CLapPainter::~CLapPainter()
 
 void CLapPainter::OGL_Paint()
 {
-  glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+  glClearColor( 0.2f, 0.2f, 0.2f, 0.2f );	//	Background color is black. May want to allow a user option to set this
+//   glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );	//	Background color is black. May want to allow a user option to set this
 	glClear( GL_COLOR_BUFFER_BIT );
   
   RECT rcClient;
@@ -89,6 +90,7 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
   // we have now determined the bounds of the thing we're going to draw
   glPushMatrix();
   glLoadIdentity();
+  glScalef(0.95f, 0.70f, 1.0f);	//	I think that this is needed, to be like the other data plots using this scaling - KDJ
   glOrtho(rcAllLaps.right, rcAllLaps.left, rcAllLaps.top, rcAllLaps.bottom,-1.0,1.0);
   
   GLdouble rgModelviewMatrix[16];
@@ -180,7 +182,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   float dMinX = 1e30;
 
   { // figuring out bounds and getting matrices all set up
-    
+    //	First lets load up all of the data into an array and determine its size
     for(int x = 0;x < lstLaps.size(); x++)
     {
       CExtendedLap* pLap = lstLaps[x];
@@ -245,13 +247,12 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     // now we have the bounds of all the laps we've looked at, so let's draw them
     glPushMatrix();
     glLoadIdentity();
-    glScalef(0.95f, 0.70f, 0.95f);
+    glScalef(0.95f, 0.70f, 1.0f);	// Let's scale it so that graphs don't touch each other.
     glOrtho(dMinX, dMaxX,mapMinY[*i], mapMaxY[*i],-1.0,1.0);
 
-    // draw line guides on the background
+    // draw line guides and text on the background
     for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
-//      glColor3d(1.0,1.0,1.0);	//	Commented out by KDJ
       glColor3d(0.7,0.7,0.7);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
       glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
       glBegin(GL_LINE_STRIP);
@@ -265,38 +266,63 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       DrawText(dMinX, flLine, szText);
     }
 
+//		Set up the non-zoomed/panned view for the map
     GLdouble rgModelviewMatrix[16];
     GLdouble rgProjMatrix[16];
     GLint rgViewport[4];
     
 	{
+//	Now that the matrices are correct, let's graph them.    
 		glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
 		glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
 		glGetIntegerv(GL_VIEWPORT, rgViewport);
 
+	  if (DATA_CHANNEL_DISTANCE) 
+	  {
+			//	Only perform ZOOM/PAN functions if the X-axis is DISTANCE, as it won't work for others
 		POINT ptMouse;
 		if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
 		{
 		//		The mouse is in our window, so panning and zooming are active!
 	  
-			const double dCenterX = (dMinX + dMaxX)/2;
-			const double dCenterY = (mapMinY[*i] + mapMaxY[*i])/2;
+	//	Code here to determine where in the window the mouse is so that zooming can be performed at the point where the mouse is. THIS DOESN't WORK YET.
+	  const double dWindowX = (rcSpot.left + rcSpot.right);		// Calculate window width
+	  //	Determine where the mouse is relative to the window.
+      GLdouble dX,dY,dZ;
+      gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+	  //	We now have the window Xmin, Xmax and the Mouse X, let's set the origin for the scaling to occur
+			RECT rcBasePos;
+			GetClientRect(OGL_GetHWnd(), &rcBasePos);			
+			const double dMouseCenterX = (dMinX + (ptMouse.x - (rcBasePos.left)))/(dMinX + dMaxX);		//	Center of dMouseX for scaling transformation
+
+			const double dCenterX = (dMinX + dMaxX)/2;		//	Center of X for scaling transformation
 			double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
-    
-			GLdouble dXShift,dYShift,dZ;
+			GLdouble dXShift,dYShift,dZShift;
 		//		Project the window shift stuff so we know how far to translate the view
 			dYShift = 0;	// No Y shift or zoom for Map Plot.
-			gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,0,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZ);
+			gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,0,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZShift);
 		//		Set up to perform the ZOOM function for DATA PLOT.   
-			const double dTranslateShiftX = dCenterX;
+		double dTranslateShiftX;
+		dTranslateShiftX= dCenterX;
+//		if(LAPSUPPLIEROPTIONS :: iZoomLevels != 1) 
+//		{
+//			//	Magnification changed by mouse wheel requested. Need to scale and move to dMouseX
+//			dTranslateShiftX = dMouseCenterX*dScaleAmt;	// Set translate position to mouse location
+//		}
+			glTranslated(dTranslateShiftX,0,0);	// Translate the map to origin on x-axis only
 			glScaled(dScaleAmt,1.0,1.0);	//	No scaling of Y-axis on Data Plot.
-			glTranslated(dMinX+dXShift,0,0);	//	Needed to get the panning in the right direction
+			glTranslated(-dTranslateShiftX,0,0);	// Now put the map back in its place
+
+//			glTranslated(dMinX+dXShift,0,0);	//	Needed to get the panning in the right direction
+			glTranslated(dXShift-dMinX,0,0);	//	Needed to get the panning in the right direction
+//			glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);	// Now let's allow it to pan
 
 		//		Now having shifted, let's get our new model matrices
 		  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
 		  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
 		  glGetIntegerv(GL_VIEWPORT, rgViewport);
 		}
+	  }
 	}
 
     Vector2D ptHighlight; // the (x,y) coords in unit-space that we want to highlight.  Example: for a speed-distance graph, x would be in distance units, y in velocities.
@@ -520,38 +546,42 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   // we have now determined the bounds of the thing we're going to draw, let's draw it
   glPushMatrix();
   glLoadIdentity();
+  glScalef(0.95f, 0.95f, 1.0f);	// Scale it so that it almost fills up the window.
   glOrtho(rcAllLaps.left, rcAllLaps.right,rcAllLaps.bottom,rcAllLaps.top, -1.0,1.0);
   
+//		Set up the non-zoomed/panned view for the map
   GLdouble rgModelviewMatrix[16];
   GLdouble rgProjMatrix[16];
   GLint rgViewport[4];
 
   {
-//		Set up the non-zoomed/panned view for the map
 //	Now that the matrices are correct, let's graph them.    
 	glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
     glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
     glGetIntegerv(GL_VIEWPORT, rgViewport);
   
+    const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
+    const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
+    double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+
 	POINT ptMouse;
 	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
 	{
 	// the mouse is in our window, so let's enable panning and zooming!
-		const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
-		const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
+		const double dTranslateShiftX = (rcAllLaps.left + rcAllLaps.right)/2;
+		const double dTranslateShiftY = (rcAllLaps.top + rcAllLaps.bottom)/2;
 		double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
 		GLdouble dXShift,dYShift,dZ;
-	//		Project the window shift stuff so we know how far to translate the view
+
+		//		Project the window shift stuff so we know how far to translate the view
 		gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,sfLapOpts.flWindowShiftY/dScaleAmt,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZ);
 
 	//		Set up to perform the ZOOM function for MAP.   
-		const double dTranslateShiftX = dCenterX;
-		const double dTranslateShiftY = dCenterY;
-		glScaled(dScaleAmt,dScaleAmt,dScaleAmt);
+			glTranslated(dTranslateShiftX,dTranslateShiftY,0);	// Translate the map to origin
+			glScaled(dScaleAmt,dScaleAmt,dScaleAmt);	//	Scale the sucker
+			glTranslated(-dTranslateShiftX,-dTranslateShiftY,0);	// Now put the map back in its place
 
-			glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);
-//			glTranslated(dXShift,dYShift,0);
-
+			glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);	// Now let's allow it to pan
 	  // now having shifted, let's get our new model matrices
 	  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
 	  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
@@ -591,7 +621,6 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       glPointSize(5.0f);
       glBegin(GL_POINTS);
     }
-//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
 	float r;
 	float g;
 	float b;
@@ -653,7 +682,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
   }
 
-  // draw the start-finish lines
+  // draw the start-finish and segment lines
   if(lstLaps.size() > 0)
   {
     const CExtendedLap* pLastLap = lstLaps[lstLaps.size()-1];
@@ -674,8 +703,8 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       if(x == 0) lpszText = "S1";	// Segment 1, likely no longer active
       if(x == 1) lpszText = "S2";	// Segment 2, likely no longer active
       if(x == 2) lpszText = "S/F";	// Segment 3, likely no longer active
-      DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);
-      DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);
+      DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
+      DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
     }
   }
 

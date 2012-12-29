@@ -762,7 +762,7 @@ public:
       {
         m_sfLapOpts.flWindowShiftX = 0;
         m_sfLapOpts.flWindowShiftY = 0;
-//        m_sfLapOpts.iZoomLevels = 0;
+        m_sfLapOpts.iZoomLevels = 0;
         UpdateUI(UPDATE_MAP);
         return TRUE;
       }
