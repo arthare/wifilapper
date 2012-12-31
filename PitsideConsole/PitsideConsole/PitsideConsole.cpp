@@ -1162,7 +1162,7 @@ private:
     {
       lstLaps.push_back(i->second);
     }
-	//	Set up for showing Reference lap similar to how we show Fastest Lap.
+/*	//	Set up for showing Reference lap similar to how we show Fastest Lap.
 	if(m_pReferenceLap != NULL)
     {
       lstLaps.push_back(m_pReferenceLap);
@@ -1171,7 +1171,7 @@ private:
     {
       lstLaps.push_back(i->second);
     }
-// */
+*/
     return lstLaps;
   }
   virtual FLOATRECT GetAllLapsBounds() const override
@@ -1489,7 +1489,7 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-//	Show Splash screen as first screen
+//  Show Splash screen as first screen
   CSplashDlg splash;
   ArtShowDialog<IDD_DLGSPLASH>(&splash);
 
@@ -1578,7 +1578,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
   g_pLapDB = &sfLaps;
-//	Removing to put splash screen at program start up
+
+//  Removing to put splash screen at program start up
 //  CSplashDlg splash;
 //  ArtShowDialog<IDD_DLGSPLASH>(&splash);
 

@@ -24,7 +24,7 @@ CLapPainter::~CLapPainter()
 
 void CLapPainter::OGL_Paint()
 {
-  glClearColor( 0.8f, 0.8f, 0.8f, 0.8f );	//	Background color is white. May want to allow a user option to set this
+  glClearColor( 0.8f, 0.8f, 0.8f, 0.8f );  //  Background color is white. May want to allow a user option to set this
 //   glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );	//	Background color is black. May want to allow a user option to set this
 	glClear( GL_COLOR_BUFFER_BIT );
   
@@ -250,7 +250,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     glScalef(0.95f, 0.70f, 1.0f);	// Let's scale it so that graphs don't touch each other.
     glOrtho(dMinX, dMaxX,mapMinY[*i], mapMaxY[*i],-1.0,1.0);
 
-    // draw horzontal guide line and text on the background
+    // draw horizontal guide lines and text on the background
     for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
       glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
@@ -261,29 +261,33 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       glEnd();
       
       glColor3d(0.1,0.1,0.5);
-//		glColor3d(0.7,0.7,0.7);
       char szText[256];
       GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
       DrawText(dMinX, flLine, szText);
     }
+
 /*
-    // draw vertical guide line and text on the background
-    for(float flLine = m_pLapSupplier->GetGuideStart(*i, dMinX[*i], dMaxX[*i]) + m_pLapSupplier->GetGuideStep(*i, dMinX[*i], dMaxX[*i]); flLine < dMaxX[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, dMinX[*i], dMaxX[*i]))
-    {
-      glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
-      glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
-      glBegin(GL_LINE_STRIP);
-      glVertex2f(mapMinY,flLine);
-      glVertex2f(mapMaxY,flLine);
-      glEnd();
-      
-      glColor3d(0.1,0.1,0.5);
-//		glColor3d(0.7,0.7,0.7);
-      char szText[256];
-      GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-      DrawText(dMinX, flLine, szText);
-    }
+	// draw vertical guide line and text on the background
+	for(float flLine = m_pLapSupplier->GetGuideStart(*i, dMinX[*i], dMaxX[*i]) + m_pLapSupplier->GetGuideStep(*i, dMinX[*i], dMaxX[*i]); flLine < dMaxX[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, dMinX[*i], dMaxX[*i]))
+	{
+		glColor3d(0.1,0.1,0.5);  // Reduced the brightness of the guidelines to match text, and to better see the data lines
+		glLineWidth(1);      // Added by KDJ. Skinny lines for guidelines.
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(mapMinY,flLine);
+		glVertex2f(mapMaxY,flLine);
+		glEnd();
+
+		glColor3d(0.1,0.1,0.5);
+		//    glColor3d(0.7,0.7,0.7);
+		char szText[256];
+		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+		
+		DrawText(dMinX, flLine, szText);
+	}
+
 */
+
+
 //		Set up the non-zoomed/panned view for the map
     GLdouble rgModelviewMatrix[16];
     GLdouble rgProjMatrix[16];
@@ -716,8 +720,8 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       glVertex2f(pt2.m_v[0],pt2.m_v[1]);
       glEnd();
 
+	  glColor3d(1.0,0.0,0.0);
 //      glColor3d(1.0,1.0,1.0);
-      glColor3d(1.0,0.0,0.0);
       LPCSTR lpszText = "";
       if(x == 0) lpszText = "S1";	// Segment 1, likely no longer active
       if(x == 1) lpszText = "S2";	// Segment 2, likely no longer active
