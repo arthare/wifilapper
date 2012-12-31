@@ -1162,6 +1162,7 @@ private:
     {
       lstLaps.push_back(i->second);
     }
+
 /*	//	Set up for showing Reference lap similar to how we show Fastest Lap.
 	if(m_pReferenceLap != NULL)
     {
@@ -1171,6 +1172,7 @@ private:
     {
       lstLaps.push_back(i->second);
     }
+
 */
     return lstLaps;
   }
