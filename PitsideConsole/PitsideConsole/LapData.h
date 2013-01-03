@@ -13,6 +13,7 @@ enum DATA_CHANNEL
   DATA_CHANNEL_PLOTTABLE_START = 2,
 
   DATA_CHANNEL_DISTANCE = DATA_CHANNEL_PLOTTABLE_START,
+  DATA_CHANNEL_TIME = 11,		//	Preparing to add Time channel for X-axis
   DATA_CHANNEL_VELOCITY = 3,
   DATA_CHANNEL_TIMESLIP = 4,
   DATA_CHANNEL_X_ACCEL = 5,
@@ -98,9 +99,9 @@ public:
   static void GetStringHeaders(vector<wstring>& lstCols, vector<int>& lstWidths)
   {
     lstCols.push_back(L"Time");
-    lstWidths.push_back(80);
+    lstWidths.push_back(60);
     lstCols.push_back(L"Laptime");
-    lstWidths.push_back(80);
+    lstWidths.push_back(60);
     lstCols.push_back(L"Comment");
     lstWidths.push_back(255);
   }

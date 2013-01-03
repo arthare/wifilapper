@@ -516,7 +516,24 @@ public:
 			  ShowAbout();
 			  return TRUE;
           }
-          case ID_DATA_OPENDB:
+          case ID_FILE_PRINT:
+          {
+			  return TRUE;
+          }
+          case ID_FILE_EXIT:
+          {
+			  return TRUE;
+          }
+          case ID_EDIT_COPY:
+          {
+			  return TRUE;
+          }
+          case ID_EDIT_PREFERENCES:
+          {
+			  return TRUE;
+          }
+          
+		  case ID_DATA_OPENDB:
           {
             TCHAR szFilename[MAX_PATH];
             if(ArtGetOpenFileName(hWnd, L"Choose WFLP file", szFilename, NUMCHARS(szFilename),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
@@ -910,8 +927,14 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.001.0001\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0001\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
+/*		while (WM_MOUSEOVER != NULL)
+		{
+			MouseIcon = 2;
+			if (WM_CLICK != NULL) { ShellExecute(http://sites.google.com/site/wifilapper"}; }
+		}
+*/
 		return;
 	}
   void ShowNetInfo()
@@ -1131,6 +1154,7 @@ private:
     vector<CExtendedLap*> lstLaps;
     map<wstring,CExtendedLap*> mapFastestDriver;
     CExtendedLap* pFastest = NULL;
+//    CExtendedLap* pReference = NULL;		// Added to show Reference Lap - KDJ
     for(set<LPARAM>::iterator i = setSelectedLaps.begin(); i != setSelectedLaps.end(); i++)
     {
       CExtendedLap* pLap = (CExtendedLap*)*i;
@@ -1168,7 +1192,7 @@ private:
     {
       lstLaps.push_back(m_pReferenceLap);
     }
-    for(map<wstring,CExtendedLap*>::iterator i = mapFastestDriver.begin(); i != mapFastestDriver.end(); i++)
+    for(map<wstring,CExtendedLap*>::iterator i = m_pReferenceLap(0); i != m_pReferenceLap.size; i++)
     {
       lstLaps.push_back(i->second);
     }
@@ -1245,6 +1269,53 @@ private:
     }
     return -1e30;
   }
+
+  virtual float GetGuideStartX(DATA_CHANNEL eChannel, float flMin, float flMax) override
+  {
+    CASSERT(DATA_CHANNEL_COUNT == 0x401);
+
+    switch(eChannel)
+    {
+      case DATA_CHANNEL_X: return 1e30;
+      case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
+      case DATA_CHANNEL_VELOCITY: return 0;
+      case DATA_CHANNEL_DISTANCE: return 0;
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin-1);
+      }
+	  case DATA_CHANNEL_TIME:
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin-1);
+      }
+	  case DATA_CHANNEL_TIMESLIP:
+	  {
+        int iMin = (int)(flMin/1000.0f);
+        return (float)(iMin-1)*1000.0f;
+      }
+      case DATA_CHANNEL_X_ACCEL:
+      case DATA_CHANNEL_Y_ACCEL:
+      case DATA_CHANNEL_Z_ACCEL:
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin-1);
+      }
+      case DATA_CHANNEL_TEMP: return 0;
+      case (DATA_CHANNEL_PID_START+0x5): return -40;
+      case (DATA_CHANNEL_PID_START+0xc): return 0;
+      case (DATA_CHANNEL_PID_START+0xA): return 0;
+      case (DATA_CHANNEL_PID_START+0x5c): return -40;
+      default: 
+        if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
+            eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
+        {
+          return m_sfLapOpts.fIOIOHardcoded ? 0 : 1e30;
+        }
+        return 1e30;
+    }
+  }
+
   virtual float GetGuideStart(DATA_CHANNEL eChannel, float flMin, float flMax) override
   {
     CASSERT(DATA_CHANNEL_COUNT == 0x401);
@@ -1255,6 +1326,7 @@ private:
       case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
       case DATA_CHANNEL_VELOCITY: return 0;
       case DATA_CHANNEL_DISTANCE: return 1e30;
+      case DATA_CHANNEL_TIME: return 1e30;
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
@@ -1281,6 +1353,52 @@ private:
         return 1e30;
     }
   }
+
+  virtual float GetGuideStepX(DATA_CHANNEL eChannel, float flMin, float flMax) override
+  {
+  // Function sets up the spacing for the vertical guidelines on the data plots
+	  CASSERT(DATA_CHANNEL_COUNT == 0x401);
+    const float flSpread = flMax - flMin;
+    switch(eChannel)
+    {
+    case DATA_CHANNEL_X: return 1e30;
+    case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
+/*    case DATA_CHANNEL_VELOCITY:	// We need to fix the X-channel call before putting these back into the code.
+		{
+		  switch(m_sfLapOpts.eUnitPreference)
+		  {
+		  case UNIT_PREFERENCE_KMH: return KMH_TO_MS(25.0);
+		  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Adjusted by KDJ
+		  case UNIT_PREFERENCE_MS: return 5;
+		  }
+		  return 10.0;
+		}
+    case DATA_CHANNEL_DISTANCE: 
+		{
+		  if(flSpread < 0.001) return 0.0001f;		
+		  if(flSpread < 0.005) return 0.0005f;		
+		  if(flSpread < 0.010) return 0.0010f;		
+		  if(flSpread < 0.050) return 0.0050f;		
+		  if(flSpread < 1.000) return 0.1000f;
+		  if(flSpread < 10.00) return 1.0000f;
+		  return 50.0f;
+		} 
+*/
+    case DATA_CHANNEL_TIME:					
+		{
+		  if(flSpread < 10000) return 1000.0f;		
+		  if(flSpread < 50000) return 5000.0f;		
+		  if(flSpread < 100000) return 10000.0f;		
+		  if(flSpread < 500000) return 50000.0f;		
+		  if(flSpread < 1100000) return 100000.0f;	
+		  if(flSpread < 100000000) return 10000000.0f;
+		  return 1e30f;
+		}
+	default:
+    return 1e30;
+	}
+  }
+
   virtual float GetGuideStep(DATA_CHANNEL eChannel, float flMin, float flMax) override
   {
     CASSERT(DATA_CHANNEL_COUNT == 0x401);
@@ -1299,7 +1417,18 @@ private:
       }
       return 10.0;
     }
-    case DATA_CHANNEL_DISTANCE: return 1e30;
+    case DATA_CHANNEL_DISTANCE: 
+    {
+	  if(flSpread < 0.001) return 0.0001f;		
+	  if(flSpread < 0.005) return 0.0005f;		
+	  if(flSpread < 0.010) return 0.0010f;		
+      if(flSpread < 0.050) return 0.0050f;		
+      if(flSpread < 1.000) return 0.1000f;
+      if(flSpread < 10.00) return 1.0000f;
+	  return 50;
+	}
+
+    case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
     case DATA_CHANNEL_TIMESLIP: 
     {
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display

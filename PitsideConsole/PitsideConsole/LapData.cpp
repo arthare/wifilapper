@@ -238,6 +238,7 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
   case DATA_CHANNEL_X: lpszDataName = L"Longitude"; break;
   case DATA_CHANNEL_Y: lpszDataName = L"Latitude"; break;
   case DATA_CHANNEL_DISTANCE: lpszDataName = L"Distance"; break;
+  case DATA_CHANNEL_TIME: lpszDataName = L"Time"; break;		//	Start of adding a Time X-axis function
   case DATA_CHANNEL_VELOCITY: lpszDataName = L"Velocity"; break;
   case DATA_CHANNEL_TIMESLIP: lpszDataName = L"Time-slip"; break;
   case DATA_CHANNEL_X_ACCEL: lpszDataName = L"X accel"; break;
@@ -333,7 +334,14 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
       sprintf(lpsz, "%4.4f", flValue);
       break;
     }
-    case DATA_CHANNEL_VELOCITY:
+    case DATA_CHANNEL_TIME:
+    {
+      // note: Need to get the amount of time (iTime?) since the start of the lap
+      sprintf(lpsz, "%4.2fs %s", flValue/1000.0);
+      break;
+    }
+
+	case DATA_CHANNEL_VELOCITY:
     {
       LPCSTR lpszUnits = GetUnitText(eUnits);
       // note: velocity is in m/s, but most humans will like km/h (well... except for americans, but screw them for now)
@@ -478,8 +486,10 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
     IDataChannel* pX = pLapDB->AllocateDataChannel();
     IDataChannel* pY = pLapDB->AllocateDataChannel();
-
-    pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
+    IDataChannel* pTime = pLapDB->AllocateDataChannel();	// New Time function for Chas
+    
+	pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME); // you'll probably have to declare DATA_CHANNEL_TIME along the other DATA_CHANNEL enums
+	pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
     pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
@@ -491,7 +501,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
-
+	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
       TimePoint2D sfD1, sfD2;
       int iMatchedTime = 0;
       double dPct = (double)x / (double)lstPoints.size();
@@ -546,6 +556,16 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pLapDB->FreeDataChannel(pDistance);
       pDistance = NULL;
     }
+    if(pTime->IsValid())
+    {
+      pTime->Lock();
+      AddChannel(pTime);
+    }
+    else
+    {
+      pLapDB->FreeDataChannel(pTime);
+      pTime = NULL;
+    }
     if(pVelocity->IsValid())
     {
       pVelocity->Lock();
@@ -593,7 +613,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
               {
                 const int iLastTime = lstReference[ixCheck-1].iTime;
                 const int iThisTime = lstReference[ixCheck].iTime;
-                const double dEstimatedElapsedTime = ((1.0-dFraction)*iLastTime + dFraction*iThisTime) - (double)iReferenceStartTime; // this is the estimated time for the previous lap at this position
+                const double dEstimatedElapsedTime = ((1.0-dFraction)*iLastTime + dFraction*iThisTime) - (double)iReferenceStartTime; 
+				// this is the estimated time for the previous lap at this position
                 if(dEstimatedElapsedTime >= 0)
                 {
                   float dTimeSlip = dEstimatedElapsedTime - (double)iElapsedTime;
@@ -652,7 +673,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     IDataChannel* pDistance = pLapDB->AllocateDataChannel();
     IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
     IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
+    IDataChannel* pTime = pLapDB->AllocateDataChannel();
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
+    pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);		// Preparing to add Time channel for X-axis
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
     pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
     for(int x = 1;x < lstPoints.size(); x++)
@@ -660,6 +683,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       const TimePoint2D& p = lstPoints[x];
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
+	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
 
       const double dX = p.flX - ptLast.flX;
       const double dY = p.flY - ptLast.flY;
@@ -676,10 +700,12 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pX->Lock();
     pY->Lock();
     pDistance->Lock();
-    pVelocity->Lock();
+    pTime->Lock();
+	pVelocity->Lock();
     pTimeSlip->Lock();
     AddChannel(pDistance);
-    AddChannel(pVelocity);
+    AddChannel(pTime);
+	AddChannel(pVelocity);
     AddChannel(pTimeSlip);
     AddChannel(pX);
     AddChannel(pY);

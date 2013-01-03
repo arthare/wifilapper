@@ -25,8 +25,7 @@ CLapPainter::~CLapPainter()
 void CLapPainter::OGL_Paint()
 {
   glClearColor( 0.8f, 0.8f, 0.8f, 0.8f );  //  Background color is white. May want to allow a user option to set this
-//   glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );	//	Background color is black. May want to allow a user option to set this
-	glClear( GL_COLOR_BUFFER_BIT );
+  glClear( GL_COLOR_BUFFER_BIT );
   
   RECT rcClient;
   GetClientRect(OGL_GetHWnd(), &rcClient);
@@ -90,7 +89,7 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
   // we have now determined the bounds of the thing we're going to draw
   glPushMatrix();
   glLoadIdentity();
-  glScalef(0.95f, 0.70f, 1.0f);	//	I think that this is needed, to be like the other data plots using this scaling - KDJ
+  glScalef(1.0f, 0.70f, 1.0f);	//	Keep the same scaling - KDJ
   glOrtho(rcAllLaps.right, rcAllLaps.left, rcAllLaps.top, rcAllLaps.bottom,-1.0,1.0);
   
   GLdouble rgModelviewMatrix[16];
@@ -142,6 +141,7 @@ void CLapPainter::DrawSelectLapsPrompt() const
 
   glPushMatrix();
   glLoadIdentity();
+  glScalef(1.0f, 0.70f, 1.0f);	//	Keep the same scaling - KDJ
   glOrtho(0, RECT_WIDTH(&rcClient),0, RECT_HEIGHT(&rcClient),-1.0,1.0);
 
   DrawText(20.0, 20, "No laps selected.  Select some laps in the lap list");
@@ -247,11 +247,25 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     // now we have the bounds of all the laps we've looked at, so let's draw them
     glPushMatrix();
     glLoadIdentity();
-    glScalef(0.95f, 0.70f, 1.0f);	// Let's scale it so that graphs don't touch each other.
+    glScalef(1.0f, 0.70f, 1.0f);	// Let's scale it so that graphs don't touch each other.
     glOrtho(dMinX, dMaxX,mapMinY[*i], mapMaxY[*i],-1.0,1.0);
 
-    // draw horizontal guide lines and text on the background
-    for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
+    // draw horizontal guide lines and text on the background. Yes this should probably go into a function, Art ;)
+    // first draw the starting guideline
+	{	float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]);
+		glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
+		glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(dMinX,flLine);
+		glVertex2f(dMaxX,flLine);
+		glEnd();
+		glColor3d(0.1,0.1,0.5);
+		char szText[256];
+		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+		DrawText(dMinX, flLine, szText);
+	}
+	// now draw the rest of them
+	for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
       glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
       glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
@@ -267,25 +281,41 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     }
 
 /*
-	// draw vertical guide line and text on the background
-	for(float flLine = m_pLapSupplier->GetGuideStart(*i, dMinX[*i], dMaxX[*i]) + m_pLapSupplier->GetGuideStep(*i, dMinX[*i], dMaxX[*i]); flLine < dMaxX[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, dMinX[*i], dMaxX[*i]))
+	// draw vertical guide lines and text on the background
+	// first draw the starting guideline
+	{
+		float flLine = m_pLapSupplier->GetGuideStartX(*i, dMinX, dMaxX);
+		glColor3d(0.1,0.1,0.5);  // Reduced the brightness of the guidelines to match text, and to better see the data lines
+		glLineWidth(1);      // Added by KDJ. Skinny lines for guidelines.
+		glBegin(GL_LINE_STRIP);
+		glVertex3f(flLine,-100000,0);
+		glVertex3f(flLine,100000,0);
+		glEnd();
+		glColor3d(0.1,0.1,0.5);
+		char szText[256];
+		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+		DrawText(flLine, rcSpot.top, szText);
+	}
+	// now draw the rest of them
+	for(float flLine = m_pLapSupplier->GetGuideStartX(*i, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(*i, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(*i, dMinX, dMaxX))
 	{
 		glColor3d(0.1,0.1,0.5);  // Reduced the brightness of the guidelines to match text, and to better see the data lines
 		glLineWidth(1);      // Added by KDJ. Skinny lines for guidelines.
 		glBegin(GL_LINE_STRIP);
-		glVertex2f(mapMinY,flLine);
-		glVertex2f(mapMaxY,flLine);
+//		glVertex3f(flLine,mapMinY[*i],0);
+//		glVertex3f(flLine,mapMaxY[*i],0);
+		glVertex3f(flLine,-100000,0);
+		glVertex3f(flLine,100000,0);
 		glEnd();
 
 		glColor3d(0.1,0.1,0.5);
-		//    glColor3d(0.7,0.7,0.7);
 		char szText[256];
 		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		
-		DrawText(dMinX, flLine, szText);
+		DrawText(flLine, rcSpot.top, szText);
 	}
-
 */
+
 
 
 //		Set up the non-zoomed/panned view for the map
@@ -299,24 +329,10 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
 		glGetIntegerv(GL_VIEWPORT, rgViewport);
 
-	  if (DATA_CHANNEL_DISTANCE) 
-	  {
-			//	Only perform ZOOM/PAN functions if the X-axis is DISTANCE, as it won't work for others
 		POINT ptMouse;
 		if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
 		{
 		//		The mouse is in our window, so panning and zooming are active!
-	  
-	//	Code here to determine where in the window the mouse is so that zooming can be performed at the point where the mouse is. THIS DOESN't WORK YET.
-	  const double dWindowX = (rcSpot.left + rcSpot.right);		// Calculate window width
-	  //	Determine where the mouse is relative to the window.
-      GLdouble dX,dY,dZ;
-      gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
-	  //	We now have the window Xmin, Xmax and the Mouse X, let's set the origin for the scaling to occur
-			RECT rcBasePos;
-			GetClientRect(OGL_GetHWnd(), &rcBasePos);			
-			const double dMouseCenterX = (dMinX + (ptMouse.x - (rcBasePos.left)))/(dMinX + dMaxX);		//	Center of dMouseX for scaling transformation
-
 			const double dCenterX = (dMinX + dMaxX)/2;		//	Center of X for scaling transformation
 			double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
 			GLdouble dXShift,dYShift,dZShift;
@@ -326,7 +342,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		//		Set up to perform the ZOOM function for DATA PLOT.   
 		double dTranslateShiftX;
 		dTranslateShiftX= dCenterX;
-//		if(LAPSUPPLIEROPTIONS :: iZoomLevels != 1) 
+//		if(LAPSUPPLIEROPTIONS :: iZoomLevels != 1.0f) 
 //		{
 //			//	Magnification changed by mouse wheel requested. Need to scale and move to dMouseX
 //			dTranslateShiftX = dMouseCenterX*dScaleAmt;	// Set translate position to mouse location
@@ -334,17 +350,14 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			glTranslated(dTranslateShiftX,0,0);	// Translate the map to origin on x-axis only
 			glScaled(dScaleAmt,1.0,1.0);	//	No scaling of Y-axis on Data Plot.
 			glTranslated(-dTranslateShiftX,0,0);	// Now put the map back in its place
-
-//			glTranslated(dMinX+dXShift,0,0);	//	Needed to get the panning in the right direction
-			glTranslated(dXShift-dMinX,0,0);	//	Needed to get the panning in the right direction
-//			glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);	// Now let's allow it to pan
+		//	Panning functionality
+			glTranslated(dXShift-dMinX,0,0);	//	Offset for this is still slight wrong, but the best for now.
 
 		//		Now having shifted, let's get our new model matrices
 		  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
 		  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
 		  glGetIntegerv(GL_VIEWPORT, rgViewport);
 		}
-	  }
 	}
 
     Vector2D ptHighlight; // the (x,y) coords in unit-space that we want to highlight.  Example: for a speed-distance graph, x would be in distance units, y in velocities.
@@ -568,7 +581,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   // we have now determined the bounds of the thing we're going to draw, let's draw it
   glPushMatrix();
   glLoadIdentity();
-  glScalef(0.95f, 0.95f, 1.0f);	// Scale it so that it almost fills up the window.
+  glScalef(1.0f, 0.95f, 1.0f);	// Scale it so that it almost fills up the window.
   glOrtho(rcAllLaps.left, rcAllLaps.right,rcAllLaps.bottom,rcAllLaps.top, -1.0,1.0);
   
 //		Set up the non-zoomed/panned view for the map
@@ -707,8 +720,8 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   // draw the start-finish and segment lines
   if(lstLaps.size() > 0)
   {
-    const CExtendedLap* pLastLap = lstLaps[lstLaps.size()-1];
-    const StartFinish* pSF = pLastLap->GetLap()->GetSF();
+    const CExtendedLap* pReferenceLap = lstLaps[lstLaps.size()-1];
+    const StartFinish* pSF = pReferenceLap->GetLap()->GetSF();
     for(int x = 0;x < 3; x++)
     {
       Vector2D pt1 = pSF[x].GetPt1();
@@ -721,11 +734,10 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       glEnd();
 
 	  glColor3d(1.0,0.0,0.0);
-//      glColor3d(1.0,1.0,1.0);
       LPCSTR lpszText = "";
-      if(x == 0) lpszText = "S1";	// Segment 1, likely no longer active
-      if(x == 1) lpszText = "S2";	// Segment 2, likely no longer active
-      if(x == 2) lpszText = "S/F";	// Segment 3, likely no longer active
+      if(x == 0) lpszText = "S1";	// Segment 1
+      if(x == 1) lpszText = "S2";	// Segment 2
+      if(x == 2) lpszText = "S/F";	// Segment 3, Start/Finish Line
       DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
       DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
     }

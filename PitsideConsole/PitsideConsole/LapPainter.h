@@ -48,7 +48,9 @@ public:
 
   // guide-parameter functions - these configure the background horizontal/vertical lines
   virtual float GetGuideStart(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	//  <-- returns the position (in the units of whatever data channel you're plotting) of the first line we should draw
+  virtual float GetGuideStartX(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	//  <-- returns the position (in the units of whatever data channel you're plotting) of the first line we should draw
   virtual float GetGuideStep(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	// <-- returns the distance between guidelines (in units of whatever data channel you're plotting)
+  virtual float GetGuideStepX(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	// <-- returns the distance between guidelines (in units of whatever data channel you're plotting)
   virtual float GetDataHardcodedMin(DATA_CHANNEL eChannel) const = 0;		// <-- returns the absolute lowest value we want to display for a given data channel type
   virtual float GetDataHardcodedMax(DATA_CHANNEL eChannel) const = 0;		// <-- returns the absolute highest value we want to display for a given data channel type
 
