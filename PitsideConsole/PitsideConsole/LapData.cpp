@@ -337,7 +337,7 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
     case DATA_CHANNEL_TIME:
     {
       // note: Need to get the amount of time (iTime?) since the start of the lap
-      sprintf(lpsz, "%4.2fs %s", flValue/1000.0);
+      sprintf(lpsz, "%4.2fs", flValue/1000.0f);
       break;
     }
 
