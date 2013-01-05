@@ -185,5 +185,11 @@ private:
 
   mutable map<DATA_CHANNEL,const IDataChannel*> m_mapChannels; // we own these pointers.  We get them allocated in ComputeLapData, and it is our responsibility to get them de-allocated
 };
-
+/*const double LatLonToDistance (double dX, double dY, TimePoint2D& p, TimePoint2D& ptLast, double rad) 
+	{
+	double dLat, dLon, R, lat1, lat2;
+	double a, c, d;
+	return d;		// Return the distance in meters
+}	//	Converts distance from LAT/LONG to meters
+*/
 const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTimeMs);

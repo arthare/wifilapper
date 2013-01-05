@@ -30,6 +30,7 @@
 #include "SQLiteLapDB.h"
 #include "UnitTests.h"
 #include <fstream>
+#include "Winuser.h"
 
 
 //#pragma comment(lib,"sdl.lib")
@@ -513,6 +514,8 @@ public:
           }
           case ID_HELP_ABOUT:
           {
+//			  DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+//			  break;
 			  ShowAbout();
 			  return TRUE;
           }
@@ -522,8 +525,9 @@ public:
           }
           case ID_FILE_EXIT:
           {
-			  return TRUE;
-          }
+				DestroyWindow(hWnd);
+			break;
+		  }
           case ID_EDIT_COPY:
           {
 			  return TRUE;
@@ -1053,7 +1057,7 @@ private:
   void UpdateMenus()
   {
     HMENU hWndMenu = GetMenu(m_hWnd);
-    HMENU hSubMenu = GetSubMenu(hWndMenu, 0);
+    HMENU hSubMenu = GetSubMenu(hWndMenu, 2);
 
     CheckMenuHelper(hSubMenu, ID_OPTIONS_KMH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_KMH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MPH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MPH);
@@ -1186,18 +1190,14 @@ private:
     {
       lstLaps.push_back(i->second);
     }
-
-/*	//	Set up for showing Reference lap similar to how we show Fastest Lap.
-	if(m_pReferenceLap != NULL)
+/*
+	//	Set up for showing Reference lap similar to how we show Fastest Lap.
+	if(m_pReferenceLap != NULL && m_lstPoints.size() > 0)
     {
-      lstLaps.push_back(m_pReferenceLap);
+		lstLaps.push_back(m_pReferenceLap);
     }
-    for(map<wstring,CExtendedLap*>::iterator i = m_pReferenceLap(0); i != m_pReferenceLap.size; i++)
-    {
-      lstLaps.push_back(i->second);
-    }
-
 */
+
     return lstLaps;
   }
   virtual FLOATRECT GetAllLapsBounds() const override
@@ -1278,8 +1278,12 @@ private:
     {
       case DATA_CHANNEL_X: return 1e30;
       case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
-      case DATA_CHANNEL_VELOCITY: return 0;
-      case DATA_CHANNEL_DISTANCE: return 0;
+	  case DATA_CHANNEL_VELOCITY:
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin-1);
+      }
+      case DATA_CHANNEL_DISTANCE:
       {
         int iMin = (int)(flMin);
         return (float)(iMin-1);
@@ -1363,7 +1367,7 @@ private:
     {
     case DATA_CHANNEL_X: return 1e30;
     case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
-/*    case DATA_CHANNEL_VELOCITY:	// We need to fix the X-channel call before putting these back into the code.
+    case DATA_CHANNEL_VELOCITY:	// We need to fix the X-channel call before putting these back into the code.
 		{
 		  switch(m_sfLapOpts.eUnitPreference)
 		  {
@@ -1381,18 +1385,26 @@ private:
 		  if(flSpread < 0.050) return 0.0050f;		
 		  if(flSpread < 1.000) return 0.1000f;
 		  if(flSpread < 10.00) return 1.0000f;
-		  return 50.0f;
+		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
+		  if(flSpread < 10000) return 500.0f;		//	Increased the trigger to improve TS display
+		  if(flSpread < 50000) return 2500.0f;		// Increased the trigger to improve TS display
+		  if(flSpread < 110000) return 5000.0f;	// Increased the trigger to improve TS display
+		  if(flSpread < 1100000) return 10000.0f;
+		  if(flSpread < 10000000) return 100000.0f;
+		  return 10000000;
 		} 
-*/
+
     case DATA_CHANNEL_TIME:					
 		{
-		  if(flSpread < 10000) return 1000.0f;		
-		  if(flSpread < 50000) return 5000.0f;		
-		  if(flSpread < 100000) return 10000.0f;		
-		  if(flSpread < 500000) return 50000.0f;		
-		  if(flSpread < 1100000) return 100000.0f;	
-		  if(flSpread < 100000000) return 10000000.0f;
-		  return 1e30f;
+		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
+		  if(flSpread < 10000) return 500.0f;		//	Increased the trigger to improve TS display
+		  if(flSpread < 50000) return 2500.0f;		// Increased the trigger to improve TS display
+		  if(flSpread < 110000) return 5000.0f;	// Increased the trigger to improve TS display
+		  if(flSpread < 1100000) return 10000.0f;
+		  if(flSpread < 10000000) return 100000.0f;
+		  return 10000000;
 		}
 	default:
     return 1e30;
@@ -1425,7 +1437,14 @@ private:
       if(flSpread < 0.050) return 0.0050f;		
       if(flSpread < 1.000) return 0.1000f;
       if(flSpread < 10.00) return 1.0000f;
-	  return 50;
+	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
+	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
+	  if(flSpread < 10000) return 1000.0f;		//	Increased the trigger to improve TS display
+      if(flSpread < 50000) return 5000.0f;		// Increased the trigger to improve TS display
+	  if(flSpread < 110000) return 10000.0f;	// Increased the trigger to improve TS display
+      if(flSpread < 1100000) return 100000.0f;
+      if(flSpread < 10000000) return 1000000.0f;
+	  return 10000000;
 	}
 
     case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
@@ -1587,10 +1606,14 @@ struct PITSIDE_SETTINGS
   {
     fRunHTTP = true;
     iHTTPPort = 80;
+	iVelocity = 1;
+	iMapLines = 1;
   }
 
   int fRunHTTP;
   int iHTTPPort;
+  int iVelocity;
+  int iMapLines;
 };
 
 void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
@@ -1608,6 +1631,8 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     {
       in>>pSettings->fRunHTTP;
       in>>pSettings->iHTTPPort;
+      in>>pSettings->iVelocity;
+      in>>pSettings->iMapLines;
       in.close();
     }
   }
@@ -1617,8 +1642,8 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
-
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+
 {
 //  Show Splash screen as first screen
   CSplashDlg splash;

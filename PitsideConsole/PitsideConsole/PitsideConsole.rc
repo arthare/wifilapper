@@ -73,6 +73,32 @@ CAPTION "Working..."
 FONT 8, "MS Shell Dlg"
 BEGIN
 END
+/*
+IDE_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About Pitside Console"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "Pitside Console / WifiLapper, Version 2.002.0001",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "This ia an open source project",IDC_STATIC,42,26,114,8
+	LTEXT			"To contribute https://sites.google.com/site/wifilapper/", IDC_STATIC,42,38,114,8
+    DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
+END
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+END
+#endif    // APSTUDIO_INVOKED
+*/
 
 IDM_OPTIONS MENU
 BEGIN
@@ -80,12 +106,12 @@ POPUP "&File"
     BEGIN
         MENUITEM "Print...", ID_FILE_PRINT
         MENUITEM "Exit", ID_FILE_EXIT
-            END
+    END
 POPUP "&Edit"
     BEGIN
         MENUITEM "Copy", ID_EDIT_COPY
         MENUITEM "Preferences", ID_EDIT_PREFERENCES
-        END
+    END
 POPUP "&Options"
     BEGIN
         MENUITEM "Km/h", ID_OPTIONS_KMH

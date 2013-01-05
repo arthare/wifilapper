@@ -331,13 +331,13 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
     }
     case DATA_CHANNEL_DISTANCE:
     {
-      sprintf(lpsz, "%4.4f", flValue);
+      sprintf(lpsz, "%4.1fkm", flValue/1000.0f);
       break;
     }
     case DATA_CHANNEL_TIME:
     {
       // note: Need to get the amount of time (iTime?) since the start of the lap
-      sprintf(lpsz, "%4.2fs", flValue/1000.0f);
+      sprintf(lpsz, "%4.1fs", flValue/1000.0f);
       break;
     }
 
@@ -687,7 +687,21 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 
       const double dX = p.flX - ptLast.flX;
       const double dY = p.flY - ptLast.flY;
-      const double d = sqrt(dX*dX + dY*dY);
+//	  const double d = LatLonToDistance (dX, dY, p.flX, ptLast.flX, 6371.0f);	// Converting from LONG/LAT to distance in meters
+//      const double d = sqrt(dX*dX + dY*dY) * 6371.0f * 1000.0f;
+			double rad = 6371.0f;  // earth's mean radius in km 
+			// default 4 sig figs reflects typical 0.3% accuracy of spherical model
+			double dLat, dLon, R, lat1, lat2, lon1, lon2;
+			R = rad;
+			lat1 = p.flY;
+			lon1 = p.flX;
+			lat2 = ptLast.flY;
+			lon2 = ptLast.flX;
+			dLat = lat2 - lat1;
+			dLon = lon2 - lon1;
+			double a = sin(dLat/2) * sin(dLat/2) + cos(lat1) * cos(lat2) * sin(dLon/2) * sin(dLon/2);
+			double c = 2 * atan2(sqrt(a), sqrt(1-a));
+			const double d = R * c * 1000;	// Return the distance in meters
       dDistance += d;
       m_lstPoints.push_back(TimePoint2D(p));
       ptLast = p;
@@ -711,6 +725,37 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     AddChannel(pY);
   }
 }
+
+/*
+// Returns the distance from this point to the supplied point, in km 
+ // (using Haversine formula)
+ //
+ // @param   {LatLon} point: Latitude/longitude of destination point
+ // @param   {Number} [precision=4]: no of significant digits to use for returned value
+ // @returns {Number} Distance in km between this point and destination point
+ //
+const double LatLonToDistance (double dX, double dY, TimePoint2D& p, TimePoint2D& ptLast, double rad) 
+	{
+	rad = 6371.0f;  // earth's mean radius in km 
+	// default 4 sig figs reflects typical 0.3% accuracy of spherical model
+	double dLat, dLon, R, lat1, lat2;
+	R = rad;
+	lat1 = p.flX;
+//	lon1 = *p.flX;
+	lat2 = ptLast.flX;
+//	lon2 = ptLast.flX;
+	dLat = dY;
+	dLon = dX;
+
+	double a = sin(dLat/2) * sin(dLat/2) +
+			cos(lat1) * cos(lat2) * 
+			sin(dLon/2) * sin(dLon/2);
+	double c = 2 * atan2(sqrt(a), sqrt(1-a));
+	double d = R * c;
+	return d*1000;		// Return the distance in meters
+	}
+*/
+
 const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTimeMs)
 {
   int ixLow = 0;

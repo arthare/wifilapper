@@ -239,6 +239,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     rcSpot.bottom = iSegmentHeight;
   }
   int iPos = 0;
+
+  // y-channel graphing loop start
   for(set<DATA_CHANNEL>::iterator i = setY.begin(); i != setY.end(); i++)
   {
     vector<HIGHLIGHTDATA> lstMousePointsToDraw;
@@ -280,41 +282,39 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       DrawText(dMinX, flLine, szText);
     }
 
-/*
+
 	// draw vertical guide lines and text on the background
 	// first draw the starting guideline
 	{
-		float flLine = m_pLapSupplier->GetGuideStartX(*i, dMinX, dMaxX);
-		glColor3d(0.1,0.1,0.5);  // Reduced the brightness of the guidelines to match text, and to better see the data lines
-		glLineWidth(1);      // Added by KDJ. Skinny lines for guidelines.
+		float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
+		glColor3d(0.1,0.5,0.1);  
+		glLineWidth(1);      
 		glBegin(GL_LINE_STRIP);
-		glVertex3f(flLine,-100000,0);
-		glVertex3f(flLine,100000,0);
+		glVertex3f(flLine,mapMinY[*i],0);
+		glVertex3f(flLine,mapMaxY[*i],0);
 		glEnd();
-		glColor3d(0.1,0.1,0.5);
+		glColor3d(0.1,0.5,0.1);
 		char szText[256];
-		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-		DrawText(flLine, rcSpot.top, szText);
+		GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+		DrawText(flLine, mapMinY[*i]-12, szText);
 	}
 	// now draw the rest of them
-	for(float flLine = m_pLapSupplier->GetGuideStartX(*i, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(*i, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(*i, dMinX, dMaxX))
+	for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
 	{
-		glColor3d(0.1,0.1,0.5);  // Reduced the brightness of the guidelines to match text, and to better see the data lines
-		glLineWidth(1);      // Added by KDJ. Skinny lines for guidelines.
+		glColor3d(0.1,0.5,0.1);  
+		glLineWidth(1);      
 		glBegin(GL_LINE_STRIP);
-//		glVertex3f(flLine,mapMinY[*i],0);
-//		glVertex3f(flLine,mapMaxY[*i],0);
-		glVertex3f(flLine,-100000,0);
-		glVertex3f(flLine,100000,0);
+		glVertex3f(flLine,mapMinY[*i],0);
+		glVertex3f(flLine,mapMaxY[*i],0);
 		glEnd();
 
-		glColor3d(0.1,0.1,0.5);
+		glColor3d(0.1,0.5,0.1);
 		char szText[256];
-		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+		GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		
-		DrawText(flLine, rcSpot.top, szText);
+		DrawText(flLine, mapMinY[*i]-12, szText);
 	}
-*/
+
 
 
 
@@ -342,11 +342,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		//		Set up to perform the ZOOM function for DATA PLOT.   
 		double dTranslateShiftX;
 		dTranslateShiftX= dCenterX;
-//		if(LAPSUPPLIEROPTIONS :: iZoomLevels != 1.0f) 
-//		{
-//			//	Magnification changed by mouse wheel requested. Need to scale and move to dMouseX
-//			dTranslateShiftX = dMouseCenterX*dScaleAmt;	// Set translate position to mouse location
-//		}
 			glTranslated(dTranslateShiftX,0,0);	// Translate the map to origin on x-axis only
 			glScaled(dScaleAmt,1.0,1.0);	//	No scaling of Y-axis on Data Plot.
 			glTranslated(-dTranslateShiftX,0,0);	// Now put the map back in its place
@@ -376,9 +371,10 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       const IDataChannel* pDataX = pLap->GetChannel(m_pLapSupplier->GetXChannel());
       const IDataChannel* pDataY = pLap->GetChannel(*i);
 
-      if(pDataX && pDataY)
-      {
-        // tracking what we want to highlight
+	  if(pDataX && pDataY)
+	  {
+//        if(!pDataX->IsValid() || pDataX->GetData().size() > 0) continue;	// Added by KDJ to try to improve stability, doesn't seem to work
+		  // tracking what we want to highlight
         float dBestLength = -1;
         float dTimeToHighlight = -1;
         const vector<DataPoint>& lstPointsX = pDataX->GetData();
