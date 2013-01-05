@@ -519,12 +519,14 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 					  pLaps->SetNetStatus(NETSTATUS_THISIP, szIPString);
 		            }
 			    }
-/*				else
+				else
 				{
+					sockaddr sfName = {0};
 					TCHAR szIPString[512] = {0};
+					sockaddr_in* pIn = (sockaddr_in*)&sfName;
 					GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
 					pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
-				}	*/
+				}	
 		    }
 		}
     }

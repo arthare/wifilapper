@@ -584,8 +584,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 
       const int iStartTime = m_lstPoints[0].iTime;
       const int iReferenceStartTime = lstReference[0].iTime;
-//      for(int x = 1;x < m_lstPoints.size(); x++)	// Remarked out by KDJ
-      for(int x = 1;x < m_lstPoints.size() - 1; x++)	//  Changed to remove graphical errors
+      for(int x = 1;x < m_lstPoints.size(); x++)	// Remarked out by KDJ
+//      for(int x = 1;x < m_lstPoints.size() - 1; x++)	//  Changed to remove graphical errors
       {
         const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
         const double dDistance = pDistance->GetValue(m_lstPoints[x].iTime);
