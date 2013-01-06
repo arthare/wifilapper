@@ -931,7 +931,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0001\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0002\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 /*		while (WM_MOUSEOVER != NULL)
 		{
@@ -1066,6 +1066,7 @@ private:
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_DRAWLINES, m_sfLapOpts.fDrawLines);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_IOIO5VSCALE, m_sfLapOpts.fIOIOHardcoded);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_ELAPSEDTIME, m_sfLapOpts.fElapsedTime);
   }
   vector<CExtendedLap*> GetSortedLaps()
   {
@@ -1289,10 +1290,7 @@ private:
         return (float)(iMin-1);
       }
 	  case DATA_CHANNEL_TIME:
-      {
-        int iMin = (int)(flMin);
-        return (float)(iMin-1);
-      }
+	  case DATA_CHANNEL_ELAPSEDTIME:
 	  case DATA_CHANNEL_TIMESLIP:
 	  {
         int iMin = (int)(flMin/1000.0f);
@@ -1331,6 +1329,7 @@ private:
       case DATA_CHANNEL_VELOCITY: return 0;
       case DATA_CHANNEL_DISTANCE: return 1e30;
       case DATA_CHANNEL_TIME: return 1e30;
+      case DATA_CHANNEL_ELAPSEDTIME: return 1e30;
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
@@ -1396,6 +1395,7 @@ private:
 		} 
 
     case DATA_CHANNEL_TIME:					
+    case DATA_CHANNEL_ELAPSEDTIME:					
 		{
 		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
 		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
@@ -1448,7 +1448,8 @@ private:
 	}
 
     case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
-    case DATA_CHANNEL_TIMESLIP: 
+    case DATA_CHANNEL_TIMESLIP:
+	case DATA_CHANNEL_ELAPSEDTIME:
     {
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
 	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
@@ -1734,10 +1735,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
   g_pLapDB = &sfLaps;
-
-//  Removing to put splash screen at program start up
-//  CSplashDlg splash;
-//  ArtShowDialog<IDD_DLGSPLASH>(&splash);
 
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);

@@ -283,38 +283,43 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     }
 
 
-	// draw vertical guide lines and text on the background
-	// first draw the starting guideline
+	// draw vertical guide lines and text on the background only if at 1.0X magnification
+	if (sfLapOpts.iZoomLevels != 0)
 	{
-		float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
-		glColor3d(0.1,0.5,0.1);  
-		glLineWidth(1);      
-		glBegin(GL_LINE_STRIP);
-		glVertex3f(flLine,mapMinY[*i],0);
-		glVertex3f(flLine,mapMaxY[*i],0);
-		glEnd();
-		glColor3d(0.1,0.5,0.1);
-		char szText[256];
-		GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-		DrawText(flLine, mapMinY[*i]-12, szText);
 	}
+	else
+	{
+		// first draw the starting guideline
+		{
+			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
+			glColor3d(0.1,0.5,0.1);  
+			glLineWidth(1);      
+			glBegin(GL_LINE_STRIP);
+			glVertex3f(flLine,mapMinY[*i],0);
+			glVertex3f(flLine,mapMaxY[*i],0);
+			glEnd();
+			glColor3d(0.1,0.5,0.1);
+			char szText[256];
+			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+			DrawText(flLine, mapMinY[*i]-12, szText);
+		}
 	// now draw the rest of them
-	for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
-	{
-		glColor3d(0.1,0.5,0.1);  
-		glLineWidth(1);      
-		glBegin(GL_LINE_STRIP);
-		glVertex3f(flLine,mapMinY[*i],0);
-		glVertex3f(flLine,mapMaxY[*i],0);
-		glEnd();
+		for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
+		{
+			glColor3d(0.1,0.5,0.1);  
+			glLineWidth(1);      
+			glBegin(GL_LINE_STRIP);
+			glVertex3f(flLine,mapMinY[*i],0);
+			glVertex3f(flLine,mapMaxY[*i],0);
+			glEnd();
 
-		glColor3d(0.1,0.5,0.1);
-		char szText[256];
-		GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+			glColor3d(0.1,0.5,0.1);
+			char szText[256];
+			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		
-		DrawText(flLine, mapMinY[*i]-12, szText);
+			DrawText(flLine, mapMinY[*i]-12, szText);
+		}
 	}
-
 
 
 
@@ -498,15 +503,13 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		// <-- same for x channel
 
         char szText[256];
-//        sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);	// Remarked out by KDJ in lieu of next line of code.
-        sprintf(szText, "%S - (%S %s)", szLapName, szTypeY, szYString);
+        sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
-        DrawText(0.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text
+        DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
 
         // we also want to draw a highlighted square
 //        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
         // we also want to draw a highlighted LINE for that individual lap/graph combination
-//				glColor3d( 1.0, 0, 0 );						// Added by Chas to make line Red. Removed to make line same color as graph.
 				glLineWidth(1);								// Added by KDJ. Skinny line for Distance markers.
 				glBegin(GL_LINE_STRIP);						// Added by KDJ
 				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
@@ -522,6 +525,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
 	
 }
+
 struct MAPHIGHLIGHT
 {
   const CExtendedLap* pLap;
@@ -577,7 +581,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   // we have now determined the bounds of the thing we're going to draw, let's draw it
   glPushMatrix();
   glLoadIdentity();
-  glScalef(1.0f, 0.95f, 1.0f);	// Scale it so that it almost fills up the window.
+  glScalef(1.0f, 1.0f, 1.0f);	// Scale it so that it fills up the window.
   glOrtho(rcAllLaps.left, rcAllLaps.right,rcAllLaps.bottom,rcAllLaps.top, -1.0,1.0);
   
 //		Set up the non-zoomed/panned view for the map
@@ -712,33 +716,34 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		glEnd();
 
   }
+//  if (pLap == m_pReferenceLap)	// If this lap is the reference lap, draw the segment lines
+//  {
+	  // draw the start-finish and segment lines
+	  if(lstLaps.size() > 0)
+	  {
+		const CExtendedLap* pReferenceLap = lstLaps[lstLaps.size()-1];
+		const StartFinish* pSF = pReferenceLap->GetLap()->GetSF();
+		for(int x = 0;x < 3; x++)
+		{
+		  Vector2D pt1 = pSF[x].GetPt1();
+		  Vector2D pt2 = pSF[x].GetPt2();
+		  glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
+		  glBegin(GL_LINE_STRIP);
+		  glColor3d(1.0,0.0,0.0);	// Red for S/F line color
+		  glVertex2f(pt1.m_v[0],pt1.m_v[1]);
+		  glVertex2f(pt2.m_v[0],pt2.m_v[1]);
+		  glEnd();
 
-  // draw the start-finish and segment lines
-  if(lstLaps.size() > 0)
-  {
-    const CExtendedLap* pReferenceLap = lstLaps[lstLaps.size()-1];
-    const StartFinish* pSF = pReferenceLap->GetLap()->GetSF();
-    for(int x = 0;x < 3; x++)
-    {
-      Vector2D pt1 = pSF[x].GetPt1();
-      Vector2D pt2 = pSF[x].GetPt2();
-      glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
-      glBegin(GL_LINE_STRIP);
-      glColor3d(1.0,0.0,0.0);	// Red for S/F line color
-      glVertex2f(pt1.m_v[0],pt1.m_v[1]);
-      glVertex2f(pt2.m_v[0],pt2.m_v[1]);
-      glEnd();
-
-	  glColor3d(1.0,0.0,0.0);
-      LPCSTR lpszText = "";
-      if(x == 0) lpszText = "S1";	// Segment 1
-      if(x == 1) lpszText = "S2";	// Segment 2
-      if(x == 2) lpszText = "S/F";	// Segment 3, Start/Finish Line
-      DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
-      DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
-    }
-  }
-
+		  glColor3d(1.0,0.0,0.0);
+		  LPCSTR lpszText = "";
+		  if(x == 0) lpszText = "S1";	// Segment 1
+		  if(x == 1) lpszText = "S2";	// Segment 2
+		  if(x == 2) lpszText = "S/F";	// Segment 3, Start/Finish Line
+		  DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
+		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
+		}
+	  }
+//  }
 
 	glPopMatrix(); // popping us out of map-coords space.
 
