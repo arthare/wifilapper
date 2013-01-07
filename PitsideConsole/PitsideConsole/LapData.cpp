@@ -528,25 +528,26 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
           const double dPercent = dHitLength;
           const double dThisDistance = (dD1Distance * (1-dPercent)) + (dD2Distance * dPercent);
           m_lstPoints.push_back(TimePoint2D(p));
-/*		  // Converting from LONG/LAT to distance in meters
-		  double rad = 6371.0f;  // earth's mean radius in km 
-		  double dLat, dLon, R, lat1, lat2, lon1, lon2;
-		  R = rad;
-		  lat1 = p.flY * 0.0174532925199433;	// Convert from degrees to radians
-		  lon1 = p.flX * 0.0174532925199433;
-		  lat2 = ptLast.flY * 0.0174532925199433;
-		  lon2 = ptLast.flX * 0.0174532925199433;
-		  dLat = (lat2 - lat1);
-		  dLon = (lon2 - lon1);
-		  double a = sin(dLat/2) * sin(dLat/2) + cos(lat1) * cos(lat2) * sin(dLon/2) * sin(dLon/2);
-		  double c = 2 * atan2(sqrt(a), sqrt(1-a));
-		  const double d = R * c * 1000;	// Return the distance in meters
-      dDistance += d;
-      m_lstPoints.push_back(TimePoint2D(p));
-      ptLast = p;
+/*			  // Converting from LONG/LAT to distance in meters
+			  double rad = 6371.0f;  // earth's mean radius in km 
+			  double dLat, dLon, R, lat1, lat2, lon1, lon2;
+			  R = rad;
+			  lat1 = p.flY * 0.0174532925199433;	// Convert from degrees to radians
+			  lon1 = p.flX * 0.0174532925199433;
+			  lat2 = ptLast.flY * 0.0174532925199433;
+			  lon2 = ptLast.flX * 0.0174532925199433;
+			  dLat = (lat2 - lat1);
+			  dLon = (lon2 - lon1);
+			  double a = sin(dLat/2) * sin(dLat/2) + cos(lat1) * cos(lat2) * sin(dLon/2) * sin(dLon/2);
+			  double c = 2 * atan2(sqrt(a), sqrt(1-a));
+			  const double d = R * c * 1000;	// Return the distance in meters
+			  dDistance += d;
+			  m_lstPoints.push_back(TimePoint2D(p));
+			  ptLast = p;
 
-      pDistance->AddPoint(p.iTime, dDistance);
-*/          pDistance->AddPoint((int)p.iTime,dThisDistance);
+			  pDistance->AddPoint(p.iTime, dDistance);
+*/
+		  pDistance->AddPoint((int)p.iTime,dThisDistance);
           pVelocity->AddPoint((int)p.iTime,p.flVelocity);
         }
       }
