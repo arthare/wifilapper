@@ -307,7 +307,13 @@ public:
         {
           vector<wstring> lstCols;
           vector<int> lstWidths;
+          CExtendedLap::GetStringHeadersXAxis(lstCols,lstWidths);
           m_sfXAxis.Init(GetDlgItem(m_hWnd, IDC_XAXIS),lstCols,lstWidths);
+		}
+        {
+          vector<wstring> lstCols;
+          vector<int> lstWidths;
+          CExtendedLap::GetStringHeadersYAxis(lstCols,lstWidths);
           m_sfYAxis.Init(GetDlgItem(m_hWnd, IDC_YAXIS),lstCols,lstWidths);
         }
         {

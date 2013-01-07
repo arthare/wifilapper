@@ -106,6 +106,16 @@ public:
     lstCols.push_back(L"Comment");
     lstWidths.push_back(255);
   }
+  static void GetStringHeadersXAxis(vector<wstring>& lstCols, vector<int>& lstWidths)
+  {
+    lstCols.push_back(L"X-Axis");
+    lstWidths.push_back(90);
+  }
+  static void GetStringHeadersYAxis(vector<wstring>& lstCols, vector<int>& lstWidths)
+  {
+    lstCols.push_back(L"Y-Axis");
+    lstWidths.push_back(90);
+  }
   void GetStrings(vector<wstring>& lstStrings) const
   {
     TCHAR szTime[100];
