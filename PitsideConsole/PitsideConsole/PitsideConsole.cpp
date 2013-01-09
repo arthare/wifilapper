@@ -266,7 +266,7 @@ public:
   CMainUI() 
     : m_sfLapPainter(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_MAINDISPLAY), 
       m_sfSubDisplay(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_SUBDISPLAY), 
-      m_eLapDisplayStyle(LAPDISPLAYSTYLE_MAP), 
+      m_eLapDisplayStyle(LAPDISPLAYSTYLE_PLOT),		//	Make data plot the default initial view
       m_fShowBests(false), 
       m_fShowDriverBests(false),
       m_pReferenceLap(NULL),
@@ -513,6 +513,19 @@ public:
             }
             return TRUE;
           }
+/*		  case ID_OPTIONS_PLOTPREFS:
+				  {
+					PLOTSELECT_RESULT sfResult;
+					CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult);
+					ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
+
+					if(!sfResult.fCancelled)
+					{
+					  UpdateUI(UPDATE_ALL);
+					}
+					
+					return TRUE;
+				  }		*/
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -586,7 +599,12 @@ public:
                   }
                   lstLaps.push_back(pLap->GetLap());
                 }
-                DashWare::SaveToDashware(szFilename, lstLaps);
+/*                // let's make sure there's a .csv suffix on that bugger.
+				if(!str_ends_with(szFilename,L".csv"))
+				{
+					wcsncat(szFilename,L".csv", NUMCHARS(szFilename));
+				}	*/		//	Getting an "Identifier Not Found error on "str_ends_with" function, not sure why.
+				DashWare::SaveToDashware(szFilename, lstLaps);
               }
             }
             else
@@ -937,7 +955,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0002\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0004\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 /*		while (WM_MOUSEOVER != NULL)
 		{

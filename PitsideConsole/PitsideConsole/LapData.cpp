@@ -491,11 +491,11 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
     IDataChannel* pX = pLapDB->AllocateDataChannel();
     IDataChannel* pY = pLapDB->AllocateDataChannel();
-    IDataChannel* pTime = pLapDB->AllocateDataChannel();	// New Time function for Chas
-    IDataChannel* pLapTime = pLapDB->AllocateDataChannel();	// New LapTime function for Chas
+    IDataChannel* pTime = pLapDB->AllocateDataChannel();
+    IDataChannel* pLapTime = pLapDB->AllocateDataChannel();
     
-	pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME); // you'll probably have to declare DATA_CHANNEL_TIME along the other DATA_CHANNEL enums
-	pLapTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_ELAPSEDTIME); // you'll probably have to declare DATA_CHANNEL_TIME along the other DATA_CHANNEL enums
+	pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME); 
+	pLapTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_ELAPSEDTIME);
 	pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
     pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
@@ -528,25 +528,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
           const double dPercent = dHitLength;
           const double dThisDistance = (dD1Distance * (1-dPercent)) + (dD2Distance * dPercent);
           m_lstPoints.push_back(TimePoint2D(p));
-/*			  // Converting from LONG/LAT to distance in meters
-			  double rad = 6371.0f;  // earth's mean radius in km 
-			  double dLat, dLon, R, lat1, lat2, lon1, lon2;
-			  R = rad;
-			  lat1 = p.flY * 0.0174532925199433;	// Convert from degrees to radians
-			  lon1 = p.flX * 0.0174532925199433;
-			  lat2 = ptLast.flY * 0.0174532925199433;
-			  lon2 = ptLast.flX * 0.0174532925199433;
-			  dLat = (lat2 - lat1);
-			  dLon = (lon2 - lon1);
-			  double a = sin(dLat/2) * sin(dLat/2) + cos(lat1) * cos(lat2) * sin(dLon/2) * sin(dLon/2);
-			  double c = 2 * atan2(sqrt(a), sqrt(1-a));
-			  const double d = R * c * 1000;	// Return the distance in meters
-			  dDistance += d;
-			  m_lstPoints.push_back(TimePoint2D(p));
-			  ptLast = p;
-
-			  pDistance->AddPoint(p.iTime, dDistance);
-*/
 		  pDistance->AddPoint((int)p.iTime,dThisDistance);
           pVelocity->AddPoint((int)p.iTime,p.flVelocity);
         }
@@ -594,18 +575,19 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     }
       if(pLapTime && pLapTime->IsValid())
       {
-					if(m_lstPoints.size() > 0)
-					{
-					  IDataChannel* pTime = pLapDB->AllocateDataChannel();
-					  pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);
+		  //	Resets time to zero at the start of each lap, using offset iStartTime
+		if(m_lstPoints.size() > 0)
+		{
+			IDataChannel* pTime = pLapDB->AllocateDataChannel();
+			pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);
 
-					  const int iStartTime = m_lstPoints[0].iTime;
-					  for(int x = 1;x < m_lstPoints.size(); x++)
-					  {
-						const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
-						pLapTime->AddPoint(m_lstPoints[x].iTime, (double)iElapsedTime);
-					  }
-					}
+			const int iStartTime = m_lstPoints[0].iTime;
+			for(int x = 1;x < m_lstPoints.size(); x++)
+			{
+			const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
+			pLapTime->AddPoint(m_lstPoints[x].iTime, (double)iElapsedTime);
+			}
+		}
         pLapTime->Lock();
         AddChannel(pLapTime);
       }
@@ -738,7 +720,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 			pLapTime->AddPoint(p.iTime, (double)iElapsedTime);
       const double dX = p.flX - ptLast.flX;
       const double dY = p.flY - ptLast.flY;
-		  // Converting from LONG/LAT to distance in meters
+/*		  // Converting from LONG/LAT to distance in meters
 		  double rad = 6371.0f;  // earth's mean radius in km 
 		  double dLat, dLon, R, lat1, lat2, lon1, lon2;
 		  R = rad;
@@ -750,7 +732,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 		  dLon = (lon2 - lon1);
 		  double a = sin(dLat/2) * sin(dLat/2) + cos(lat1) * cos(lat2) * sin(dLon/2) * sin(dLon/2);
 		  double c = 2 * atan2(sqrt(a), sqrt(1-a));
-		  const double d = R * c * 1000;	// Return the distance in meters
+		  const double d = R * c * 1000;	// Return the distance in meters	*/
+	  const double d = sqrt (dY*dY + dX*dX);	// Return distance in Theta of Long/Lat. Needed until Jason fixes web-side GUI
       dDistance += d;
       m_lstPoints.push_back(TimePoint2D(p));
       ptLast = p;
