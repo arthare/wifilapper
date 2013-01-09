@@ -955,7 +955,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0004\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0005\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 /*		while (WM_MOUSEOVER != NULL)
 		{

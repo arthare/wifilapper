@@ -442,19 +442,16 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
     const double dPct = (double)ixCheck / (double)cSize;
     const double dPctDiff = abs(dPct - dInputPercentage);
 
-    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.25)
+    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.25)		// If you are within 25% of reference lap in data string
     {
       dClosest = dAvg;
       ixBestIndex = ixCheck;
     }
-    if(dAvg < 5e-9 && ixBestIndex >= 0)
+    if(dAvg < 1e-10 && ixBestIndex >= 0)		//	Lowered this due to 10Hz GPS triggering it too much (Shannoville)
     {
       break; // early-out: if we found one that is close enough, just stop here
     }
-
-
     ixCheck = ixNext; // advance to next point
-
 
     if(ixCheck == *pixStartIndex)
     {
