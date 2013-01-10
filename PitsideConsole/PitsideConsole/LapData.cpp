@@ -238,6 +238,8 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
   case DATA_CHANNEL_X: lpszDataName = L"Longitude"; break;
   case DATA_CHANNEL_Y: lpszDataName = L"Latitude"; break;
   case DATA_CHANNEL_DISTANCE: lpszDataName = L"Distance"; break;
+  case DATA_CHANNEL_TIME: lpszDataName = L"Time"; break;		//	Start of adding a Time X-axis function
+  case DATA_CHANNEL_ELAPSEDTIME: lpszDataName = L"Lap Time"; break;		//	Start of adding a Time X-axis function
   case DATA_CHANNEL_VELOCITY: lpszDataName = L"Velocity"; break;
   case DATA_CHANNEL_TIMESLIP: lpszDataName = L"Time-slip"; break;
   case DATA_CHANNEL_X_ACCEL: lpszDataName = L"X accel"; break;
@@ -330,10 +332,21 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
     }
     case DATA_CHANNEL_DISTANCE:
     {
-      sprintf(lpsz, "%4.4f", flValue);
+      sprintf(lpsz, "%4.1fkm", flValue/1000.0f);
       break;
     }
-    case DATA_CHANNEL_VELOCITY:
+    case DATA_CHANNEL_TIME:
+    {
+      sprintf(lpsz, "%4.1fs", flValue/1000.0f);
+      break;
+    }
+    case DATA_CHANNEL_ELAPSEDTIME:
+    {
+      sprintf(lpsz, "%4.2fs", flValue/1000.0f);
+      break;
+    }
+
+	case DATA_CHANNEL_VELOCITY:
     {
       LPCSTR lpszUnits = GetUnitText(eUnits);
       // note: velocity is in m/s, but most humans will like km/h (well... except for americans, but screw them for now)
@@ -429,19 +442,16 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
     const double dPct = (double)ixCheck / (double)cSize;
     const double dPctDiff = abs(dPct - dInputPercentage);
 
-    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.25)
+    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.40)		// If you are within 50% of reference lap in data string
     {
       dClosest = dAvg;
       ixBestIndex = ixCheck;
     }
-    if(dAvg < 5e-9 && ixBestIndex >= 0)
+    if(dAvg < 5e-11 && ixBestIndex >= 0)		//	Lowered this due to 10Hz GPS triggering it too much (Shannonville)
     {
       break; // early-out: if we found one that is close enough, just stop here
     }
-
-
     ixCheck = ixNext; // advance to next point
-
 
     if(ixCheck == *pixStartIndex)
     {
@@ -478,8 +488,12 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
     IDataChannel* pX = pLapDB->AllocateDataChannel();
     IDataChannel* pY = pLapDB->AllocateDataChannel();
-
-    pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
+    IDataChannel* pTime = pLapDB->AllocateDataChannel();
+    IDataChannel* pLapTime = pLapDB->AllocateDataChannel();
+    
+	pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME); 
+	pLapTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_ELAPSEDTIME);
+	pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
     pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
@@ -491,7 +505,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
-
+	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
       TimePoint2D sfD1, sfD2;
       int iMatchedTime = 0;
       double dPct = (double)x / (double)lstPoints.size();
@@ -511,7 +525,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
           const double dPercent = dHitLength;
           const double dThisDistance = (dD1Distance * (1-dPercent)) + (dD2Distance * dPercent);
           m_lstPoints.push_back(TimePoint2D(p));
-          pDistance->AddPoint((int)p.iTime,dThisDistance);
+		  pDistance->AddPoint((int)p.iTime,dThisDistance);
           pVelocity->AddPoint((int)p.iTime,p.flVelocity);
         }
       }
@@ -546,6 +560,39 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pLapDB->FreeDataChannel(pDistance);
       pDistance = NULL;
     }
+    if(pTime->IsValid())
+    {
+      pTime->Lock();
+      AddChannel(pTime);
+    }
+    else
+    {
+      pLapDB->FreeDataChannel(pTime);
+      pTime = NULL;
+    }
+      if(pLapTime && pLapTime->IsValid())
+      {
+		  //	Resets time to zero at the start of each lap, using offset iStartTime
+		if(m_lstPoints.size() > 0)
+		{
+			IDataChannel* pTime = pLapDB->AllocateDataChannel();
+			pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);
+
+			const int iStartTime = m_lstPoints[0].iTime;
+			for(int x = 1;x < m_lstPoints.size(); x++)
+			{
+			const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
+			pLapTime->AddPoint(m_lstPoints[x].iTime, (double)iElapsedTime);
+			}
+		}
+        pLapTime->Lock();
+        AddChannel(pLapTime);
+      }
+      else
+      {
+        pLapDB->FreeDataChannel(pLapTime);
+		pLapTime = NULL;
+	  }
     if(pVelocity->IsValid())
     {
       pVelocity->Lock();
@@ -564,8 +611,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 
       const int iStartTime = m_lstPoints[0].iTime;
       const int iReferenceStartTime = lstReference[0].iTime;
-//      for(int x = 1;x < m_lstPoints.size(); x++)	// Remarked out by KDJ
-      for(int x = 1;x < m_lstPoints.size() - 1; x++)	//  Changed to remove graphical errors
+      for(int x = 1;x < m_lstPoints.size(); x++)
       {
         const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
         const double dDistance = pDistance->GetValue(m_lstPoints[x].iTime);
@@ -593,7 +639,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
               {
                 const int iLastTime = lstReference[ixCheck-1].iTime;
                 const int iThisTime = lstReference[ixCheck].iTime;
-                const double dEstimatedElapsedTime = ((1.0-dFraction)*iLastTime + dFraction*iThisTime) - (double)iReferenceStartTime; // this is the estimated time for the previous lap at this position
+                const double dEstimatedElapsedTime = ((1.0-dFraction)*iLastTime + dFraction*iThisTime) - (double)iReferenceStartTime; 
+				// this is the estimated time for the previous lap at this position
                 if(dEstimatedElapsedTime >= 0)
                 {
                   float dTimeSlip = dEstimatedElapsedTime - (double)iElapsedTime;
@@ -619,6 +666,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       else
       {
         pLapDB->FreeDataChannel(pTimeSlip);
+		pTimeSlip = NULL;
       }
     }
 
@@ -652,7 +700,11 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     IDataChannel* pDistance = pLapDB->AllocateDataChannel();
     IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
     IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
+    IDataChannel* pTime = pLapDB->AllocateDataChannel();
+    IDataChannel* pLapTime = pLapDB->AllocateDataChannel();
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
+    pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);		// Preparing to add Time channel for X-axis
+    pLapTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_ELAPSEDTIME);		// Preparing to add Time channel for X-axis
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
     pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
     for(int x = 1;x < lstPoints.size(); x++)
@@ -660,10 +712,25 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       const TimePoint2D& p = lstPoints[x];
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
-
+	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
+			const int iElapsedTime = lstPoints[x].iTime - lstPoints[0].iTime;
+			pLapTime->AddPoint(p.iTime, (double)iElapsedTime);
       const double dX = p.flX - ptLast.flX;
       const double dY = p.flY - ptLast.flY;
-      const double d = sqrt(dX*dX + dY*dY);
+/*		  // Converting from LONG/LAT to distance in meters
+		  double rad = 6371.0f;  // earth's mean radius in km 
+		  double dLat, dLon, R, lat1, lat2, lon1, lon2;
+		  R = rad;
+		  lat1 = p.flY * 0.0174532925199433;	// Convert from degrees to radians
+		  lon1 = p.flX * 0.0174532925199433;
+		  lat2 = ptLast.flY * 0.0174532925199433;
+		  lon2 = ptLast.flX * 0.0174532925199433;
+		  dLat = (lat2 - lat1);
+		  dLon = (lon2 - lon1);
+		  double a = sin(dLat/2) * sin(dLat/2) + cos(lat1) * cos(lat2) * sin(dLon/2) * sin(dLon/2);
+		  double c = 2 * atan2(sqrt(a), sqrt(1-a));
+		  const double d = R * c * 1000;	// Return the distance in meters	*/
+	  const double d = sqrt (dY*dY + dX*dX);	// Return distance in Theta of Long/Lat. Needed until Jason fixes web-side GUI
       dDistance += d;
       m_lstPoints.push_back(TimePoint2D(p));
       ptLast = p;
@@ -676,15 +743,20 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pX->Lock();
     pY->Lock();
     pDistance->Lock();
-    pVelocity->Lock();
+    pTime->Lock();
+    pLapTime->Lock();
+	pVelocity->Lock();
     pTimeSlip->Lock();
     AddChannel(pDistance);
-    AddChannel(pVelocity);
+    AddChannel(pTime);
+    AddChannel(pLapTime);
+	AddChannel(pVelocity);
     AddChannel(pTimeSlip);
     AddChannel(pX);
     AddChannel(pY);
   }
 }
+
 const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTimeMs)
 {
   int ixLow = 0;

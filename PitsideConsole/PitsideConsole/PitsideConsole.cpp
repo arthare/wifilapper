@@ -30,6 +30,7 @@
 #include "SQLiteLapDB.h"
 #include "UnitTests.h"
 #include <fstream>
+#include "Winuser.h"
 
 
 //#pragma comment(lib,"sdl.lib")
@@ -265,7 +266,7 @@ public:
   CMainUI() 
     : m_sfLapPainter(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_MAINDISPLAY), 
       m_sfSubDisplay(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_SUBDISPLAY), 
-      m_eLapDisplayStyle(LAPDISPLAYSTYLE_MAP), 
+      m_eLapDisplayStyle(LAPDISPLAYSTYLE_PLOT),		//	Make data plot the default initial view
       m_fShowBests(false), 
       m_fShowDriverBests(false),
       m_pReferenceLap(NULL),
@@ -306,7 +307,13 @@ public:
         {
           vector<wstring> lstCols;
           vector<int> lstWidths;
+          CExtendedLap::GetStringHeadersXAxis(lstCols,lstWidths);
           m_sfXAxis.Init(GetDlgItem(m_hWnd, IDC_XAXIS),lstCols,lstWidths);
+		}
+        {
+          vector<wstring> lstCols;
+          vector<int> lstWidths;
+          CExtendedLap::GetStringHeadersYAxis(lstCols,lstWidths);
           m_sfYAxis.Init(GetDlgItem(m_hWnd, IDC_YAXIS),lstCols,lstWidths);
         }
         {
@@ -506,6 +513,19 @@ public:
             }
             return TRUE;
           }
+/*		  case ID_OPTIONS_PLOTPREFS:
+				  {
+					PLOTSELECT_RESULT sfResult;
+					CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult);
+					ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
+
+					if(!sfResult.fCancelled)
+					{
+					  UpdateUI(UPDATE_ALL);
+					}
+					
+					return TRUE;
+				  }		*/
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -513,10 +533,30 @@ public:
           }
           case ID_HELP_ABOUT:
           {
+//			  DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+//			  break;
 			  ShowAbout();
 			  return TRUE;
           }
-          case ID_DATA_OPENDB:
+          case ID_FILE_PRINT:
+          {
+			  return TRUE;
+          }
+          case ID_FILE_EXIT:
+          {
+				DestroyWindow(hWnd);
+			break;
+		  }
+          case ID_EDIT_COPY:
+          {
+			  return TRUE;
+          }
+          case ID_EDIT_PREFERENCES:
+          {
+			  return TRUE;
+          }
+          
+		  case ID_DATA_OPENDB:
           {
             TCHAR szFilename[MAX_PATH];
             if(ArtGetOpenFileName(hWnd, L"Choose WFLP file", szFilename, NUMCHARS(szFilename),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
@@ -559,7 +599,12 @@ public:
                   }
                   lstLaps.push_back(pLap->GetLap());
                 }
-                DashWare::SaveToDashware(szFilename, lstLaps);
+/*                // let's make sure there's a .csv suffix on that bugger.
+				if(!str_ends_with(szFilename,L".csv"))
+				{
+					wcsncat(szFilename,L".csv", NUMCHARS(szFilename));
+				}	*/		//	Getting an "Identifier Not Found error on "str_ends_with" function, not sure why.
+				DashWare::SaveToDashware(szFilename, lstLaps);
               }
             }
             else
@@ -910,8 +955,14 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.001.0001\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0006\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
+/*		while (WM_MOUSEOVER != NULL)
+		{
+			MouseIcon = 2;
+			if (WM_CLICK != NULL) { ShellExecute(http://sites.google.com/site/wifilapper"}; }
+		}
+*/
 		return;
 	}
   void ShowNetInfo()
@@ -1030,7 +1081,7 @@ private:
   void UpdateMenus()
   {
     HMENU hWndMenu = GetMenu(m_hWnd);
-    HMENU hSubMenu = GetSubMenu(hWndMenu, 0);
+    HMENU hSubMenu = GetSubMenu(hWndMenu, 2);
 
     CheckMenuHelper(hSubMenu, ID_OPTIONS_KMH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_KMH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MPH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MPH);
@@ -1039,6 +1090,7 @@ private:
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_DRAWLINES, m_sfLapOpts.fDrawLines);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_IOIO5VSCALE, m_sfLapOpts.fIOIOHardcoded);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_ELAPSEDTIME, m_sfLapOpts.fElapsedTime);
   }
   vector<CExtendedLap*> GetSortedLaps()
   {
@@ -1131,6 +1183,7 @@ private:
     vector<CExtendedLap*> lstLaps;
     map<wstring,CExtendedLap*> mapFastestDriver;
     CExtendedLap* pFastest = NULL;
+//    CExtendedLap* pReference = NULL;		// Added to show Reference Lap - KDJ
     for(set<LPARAM>::iterator i = setSelectedLaps.begin(); i != setSelectedLaps.end(); i++)
     {
       CExtendedLap* pLap = (CExtendedLap*)*i;
@@ -1162,18 +1215,14 @@ private:
     {
       lstLaps.push_back(i->second);
     }
-
-/*	//	Set up for showing Reference lap similar to how we show Fastest Lap.
-	if(m_pReferenceLap != NULL)
+/*
+	//	Set up for showing Reference lap similar to how we show Fastest Lap.
+	if(m_pReferenceLap != NULL && m_lstPoints.size() > 0)
     {
-      lstLaps.push_back(m_pReferenceLap);
+		lstLaps.push_back(m_pReferenceLap);
     }
-    for(map<wstring,CExtendedLap*>::iterator i = mapFastestDriver.begin(); i != mapFastestDriver.end(); i++)
-    {
-      lstLaps.push_back(i->second);
-    }
-
 */
+
     return lstLaps;
   }
   virtual FLOATRECT GetAllLapsBounds() const override
@@ -1245,6 +1294,54 @@ private:
     }
     return -1e30;
   }
+
+  virtual float GetGuideStartX(DATA_CHANNEL eChannel, float flMin, float flMax) override
+  {
+    CASSERT(DATA_CHANNEL_COUNT == 0x401);
+
+    switch(eChannel)
+    {
+      case DATA_CHANNEL_X: return 1e30;
+      case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
+	  case DATA_CHANNEL_VELOCITY:
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin-1);
+      }
+      case DATA_CHANNEL_DISTANCE:
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin-1);
+      }
+	  case DATA_CHANNEL_TIME:
+	  case DATA_CHANNEL_ELAPSEDTIME:
+	  case DATA_CHANNEL_TIMESLIP:
+	  {
+        int iMin = (int)(flMin/1000.0f);
+        return (float)(iMin-1)*1000.0f;
+      }
+      case DATA_CHANNEL_X_ACCEL:
+      case DATA_CHANNEL_Y_ACCEL:
+      case DATA_CHANNEL_Z_ACCEL:
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin-1);
+      }
+      case DATA_CHANNEL_TEMP: return 0;
+      case (DATA_CHANNEL_PID_START+0x5): return -40;
+      case (DATA_CHANNEL_PID_START+0xc): return 0;
+      case (DATA_CHANNEL_PID_START+0xA): return 0;
+      case (DATA_CHANNEL_PID_START+0x5c): return -40;
+      default: 
+        if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
+            eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
+        {
+          return m_sfLapOpts.fIOIOHardcoded ? 0 : 1e30;
+        }
+        return 1e30;
+    }
+  }
+
   virtual float GetGuideStart(DATA_CHANNEL eChannel, float flMin, float flMax) override
   {
     CASSERT(DATA_CHANNEL_COUNT == 0x401);
@@ -1255,6 +1352,8 @@ private:
       case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
       case DATA_CHANNEL_VELOCITY: return 0;
       case DATA_CHANNEL_DISTANCE: return 1e30;
+      case DATA_CHANNEL_TIME: return 1e30;
+      case DATA_CHANNEL_ELAPSEDTIME: return 1e30;
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
@@ -1281,6 +1380,61 @@ private:
         return 1e30;
     }
   }
+
+  virtual float GetGuideStepX(DATA_CHANNEL eChannel, float flMin, float flMax) override
+  {
+  // Function sets up the spacing for the vertical guidelines on the data plots
+	  CASSERT(DATA_CHANNEL_COUNT == 0x401);
+    const float flSpread = flMax - flMin;
+    switch(eChannel)
+    {
+    case DATA_CHANNEL_X: return 1e30;
+    case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
+    case DATA_CHANNEL_VELOCITY:	// We need to fix the X-channel call before putting these back into the code.
+		{
+		  switch(m_sfLapOpts.eUnitPreference)
+		  {
+		  case UNIT_PREFERENCE_KMH: return KMH_TO_MS(25.0);
+		  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Adjusted by KDJ
+		  case UNIT_PREFERENCE_MS: return 5;
+		  }
+		  return 10.0;
+		}
+    case DATA_CHANNEL_DISTANCE: 
+		{
+		  if(flSpread < 0.001) return 0.0001f;		
+		  if(flSpread < 0.005) return 0.0005f;		
+		  if(flSpread < 0.010) return 0.0010f;		
+		  if(flSpread < 0.050) return 0.0050f;		
+		  if(flSpread < 1.000) return 0.1000f;
+		  if(flSpread < 10.00) return 1.0000f;
+		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
+		  if(flSpread < 10000) return 500.0f;		//	Increased the trigger to improve TS display
+		  if(flSpread < 50000) return 2500.0f;		// Increased the trigger to improve TS display
+		  if(flSpread < 110000) return 5000.0f;	// Increased the trigger to improve TS display
+		  if(flSpread < 1100000) return 10000.0f;
+		  if(flSpread < 10000000) return 100000.0f;
+		  return 10000000;
+		} 
+
+    case DATA_CHANNEL_TIME:					
+    case DATA_CHANNEL_ELAPSEDTIME:					
+		{
+		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
+		  if(flSpread < 10000) return 500.0f;		//	Increased the trigger to improve TS display
+		  if(flSpread < 50000) return 2500.0f;		// Increased the trigger to improve TS display
+		  if(flSpread < 110000) return 5000.0f;	// Increased the trigger to improve TS display
+		  if(flSpread < 1100000) return 10000.0f;
+		  if(flSpread < 10000000) return 100000.0f;
+		  return 10000000;
+		}
+	default:
+    return 1e30;
+	}
+  }
+
   virtual float GetGuideStep(DATA_CHANNEL eChannel, float flMin, float flMax) override
   {
     CASSERT(DATA_CHANNEL_COUNT == 0x401);
@@ -1299,8 +1453,27 @@ private:
       }
       return 10.0;
     }
-    case DATA_CHANNEL_DISTANCE: return 1e30;
-    case DATA_CHANNEL_TIMESLIP: 
+    case DATA_CHANNEL_DISTANCE: 
+    {
+	  if(flSpread < 0.001) return 0.0001f;		
+	  if(flSpread < 0.005) return 0.0005f;		
+	  if(flSpread < 0.010) return 0.0010f;		
+      if(flSpread < 0.050) return 0.0050f;		
+      if(flSpread < 1.000) return 0.1000f;
+      if(flSpread < 10.00) return 1.0000f;
+	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
+	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
+	  if(flSpread < 10000) return 1000.0f;		//	Increased the trigger to improve TS display
+      if(flSpread < 50000) return 5000.0f;		// Increased the trigger to improve TS display
+	  if(flSpread < 110000) return 10000.0f;	// Increased the trigger to improve TS display
+      if(flSpread < 1100000) return 100000.0f;
+      if(flSpread < 10000000) return 1000000.0f;
+	  return 10000000;
+	}
+
+    case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
+    case DATA_CHANNEL_TIMESLIP:
+	case DATA_CHANNEL_ELAPSEDTIME:
     {
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
 	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
@@ -1458,10 +1631,14 @@ struct PITSIDE_SETTINGS
   {
     fRunHTTP = true;
     iHTTPPort = 80;
+	iVelocity = 1;
+	iMapLines = 1;
   }
 
   int fRunHTTP;
   int iHTTPPort;
+  int iVelocity;
+  int iMapLines;
 };
 
 void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
@@ -1479,6 +1656,8 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     {
       in>>pSettings->fRunHTTP;
       in>>pSettings->iHTTPPort;
+      in>>pSettings->iVelocity;
+      in>>pSettings->iMapLines;
       in.close();
     }
   }
@@ -1488,8 +1667,8 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
-
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+
 {
 //  Show Splash screen as first screen
   CSplashDlg splash;
@@ -1580,10 +1759,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
   g_pLapDB = &sfLaps;
-
-//  Removing to put splash screen at program start up
-//  CSplashDlg splash;
-//  ArtShowDialog<IDD_DLGSPLASH>(&splash);
 
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);
