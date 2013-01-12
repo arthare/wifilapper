@@ -13,6 +13,8 @@ enum DATA_CHANNEL
   DATA_CHANNEL_PLOTTABLE_START = 2,
 
   DATA_CHANNEL_DISTANCE = DATA_CHANNEL_PLOTTABLE_START,
+  DATA_CHANNEL_TIME = 11,		//	Preparing to add Time channel for X-axis
+  DATA_CHANNEL_ELAPSEDTIME = 12,		//	Preparing to add Time channel for X-axis
   DATA_CHANNEL_VELOCITY = 3,
   DATA_CHANNEL_TIMESLIP = 4,
   DATA_CHANNEL_X_ACCEL = 5,
@@ -98,11 +100,21 @@ public:
   static void GetStringHeaders(vector<wstring>& lstCols, vector<int>& lstWidths)
   {
     lstCols.push_back(L"Time");
-    lstWidths.push_back(80);
+    lstWidths.push_back(60);
     lstCols.push_back(L"Laptime");
-    lstWidths.push_back(80);
+    lstWidths.push_back(60);
     lstCols.push_back(L"Comment");
     lstWidths.push_back(255);
+  }
+  static void GetStringHeadersXAxis(vector<wstring>& lstCols, vector<int>& lstWidths)
+  {
+    lstCols.push_back(L"X-Axis");
+    lstWidths.push_back(90);
+  }
+  static void GetStringHeadersYAxis(vector<wstring>& lstCols, vector<int>& lstWidths)
+  {
+    lstCols.push_back(L"Y-Axis");
+    lstWidths.push_back(90);
   }
   void GetStrings(vector<wstring>& lstStrings) const
   {
@@ -184,5 +196,4 @@ private:
 
   mutable map<DATA_CHANNEL,const IDataChannel*> m_mapChannels; // we own these pointers.  We get them allocated in ComputeLapData, and it is our responsibility to get them de-allocated
 };
-
 const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTimeMs);
