@@ -579,7 +579,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 			pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);
 
 			const int iStartTime = m_lstPoints[0].iTime;
-			for(int x = 1;x < m_lstPoints.size(); x++)
+			for(int x = 1;x < m_lstPoints.size() - 1; x++)
+//			for(int x = 1;x < m_lstPoints.size(); x++)
 			{
 			const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
 			pLapTime->AddPoint(m_lstPoints[x].iTime, (double)iElapsedTime);

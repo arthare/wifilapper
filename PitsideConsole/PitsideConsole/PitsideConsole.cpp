@@ -20,6 +20,7 @@
 #include "LapData.h"
 #include "DlgMessage.h"
 #include "DlgRaceSelect.h"
+#include "DlgPlotSelect.h"	//	Added by KDJ for Preferences menu
 #include "Iphlpapi.h"
 #include "ArtSQL/ArtSQLite.h"
 #include <stdio.h>
@@ -292,6 +293,21 @@ public:
       PostMessage(m_hWnd,WM_NOTIFYUPDATE,wParam,(LPARAM)lParam);
     }
   }
+  
+  int str_ends_with(const TCHAR * str, const TCHAR * suffix) 
+  {
+    if( str == NULL || suffix == NULL )
+      return 0;
+
+    size_t str_len = wcslen(str);
+    size_t suffix_len = wcslen(suffix);
+
+    if(suffix_len > str_len)
+      return 0;
+
+    return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
+  }
+
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
     if(m_sfLapPainter.HandleMessage(hWnd,uMsg,wParam,lParam))
@@ -513,11 +529,11 @@ public:
             }
             return TRUE;
           }
-/*		  case ID_OPTIONS_PLOTPREFS:
+		  case ID_OPTIONS_PLOTPREFS:
 				  {
 					PLOTSELECT_RESULT sfResult;
-					CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult);
-					ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
+//					CPlotSelectDlg* dlgPlot(g_pLapDB, &sfResult);
+//					ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 					if(!sfResult.fCancelled)
 					{
@@ -525,7 +541,7 @@ public:
 					}
 					
 					return TRUE;
-				  }		*/
+				  }		
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -599,11 +615,11 @@ public:
                   }
                   lstLaps.push_back(pLap->GetLap());
                 }
-/*                // let's make sure there's a .csv suffix on that bugger.
+                // let's make sure there's a .csv suffix on that bugger.
 				if(!str_ends_with(szFilename,L".csv"))
 				{
 					wcsncat(szFilename,L".csv", NUMCHARS(szFilename));
-				}	*/		//	Getting an "Identifier Not Found error on "str_ends_with" function, not sure why.
+				}			//	Getting an "Identifier Not Found error on "str_ends_with" function, not sure why.
 				DashWare::SaveToDashware(szFilename, lstLaps);
               }
             }
@@ -1760,8 +1776,50 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   g_pLapDB = &sfLaps;
 
+  LAPSUPPLIEROPTIONS m_sfLapOpts;
   PITSIDE_SETTINGS sfSettings;
-  LoadPitsideSettings(&sfSettings);
+  LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
+
+  switch (sfSettings.iVelocity)
+  {
+  case 0:
+          {
+            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
+			break;
+          }
+  case 1:
+          {
+            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MPH;
+			break;
+          }
+  case 2:
+          {
+            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MS;
+			break;
+          }
+  default:
+          {
+            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
+          }
+  }
+  switch (sfSettings.iMapLines)
+  {
+  case 0:
+          {
+            m_sfLapOpts.fDrawLines = sfSettings.iMapLines;
+			break;
+          }
+  case 1:
+          {
+            m_sfLapOpts.fDrawLines = sfSettings.iMapLines;
+			break;
+          }
+  default:
+          {
+            m_sfLapOpts.fDrawLines = true;
+          }
+  }
+
 
   PitsideHTTP aResponder(g_pLapDB,&sfUI);
   if(sfSettings.fRunHTTP && sfSettings.iHTTPPort > 0 && sfSettings.iHTTPPort < 65536)
