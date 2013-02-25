@@ -14,20 +14,20 @@ PIDDATA g_rgPIDData[] =
 	{L"Monitor status since DTCs cleared. (Includes malfunction indicator lamp (MIL) status and number of DTCs.)",""},
 	{L"Freeze DTC",""},
 	{L"Fuel system status",""},
-	{L"Calculated engine load value","%3.0f%%"},
-	{L"Engine coolant temperature","%3.0f C"},
-	{L"Short term fuel % trim—Bank 1","%4.0f%%"},
-	{L"Long term fuel % trim—Bank 1","%4.0f%%"},
-	{L"Short term fuel % trim—Bank 2","%4.0f%%"},
-	{L"Long term fuel % trim—Bank 2","%4.0f%%"},
-	{L"Fuel pressure","%3.0f kPa"},
-	{L"Intake manifold absolute pressure","%3.0f kPa"},
+	{L"Calculated engine load value","%3.1f%%"},
+	{L"Engine coolant temperature","%3.1f C"},
+	{L"Short term fuel % trim—Bank 1","%4.1f%%"},
+	{L"Long term fuel % trim—Bank 1","%4.1f%%"},
+	{L"Short term fuel % trim—Bank 2","%4.1f%%"},
+	{L"Long term fuel % trim—Bank 2","%4.1f%%"},
+	{L"Fuel pressure","%3.1f kPa"},
+	{L"Intake manifold absolute pressure","%4.1f kPa"},
 	{L"Engine RPM","%5.0f RPM"},
-	{L"Vehicle speed","%3.0f km/h"},
-	{L"Timing advance","%2.1f degrees"},
-	{L"Intake air temperature","%3.0f C"},
+	{L"Vehicle speed","%3.1f km/h"},
+	{L"Timing advance","%2.2f degrees"},
+	{L"Intake air temperature","%3.1f C"},
 	{L"MAF air flow rate","%3.2f grams/sec"},
-	{L"Throttle position","%3.0f%%"},
+	{L"Throttle position","%3.1f%%"},
 	{L"Commanded secondary air status",""},
 	{L"Oxygen sensors present",""},
 	{L"Bank 1, Sensor 1: Oxygen sensor voltage, Short term fuel trim",""},
@@ -43,9 +43,9 @@ PIDDATA g_rgPIDData[] =
 	{L"Auxiliary input status",""},
 	{L"Run time since engine start","%5.0f seconds"},
 	{L"PIDs supported [21 - 40]",""},
-	{L"Distance traveled with malfunction indicator lamp (MIL) on","%5.0f km"},
+	{L"Distance traveled with malfunction indicator lamp (MIL) on","%5.1f km"},
 	{L"Fuel Rail Pressure (relative to manifold vacuum)","%5.1f kPa"},
-	{L"Fuel Rail Pressure (diesel, or gasoline direct inject)","%6.0f kPa"},
+	{L"Fuel Rail Pressure (diesel, or gasoline direct inject)","%6.1f kPa"},
 	{L"O2S1_WR_lambda(1): Equivalence Ratio Voltage",""},
 	{L"O2S2_WR_lambda(1): Equivalence Ratio Voltage",""},
 	{L"O2S3_WR_lambda(1): Equivalence Ratio Voltage",""},
@@ -54,14 +54,14 @@ PIDDATA g_rgPIDData[] =
 	{L"O2S6_WR_lambda(1): Equivalence Ratio Voltage",""},
 	{L"O2S7_WR_lambda(1): Equivalence Ratio Voltage",""},
 	{L"O2S8_WR_lambda(1): Equivalence Ratio Voltage",""},
-	{L"Commanded EGR","%3.0f%%"},
-	{L"EGR Error","%3.0f%%"},
-	{L"Commanded evaporative purge","%3.0f%%"},
-	{L"Fuel Level Input","%3.0f%%"},
+	{L"Commanded EGR","%3.1f%%"},
+	{L"EGR Error","%3.1f%%"},
+	{L"Commanded evaporative purge","%3.1f%%"},
+	{L"Fuel Level Input","%3.1f%%"},
 	{L"# of warm-ups since codes cleared","%3.0f"},
-	{L"Distance traveled since codes cleared","%5.0f km"},
-	{L"Evap. System Vapor Pressure","%4.0f Pa"},
-	{L"Barometric pressure","%3.0f kPa"},
+	{L"Distance traveled since codes cleared","%5.1f km"},
+	{L"Evap. System Vapor Pressure","%4.1f Pa"},
+	{L"Barometric pressure","%3.1f kPa"},
 	{L"O2S1_WR_lambda(1): Equivalence Ratio Current",""},
 	{L"O2S2_WR_lambda(1): Equivalence Ratio Current",""},
 	{L"O2S3_WR_lambda(1): Equivalence Ratio Current",""},
@@ -207,7 +207,7 @@ PIDDATA g_rgPIDData[] =
 
 PIDDATA g_rgIOIOCustomData[] = {
   {L"Fuel Level","%3.2f%%"},
-  {L"RPM","%3.2f"},
+  {L"RPM","%5.2f"},
   {L"Throttle Position","%3.2f"},
   {L"Brake Position","%3.2f"},
   {L"Clutch Position","%3.2f"},
@@ -215,18 +215,18 @@ PIDDATA g_rgIOIOCustomData[] = {
   {L"RF Wheelspeed","%3.2f"},
   {L"LR Wheelspeed","%3.2f"},
   {L"RR Wheelspeed","%3.2f"},
-  {L"Exhaust Temperature","%3.2f"},
-  {L"LF Tire Temperature","%3.2f"},
-  {L"RF Tire Temperature","%3.2f"},
-  {L"LR Tire Temperature","%3.2f"},
-  {L"RR Tire Temperature","%3.2f"},
-  {L"LF Brake Temperature","%3.2f"},
-  {L"RF Brake Temperature","%3.2f"},
-  {L"LR Brake Temperature","%3.2f"},
-  {L"RR Brake Temperature","%3.2f"},
+  {L"Exhaust Temperature","%3.1f"},
+  {L"LF Tire Temperature","%3.1f"},
+  {L"RF Tire Temperature","%3.1f"},
+  {L"LR Tire Temperature","%3.1f"},
+  {L"RR Tire Temperature","%3.1f"},
+  {L"LF Brake Temperature","%3.1f"},
+  {L"RF Brake Temperature","%3.1f"},
+  {L"LR Brake Temperature","%3.1f"},
+  {L"RR Brake Temperature","%3.1f"},
   {L"Oil Pressure","%3.2f"},
-  {L"Oil Temperature","%3.2f"},
-  {L"Coolant Temperature","%3.2f"},
+  {L"Oil Temperature","%3.1f"},
+  {L"Coolant Temperature","%3.1f"},
   {L"Alternator voltage","%3.2fV"},
 };
 
@@ -404,7 +404,7 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
       }
       else
       {
-        sprintf(lpsz,"%f",flValue);
+        sprintf(lpsz,"%4.1f",flValue);
       }
       break;
     }
@@ -442,15 +442,15 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
     const double dPct = (double)ixCheck / (double)cSize;
     const double dPctDiff = abs(dPct - dInputPercentage);
 
-    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.40)		// If you are within 50% of reference lap in data string
+    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.15)		// If you are within 15% of reference lap in data string
     {
       dClosest = dAvg;
       ixBestIndex = ixCheck;
     }
-    if(dAvg < 5e-11 && ixBestIndex >= 0)		//	Lowered this due to 10Hz GPS triggering it too much (Shannonville)
-    {
-      break; // early-out: if we found one that is close enough, just stop here
-    }
+//    if(dAvg < 5e-11 && ixBestIndex >= 0)		//	Lowered this due to 10Hz GPS triggering it too much (Shannonville)
+//    {
+//      break; // early-out: if we found one that is close enough, just stop here
+//    }
     ixCheck = ixNext; // advance to next point
 
     if(ixCheck == *pixStartIndex)
@@ -498,8 +498,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
     int iStartPoint = 0;
-    for(int x = 0;x < lstPoints.size() - 1; x++)	// Removed last point to prevent graphing errors.
-//    for(int x = 0;x < lstPoints.size(); x++)	// Remarked out by KDJ
+//    for(int x = 0;x < lstPoints.size() - 1; x++)	// Removed last point to prevent graphing errors.
+    for(int x = 0;x < lstPoints.size(); x++)	// Remarked out by KDJ
     {
       const TimePoint2D& p = lstPoints[x];
 
@@ -519,15 +519,34 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
         Line<2> lnPerp(p.V2D(),vD.RotateAboutOrigin(PI/2));
 
         double dHitLength;
-        if(lnD.IntersectLine(lnPerp, &dHitLength) && dHitLength >= 0 && dHitLength <= 1.0)
+//        if(lnD.IntersectLine(lnPerp, &dHitLength) && dHitLength >= 0 && dHitLength <= 1.0)
+		if(lnD.IntersectLine(lnPerp, &dHitLength) && dHitLength >= -1 && dHitLength <= 2.0)	//	Widening the accept limit
         {
           // hooray, they intersect
           const double dPercent = dHitLength;
-          const double dThisDistance = (dD1Distance * (1-dPercent)) + (dD2Distance * dPercent);
-          m_lstPoints.push_back(TimePoint2D(p));
-		  pDistance->AddPoint((int)p.iTime,dThisDistance);
-          pVelocity->AddPoint((int)p.iTime,p.flVelocity);
-        }
+          if (abs(sfD1.iTime - sfD2.iTime) <= 3000)	
+		  //	Check to make sure that points are not wrapping around, need to be within 3s of each other
+		  {
+			const double dThisDistance = (dD1Distance * (1-dPercent)) + (dD2Distance * dPercent);
+			m_lstPoints.push_back(TimePoint2D(p));
+			pDistance->AddPoint((int)p.iTime,dThisDistance);
+			pVelocity->AddPoint((int)p.iTime,p.flVelocity);
+		  }
+		}
+		else
+		{
+		  //	Added by KDJ to fix lost graphing points, this is only an approximation at this point, and can be improved
+          if (abs(sfD1.iTime - sfD2.iTime) <= 3000)	
+		  //	Check to make sure that points are not wrapping around, need to be within 3s of each other
+		  {
+			const double dPercent = 0.5;
+            const double dThisDistance = (dD1Distance * (1-dPercent)) + (dD2Distance * dPercent);
+            m_lstPoints.push_back(TimePoint2D(p));
+		    pDistance->AddPoint((int)p.iTime,dThisDistance);
+            pVelocity->AddPoint((int)p.iTime,p.flVelocity);
+		  }
+		}
+
       }
     }
     if(pX->IsValid())
@@ -579,8 +598,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 			pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);
 
 			const int iStartTime = m_lstPoints[0].iTime;
-			for(int x = 1;x < m_lstPoints.size() - 1; x++)
-//			for(int x = 1;x < m_lstPoints.size(); x++)
+//			for(int x = 1;x < m_lstPoints.size() - 1; x++)
+			for(int x = 1;x < m_lstPoints.size(); x++)
 			{
 			const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
 			pLapTime->AddPoint(m_lstPoints[x].iTime, (double)iElapsedTime);
@@ -613,6 +632,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       const int iStartTime = m_lstPoints[0].iTime;
       const int iReferenceStartTime = lstReference[0].iTime;
       for(int x = 1;x < m_lstPoints.size(); x++)
+//      for(int x = 1;x < m_lstPoints.size() - 1; x++)	//	Done to reduce graphical errors
       {
         const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
         const double dDistance = pDistance->GetValue(m_lstPoints[x].iTime);

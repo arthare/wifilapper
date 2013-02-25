@@ -530,18 +530,19 @@ public:
             return TRUE;
           }
 		  case ID_OPTIONS_PLOTPREFS:
-				  {
-					PLOTSELECT_RESULT sfResult;
-//					CPlotSelectDlg* dlgPlot(g_pLapDB, &sfResult);
-//					ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
+		  {
+			PLOTSELECT_RESULT sfResult;		//	Initialize something, I really don't know what this does 
+//			CPlotSelectDlg DlgProc(g_pLapDB, &sfResult);
+//			ArtShowDialog<IDD_PLOTPREFS>(&DlgProc);
+//			CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_PLOTPREFS), hWnd, DlgProc);
 
-					if(!sfResult.fCancelled)
-					{
-					  UpdateUI(UPDATE_ALL);
-					}
+			if(!sfResult.fCancelled)
+			{
+				UpdateUI(UPDATE_ALL);
+			}
 					
-					return TRUE;
-				  }		
+			return TRUE;
+		  }		
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -549,13 +550,12 @@ public:
           }
           case ID_HELP_ABOUT:
           {
-//			  DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-//			  break;
 			  ShowAbout();
 			  return TRUE;
           }
           case ID_FILE_PRINT:
           {
+			  HRESULT WINAPI PrintDlgEx(_Inout_  LPPRINTDLGEX lppd);
 			  return TRUE;
           }
           case ID_FILE_EXIT:
@@ -619,7 +619,7 @@ public:
 				if(!str_ends_with(szFilename,L".csv"))
 				{
 					wcsncat(szFilename,L".csv", NUMCHARS(szFilename));
-				}			//	Getting an "Identifier Not Found error on "str_ends_with" function, not sure why.
+				}
 				DashWare::SaveToDashware(szFilename, lstLaps);
               }
             }
@@ -971,14 +971,8 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0006\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0002\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
-/*		while (WM_MOUSEOVER != NULL)
-		{
-			MouseIcon = 2;
-			if (WM_CLICK != NULL) { ShellExecute(http://sites.google.com/site/wifilapper"}; }
-		}
-*/
 		return;
 	}
   void ShowNetInfo()
@@ -1199,7 +1193,7 @@ private:
     vector<CExtendedLap*> lstLaps;
     map<wstring,CExtendedLap*> mapFastestDriver;
     CExtendedLap* pFastest = NULL;
-//    CExtendedLap* pReference = NULL;		// Added to show Reference Lap - KDJ
+    CExtendedLap* pReference = NULL;		// Added to show Reference Lap - KDJ
     for(set<LPARAM>::iterator i = setSelectedLaps.begin(); i != setSelectedLaps.end(); i++)
     {
       CExtendedLap* pLap = (CExtendedLap*)*i;
@@ -1231,13 +1225,15 @@ private:
     {
       lstLaps.push_back(i->second);
     }
-/*
-	//	Set up for showing Reference lap similar to how we show Fastest Lap.
-	if(m_pReferenceLap != NULL && m_lstPoints.size() > 0)
+
+	//	Set up for showing Reference lap similar to how we show Fastest Lap. 
+	//	This currently can cause program crashes, so remarked out.
+//	if(m_pReferenceLap != NULL && m_lstPoints.size() > 0)
+	if(m_pReferenceLap != NULL)
     {
 		lstLaps.push_back(m_pReferenceLap);
     }
-*/
+
 
     return lstLaps;
   }
@@ -1425,10 +1421,10 @@ private:
 		  if(flSpread < 1.000) return 0.1000f;
 		  if(flSpread < 10.00) return 1.0000f;
 		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
-		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
-		  if(flSpread < 10000) return 500.0f;		//	Increased the trigger to improve TS display
-		  if(flSpread < 50000) return 2500.0f;		// Increased the trigger to improve TS display
-		  if(flSpread < 110000) return 5000.0f;	// Increased the trigger to improve TS display
+		  if(flSpread < 5000) return 100.0f;
+		  if(flSpread < 10000) return 500.0f;
+		  if(flSpread < 50000) return 2500.0f;
+		  if(flSpread < 110000) return 5000.0f;
 		  if(flSpread < 1100000) return 10000.0f;
 		  if(flSpread < 10000000) return 100000.0f;
 		  return 10000000;
@@ -1438,10 +1434,10 @@ private:
     case DATA_CHANNEL_ELAPSEDTIME:					
 		{
 		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
-		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
-		  if(flSpread < 10000) return 500.0f;		//	Increased the trigger to improve TS display
-		  if(flSpread < 50000) return 2500.0f;		// Increased the trigger to improve TS display
-		  if(flSpread < 110000) return 5000.0f;	// Increased the trigger to improve TS display
+		  if(flSpread < 5000) return 100.0f;
+		  if(flSpread < 10000) return 500.0f;
+		  if(flSpread < 50000) return 2500.0f;
+		  if(flSpread < 110000) return 5000.0f;
 		  if(flSpread < 1100000) return 10000.0f;
 		  if(flSpread < 10000000) return 100000.0f;
 		  return 10000000;
@@ -1478,10 +1474,10 @@ private:
       if(flSpread < 1.000) return 0.1000f;
       if(flSpread < 10.00) return 1.0000f;
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
-	  if(flSpread < 10000) return 1000.0f;		//	Increased the trigger to improve TS display
-      if(flSpread < 50000) return 5000.0f;		// Increased the trigger to improve TS display
-	  if(flSpread < 110000) return 10000.0f;	// Increased the trigger to improve TS display
+	  if(flSpread < 5000) return 500.0f;
+	  if(flSpread < 10000) return 1000.0f;
+      if(flSpread < 50000) return 5000.0f;
+	  if(flSpread < 110000) return 10000.0f;
       if(flSpread < 1100000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
 	  return 10000000;
@@ -1492,10 +1488,10 @@ private:
 	case DATA_CHANNEL_ELAPSEDTIME:
     {
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
-	  if(flSpread < 10000) return 1000.0f;		//	Increased the trigger to improve TS display
-      if(flSpread < 50000) return 5000.0f;		// Increased the trigger to improve TS display
-	  if(flSpread < 110000) return 10000.0f;	// Increased the trigger to improve TS display
+	  if(flSpread < 5000) return 500.0f;
+	  if(flSpread < 10000) return 1000.0f;
+      if(flSpread < 50000) return 5000.0f;
+	  if(flSpread < 110000) return 10000.0f;
       if(flSpread < 1100000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
     }
@@ -1820,7 +1816,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
           }
   }
 
-
   PitsideHTTP aResponder(g_pLapDB,&sfUI);
   if(sfSettings.fRunHTTP && sfSettings.iHTTPPort > 0 && sfSettings.iHTTPPort < 65536)
   {
@@ -1857,6 +1852,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
+
+  //	Load inital values for Upper and Lower Alarm limits
+//	DlgPlotSelect :: InitPlotPrefs(set<DATA_CHANNEL> setAvailable);
 
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
   exit(0);

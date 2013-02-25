@@ -24,7 +24,7 @@ CLapPainter::~CLapPainter()
 
 void CLapPainter::OGL_Paint()
 {
-  glClearColor( 0.8f, 0.8f, 0.8f, 0.8f );  //  Background color is white. May want to allow a user option to set this
+  glClearColor( 0.9f, 0.9f, 0.9f, 0.9f );  //  Background color is white. May want to allow a user option to set this
   glClear( GL_COLOR_BUFFER_BIT );
   
   RECT rcClient;
@@ -541,7 +541,7 @@ void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, floa
 		*pG = RandDouble(); 
 		*pB = RandDouble(); 
 	} 
-	while(*pR + *pG + *pB > 1.5); 
+	while(*pR * *pG * *pB > 0.35); 
 	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 }
 
