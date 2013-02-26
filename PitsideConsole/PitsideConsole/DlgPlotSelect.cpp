@@ -1,5 +1,4 @@
 #include "Stdafx.h"
-#include "stdio.h"
 #include "DlgPlotSelect.h"
 #include "resource.h"
 #include "PitsideConsole.h"
@@ -13,7 +12,7 @@ float fMaxValue[50];
 bool fCancelled = false;
 LPCWSTR szTemp[512];
 
-int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
+int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable, LPARAM lParam)
   { 
 	//	Get all of the Y-axis data channels being displayed
     ArtListBox m_sfYAxis;
@@ -36,7 +35,7 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 		ChnlAddr = &i_ChannelName;
 		m_PlotPrefs[i].m_ChannelName[0] = *ChnlAddr;
 	}
-	for (int i=TotalYChannels; i <= 1; i++)
+	for (int i=TotalYChannels; i <= 50; i++)
 	{
 		m_PlotPrefs[i].iPlotView = true;	//	Default to display as a graph
 		m_PlotPrefs[i].fMinValue = -1.0;		//	Set all lower limits to -1.0
@@ -48,7 +47,7 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	*szTemp = *m_PlotPrefs[1].m_ChannelName;
 	p_hWnd = GetDlgItem(hWnd, IDC_PLOTTYPE_CHANNEL1);
 	SendMessage(p_hWnd, WM_SETTEXT, 0, (LPARAM)*szTemp);
-/*	*szTemp = *m_PlotPrefs[2].m_ChannelName;
+	*szTemp = *m_PlotPrefs[2].m_ChannelName;
 	p_hWnd = GetDlgItem(hWnd, IDC_PLOTTYPE_CHANNEL2);
 	SendMessage(p_hWnd, WM_SETTEXT, 0, (LPARAM)*szTemp);
 	*szTemp = m_PlotPrefs[3].m_ChannelName[0];
@@ -105,8 +104,8 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	*szTemp = m_PlotPrefs[20].m_ChannelName[0];
 	p_hWnd = GetDlgItem(hWnd, IDC_PLOTTYPE_CHANNEL20);
 	SendMessage(p_hWnd, WM_SETTEXT, 0, (LPARAM)*szTemp);
-*/	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH1, IDC_PLOTTYPE_VALUE1, IDC_PLOTTYPE_GRAPH1);
-/*	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH2, IDC_PLOTTYPE_VALUE2, IDC_PLOTTYPE_GRAPH2);
+	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH1, IDC_PLOTTYPE_VALUE1, IDC_PLOTTYPE_GRAPH1);
+	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH2, IDC_PLOTTYPE_VALUE2, IDC_PLOTTYPE_GRAPH2);
 	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH3, IDC_PLOTTYPE_VALUE3, IDC_PLOTTYPE_GRAPH3);
 	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH4, IDC_PLOTTYPE_VALUE4, IDC_PLOTTYPE_GRAPH4);
 	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH5, IDC_PLOTTYPE_VALUE5, IDC_PLOTTYPE_GRAPH5);
@@ -125,13 +124,13 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH18, IDC_PLOTTYPE_VALUE18, IDC_PLOTTYPE_GRAPH18);
 	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH19, IDC_PLOTTYPE_VALUE19, IDC_PLOTTYPE_GRAPH19);
 	CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH20, IDC_PLOTTYPE_VALUE20, IDC_PLOTTYPE_GRAPH20);
-*/
+
 	TCHAR szText[MAX_PATH];
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[1].fMinValue);
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT1, LPCWSTR(&szText));				
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[1].fMaxValue);
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT1, LPCWSTR(&szText));				
-/*
+
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[2].fMinValue);
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT2, LPCWSTR(&szText));				
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[2].fMaxValue);
@@ -226,7 +225,7 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT20, LPCWSTR(&szText));				
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[20].fMaxValue);
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT20, LPCWSTR(&szText));
-*/
+
 	return 0;
   }
 
@@ -238,7 +237,7 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT1, LPCWSTR(&szText));				
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[1].fMaxValue);
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT1, LPCWSTR(&szText));
-/*
+
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[2].fMinValue);
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT2, LPCWSTR(&szText));				
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[2].fMaxValue);
@@ -333,12 +332,12 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT20, LPCWSTR(&szText));				
 	swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[20].fMaxValue);
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT20, LPCWSTR(&szText));
-*/
+
 //	Display all of the data channel names.
 
 	*szTemp = m_PlotPrefs[1].m_ChannelName[0];
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_CHANNEL1, (LPCWSTR)*szTemp);
-/*	*szTemp = m_PlotPrefs[2].m_ChannelName[0];
+	*szTemp = m_PlotPrefs[2].m_ChannelName[0];
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_CHANNEL2, (LPCWSTR)*szTemp);
 	*szTemp = m_PlotPrefs[3].m_ChannelName[0];
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_CHANNEL3, (LPCWSTR)*szTemp);
@@ -376,11 +375,11 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_CHANNEL19, (LPCWSTR)*szTemp);
 	*szTemp = m_PlotPrefs[20].m_ChannelName[0];
 	SetDlgItemText(hWnd, IDC_PLOTTYPE_CHANNEL20, (LPCWSTR)*szTemp);
-*/	if (m_PlotPrefs[1].iPlotView) 
+	if (m_PlotPrefs[1].iPlotView) 
 		CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH1, IDC_PLOTTYPE_VALUE1, IDC_PLOTTYPE_GRAPH1);
 	else
 		CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH1, IDC_PLOTTYPE_VALUE1, IDC_PLOTTYPE_VALUE1);
-/*	if (m_PlotPrefs[2].iPlotView) 
+	if (m_PlotPrefs[2].iPlotView) 
 		CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH2, IDC_PLOTTYPE_VALUE2, IDC_PLOTTYPE_GRAPH2);
 	else
 		CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH2, IDC_PLOTTYPE_VALUE2, IDC_PLOTTYPE_VALUE2);
@@ -456,11 +455,11 @@ int InitPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 		CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH20, IDC_PLOTTYPE_VALUE20, IDC_PLOTTYPE_GRAPH20);
 	else
 		CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH20, IDC_PLOTTYPE_VALUE20, IDC_PLOTTYPE_VALUE20);
-*/
+
 	return 0;
 	}
 
-LRESULT CPlotSelectDlg::DlgPlot(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CPlotSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg)
   {
@@ -471,7 +470,7 @@ LRESULT CPlotSelectDlg::DlgPlot(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
   			if (m_PlotPrefs[1].iPlotView == false)
 			{
 				set<DATA_CHANNEL> setAvailable;
-				InitPlotPrefs(hWnd, setAvailable);
+				InitPlotPrefs(hWnd, setAvailable, lParam);
 			}
 			else
 			{
@@ -496,7 +495,7 @@ LRESULT CPlotSelectDlg::DlgPlot(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				m_PlotPrefs[1].iPlotView = false;
 				break;
 			}
-/*			case IDC_PLOTTYPE_GRAPH2:
+			case IDC_PLOTTYPE_GRAPH2:
 			{
 				TCHAR szTemp[512];
 				m_PlotPrefs[2].iPlotView = true;
@@ -724,7 +723,7 @@ LRESULT CPlotSelectDlg::DlgPlot(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				m_PlotPrefs[20].iPlotView = false;
 				break;
 			}
-*/			case IDOK:
+			case IDOK:
 			{
 				//	Let's get the values for each channel and store it for program execution
 				BOOL bSuccess;
@@ -739,7 +738,7 @@ LRESULT CPlotSelectDlg::DlgPlot(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				GetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT1, szText, len+1);
 				flValue = _wtof(szText);
 				m_PlotPrefs[1].fMaxValue = flValue;
-/*				
+				
 				len = GetWindowTextLength(GetDlgItem(hWnd, IDC_PLOTTYPE_LOWLIMIT2));
 				GetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT2, szText, len+1);
 				flValue = _wtof(szText);
@@ -910,7 +909,7 @@ LRESULT CPlotSelectDlg::DlgPlot(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				GetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT20, szText, len+1);
 				flValue = _wtof(szText);
 				m_PlotPrefs[20].fMaxValue = flValue;
-*/				
+				
 				m_pResults->fCancelled = false;
 				EndDialog(hWnd,0);
 				return TRUE;

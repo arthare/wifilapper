@@ -532,8 +532,8 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;		//	Initialize something, I really don't know what this does 
-//			CPlotSelectDlg DlgProc(g_pLapDB, &sfResult);
-//			ArtShowDialog<IDD_PLOTPREFS>(&DlgProc);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult);
+			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 //			CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_PLOTPREFS), hWnd, DlgProc);
 
 			if(!sfResult.fCancelled)
@@ -1571,10 +1571,12 @@ private:
       }
     }
   }
+public:
+  vector<DATA_CHANNEL> m_lstYChannels;
+  ArtListBox m_sfYAxis;
 private:
   ArtListBox m_sfLapList;
   ArtListBox m_sfXAxis;
-  ArtListBox m_sfYAxis;
 
   CLapPainter m_sfLapPainter;
   CLapPainter m_sfSubDisplay;
@@ -1585,7 +1587,7 @@ private:
   LAPSUPPLIEROPTIONS m_sfLapOpts;
   LAPDISPLAYSTYLE m_eLapDisplayStyle;
   DATA_CHANNEL m_eXChannel;
-  vector<DATA_CHANNEL> m_lstYChannels;
+//  vector<DATA_CHANNEL> m_lstYChannels;
   bool m_fShowBests;
   bool m_fShowDriverBests;
 
