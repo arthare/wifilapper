@@ -205,6 +205,7 @@ public:
           DASSERT(sfItem.lParam != NULL);
           ret.insert(sfItem.lParam);
         }
+		else {DASSERT(FALSE); break;}		// Added by KDJ to prevent locks when no data is passed
       }
     } while(ixSelect >= 0);
 

@@ -73,7 +73,7 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Choose plotting preferences"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT           "               Data Channel                                                      Display Type                    Low Limit       High Limit", IDC_PLOTTYPE_HEADERS,20,20,360,12
+    LTEXT           "               Data Channel                                                      Display Type                    Low Limit       High Limit", IDC_PLOTTYPE_HEADERS,20,20,370,12
     LTEXT           " 1: ", IDC_PLOTTYPE_CHANNEL1,5,32,175,12
     AUTORADIOBUTTON "Graph",IDC_PLOTTYPE_GRAPH1,180,32,45,12
     AUTORADIOBUTTON "Value",IDC_PLOTTYPE_VALUE1,225,32,45,12

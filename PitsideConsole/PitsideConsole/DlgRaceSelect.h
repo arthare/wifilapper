@@ -23,12 +23,14 @@ public:
   {
     m_pLapDB = pLapDB;
   };
-
   virtual void NotifyChange(WPARAM wParam, LPARAM lParam) {DASSERT(FALSE);};
   virtual LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
   virtual DWORD GetDlgId() const {return IDD_SELECTRACE;}
-private:
+public:
   RACESELECT_RESULT* m_pResults;
+
+private:
+//  RACESELECT_RESULT* m_pResults;
   ILapReceiver* m_pLapDB;
   ArtListBox sfListBox;
 };

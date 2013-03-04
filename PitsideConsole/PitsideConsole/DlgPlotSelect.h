@@ -3,6 +3,9 @@
 #include "ArtUI.h"
 #include "ArtTools.h"
 #include "LapReceiver.h"
+#include "PitsideConsole.h"
+#include "LapData.h"
+#include "DlgRaceSelect.h"
 
 struct PLOTSELECT_RESULT
 {
@@ -31,19 +34,26 @@ static struct PlotPrefs
 class CPlotSelectDlg : public IUI
 {
 public:
-  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults) : m_pResults(pResults) 
+  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults) : m_pPlotResults(pResults) 
   {
   m_pLapDB = pLapDB;
-  int InitPlotPrefs (HWND hWnd, set<DATA_CHANNEL> setAvailable, LPARAM lParam);
-  void InitPlotChannels(set<DATA_CHANNEL> setAvailable);
-  void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch, set<DATA_CHANNEL> setAvailable);
   };
+  int InitPlotPrefs (HWND hWnd, LPARAM lParam);
+//  int SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable);
+  void InitPlotChannels(set<DATA_CHANNEL> setAvailable);
 
   virtual void NotifyChange(WPARAM wParam, LPARAM lParam) {DASSERT(FALSE);};
   virtual LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
   virtual DWORD GetDlgId() const {return IDD_PLOTPREFS;}
 private:
-	PLOTSELECT_RESULT* m_pResults;
+	PLOTSELECT_RESULT* m_pPlotResults;
 	ILapReceiver* m_pLapDB;
-	ArtListBox sfListBox;
+	ArtListBox m_sfYAxis;
+	RACESELECT_RESULT* m_pResults;
+//    set<DATA_CHANNEL> setSelectedData;
+	virtual vector<DATA_CHANNEL> GetYChannels()
+	  {
+		return m_lstYChannels;
+	  };
+	vector<DATA_CHANNEL> m_lstYChannels;
 };

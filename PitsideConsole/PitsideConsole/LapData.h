@@ -104,7 +104,7 @@ public:
     lstCols.push_back(L"Laptime");
     lstWidths.push_back(60);
     lstCols.push_back(L"Comment");
-    lstWidths.push_back(255);
+    lstWidths.push_back(75);
   }
   static void GetStringHeadersXAxis(vector<wstring>& lstCols, vector<int>& lstWidths)
   {

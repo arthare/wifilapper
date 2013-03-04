@@ -80,6 +80,7 @@ private:
   void DrawSelectLapsPrompt() const;
   void DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const;
   void MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float*pB); 
+//  void MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
 private:
   ILapSupplier* m_pLapSupplier;
 

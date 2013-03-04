@@ -395,6 +395,47 @@ public:
         }
         return FALSE;
       }
+      case WM_LBUTTONDBLCLK:
+	  case WM_MBUTTONDOWN:
+	  {
+		const int x = LOWORD(lParam);
+        const int y = HIWORD(lParam);
+        // figure out if we should put focus on the main map
+        RECT rcMap;
+        HWND hWndMap = GetDlgItem(this->m_hWnd,IDC_DISPLAY);
+        GetClientRect(hWndMap,&rcMap);
+        if(x >= rcMap.left && x < rcMap.right && y >= rcMap.top && y < rcMap.bottom)
+        {
+          SetFocus(hWndMap);
+          return TRUE;
+        }
+		  //	Now display the closest values on the map.
+/*			const float flDataX = MagicDeterminingFunction(sfLapOpts, fHighlightXAxis); // this part could be hard...
+			vector<CExtendedLap*> lstLaps = GetLapsToShow();
+			if(lstLaps.size() >= 2) // don't show anything if we've got multiple laps selected
+			{
+				set<DATA_CHANNEL> setChannels = lstLaps[0]->GetAvailableChannels();
+				stringstream ss;
+				for(set<DATA_CHANNEL>::const_iterator i = setChannels.begin(); i != setChannels.end(); i++)
+				{
+					const IDataChannel* pChannel = GetChannel(*i);
+					if(pChannel)
+					{
+						const float flValue = pChannel->GetValue(flDataX);
+						TCHAR szName[100];
+						GetDataChannelName(*i,szName,NUMCHARS(szName));
+						char szValue[100];
+						GetChannelString(*i, m_sfLapOpts.eUnitPreference, flValue, szValue, NUMCHARS(szValue));
+						ss<<szName;
+						ss<<szValue;
+						ss<<endl;
+					}
+				}
+				MessageBox(NULL, ss.c_str(), NULL, NULL);
+
+				}
+*/          return TRUE;
+      }
       case WM_NOTIFY:
       {
         NMHDR* notifyHeader = (NMHDR*)lParam;
@@ -531,10 +572,9 @@ public:
           }
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
-			PLOTSELECT_RESULT sfResult;		//	Initialize something, I really don't know what this does 
+			PLOTSELECT_RESULT sfResult;
 			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
-//			CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_PLOTPREFS), hWnd, DlgProc);
 
 			if(!sfResult.fCancelled)
 			{
@@ -1574,8 +1614,8 @@ private:
 public:
   vector<DATA_CHANNEL> m_lstYChannels;
   ArtListBox m_sfYAxis;
-private:
   ArtListBox m_sfLapList;
+private:
   ArtListBox m_sfXAxis;
 
   CLapPainter m_sfLapPainter;
