@@ -34,9 +34,10 @@ static struct PlotPrefs
 class CPlotSelectDlg : public IUI
 {
 public:
-  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults) : m_pPlotResults(pResults) 
+  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId) : m_pPlotResults(pResults), m_iRaceId(iRaceId)
+  //  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults) : m_pPlotResults(pResults) 
   {
-  m_pLapDB = pLapDB;
+		m_pLapDB = pLapDB;
   };
   int InitPlotPrefs (HWND hWnd, LPARAM lParam);
 //  int SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable);
@@ -47,13 +48,14 @@ public:
   virtual DWORD GetDlgId() const {return IDD_PLOTPREFS;}
 private:
 	PLOTSELECT_RESULT* m_pPlotResults;
+	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
 	ArtListBox m_sfYAxis;
 	RACESELECT_RESULT* m_pResults;
 //    set<DATA_CHANNEL> setSelectedData;
 	virtual vector<DATA_CHANNEL> GetYChannels()
-	  {
+	{
 		return m_lstYChannels;
-	  };
+	};
 	vector<DATA_CHANNEL> m_lstYChannels;
 };

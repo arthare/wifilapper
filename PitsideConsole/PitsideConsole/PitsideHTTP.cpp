@@ -171,10 +171,10 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     const IDataChannel* pDist1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_DISTANCE);
     const IDataChannel* pDist2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_DISTANCE);
 
-    const IDataChannel* pTime1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_TIME);	//	Setting up for adding Time channel for X-axis
+    const IDataChannel* pTime1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_TIME);
     const IDataChannel* pTime2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_TIME);
 
-    const IDataChannel* pLapTime1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_ELAPSEDTIME);	//	Setting up for adding Time channel for X-axis
+    const IDataChannel* pLapTime1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_ELAPSEDTIME);
     const IDataChannel* pLapTime2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_ELAPSEDTIME);
 
     const IDataChannel* pVel1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_VELOCITY);

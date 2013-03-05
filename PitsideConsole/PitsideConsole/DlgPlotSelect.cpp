@@ -51,20 +51,37 @@ vector<CExtendedLap*> GetAllLaps()
 
 		  			// Load all laps and get their channels
 					vector<RACEDATA> lstRaces = m_pLapDB->GetRaces();
-					//	Go through all of the races available, and pull their data channels for each lap. 
-					//	This is painful and should be unnecessary.
-					for(int x = 0;x < lstRaces.size(); x++)
+					//	Pull the data channels for each lap from this race instance m_iRaceId
+					m_pPlotResults->iPlotId = m_iRaceId;	//	Get the Selected Race ID.
+					m_sfLapList.Clear();	//  Clear list of laps in memory and reload them.
+					if (m_pLapDB->GetLapCount(m_pPlotResults->iPlotId) > 1)	//	If race has more than 1 lap, let's get the laps / channels
 					{
-						m_pPlotResults->iPlotId = x;
-//						m_pPlotResults->iPlotId = m_pResults->iRaceId;	//	This information is unavailable :( It would sure make it easier if it was
-						m_sfLapList.Clear();	//  Clear list of laps in memory and reload them.
-						if (m_pLapDB->GetLapCount(m_pPlotResults->iPlotId) > 1)	//	If race has more than 1 lap, let's get the laps / channels
+						LoadLaps(m_pLapDB, m_pPlotResults->iPlotId);	//	Load all of the laps for this Race ID
+						GetAllLaps();	//	Load up lstLaps with all available laps
+					}
+					//	Now that we have the lap list from the DB, let's get the data channels in them
+					vector<DATA_CHANNEL> GetYChannels();
+					int i_MaxDataChannels = 0;
+					ILapReceiver* m_pLap = m_pLapDB;
+					m_pLap->GetAvailableChannels(0) = m_pLapDB->GetAvailableChannels(0);
+					for (int z = 0; z <= m_pLapDB->GetLapCount(m_pPlotResults->iPlotId) - 1; z++)	//	If race has more than 1 lap, let's get the laps / channels
+					{
+						if ( sizeof ( GetYChannels() ) > i_MaxDataChannels);
 						{
-							LoadLaps(m_pLapDB, m_pPlotResults->iPlotId);	//	Load all of the laps for this Race ID
-							GetAllLaps();	//	Load up lstLaps with all available laps
+							i_MaxDataChannels = sizeof ( GetYChannels() );	//	Determine the lap with the most channels and get their number
+							int MaxLap = z;
+							z++;
 						}
 					}
-		  const set<LPARAM> sel = m_sfYAxis.GetSelectedItemsData();
+				    set<LPARAM> setYSelected;
+					setYSelected = m_lstYChannels[0];
+					for (int y = 0; y < i_MaxDataChannels; y++)	//	Now let's build the data channels for the form
+					{
+						setYSelected.insert(m_lstYChannels[y]);
+					}
+					m_sfYAxis.SetSelectedData(setYSelected);
+
+	    const set<LPARAM> sel = m_sfYAxis.GetSelectedItemsData();
 		if(sel.size() >= 1)
 		{
 			m_lstYChannels.clear();
@@ -73,7 +90,7 @@ vector<CExtendedLap*> GetAllLaps()
 				m_lstYChannels.push_back((DATA_CHANNEL)*i);
 			}
 		}
-      set<LPARAM> setYSelected;
+//      set<LPARAM> setYSelected;
 
       for(int x = 0; x < m_lstYChannels.size(); x++)
       {
