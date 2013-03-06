@@ -6,6 +6,7 @@
 #include "PitsideConsole.h"
 #include "LapData.h"
 #include "DlgRaceSelect.h"
+#include "LapPainter.h"
 
 struct PLOTSELECT_RESULT
 {
@@ -34,8 +35,8 @@ static struct PlotPrefs
 class CPlotSelectDlg : public IUI
 {
 public:
-  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId) : m_pPlotResults(pResults), m_iRaceId(iRaceId)
-  //  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults) : m_pPlotResults(pResults) 
+//  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId) : m_pPlotResults(pResults), m_iRaceId(iRaceId)
+  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier)
   {
 		m_pLapDB = pLapDB;
   };
@@ -50,9 +51,9 @@ private:
 	PLOTSELECT_RESULT* m_pPlotResults;
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
+	ILapSupplier* m_ILapSupplier;
 	ArtListBox m_sfYAxis;
 	RACESELECT_RESULT* m_pResults;
-//    set<DATA_CHANNEL> setSelectedData;
 	virtual vector<DATA_CHANNEL> GetYChannels()
 	{
 		return m_lstYChannels;

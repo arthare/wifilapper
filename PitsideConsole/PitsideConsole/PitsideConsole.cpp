@@ -573,7 +573,7 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			if(!sfResult.fCancelled)
@@ -1653,6 +1653,7 @@ private:
   MCResponder m_sfResponder;
 
   int m_iRaceId;
+  ILapSupplier* m_ILapSupplier;
 };
 
 DWORD ReceiveThreadProc(LPVOID param)
