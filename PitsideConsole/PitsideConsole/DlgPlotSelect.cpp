@@ -12,7 +12,7 @@
     float fMinValue[50];
     float fMaxValue[50];
     bool fCancelled = false;
-    LPCWSTR szTemp[512];
+    TCHAR szTemp[512];
 	map<int,CExtendedLap*> m_mapLaps; // maps from iLapId to a lap object
     CExtendedLap* m_pReferenceLap;
     ArtListBox m_sfLapList;
@@ -63,7 +63,7 @@ vector<CExtendedLap*> GetAllLaps()
 		m_sfYAxis.Clear();
 		set<LPARAM> setYSelected;
 		vector<const ILap*> lstLaps = m_pLapDB->GetLaps(m_pPlotResults->iPlotId);
-		int TotalYChannels = 0;
+		int TotalYChannels = 1;
 		for(int x = 0; x < lstLaps.size(); x++)
 		{
 			// do like I did above to build up the data channel set
@@ -74,27 +74,18 @@ vector<CExtendedLap*> GetAllLaps()
 				setYSelected.insert(*i);
 				GetDataChannelName(*i, szDataChannelName, NUMCHARS(szDataChannelName));
 				m_sfYAxis.AddString(szDataChannelName,*i);
+				wcscpy(m_PlotPrefs[x].m_ChannelName, (LPCWSTR)szDataChannelName);
 			}
 		}
 		TotalYChannels = setYSelected.size();
-		//	Now that we have all of the database channel ID's and names, let's assign the names to PlotPrefs[].m_ChannelName[0]
-		for(int x = 0; x < TotalYChannels; x++)
-		{
-						  for(int z = 0; z < m_lstYChannels.size(); z++)
-						  {
-							setYSelected.insert(m_lstYChannels[z]);
-						  }
-						  m_sfYAxis.SetSelectedData(setYSelected);
-			m_PlotPrefs[x+1].m_ChannelName[0] = (LPCWSTR)&m_sfYAxis;
-		}
-//		const IDataChannel* pChannel = m_pLapDB->GetDataChannel(lstLaps[y]->GetLapId(),DATA_CHANNEL_BLAH);
-
+//		for (int z=0; z=TotalYChannels; z++)
+//		{
+//			const IDataChannel* pChannel = m_pLapDB->GetDataChannel(lstLaps[z]->GetLapId(), setYSelected);
+//		}
 	for (int i=TotalYChannels + 1; i <= 50; i++)
       {
         LPCWSTR i_ChannelName = L"Channel not used";
-        LPCWSTR* ChnlAddr;
-        ChnlAddr = &i_ChannelName;
-        m_PlotPrefs[i].m_ChannelName[0] = *ChnlAddr;
+        wcscpy(m_PlotPrefs[i].m_ChannelName, (LPCWSTR)i_ChannelName);
       }
       for (int i=1; i <= 50; i++)
       {
@@ -104,10 +95,10 @@ vector<CExtendedLap*> GetAllLaps()
       }
     //  Display all of the data channels, along with the Alarm limits.
       HWND p_hWnd;
-      LPCWSTR szTemp[512];
-      *szTemp = *m_PlotPrefs[1].m_ChannelName;
+      TCHAR szTemp[512];
+      szTemp[0] = *m_PlotPrefs[1].m_ChannelName;
       p_hWnd = GetDlgItem(hWnd, IDC_PLOTTYPE_CHANNEL1);
-      SendMessage(p_hWnd, WM_SETTEXT, 0, (LPARAM)*szTemp);
+      SendMessage(p_hWnd, WM_SETTEXT, 0, (LPARAM)szTemp);
       *szTemp = *m_PlotPrefs[2].m_ChannelName;
       p_hWnd = GetDlgItem(hWnd, IDC_PLOTTYPE_CHANNEL2);
       SendMessage(p_hWnd, WM_SETTEXT, 0, (LPARAM)*szTemp);

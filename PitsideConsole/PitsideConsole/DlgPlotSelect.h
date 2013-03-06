@@ -25,7 +25,7 @@ public:
 //	Use it to create a 50 term array to store these values
 static struct PlotPrefs 
 {
-	LPCWSTR m_ChannelName[512];
+	TCHAR m_ChannelName[512];
 	bool iPlotView;
 	double fMinValue;
 	double fMaxValue;
