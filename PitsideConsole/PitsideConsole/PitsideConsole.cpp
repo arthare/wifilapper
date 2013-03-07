@@ -1011,7 +1011,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0002\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0003\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1592,7 +1592,6 @@ private:
       IP_ADAPTER_INFO* pInfo = &sfAdapter[0];
       while(pInfo)
       {
-        TCHAR szLine[255];
         if(strcmp(pInfo->IpAddressList.IpAddress.String, "0.0.0.0") != 0)
         {
           // found an adapter.  That means we need a multicast checker

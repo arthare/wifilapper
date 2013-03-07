@@ -2,6 +2,7 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
+//#include "DlgPlotSelect.h"
 
 struct HIGHLIGHTDATA
 {

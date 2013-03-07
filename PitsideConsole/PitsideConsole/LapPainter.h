@@ -4,10 +4,17 @@
 #include "LapReceiver.h" // for TimePoint2D
 #include "ArtUI.h" // for ArtOpenGLWindow
 #include "LapData.h" // for CExtendedPoint
+//#include "DlgPlotSelect.h"	//	For Value display and Alarms
 using namespace std;
 
 
 class CExtendedLap;
+
+enum CHANNELDISPLAYSTYLE
+{
+  CHANNELDISPLAYSTYLE_VALUE,
+  CHANNELDISPLAYSTYLE_GRAPH,
+};
 
 enum LAPDISPLAYSTYLE
 {
