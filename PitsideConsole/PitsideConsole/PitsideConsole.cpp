@@ -20,6 +20,7 @@
 #include "LapData.h"
 #include "DlgMessage.h"
 #include "DlgRaceSelect.h"
+#include "DlgPlotSelect.h"	//	Added by KDJ for Preferences menu
 #include "Iphlpapi.h"
 #include "ArtSQL/ArtSQLite.h"
 #include <stdio.h>
@@ -292,6 +293,21 @@ public:
       PostMessage(m_hWnd,WM_NOTIFYUPDATE,wParam,(LPARAM)lParam);
     }
   }
+  
+  int str_ends_with(const TCHAR * str, const TCHAR * suffix) 
+  {
+    if( str == NULL || suffix == NULL )
+      return 0;
+
+    size_t str_len = wcslen(str);
+    size_t suffix_len = wcslen(suffix);
+
+    if(suffix_len > str_len)
+      return 0;
+
+    return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
+  }
+
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
     if(m_sfLapPainter.HandleMessage(hWnd,uMsg,wParam,lParam))
@@ -378,6 +394,46 @@ public:
           return TRUE;
         }
         return FALSE;
+      }
+      case WM_LBUTTONDBLCLK:
+	  {
+		const int x = LOWORD(lParam);
+        const int y = HIWORD(lParam);
+        // figure out if we should put focus on the main map
+        RECT rcMap;
+        HWND hWndMap = GetDlgItem(this->m_hWnd,IDC_DISPLAY);
+        GetClientRect(hWndMap,&rcMap);
+        if(x >= rcMap.left && x < rcMap.right && y >= rcMap.top && y < rcMap.bottom)
+        {
+          SetFocus(hWndMap);
+          return TRUE;
+        }
+		  //	Now display the closest values on the map.
+/*			const float flDataX = MagicDeterminingFunction(sfLapOpts, fHighlightXAxis); // this part could be hard...
+			vector<CExtendedLap*> lstLaps = GetLapsToShow();
+			if(lstLaps.size() >= 2) // don't show anything if we've got multiple laps selected
+			{
+				set<DATA_CHANNEL> setChannels = lstLaps[0]->GetAvailableChannels();
+				stringstream ss;
+				for(set<DATA_CHANNEL>::const_iterator i = setChannels.begin(); i != setChannels.end(); i++)
+				{
+					const IDataChannel* pChannel = GetChannel(*i);
+					if(pChannel)
+					{
+						const float flValue = pChannel->GetValue(flDataX);
+						TCHAR szName[100];
+						GetDataChannelName(*i,szName,NUMCHARS(szName));
+						char szValue[100];
+						GetChannelString(*i, m_sfLapOpts.eUnitPreference, flValue, szValue, NUMCHARS(szValue));
+						ss<<szName;
+						ss<<szValue;
+						ss<<endl;
+					}
+				}
+				MessageBox(NULL, ss.c_str(), NULL, NULL);
+
+				}
+*/          return TRUE;
       }
       case WM_NOTIFY:
       {
@@ -513,19 +569,19 @@ public:
             }
             return TRUE;
           }
-/*		  case ID_OPTIONS_PLOTPREFS:
-				  {
-					PLOTSELECT_RESULT sfResult;
-					CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult);
-					ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
+		  case ID_OPTIONS_PLOTPREFS:
+		  {
+			PLOTSELECT_RESULT sfResult;
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier);
+			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
-					if(!sfResult.fCancelled)
-					{
-					  UpdateUI(UPDATE_ALL);
-					}
+			if(!sfResult.fCancelled)
+			{
+				UpdateUI(UPDATE_ALL);
+			}
 					
-					return TRUE;
-				  }		*/
+			return TRUE;
+		  }		
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -533,13 +589,12 @@ public:
           }
           case ID_HELP_ABOUT:
           {
-//			  DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-//			  break;
 			  ShowAbout();
 			  return TRUE;
           }
           case ID_FILE_PRINT:
           {
+			  HRESULT WINAPI PrintDlgEx(_Inout_  LPPRINTDLGEX lppd);
 			  return TRUE;
           }
           case ID_FILE_EXIT:
@@ -599,11 +654,11 @@ public:
                   }
                   lstLaps.push_back(pLap->GetLap());
                 }
-/*                // let's make sure there's a .csv suffix on that bugger.
+                // let's make sure there's a .csv suffix on that bugger.
 				if(!str_ends_with(szFilename,L".csv"))
 				{
 					wcsncat(szFilename,L".csv", NUMCHARS(szFilename));
-				}	*/		//	Getting an "Identifier Not Found error on "str_ends_with" function, not sure why.
+				}
 				DashWare::SaveToDashware(szFilename, lstLaps);
               }
             }
@@ -955,14 +1010,8 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.002.0006\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0004\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
-/*		while (WM_MOUSEOVER != NULL)
-		{
-			MouseIcon = 2;
-			if (WM_CLICK != NULL) { ShellExecute(http://sites.google.com/site/wifilapper"}; }
-		}
-*/
 		return;
 	}
   void ShowNetInfo()
@@ -1070,7 +1119,27 @@ private:
   void UpdateDisplays()
   {
     m_sfLapPainter.Refresh();
-    m_sfSubDisplay.Refresh();
+	//	Update the data channels are being displayed as values
+
+		HWND Value1_hWnd=NULL, Value2_hWnd=NULL, Value3_hWnd=NULL, Value4_hWnd=NULL, Value5_hWnd=NULL;
+		TCHAR szTxt[10][MAX_PATH];
+		float f_Min = 2.34;
+		float f_Max = 5.34;
+		swprintf (szTxt[1], NUMCHARS(szTxt[1]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"ALT", L"  1.00,   1.00,  1.00,  1.03,  1.99", f_Min, f_Max);
+        swprintf (szTxt[2], NUMCHARS(szTxt[2]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"OILP", L"  2.22,   2.33,  2.53,  2.33,  2.99", f_Min, f_Max);
+        swprintf (szTxt[3], NUMCHARS(szTxt[3]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"TEMP", L"  3.02,   3.22,  3.54,  3.33,  3.99", f_Min, f_Max);
+        swprintf (szTxt[4], NUMCHARS(szTxt[4]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"FUEL", L"  4.22,   4.33,  4.53,  4.33,  4.99", f_Min, f_Max);
+        swprintf (szTxt[5], NUMCHARS(szTxt[5]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"OILT", L"  5.22,   5.03,  5.53,  5.55,  5.99", f_Min, f_Max);
+
+		//	Now display the values on the page
+		for (int i=1; i <= 5; i++)
+		{
+			Value1_hWnd = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL0 + i);
+			SendMessage(Value1_hWnd, WM_SETTEXT, 0, (LPARAM)szTxt[i]);
+//			SendMessage(Value1_hWnd, WM_SETTEXT, 0, (LPARAM)m_szTxt.szTxt[i]);
+		}
+	m_sfSubDisplay.Refresh();
+
   }
   void CheckMenuHelper(HMENU hMainMenu, int id, bool fChecked)
   {
@@ -1183,7 +1252,7 @@ private:
     vector<CExtendedLap*> lstLaps;
     map<wstring,CExtendedLap*> mapFastestDriver;
     CExtendedLap* pFastest = NULL;
-//    CExtendedLap* pReference = NULL;		// Added to show Reference Lap - KDJ
+    CExtendedLap* pReference = NULL;		// Added to show Reference Lap - KDJ
     for(set<LPARAM>::iterator i = setSelectedLaps.begin(); i != setSelectedLaps.end(); i++)
     {
       CExtendedLap* pLap = (CExtendedLap*)*i;
@@ -1215,13 +1284,15 @@ private:
     {
       lstLaps.push_back(i->second);
     }
-/*
-	//	Set up for showing Reference lap similar to how we show Fastest Lap.
-	if(m_pReferenceLap != NULL && m_lstPoints.size() > 0)
+
+	//	Set up for showing Reference lap similar to how we show Fastest Lap. 
+	//	This currently can cause program crashes, so remarked out.
+//	if(m_pReferenceLap != NULL && m_lstPoints.size() > 0)
+	if(m_pReferenceLap != NULL)
     {
 		lstLaps.push_back(m_pReferenceLap);
     }
-*/
+
 
     return lstLaps;
   }
@@ -1316,6 +1387,7 @@ private:
 	  case DATA_CHANNEL_TIME:
 	  case DATA_CHANNEL_ELAPSEDTIME:
 	  case DATA_CHANNEL_TIMESLIP:
+	  case DATA_CHANNEL_LAPTIME_SUMMARY:
 	  {
         int iMin = (int)(flMin/1000.0f);
         return (float)(iMin-1)*1000.0f;
@@ -1354,6 +1426,7 @@ private:
       case DATA_CHANNEL_DISTANCE: return 1e30;
       case DATA_CHANNEL_TIME: return 1e30;
       case DATA_CHANNEL_ELAPSEDTIME: return 1e30;
+      case DATA_CHANNEL_LAPTIME_SUMMARY: return 1e30;
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
@@ -1409,10 +1482,10 @@ private:
 		  if(flSpread < 1.000) return 0.1000f;
 		  if(flSpread < 10.00) return 1.0000f;
 		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
-		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
-		  if(flSpread < 10000) return 500.0f;		//	Increased the trigger to improve TS display
-		  if(flSpread < 50000) return 2500.0f;		// Increased the trigger to improve TS display
-		  if(flSpread < 110000) return 5000.0f;	// Increased the trigger to improve TS display
+		  if(flSpread < 5000) return 100.0f;
+		  if(flSpread < 10000) return 500.0f;
+		  if(flSpread < 50000) return 2500.0f;
+		  if(flSpread < 110000) return 5000.0f;
 		  if(flSpread < 1100000) return 10000.0f;
 		  if(flSpread < 10000000) return 100000.0f;
 		  return 10000000;
@@ -1420,12 +1493,13 @@ private:
 
     case DATA_CHANNEL_TIME:					
     case DATA_CHANNEL_ELAPSEDTIME:					
+    case DATA_CHANNEL_LAPTIME_SUMMARY:					
 		{
 		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
-		  if(flSpread < 5000) return 100.0f;		//	Increased the trigger to improve TS display
-		  if(flSpread < 10000) return 500.0f;		//	Increased the trigger to improve TS display
-		  if(flSpread < 50000) return 2500.0f;		// Increased the trigger to improve TS display
-		  if(flSpread < 110000) return 5000.0f;	// Increased the trigger to improve TS display
+		  if(flSpread < 5000) return 100.0f;
+		  if(flSpread < 10000) return 500.0f;
+		  if(flSpread < 50000) return 2500.0f;
+		  if(flSpread < 110000) return 5000.0f;
 		  if(flSpread < 1100000) return 10000.0f;
 		  if(flSpread < 10000000) return 100000.0f;
 		  return 10000000;
@@ -1462,10 +1536,10 @@ private:
       if(flSpread < 1.000) return 0.1000f;
       if(flSpread < 10.00) return 1.0000f;
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
-	  if(flSpread < 10000) return 1000.0f;		//	Increased the trigger to improve TS display
-      if(flSpread < 50000) return 5000.0f;		// Increased the trigger to improve TS display
-	  if(flSpread < 110000) return 10000.0f;	// Increased the trigger to improve TS display
+	  if(flSpread < 5000) return 500.0f;
+	  if(flSpread < 10000) return 1000.0f;
+      if(flSpread < 50000) return 5000.0f;
+	  if(flSpread < 110000) return 10000.0f;
       if(flSpread < 1100000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
 	  return 10000000;
@@ -1474,12 +1548,13 @@ private:
     case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
     case DATA_CHANNEL_TIMESLIP:
 	case DATA_CHANNEL_ELAPSEDTIME:
+	case DATA_CHANNEL_LAPTIME_SUMMARY:
     {
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 5000) return 500.0f;		//	Increased the trigger to improve TS display
-	  if(flSpread < 10000) return 1000.0f;		//	Increased the trigger to improve TS display
-      if(flSpread < 50000) return 5000.0f;		// Increased the trigger to improve TS display
-	  if(flSpread < 110000) return 10000.0f;	// Increased the trigger to improve TS display
+	  if(flSpread < 5000) return 500.0f;
+	  if(flSpread < 10000) return 1000.0f;
+      if(flSpread < 50000) return 5000.0f;
+	  if(flSpread < 110000) return 10000.0f;
       if(flSpread < 1100000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
     }
@@ -1540,7 +1615,6 @@ private:
       IP_ADAPTER_INFO* pInfo = &sfAdapter[0];
       while(pInfo)
       {
-        TCHAR szLine[255];
         if(strcmp(pInfo->IpAddressList.IpAddress.String, "0.0.0.0") != 0)
         {
           // found an adapter.  That means we need a multicast checker
@@ -1559,10 +1633,12 @@ private:
       }
     }
   }
-private:
-  ArtListBox m_sfLapList;
-  ArtListBox m_sfXAxis;
+public:
+  vector<DATA_CHANNEL> m_lstYChannels;
   ArtListBox m_sfYAxis;
+  ArtListBox m_sfLapList;
+private:
+  ArtListBox m_sfXAxis;
 
   CLapPainter m_sfLapPainter;
   CLapPainter m_sfSubDisplay;
@@ -1573,7 +1649,7 @@ private:
   LAPSUPPLIEROPTIONS m_sfLapOpts;
   LAPDISPLAYSTYLE m_eLapDisplayStyle;
   DATA_CHANNEL m_eXChannel;
-  vector<DATA_CHANNEL> m_lstYChannels;
+//  vector<DATA_CHANNEL> m_lstYChannels;
   bool m_fShowBests;
   bool m_fShowDriverBests;
 
@@ -1599,6 +1675,7 @@ private:
   MCResponder m_sfResponder;
 
   int m_iRaceId;
+  ILapSupplier* m_ILapSupplier;
 };
 
 DWORD ReceiveThreadProc(LPVOID param)
@@ -1760,8 +1837,49 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   g_pLapDB = &sfLaps;
 
+  LAPSUPPLIEROPTIONS m_sfLapOpts;
   PITSIDE_SETTINGS sfSettings;
-  LoadPitsideSettings(&sfSettings);
+  LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
+
+  switch (sfSettings.iVelocity)
+  {
+  case 0:
+          {
+            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
+			break;
+          }
+  case 1:
+          {
+            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MPH;
+			break;
+          }
+  case 2:
+          {
+            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MS;
+			break;
+          }
+  default:
+          {
+            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
+          }
+  }
+  switch (sfSettings.iMapLines)
+  {
+  case 0:
+          {
+            m_sfLapOpts.fDrawLines = sfSettings.iMapLines;
+			break;
+          }
+  case 1:
+          {
+            m_sfLapOpts.fDrawLines = sfSettings.iMapLines;
+			break;
+          }
+  default:
+          {
+            m_sfLapOpts.fDrawLines = true;
+          }
+  }
 
   PitsideHTTP aResponder(g_pLapDB,&sfUI);
   if(sfSettings.fRunHTTP && sfSettings.iHTTPPort > 0 && sfSettings.iHTTPPort < 65536)
@@ -1799,6 +1917,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
+
+  //	Load inital values for Upper and Lower Alarm limits
+//	DlgPlotSelect :: InitPlotPrefs(set<DATA_CHANNEL> setAvailable);
 
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
   exit(0);

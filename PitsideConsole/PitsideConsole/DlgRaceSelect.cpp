@@ -1,16 +1,10 @@
 #include "Stdafx.h"
 #include "DlgRaceSelect.h"
 #include "resource.h"
-#include "pitsideconsole.h"
-#include "ArtSQL/ArtSQLite.h"
+#include "PitsideConsole.h"
 #include "LapReceiver.h"
-LRESULT CRaceSelectDlg::DlgProc
-(
-  HWND hWnd, 
-  UINT uMsg, 
-  WPARAM wParam, 
-  LPARAM lParam
-)
+#include "ArtSQL/ArtSQLite.h"
+LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
   {

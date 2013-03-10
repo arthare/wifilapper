@@ -61,26 +61,6 @@
                         android:layout_height="wrap_content"
                         android:text="Tachometer" />
 		
-                    <RadioButton
-                        android:id="@+id/rb944Coolant"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="944 Coolant" />
-                    <RadioButton
-                        android:id="@+id/rb944OilPres"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="944 Oil Pressure" />
-                    <RadioButton
-                        android:id="@+id/rb944FuelLevel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="944 Fuel Level" />
-                    <RadioButton
-                        android:id="@+id/rb944Alternator"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="944 Alternator" />
                 </RadioGroup>
             </LinearLayout>
         </ScrollView>

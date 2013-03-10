@@ -379,7 +379,7 @@ public:
   virtual void GetComments(int iLapId, vector<wstring>& lstComments) const = 0;
 
   // modifying data
-	virtual void AddLap(const ILap* pLap, int iRaceId) = 0;
+  virtual void AddLap(const ILap* pLap, int iRaceId) = 0;
   virtual void AddDataChannel(const IDataChannel* pChannel) = 0;
   virtual void Clear() = 0;
   virtual void AddComment(int iLapId, LPCTSTR strComment) = 0;

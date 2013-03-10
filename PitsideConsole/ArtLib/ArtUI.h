@@ -30,7 +30,7 @@ public:
     m_hWnd = hWnd;
 
     m_cColumns = lstColumnHeaders.size();
-    if(lstColumnHeaders.size() <= 0)
+    if(lstColumnHeaders.size() <= 0)	//	No data to display
     {
       RECT rc;
       GetClientRect(m_hWnd,&rc);
@@ -42,7 +42,7 @@ public:
 
       SendMessage(m_hWnd,LVM_INSERTCOLUMN,0,(LPARAM)&LvCol); // Insert/Show the coloum
     }
-    else
+    else								//	Data to display
     {
       LVCOLUMN LvCol = {0};
       LvCol.mask=LVCF_TEXT|LVCF_WIDTH|LVCF_SUBITEM;
@@ -205,6 +205,7 @@ public:
           DASSERT(sfItem.lParam != NULL);
           ret.insert(sfItem.lParam);
         }
+		else {DASSERT(FALSE); break;}		// Added by KDJ to prevent locks when no data is passed
       }
     } while(ixSelect >= 0);
 
@@ -357,6 +358,7 @@ template<int n>
 void ArtShowDialog(IUI* pDlg)
 {
   mapDialogs[n] = pDlg;
+
   DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(pDlg->GetDlgId()), NULL, ::MessageDlgProc<n>);
 }
 
