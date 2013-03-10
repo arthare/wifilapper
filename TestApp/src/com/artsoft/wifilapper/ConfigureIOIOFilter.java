@@ -113,10 +113,6 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 			else if(idChecked == R.id.rbWheelSpeedRPM) iFilterType = IOIOManager.PinParams.FILTERTYPE_WHEELSPEEDRPM;
 			else if(idChecked == R.id.rbPolynomial) iFilterType = IOIOManager.PinParams.FILTERTYPE_POLYNOMIAL;
 			else if(idChecked == R.id.rbTachometer) iFilterType = IOIOManager.PinParams.FILTERTYPE_TACHOMETER;
-			else if(idChecked == R.id.rb944Coolant) iFilterType = IOIOManager.PinParams.FILTERTYPE_944COOLANT;
-			else if(idChecked == R.id.rb944OilPres) iFilterType = IOIOManager.PinParams.FILTERTYPE_944OILPRES;
-			else if(idChecked == R.id.rb944FuelLevel) iFilterType = IOIOManager.PinParams.FILTERTYPE_944FUELLEVEL;
-			else if(idChecked == R.id.rb944Alternator) iFilterType = IOIOManager.PinParams.FILTERTYPE_944ALTERNATOR;
 			
 			Spinner spnCustom = (Spinner)findViewById(R.id.spnCustom);
 			int iCustomType = spnCustom.getSelectedItemPosition() == 0 ? 0 : spnCustom.getSelectedItemPosition() + LapAccumulator.DataChannel.CHANNEL_IOIOCUSTOM_START;
@@ -189,13 +185,6 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 			strParam2 = "";
 			strParam3 = "";
 			dDefault1= 4;
-		}
-		else if(idChecked == R.id.rb944Coolant || 
-				idChecked == R.id.rb944OilPres ||
-				idChecked == R.id.rb944FuelLevel ||
-				idChecked == R.id.rb944Alternator)
-		{
-			strParam1 = strParam2 = strParam3 = "";
 		}
 		else if(idChecked == R.id.rbPolynomial)
 		{

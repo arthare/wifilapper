@@ -4,10 +4,19 @@
 #include "LapReceiver.h" // for TimePoint2D
 #include "ArtUI.h" // for ArtOpenGLWindow
 #include "LapData.h" // for CExtendedPoint
+//#include "DlgPlotSelect.h"	//	For Value display and Alarms
+#include "PitsideConsole.h"
+
 using namespace std;
 
 
 class CExtendedLap;
+
+enum CHANNELDISPLAYSTYLE
+{
+  CHANNELDISPLAYSTYLE_VALUE,
+  CHANNELDISPLAYSTYLE_GRAPH,
+};
 
 enum LAPDISPLAYSTYLE
 {
@@ -33,6 +42,7 @@ public:
   float flWindowShiftX;
   float flWindowShiftY;
   int iZoomLevels;
+  TCHAR szTxt[10][MAX_PATH];		//	Variable to store the Value Data Channels in for display
 };
 
 // LapSupplier interface - needed so that the lap painter knows what to paint
@@ -80,6 +90,7 @@ private:
   void DrawSelectLapsPrompt() const;
   void DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const;
   void MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float*pB); 
+//  void MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
 private:
   ILapSupplier* m_pLapSupplier;
 
@@ -89,3 +100,4 @@ private:
 
   //IUI* m_pUI;
 };
+
