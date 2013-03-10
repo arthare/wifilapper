@@ -15,6 +15,7 @@ enum DATA_CHANNEL
   DATA_CHANNEL_DISTANCE = DATA_CHANNEL_PLOTTABLE_START,
   DATA_CHANNEL_TIME = 11,
   DATA_CHANNEL_ELAPSEDTIME = 12,
+  DATA_CHANNEL_LAPTIME_SUMMARY = 13,
   DATA_CHANNEL_VELOCITY = 3,
   DATA_CHANNEL_TIMESLIP = 4,
   DATA_CHANNEL_X_ACCEL = 5,
@@ -46,6 +47,7 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch);
 float ConvertSpeed(UNIT_PREFERENCE eConvertTo, float flVelocityInMetersPerSecond);
 LPCSTR GetUnitText(UNIT_PREFERENCE eUnits);
 void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPSTR lpsz, int cch);
+void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPSTR lpsz, int cch);
 
 bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const vector<TimePoint2D>& lstPoints, TimePoint2D* pt1, TimePoint2D* pt2);
 

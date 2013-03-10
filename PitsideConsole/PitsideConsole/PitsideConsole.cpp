@@ -396,7 +396,6 @@ public:
         return FALSE;
       }
       case WM_LBUTTONDBLCLK:
-	  case WM_MBUTTONDOWN:
 	  {
 		const int x = LOWORD(lParam);
         const int y = HIWORD(lParam);
@@ -1011,7 +1010,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0003\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0004\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1120,7 +1119,27 @@ private:
   void UpdateDisplays()
   {
     m_sfLapPainter.Refresh();
-    m_sfSubDisplay.Refresh();
+	//	Update the data channels are being displayed as values
+
+		HWND Value1_hWnd=NULL, Value2_hWnd=NULL, Value3_hWnd=NULL, Value4_hWnd=NULL, Value5_hWnd=NULL;
+		TCHAR szTxt[10][MAX_PATH];
+		float f_Min = 2.34;
+		float f_Max = 5.34;
+		swprintf (szTxt[1], NUMCHARS(szTxt[1]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"ALT", L"  1.00,   1.00,  1.00,  1.03,  1.99", f_Min, f_Max);
+        swprintf (szTxt[2], NUMCHARS(szTxt[2]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"OILP", L"  2.22,   2.33,  2.53,  2.33,  2.99", f_Min, f_Max);
+        swprintf (szTxt[3], NUMCHARS(szTxt[3]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"TEMP", L"  3.02,   3.22,  3.54,  3.33,  3.99", f_Min, f_Max);
+        swprintf (szTxt[4], NUMCHARS(szTxt[4]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"FUEL", L"  4.22,   4.33,  4.53,  4.33,  4.99", f_Min, f_Max);
+        swprintf (szTxt[5], NUMCHARS(szTxt[5]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"OILT", L"  5.22,   5.03,  5.53,  5.55,  5.99", f_Min, f_Max);
+
+		//	Now display the values on the page
+		for (int i=1; i <= 5; i++)
+		{
+			Value1_hWnd = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL0 + i);
+			SendMessage(Value1_hWnd, WM_SETTEXT, 0, (LPARAM)szTxt[i]);
+//			SendMessage(Value1_hWnd, WM_SETTEXT, 0, (LPARAM)m_szTxt.szTxt[i]);
+		}
+	m_sfSubDisplay.Refresh();
+
   }
   void CheckMenuHelper(HMENU hMainMenu, int id, bool fChecked)
   {
@@ -1368,6 +1387,7 @@ private:
 	  case DATA_CHANNEL_TIME:
 	  case DATA_CHANNEL_ELAPSEDTIME:
 	  case DATA_CHANNEL_TIMESLIP:
+	  case DATA_CHANNEL_LAPTIME_SUMMARY:
 	  {
         int iMin = (int)(flMin/1000.0f);
         return (float)(iMin-1)*1000.0f;
@@ -1406,6 +1426,7 @@ private:
       case DATA_CHANNEL_DISTANCE: return 1e30;
       case DATA_CHANNEL_TIME: return 1e30;
       case DATA_CHANNEL_ELAPSEDTIME: return 1e30;
+      case DATA_CHANNEL_LAPTIME_SUMMARY: return 1e30;
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
@@ -1472,6 +1493,7 @@ private:
 
     case DATA_CHANNEL_TIME:					
     case DATA_CHANNEL_ELAPSEDTIME:					
+    case DATA_CHANNEL_LAPTIME_SUMMARY:					
 		{
 		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
 		  if(flSpread < 5000) return 100.0f;
@@ -1526,6 +1548,7 @@ private:
     case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
     case DATA_CHANNEL_TIMESLIP:
 	case DATA_CHANNEL_ELAPSEDTIME:
+	case DATA_CHANNEL_LAPTIME_SUMMARY:
     {
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
 	  if(flSpread < 5000) return 500.0f;

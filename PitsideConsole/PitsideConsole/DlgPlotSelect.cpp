@@ -9,9 +9,6 @@
 #include "LapPainter.h"
 
 PlotPrefs m_PlotPrefs[];
-int iPlotView;
-float fMinValue;
-float fMaxValue;
 bool fCancelled = false;
 TCHAR szTemp[512];
 map<int,CExtendedLap*> m_mapLaps; // maps from iLapId to a lap object
@@ -107,9 +104,9 @@ vector<CExtendedLap*> GetAllLaps()
 				}
 
 				TCHAR szText[MAX_PATH];	//	Load the dialog with the alarm limits
-				swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[z].fMinValue);
+				swprintf (szText, NUMCHARS(szText), L"%9.2f%", m_PlotPrefs[z].fMinValue);
 				SetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT0 + z, LPCWSTR(&szText));       
-				swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[z].fMaxValue);
+				swprintf (szText, NUMCHARS(szText), L"%9.2f%", m_PlotPrefs[z].fMaxValue);
 				SetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT0 + z, LPCWSTR(&szText));       
 			}
 		return 0;
@@ -128,9 +125,9 @@ vector<CExtendedLap*> GetAllLaps()
 				SendMessage(p_hWnd, WM_SETTEXT, 0, (LPARAM)szTemp);
 
 				TCHAR szText[MAX_PATH];	//	Load the dialog with the alarm limits
-				swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[z].fMinValue);
+				swprintf (szText, NUMCHARS(szText), L"%9.2f%", m_PlotPrefs[z].fMinValue);
 				SetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT0 + z, LPCWSTR(&szText));       
-				swprintf (szText, NUMCHARS(szText), L"%9.4f%", m_PlotPrefs[z].fMaxValue);
+				swprintf (szText, NUMCHARS(szText), L"%9.2f%", m_PlotPrefs[z].fMaxValue);
 				SetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT0 + z, LPCWSTR(&szText));       
 
 				if (m_PlotPrefs[z].iPlotView)

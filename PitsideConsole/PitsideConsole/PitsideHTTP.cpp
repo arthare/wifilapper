@@ -177,6 +177,9 @@ bool PitsideHTTP::MakePage(HTTPREQUEST& pReq, ostream& out)
     const IDataChannel* pLapTime1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_ELAPSEDTIME);
     const IDataChannel* pLapTime2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_ELAPSEDTIME);
 
+    const IDataChannel* pLapTimeSummary1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_LAPTIME_SUMMARY);
+    const IDataChannel* pLapTimeSummary2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_LAPTIME_SUMMARY);
+
     const IDataChannel* pVel1 = this->m_pLapSupplier->GetChannel(lapId1,DATA_CHANNEL_VELOCITY);
     const IDataChannel* pVel2 = this->m_pLapSupplier->GetChannel(lapId2,DATA_CHANNEL_VELOCITY);
     

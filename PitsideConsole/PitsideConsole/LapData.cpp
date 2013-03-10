@@ -240,6 +240,7 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
   case DATA_CHANNEL_DISTANCE: lpszDataName = L"Distance"; break;
   case DATA_CHANNEL_TIME: lpszDataName = L"Time"; break;
   case DATA_CHANNEL_ELAPSEDTIME: lpszDataName = L"Lap Time"; break;
+  case DATA_CHANNEL_LAPTIME_SUMMARY: lpszDataName = L"Laptime Summary"; break;
   case DATA_CHANNEL_VELOCITY: lpszDataName = L"Velocity"; break;
   case DATA_CHANNEL_TIMESLIP: lpszDataName = L"Time-slip"; break;
   case DATA_CHANNEL_X_ACCEL: lpszDataName = L"X accel"; break;
@@ -335,6 +336,7 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
       sprintf(lpsz, "%4.1fkm", flValue/1000.0f);
       break;
     }
+    case DATA_CHANNEL_LAPTIME_SUMMARY:
     case DATA_CHANNEL_TIME:
     {
       sprintf(lpsz, "%4.1fs", flValue/1000.0f);
@@ -361,28 +363,28 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
     }
     case DATA_CHANNEL_X_ACCEL:
     {
-      sprintf(lpsz, "%4.4fg", flValue);
+      sprintf(lpsz, "%2.4fg", flValue);
       break;
     }
     case DATA_CHANNEL_Y_ACCEL:
     {
-      sprintf(lpsz, "%4.4fg", flValue);
+      sprintf(lpsz, "%2.4fg", flValue);
       break;
     }
     case DATA_CHANNEL_Z_ACCEL:
     {
-      sprintf(lpsz, "%4.4fg", flValue);
+      sprintf(lpsz, "%2.4fg", flValue);
       break;
     }
     case DATA_CHANNEL_TEMP:
     {
-      sprintf(lpsz, "%4.4fc", flValue);
+      sprintf(lpsz, "%4.2fc", flValue);
       break;
     }
     case DATA_CHANNEL_RECEPTION_X:
     case DATA_CHANNEL_RECEPTION_Y:
     {
-      sprintf(lpsz,"%4.4f",flValue);
+      sprintf(lpsz,"%3.3f",flValue);
       break;
     }
     default:
@@ -395,7 +397,7 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
       else if(eX >= DATA_CHANNEL_IOIOPIN_START && eX <= DATA_CHANNEL_IOIOPIN_END)
       {
         const int pin = eX - DATA_CHANNEL_IOIOPIN_START;
-        sprintf(lpsz, "%3.3fV", flValue);
+        sprintf(lpsz, "%2.3fV", flValue);
       }
       else if(eX >= DATA_CHANNEL_IOIOCUSTOM_START && eX <= DATA_CHANNEL_IOIOCUSTOM_END)
       {
@@ -410,6 +412,103 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
     }
   }
 }
+
+void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPSTR lpsz, int cch)
+{
+  CASSERT(DATA_CHANNEL_COUNT == 0x401);
+
+  switch(eX)
+  {
+    case DATA_CHANNEL_X:
+    {
+      sprintf(lpsz, "%1.4f%", abs(flValue));
+      break;
+    }
+    case DATA_CHANNEL_Y:
+    {
+      sprintf(lpsz, "%1.4f%", abs(flValue));
+      break;
+    }
+    case DATA_CHANNEL_DISTANCE:
+    {
+      sprintf(lpsz, "%3.1f", flValue/1000.0f);
+      break;
+    }
+    case DATA_CHANNEL_LAPTIME_SUMMARY:
+    case DATA_CHANNEL_TIME:
+    {
+      sprintf(lpsz, "%4.1f", flValue/1000.0f);
+      break;
+    }
+    case DATA_CHANNEL_ELAPSEDTIME:
+    {
+      sprintf(lpsz, "%4.2f", flValue/1000.0f);
+      break;
+    }
+
+	case DATA_CHANNEL_VELOCITY:
+    {
+      // note: velocity is in m/s, but most humans will like km/h (well... except for americans, but screw them for now)
+      sprintf(lpsz, "%4.2f", ConvertSpeed(eUnits,flValue));
+      break;
+    }
+    case DATA_CHANNEL_TIMESLIP:
+    {
+      sprintf(lpsz, "%4.2fs", abs(flValue/1000.0));
+      break;
+    }
+    case DATA_CHANNEL_X_ACCEL:
+    {
+      sprintf(lpsz, "%1.3f", flValue);
+      break;
+    }
+    case DATA_CHANNEL_Y_ACCEL:
+    {
+      sprintf(lpsz, "%1.3f", flValue);
+      break;
+    }
+    case DATA_CHANNEL_Z_ACCEL:
+    {
+      sprintf(lpsz, "%1.3f", flValue);
+      break;
+    }
+    case DATA_CHANNEL_TEMP:
+    {
+      sprintf(lpsz, "%3.1f", flValue);
+      break;
+    }
+    case DATA_CHANNEL_RECEPTION_X:
+    case DATA_CHANNEL_RECEPTION_Y:
+    {
+      sprintf(lpsz,"%3.2f",flValue);
+      break;
+    }
+    default:
+    {
+      if(eX >= DATA_CHANNEL_PID_START && eX < DATA_CHANNEL_PID_END)
+      {
+        const int pid = eX - DATA_CHANNEL_PID_START;
+        sprintf(lpsz, g_rgPIDData[pid].pDataFormat, flValue);
+      }
+      else if(eX >= DATA_CHANNEL_IOIOPIN_START && eX <= DATA_CHANNEL_IOIOPIN_END)
+      {
+        const int pin = eX - DATA_CHANNEL_IOIOPIN_START;
+        sprintf(lpsz, "%2.3f", flValue);
+      }
+      else if(eX >= DATA_CHANNEL_IOIOCUSTOM_START && eX <= DATA_CHANNEL_IOIOCUSTOM_END)
+      {
+        const int custom = eX - DATA_CHANNEL_IOIOCUSTOM_START;
+        sprintf(lpsz,g_rgIOIOCustomData[custom].pDataFormat, flValue);
+      }
+      else
+      {
+        sprintf(lpsz,"%3.2f",flValue);
+      }
+      break;
+    }
+  }
+}
+
 
 bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInputPercentage, const vector<TimePoint2D>& lstPoints, TimePoint2D* pt1, TimePoint2D* pt2)
 {
@@ -490,22 +589,24 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     IDataChannel* pY = pLapDB->AllocateDataChannel();
     IDataChannel* pTime = pLapDB->AllocateDataChannel();
     IDataChannel* pLapTime = pLapDB->AllocateDataChannel();
+    IDataChannel* pLapTimeSummary = pLapDB->AllocateDataChannel();
     
 	pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME); 
 	pLapTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_ELAPSEDTIME);
+	pLapTimeSummary->Init(GetLap()->GetLapId(), DATA_CHANNEL_LAPTIME_SUMMARY);
 	pX->Init(GetLap()->GetLapId(), DATA_CHANNEL_X);
     pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
     int iStartPoint = 0;
-//    for(int x = 0;x < lstPoints.size() - 1; x++)	// Removed last point to prevent graphing errors.
-    for(int x = 0;x < lstPoints.size(); x++)	// Remarked out by KDJ
+    for(int x = 0;x < lstPoints.size(); x++)
     {
       const TimePoint2D& p = lstPoints[x];
 
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
 	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
+	  pLapTimeSummary->AddPoint(p.iTime, GetLap()->GetTime()); // This should be a mapping from time to Laptime Summaries
       TimePoint2D sfD1, sfD2;
       int iMatchedTime = 0;
       double dPct = (double)x / (double)lstPoints.size();
@@ -588,9 +689,19 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     {
       pLapDB->FreeDataChannel(pTime);
       pTime = NULL;
+	}
+    if(pLapTimeSummary->IsValid())
+    {
+      pLapTimeSummary->Lock();
+      AddChannel(pLapTimeSummary);
     }
-      if(pLapTime && pLapTime->IsValid())
-      {
+    else
+    {
+      pLapDB->FreeDataChannel(pLapTimeSummary);
+      pLapTimeSummary = NULL;
+    }
+    if(pLapTime && pLapTime->IsValid())
+    {
 		  //	Resets time to zero at the start of each lap, using offset iStartTime
 		if(m_lstPoints.size() > 0)
 		{
@@ -607,12 +718,12 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 		}
         pLapTime->Lock();
         AddChannel(pLapTime);
-      }
-      else
-      {
-        pLapDB->FreeDataChannel(pLapTime);
-		pLapTime = NULL;
-	  }
+    }
+    else
+    {
+    pLapDB->FreeDataChannel(pLapTime);
+	pLapTime = NULL;
+	}
     if(pVelocity->IsValid())
     {
       pVelocity->Lock();
@@ -723,9 +834,11 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
     IDataChannel* pTime = pLapDB->AllocateDataChannel();
     IDataChannel* pLapTime = pLapDB->AllocateDataChannel();
+    IDataChannel* pLapTimeSummary = pLapDB->AllocateDataChannel();
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
-    pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);		// Preparing to add Time channel for X-axis
-    pLapTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_ELAPSEDTIME);		// Preparing to add Time channel for X-axis
+    pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);
+    pLapTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_ELAPSEDTIME);
+    pLapTimeSummary->Init(GetLap()->GetLapId(), DATA_CHANNEL_LAPTIME_SUMMARY);		// Preparing to add Laptime Summary channel for X-axis
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
     pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
     for(int x = 1;x < lstPoints.size(); x++)
@@ -734,8 +847,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
 	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
-			const int iElapsedTime = lstPoints[x].iTime - lstPoints[0].iTime;
-			pLapTime->AddPoint(p.iTime, (double)iElapsedTime);
+	  pLapTimeSummary->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
+	  const int iElapsedTime = lstPoints[x].iTime - lstPoints[0].iTime;
+	  pLapTime->AddPoint(p.iTime, (double)iElapsedTime);
       const double dX = p.flX - ptLast.flX;
       const double dY = p.flY - ptLast.flY;
 /*		  // Converting from LONG/LAT to distance in meters
@@ -765,12 +879,14 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pY->Lock();
     pDistance->Lock();
     pTime->Lock();
+    pLapTimeSummary->Lock();
     pLapTime->Lock();
 	pVelocity->Lock();
     pTimeSlip->Lock();
     AddChannel(pDistance);
     AddChannel(pTime);
     AddChannel(pLapTime);
+    AddChannel(pLapTimeSummary);
 	AddChannel(pVelocity);
     AddChannel(pTimeSlip);
     AddChannel(pX);

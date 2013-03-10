@@ -5,6 +5,8 @@
 #include "ArtUI.h" // for ArtOpenGLWindow
 #include "LapData.h" // for CExtendedPoint
 //#include "DlgPlotSelect.h"	//	For Value display and Alarms
+#include "PitsideConsole.h"
+
 using namespace std;
 
 
@@ -40,6 +42,7 @@ public:
   float flWindowShiftX;
   float flWindowShiftY;
   int iZoomLevels;
+  TCHAR szTxt[10][MAX_PATH];		//	Variable to store the Value Data Channels in for display
 };
 
 // LapSupplier interface - needed so that the lap painter knows what to paint
@@ -97,3 +100,4 @@ private:
 
   //IUI* m_pUI;
 };
+

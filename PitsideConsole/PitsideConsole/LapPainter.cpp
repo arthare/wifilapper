@@ -2,7 +2,7 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
-//#include "DlgPlotSelect.h"
+#include "DlgPlotSelect.h"	//	Needed to get the Graph/Value display information
 
 struct HIGHLIGHTDATA
 {
@@ -12,7 +12,6 @@ public:
   POINT m_ptWindow;
   const CExtendedLap* m_pLap;
   DATA_CHANNEL m_eChannelY;
-
 };
 
 CLapPainter::CLapPainter(/*IUI* pUI, */ILapSupplier* pLapSupplier, int iSupplierId) : ArtOpenGLWindow(), /*m_pUI(pUI),*/ m_pLapSupplier(pLapSupplier), m_iSupplierId(iSupplierId)
@@ -25,7 +24,7 @@ CLapPainter::~CLapPainter()
 
 void CLapPainter::OGL_Paint()
 {
-  glClearColor( 0.9f, 0.9f, 0.9f, 0.9f );  //  Background color is white. May want to allow a user option to set this
+  glClearColor( 0.95f, 0.95f, 0.95f, 0.95f );  //  Background color is white. May want to allow a user option to set this
   glClear( GL_COLOR_BUFFER_BIT );
   
   RECT rcClient;
@@ -37,13 +36,13 @@ void CLapPainter::OGL_Paint()
   {
   case LAPDISPLAYSTYLE_MAP:
     glViewport(0,0,RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient));
-    DrawLapLines(sfLapOpts);
+    DrawLapLines(sfLapOpts);	//	Draws the lap as a map on primary display
     break;
   case LAPDISPLAYSTYLE_PLOT:
-    DrawGeneralGraph(sfLapOpts, true);
+    DrawGeneralGraph(sfLapOpts, true);	//	Draws the data graphs on the primary display
     break;
   case LAPDISPLAYSTYLE_RECEPTION:
-    DrawReceptionMap(sfLapOpts);
+    DrawReceptionMap(sfLapOpts);	//	Draws the reception map on the primary display
     break;
   case LAPDISPLAYSTYLE_NOLAPS:
     // user doesn't have any laps selected, so we should tell them to select some
@@ -498,13 +497,30 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
 		// <-- gets the actual unit string for the data channel.  For speed, this might be "100.0km/h"
 
-        char szXString[256];
+		char szXString[256];
         GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
 		// <-- same for x channel
 
         char szText[256];
         sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
+		//	Code for displaying Value in Dashboard
+		char szYValue[256];
+        GetChannelValue(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYValue, NUMCHARS(szYValue));
+		// <-- gets the actual value of the data channel in string format.  For speed, this might be "100.0"
+
+        TCHAR szAbbrY[6];
+        ::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szAbbrY, 6);	// <-- Abbreviates and converts the y channel into a string
+
+		LAPSUPPLIEROPTIONS m_szTxt;
+/*		float f_Mean = 2.34;
+		//		Build the strings for the data channels to be displayed as Values
+		swprintf (m_szTxt.szTxt[1], NUMCHARS(m_szTxt.szTxt[1]), L"%s: %s, Mn/Mx: %3.2f", L"ALT", L"  1.00,   1.00,  1.00,  1.03,  1.99", f_Mean);
+        swprintf (m_szTxt.szTxt[2], NUMCHARS(m_szTxt.szTxt[2]), L"%s: %s, Mn/Mx: %3.2f", L"OILP", L"  2.22,   2.33,  2.53,  2.33,  2.99", f_Mean);
+        swprintf (m_szTxt.szTxt[3], NUMCHARS(m_szTxt.szTxt[3]), L"%s: %s, Mn/Mx: %3.2f", L"TEMP", L"  3.02,   3.22,  3.54,  3.33,  3.99", f_Mean);
+        swprintf (m_szTxt.szTxt[4], NUMCHARS(m_szTxt.szTxt[4]), L"%s: %s, Mn/Mx: %3.2f", L"FUEL", L"  4.22,   4.33,  4.53,  4.33,  4.99", f_Mean);
+        swprintf (m_szTxt.szTxt[5], NUMCHARS(m_szTxt.szTxt[5]), L"%s: %s, Mn/Mx: %3.2f", L"OILT", L"  5.22,   5.03,  5.53,  5.55,  5.99", f_Mean);
+*/
         DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
 
         // we also want to draw a highlighted square
