@@ -89,7 +89,7 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
   // we have now determined the bounds of the thing we're going to draw
   glPushMatrix();
   glLoadIdentity();
-  glScalef(1.0f, 0.70f, 1.0f);	//	Keep the same scaling - KDJ
+  glScalef(1.0f, 0.90f, 1.0f);	//	Keep the same scaling - KDJ
   glOrtho(rcAllLaps.right, rcAllLaps.left, rcAllLaps.top, rcAllLaps.bottom,-1.0,1.0);
   
   GLdouble rgModelviewMatrix[16];
@@ -141,7 +141,7 @@ void CLapPainter::DrawSelectLapsPrompt() const
 
   glPushMatrix();
   glLoadIdentity();
-  glScalef(1.0f, 0.70f, 1.0f);	//	Keep the same scaling - KDJ
+  glScalef(1.0f, 0.90f, 1.0f);	//	Keep the same scaling - KDJ
   glOrtho(0, RECT_WIDTH(&rcClient),0, RECT_HEIGHT(&rcClient),-1.0,1.0);
 
   DrawText(20.0, 20, "No laps selected.  Select some laps in the lap list");
@@ -180,6 +180,17 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   map<DATA_CHANNEL,float> mapMaxY;
   float dMaxX = -1e30;
   float dMinX = 1e30;
+  //	  Initialize value channel text strings
+  int d = 0;
+//  LAPSUPPLIEROPTIONS m_szTxt[15][MAX_PATH];
+  char szYValue[10][256];
+  char szAbbrY[6];
+  char m_szYValue[256];
+  for (int y = 0; y < 10; y++)
+  {
+	sprintf (szYValue[y], "");
+	sprintf (szAbbrY, "");
+  }
 
   { // figuring out bounds and getting matrices all set up
     //	First lets load up all of the data into an array and determine its size
@@ -249,7 +260,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     // now we have the bounds of all the laps we've looked at, so let's draw them
     glPushMatrix();
     glLoadIdentity();
-    glScalef(1.0f, 0.70f, 1.0f);	// Let's scale it so that graphs don't touch each other.
+    glScalef(1.0f, 0.90f, 1.0f);	// Let's scale it so that graphs don't touch each other.
     glOrtho(dMinX, dMaxX,mapMinY[*i], mapMaxY[*i],-1.0,1.0);
 
     // draw horizontal guide lines and text on the background. Yes this should probably go into a function, Art ;)
@@ -369,7 +380,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
       ptHighlight = V2D(dX,0);
     }
-
     for(int x = 0; x < lstLaps.size(); x++)
     {
       CExtendedLap* pLap = lstLaps[x];
@@ -504,23 +514,27 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         char szText[256];
         sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
-		//	Code for displaying Value in Dashboard
-		char szYValue[256];
-        GetChannelValue(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYValue, NUMCHARS(szYValue));
-		// <-- gets the actual value of the data channel in string format.  For speed, this might be "100.0"
+		//	Code for displaying Values in Dashboard
+		// Get the Min/Max values for this channel
+        char szYMin[56], szYMax[56];
+        sprintf(szYMin, "%3.2f", pDataY->GetMin());
+        sprintf(szYMax, "%3.2f", pDataY->GetMax());
 
-        TCHAR szAbbrY[6];
-        ::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szAbbrY, 6);	// <-- Abbreviates and converts the y channel into a string
+		if (x < 5 && x < 5 && lstMousePointsToDraw[x].m_eChannelY != NULL)	// Only show the first 5 laps data and 5 data channels
+		{
+			GetChannelValue(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYValue[x], NUMCHARS(szYValue[x]));
+			// <-- gets the actual value of the data channel in string format.  For speed, this might be "100.0"
 
-		LAPSUPPLIEROPTIONS m_szTxt;
-/*		float f_Mean = 2.34;
-		//		Build the strings for the data channels to be displayed as Values
-		swprintf (m_szTxt.szTxt[1], NUMCHARS(m_szTxt.szTxt[1]), L"%s: %s, Mn/Mx: %3.2f", L"ALT", L"  1.00,   1.00,  1.00,  1.03,  1.99", f_Mean);
-        swprintf (m_szTxt.szTxt[2], NUMCHARS(m_szTxt.szTxt[2]), L"%s: %s, Mn/Mx: %3.2f", L"OILP", L"  2.22,   2.33,  2.53,  2.33,  2.99", f_Mean);
-        swprintf (m_szTxt.szTxt[3], NUMCHARS(m_szTxt.szTxt[3]), L"%s: %s, Mn/Mx: %3.2f", L"TEMP", L"  3.02,   3.22,  3.54,  3.33,  3.99", f_Mean);
-        swprintf (m_szTxt.szTxt[4], NUMCHARS(m_szTxt.szTxt[4]), L"%s: %s, Mn/Mx: %3.2f", L"FUEL", L"  4.22,   4.33,  4.53,  4.33,  4.99", f_Mean);
-        swprintf (m_szTxt.szTxt[5], NUMCHARS(m_szTxt.szTxt[5]), L"%s: %s, Mn/Mx: %3.2f", L"OILT", L"  5.22,   5.03,  5.53,  5.55,  5.99", f_Mean);
-*/
+			sprintf (szAbbrY, "%d", lstMousePointsToDraw[x].m_eChannelY);	//	Gets the ENUM number and uses that for the channel name, in string form
+
+			//		Build the strings for the data channels to be displayed as Values
+			sprintf (szYValue[x], "%s, ", szYValue[x]);
+		}
+		if (x < 5) 
+		{
+			//	Build the Value text string
+			sprintf (m_szYValue, "%s: %s%s%s%s%sMn/Mx: %3.1f/%3.1f", szAbbrY, szYValue[0], szYValue[1], szYValue[2], szYValue[3], szYValue[4], pDataY->GetMin(), pDataY->GetMax());
+		}
         DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
 
         // we also want to draw a highlighted square
@@ -531,6 +545,12 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
 				glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
 				glEnd();									// Added by KDJ
+	  }
+	  if (d < 5) 
+	  {
+		//	Save string in array for displaying, and increment
+		sprintf (m_szTxt[d], "%s, ", m_szYValue);
+		d++;
 	  }
       glPopMatrix();
       glPopMatrix();	//	Should there be two of these here?
@@ -827,7 +847,6 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     {
       const CExtendedLap* pLap = lstMousePointsToDraw[x].pLap;
       const POINT& ptWindow = lstMousePointsToDraw[x].pt;
-//      srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
 	  float r;
 	  float g;
 	  float b;

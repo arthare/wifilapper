@@ -42,7 +42,7 @@ public:
   float flWindowShiftX;
   float flWindowShiftY;
   int iZoomLevels;
-  TCHAR szTxt[10][MAX_PATH];		//	Variable to store the Value Data Channels in for display
+//  static char szTxt();		//	Variable to store the Value Data Channels in for display
 };
 
 // LapSupplier interface - needed so that the lap painter knows what to paint
@@ -97,7 +97,7 @@ private:
   //ILapHighlighter* m_pHighlighter;
 
   int m_iSupplierId;
-
+  static int d;	//	For Value table counting
   //IUI* m_pUI;
 };
-
+  static char m_szTxt[15][MAX_PATH];	//	Variable to store the Value Channel elements, still need to get this out to PitsideConsole

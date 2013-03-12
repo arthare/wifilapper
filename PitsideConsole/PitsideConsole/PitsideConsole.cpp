@@ -1120,23 +1120,14 @@ private:
   {
     m_sfLapPainter.Refresh();
 	//	Update the data channels are being displayed as values
-
-		HWND Value1_hWnd=NULL, Value2_hWnd=NULL, Value3_hWnd=NULL, Value4_hWnd=NULL, Value5_hWnd=NULL;
-		TCHAR szTxt[10][MAX_PATH];
-		float f_Min = 2.34;
-		float f_Max = 5.34;
-		swprintf (szTxt[1], NUMCHARS(szTxt[1]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"ALT", L"  1.00,   1.00,  1.00,  1.03,  1.99", f_Min, f_Max);
-        swprintf (szTxt[2], NUMCHARS(szTxt[2]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"OILP", L"  2.22,   2.33,  2.53,  2.33,  2.99", f_Min, f_Max);
-        swprintf (szTxt[3], NUMCHARS(szTxt[3]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"TEMP", L"  3.02,   3.22,  3.54,  3.33,  3.99", f_Min, f_Max);
-        swprintf (szTxt[4], NUMCHARS(szTxt[4]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"FUEL", L"  4.22,   4.33,  4.53,  4.33,  4.99", f_Min, f_Max);
-        swprintf (szTxt[5], NUMCHARS(szTxt[5]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"OILT", L"  5.22,   5.03,  5.53,  5.55,  5.99", f_Min, f_Max);
-
+//	static LAPSUPPLIEROPTIONS m_szTxt[15][MAX_PATH];
+	HWND Value_hWnd=NULL;
 		//	Now display the values on the page
+		char szText[MAX_PATH];
 		for (int i=1; i <= 5; i++)
 		{
-			Value1_hWnd = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL0 + i);
-			SendMessage(Value1_hWnd, WM_SETTEXT, 0, (LPARAM)szTxt[i]);
-//			SendMessage(Value1_hWnd, WM_SETTEXT, 0, (LPARAM)m_szTxt.szTxt[i]);
+			Value_hWnd = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL0 + i);
+			SendMessage(Value_hWnd, WM_SETTEXT, 0, (LPARAM)m_szTxt[i]);
 		}
 	m_sfSubDisplay.Refresh();
 

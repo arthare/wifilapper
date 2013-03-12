@@ -620,7 +620,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
         Line<2> lnPerp(p.V2D(),vD.RotateAboutOrigin(PI/2));
 
         double dHitLength;
-//        if(lnD.IntersectLine(lnPerp, &dHitLength) && dHitLength >= 0 && dHitLength <= 1.0)
 		if(lnD.IntersectLine(lnPerp, &dHitLength) && dHitLength >= -1 && dHitLength <= 2.0)	//	Widening the accept limit
         {
           // hooray, they intersect
@@ -636,7 +635,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 		}
 		else
 		{
-		  //	Added by KDJ to fix lost graphing points, this is only an approximation at this point, and can be improved
           if (abs(sfD1.iTime - sfD2.iTime) <= 3000)	
 		  //	Check to make sure that points are not wrapping around, need to be within 3s of each other
 		  {
@@ -709,7 +707,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 			pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);
 
 			const int iStartTime = m_lstPoints[0].iTime;
-//			for(int x = 1;x < m_lstPoints.size() - 1; x++)
 			for(int x = 1;x < m_lstPoints.size(); x++)
 			{
 			const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
@@ -743,7 +740,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       const int iStartTime = m_lstPoints[0].iTime;
       const int iReferenceStartTime = lstReference[0].iTime;
       for(int x = 1;x < m_lstPoints.size(); x++)
-//      for(int x = 1;x < m_lstPoints.size() - 1; x++)	//	Done to reduce graphical errors
       {
         const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
         const double dDistance = pDistance->GetValue(m_lstPoints[x].iTime);
@@ -847,7 +843,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
 	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
-	  pLapTimeSummary->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
+	  pLapTimeSummary->AddPoint(p.iTime, p.iTime); // this is a mapping from time to laptime summary, needs fixing
 	  const int iElapsedTime = lstPoints[x].iTime - lstPoints[0].iTime;
 	  pLapTime->AddPoint(p.iTime, (double)iElapsedTime);
       const double dX = p.flX - ptLast.flX;
