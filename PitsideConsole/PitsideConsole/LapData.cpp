@@ -445,7 +445,6 @@ void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPS
       sprintf(lpsz, "%4.2f", flValue/1000.0f);
       break;
     }
-
 	case DATA_CHANNEL_VELOCITY:
     {
       // note: velocity is in m/s, but most humans will like km/h (well... except for americans, but screw them for now)

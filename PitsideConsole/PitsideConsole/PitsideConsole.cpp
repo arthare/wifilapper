@@ -1116,19 +1116,68 @@ private:
     HandleCtlResize(sNewSize, IDC_SUBDISPLAY, true, false); // sub display window
     HandleCtlResize(sNewSize, IDC_LAPS, false, true); // lap list
   }
-  void UpdateDisplays()
+	float Average(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal, char szAvg[MAX_PATH])
+	{
+	float sum = 0.0f;
+	int count; 
+    for (count=1; count <= sizeof pChannel->GetValue(count); count++)
+	{
+		GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flVal,szAvg,NUMCHARS(szAvg));
+		sum = sum + atof(szAvg); 
+	}
+	if (count != 0) 
+	{
+		return sum / count; 
+	}
+	else
+	{
+		return sum;
+	}
+}
+void UpdateDisplays()
   {
     m_sfLapPainter.Refresh();
 	//	Update the data channels are being displayed as values
-//	static LAPSUPPLIEROPTIONS m_szTxt[15][MAX_PATH];
-	HWND Value_hWnd=NULL;
-		//	Now display the values on the page
-		char szText[MAX_PATH];
-		for (int i=1; i <= 5; i++)
-		{
-			Value_hWnd = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL0 + i);
-			SendMessage(Value_hWnd, WM_SETTEXT, 0, (LPARAM)m_szTxt[i]);
-		}
+	//	List of highlighted laps
+	set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
+    if(setSelectedData.size() > 0 && setSelectedData.size() < 5)
+    {
+      const int cLabels = 5;
+      //   Loop through the selected Y-axis data channels for this lap
+      for(int x = 0;x < this->m_lstYChannels.size() && x < cLabels; x++)
+      {
+        const DATA_CHANNEL eChannel = m_lstYChannels[x];
+        // go through all the laps we have selected to figure out min/max
+        float flMin = 1e30;
+        float flMax = -1e30;
+        float flVal, flAvg;
+		char szAvg[MAX_PATH];
+		for(set<LPARAM>::const_iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
+        {
+          CExtendedLap* pLap = (CExtendedLap*)*i;
+          const IDataChannel* pChannel = pLap->GetChannel(eChannel);
+          flVal = pChannel->GetValue(m_mapLapHighlightTimes[pLap]);
+          flMin = pChannel->GetMin();
+          flMax = pChannel->GetMax();
+          // 951turbo: do more math here like averages, median, etc.
+		  flAvg = Average(eChannel, pChannel, flVal, szAvg);
+       }
+
+        TCHAR szLabel[10][MAX_PATH];
+        TCHAR szChannelName[MAX_PATH];
+        GetDataChannelName(eChannel,szChannelName,NUMCHARS(szChannelName));
+
+        char szMin[MAX_PATH];
+        char szMax[MAX_PATH];
+		GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMin,szMin,NUMCHARS(szMin));
+        GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMax,szMax,NUMCHARS(szMax));
+		//	Now assemble the string to display	
+        swprintf(szLabel[x],NUMCHARS(szLabel[x]),L"%s: Min: %S, Max: %S, Mean: %3.2f",szChannelName,szMin,szMax,flAvg);
+
+		HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + x);
+		SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[x]);
+      }
+    }
 	m_sfSubDisplay.Refresh();
 
   }

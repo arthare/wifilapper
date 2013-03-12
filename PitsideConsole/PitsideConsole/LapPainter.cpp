@@ -180,18 +180,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   map<DATA_CHANNEL,float> mapMaxY;
   float dMaxX = -1e30;
   float dMinX = 1e30;
-  //	  Initialize value channel text strings
-  int d = 0;
-//  LAPSUPPLIEROPTIONS m_szTxt[15][MAX_PATH];
-  char szYValue[10][256];
-  char szAbbrY[6];
-  char m_szYValue[256];
-  for (int y = 0; y < 10; y++)
-  {
-	sprintf (szYValue[y], "");
-	sprintf (szAbbrY, "");
-  }
-
   { // figuring out bounds and getting matrices all set up
     //	First lets load up all of the data into an array and determine its size
     for(int x = 0;x < lstLaps.size(); x++)
@@ -514,28 +502,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         char szText[256];
         sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
-		//	Code for displaying Values in Dashboard
-		// Get the Min/Max values for this channel
-        char szYMin[56], szYMax[56];
-        sprintf(szYMin, "%3.2f", pDataY->GetMin());
-        sprintf(szYMax, "%3.2f", pDataY->GetMax());
-
-		if (x < 5 && x < 5 && lstMousePointsToDraw[x].m_eChannelY != NULL)	// Only show the first 5 laps data and 5 data channels
-		{
-			GetChannelValue(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYValue[x], NUMCHARS(szYValue[x]));
-			// <-- gets the actual value of the data channel in string format.  For speed, this might be "100.0"
-
-			sprintf (szAbbrY, "%d", lstMousePointsToDraw[x].m_eChannelY);	//	Gets the ENUM number and uses that for the channel name, in string form
-
-			//		Build the strings for the data channels to be displayed as Values
-			sprintf (szYValue[x], "%s, ", szYValue[x]);
-		}
-		if (x < 5) 
-		{
-			//	Build the Value text string
-			sprintf (m_szYValue, "%s: %s%s%s%s%sMn/Mx: %3.1f/%3.1f", szAbbrY, szYValue[0], szYValue[1], szYValue[2], szYValue[3], szYValue[4], pDataY->GetMin(), pDataY->GetMax());
-		}
-        DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
+		DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
 
         // we also want to draw a highlighted square
 //        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
@@ -545,12 +512,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
 				glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
 				glEnd();									// Added by KDJ
-	  }
-	  if (d < 5) 
-	  {
-		//	Save string in array for displaying, and increment
-		sprintf (m_szTxt[d], "%s, ", m_szYValue);
-		d++;
 	  }
       glPopMatrix();
       glPopMatrix();	//	Should there be two of these here?
