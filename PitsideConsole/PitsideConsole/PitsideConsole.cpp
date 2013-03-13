@@ -76,6 +76,17 @@ bool CLap_SortByTime(const ILap* p1, const ILap* p2)
   return p1->GetStartTime() < p2->GetStartTime();
 }
 
+//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
+//	Use it to create a 50 term array to store these values
+struct PlotPrefs 
+{
+	TCHAR m_ChannelName[512];
+	DATA_CHANNEL iDataChannel;
+	bool iPlotView;
+	double fMinValue;
+	double fMaxValue;
+} m_PlotPrefs[50];
+
 // this object takes the laps received on the net thread, stores them, and notifies the UI of the new laps
 class CLapReceiver : public ILapReceiver
 {
@@ -281,6 +292,18 @@ public:
     m_szCommentText[0] = '\0';
     m_szMessageStatus[0] = '\0';
     SetupMulticast();
+  }
+  void InitPlotPrefs()
+  {
+	  		for (int i=1; i <= 50; i++)
+		{
+			m_PlotPrefs[i].m_ChannelName[0] = NULL;
+			m_PlotPrefs[i].iDataChannel = DATA_CHANNEL_VELOCITY;
+			m_PlotPrefs[i].iPlotView = true;  //  Default to display as a graph
+			m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
+			m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+		}
+
   }
   void SetRaceId(int iRaceId)
   {
@@ -572,6 +595,7 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
+			InitPlotPrefs();	//	Initialize all PlotPrefs variables
 			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
@@ -1143,6 +1167,11 @@ void UpdateDisplays()
     if(setSelectedData.size() > 0 && setSelectedData.size() < 5)
     {
       const int cLabels = 5;
+      TCHAR szLabel[10][MAX_PATH];
+	  for (int z=0; z<10; z++)
+	  {
+		  wcscpy(szLabel[z],(TCHAR*) L"");	//	Initialize the strings for Data Value Channels
+	  }
       //   Loop through the selected Y-axis data channels for this lap
       for(int x = 0;x < this->m_lstYChannels.size() && x < cLabels; x++)
       {
@@ -1163,7 +1192,6 @@ void UpdateDisplays()
 		  flAvg = Average(eChannel, pChannel, flVal, szAvg);
        }
 
-        TCHAR szLabel[10][MAX_PATH];
         TCHAR szChannelName[MAX_PATH];
         GetDataChannelName(eChannel,szChannelName,NUMCHARS(szChannelName));
 
@@ -1172,11 +1200,15 @@ void UpdateDisplays()
 		GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMin,szMin,NUMCHARS(szMin));
         GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMax,szMax,NUMCHARS(szMax));
 		//	Now assemble the string to display	
-        swprintf(szLabel[x],NUMCHARS(szLabel[x]),L"%s: Min: %S, Max: %S, Mean: %3.2f",szChannelName,szMin,szMax,flAvg);
+        swprintf(szLabel[x],NUMCHARS(szLabel[x]),L"%s: Min: %S, Max: %S, Mean: %3.1f",szChannelName,szMin,szMax,flAvg);
 
-		HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + x);
-		SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[x]);
       }
+		//	Display the Data Value Channels
+	  for (int z=0; z<5; z++)
+	  {
+		HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
+		SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
+	  }
     }
 	m_sfSubDisplay.Refresh();
 

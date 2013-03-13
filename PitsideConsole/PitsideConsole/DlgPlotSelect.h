@@ -20,16 +20,17 @@ public:
   bool fCancelled;
 };
 
-//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
+/*//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
 //	Use it to create a 50 term array to store these values
-static struct PlotPrefs 
+struct PlotPrefs 
 {
 	TCHAR m_ChannelName[512];
+	DATA_CHANNEL iDataChannel;
 	bool iPlotView;
 	double fMinValue;
 	double fMaxValue;
 } m_PlotPrefs[50];
-
+*/
 class CPlotSelectDlg : public IUI
 {
 public:

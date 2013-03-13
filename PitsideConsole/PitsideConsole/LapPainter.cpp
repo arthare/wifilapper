@@ -196,7 +196,20 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         if(!pChannel || !pChannel->IsValid()) continue;
 
         const DATA_CHANNEL eType = lstDataY[y];
-        if(mapMinY.find(eType) == mapMinY.end())
+/*
+//		Choose which channels to display and how
+			PLOTSELECT_RESULT sfResult;
+			CPlotSelectDlg dlgPlot(pLapDB, &sfResult, m_iRaceId, m_ILapSupplier);
+			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
+*/
+
+		//	Determine if this Data Channel is one that we only want to display the values for
+			for (int u=0;u<50;u++)
+			{
+				if (eType == m_PlotPrefs[u].iDataChannel && m_PlotPrefs[u].iPlotView == false)
+				return;
+			}
+      if(mapMinY.find(eType) == mapMinY.end())
         {
           mapMinY[eType] = min(pChannel->GetMin(),m_pLapSupplier->GetDataHardcodedMin(eType));
           mapMaxY[eType] = max(pChannel->GetMax(),m_pLapSupplier->GetDataHardcodedMax(eType));
@@ -218,7 +231,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       }
     }
   }
-  
+	 
   if(setY.size() <= 0)
   {
     DrawSelectLapsPrompt();
@@ -338,7 +351,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		{
 		//		The mouse is in our window, so panning and zooming are active!
 			const double dCenterX = (dMinX + dMaxX)/2;		//	Center of X for scaling transformation
-			double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+			double dScaleAmt = pow(1.08,sfLapOpts.iZoomLevels);
 			GLdouble dXShift,dYShift,dZShift;
 		//		Project the window shift stuff so we know how far to translate the view
 			dYShift = 0;	// No Y shift or zoom for Map Plot.

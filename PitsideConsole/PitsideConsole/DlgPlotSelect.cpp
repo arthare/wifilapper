@@ -8,7 +8,7 @@
 #include "DlgRaceSelect.h"
 #include "LapPainter.h"
 
-PlotPrefs m_PlotPrefs[];
+//static PlotPrefs m_PlotPrefs[];
 bool fCancelled = false;
 TCHAR szTemp[512];
 map<int,CExtendedLap*> m_mapLaps; // maps from iLapId to a lap object
@@ -74,6 +74,7 @@ vector<CExtendedLap*> GetAllLaps()
 				GetDataChannelName(*i, szDataChannelName, NUMCHARS(szDataChannelName));
 				m_sfYAxis.AddString(szDataChannelName,*i);
 				wcscpy(m_PlotPrefs[TotalYChannels].m_ChannelName, szDataChannelName);
+				m_PlotPrefs[TotalYChannels].iDataChannel = *i;	//	Add the DATA_CHANNEL enum into the PP array
 				TotalYChannels = TotalYChannels + 1;
 			}
 		}
