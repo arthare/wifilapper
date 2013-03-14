@@ -75,18 +75,6 @@ bool CLap_SortByTime(const ILap* p1, const ILap* p2)
 {
   return p1->GetStartTime() < p2->GetStartTime();
 }
-
-//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
-//	Use it to create a 50 term array to store these values
-struct PlotPrefs 
-{
-	TCHAR m_ChannelName[512];
-	DATA_CHANNEL iDataChannel;
-	bool iPlotView;
-	double fMinValue;
-	double fMaxValue;
-} m_PlotPrefs[50];
-
 // this object takes the laps received on the net thread, stores them, and notifies the UI of the new laps
 class CLapReceiver : public ILapReceiver
 {
@@ -242,7 +230,6 @@ private:
   
   IUI* m_pUI;
   TCHAR szLastNetStatus[NETSTATUS_COUNT][200];
-
   mutable ManagedCS m_cs;
 };
 
@@ -293,18 +280,6 @@ public:
     m_szMessageStatus[0] = '\0';
     SetupMulticast();
   }
-  void InitPlotPrefs()
-  {
-	  		for (int i=1; i <= 50; i++)
-		{
-			m_PlotPrefs[i].m_ChannelName[0] = NULL;
-			m_PlotPrefs[i].iDataChannel = DATA_CHANNEL_VELOCITY;
-			m_PlotPrefs[i].iPlotView = true;  //  Default to display as a graph
-			m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
-			m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
-		}
-
-  }
   void SetRaceId(int iRaceId)
   {
     m_iRaceId = iRaceId;
@@ -330,6 +305,19 @@ public:
 
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
+  void InitPlotPrefs()
+  {
+	swprintf(m_PlotPrefs[1].m_ChannelName, L"Velocity");
+	m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
+	for (int i=1; i < 50; i++)
+	{
+		swprintf(m_PlotPrefs[i+1].m_ChannelName, L"");
+		m_PlotPrefs[i+1].iDataChannel = DATA_CHANNEL_START;
+		m_PlotPrefs[i].iPlotView = true;  //  Default to display as a graph
+		m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
+		m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+	}
+  }
 
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
@@ -337,6 +325,10 @@ public:
     {
       return 0;
     }
+  //	Load inital values for Upper and Lower Alarm limits
+  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
+  PlotPrefs* p_PlotPrefs = &m_PlotPrefs[0];		//	Create a pointer to m_PlotPrefs
+
     switch(uMsg)
 	  {
 	    case WM_INITDIALOG:
@@ -514,11 +506,11 @@ public:
             }
             break;
         } // end switch on wParam
-        } // end body of case WM_NOTIFY
+      } // end body of case WM_NOTIFY
 	  case WM_COMMAND:
       {
-		    switch(LOWORD(wParam)) // find out the control ID
-		    {
+	    switch(LOWORD(wParam)) // find out the control ID
+	    {
           case IDC_SENDMESSAGE:
           {
             MESSAGEDLG_RESULT sfResult;
@@ -595,8 +587,7 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-			InitPlotPrefs();	//	Initialize all PlotPrefs variables
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier, p_PlotPrefs);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			if(!sfResult.fCancelled)
@@ -878,9 +869,9 @@ public:
           UpdateUI(UPDATE_DASHBOARD);
           return TRUE;
         }
-        }
+      }
         
-        return 0;
+      return 0;
       }
       case WM_RBUTTONUP:
       {
@@ -903,9 +894,9 @@ public:
         HandleResize(sNewSize);
         return TRUE;
       }
-	  }
+    }
 
-	  return FALSE;
+	return FALSE;
   }
   DWORD GetDlgId() const {return IDD_DLGFIRST;}
 
@@ -1034,7 +1025,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0004\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0005\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1358,8 +1349,6 @@ void UpdateDisplays()
     }
 
 	//	Set up for showing Reference lap similar to how we show Fastest Lap. 
-	//	This currently can cause program crashes, so remarked out.
-//	if(m_pReferenceLap != NULL && m_lstPoints.size() > 0)
 	if(m_pReferenceLap != NULL)
     {
 		lstLaps.push_back(m_pReferenceLap);
@@ -1989,9 +1978,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
-
-  //	Load inital values for Upper and Lower Alarm limits
-//	DlgPlotSelect :: InitPlotPrefs(set<DATA_CHANNEL> setAvailable);
 
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
   exit(0);

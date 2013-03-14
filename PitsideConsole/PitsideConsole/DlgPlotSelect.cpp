@@ -6,9 +6,7 @@
 #include "ArtSQL/ArtSQLite.h"
 #include "LapData.h"
 #include "DlgRaceSelect.h"
-#include "LapPainter.h"
 
-//static PlotPrefs m_PlotPrefs[];
 bool fCancelled = false;
 TCHAR szTemp[512];
 map<int,CExtendedLap*> m_mapLaps; // maps from iLapId to a lap object

@@ -264,7 +264,7 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
       }
       else
       {
-        lpszDataName = L"Unrecognized IOIO pin";
+        lpszDataName = L"Ukwn IOIO pin";
       }
     }
     else

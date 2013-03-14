@@ -196,12 +196,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         if(!pChannel || !pChannel->IsValid()) continue;
 
         const DATA_CHANNEL eType = lstDataY[y];
-/*
-//		Choose which channels to display and how
-			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(pLapDB, &sfResult, m_iRaceId, m_ILapSupplier);
-			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
-*/
 
 		//	Determine if this Data Channel is one that we only want to display the values for
 			for (int u=0;u<50;u++)

@@ -20,7 +20,7 @@ public:
   bool fCancelled;
 };
 
-/*//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
+//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
 //	Use it to create a 50 term array to store these values
 struct PlotPrefs 
 {
@@ -30,11 +30,11 @@ struct PlotPrefs
 	double fMinValue;
 	double fMaxValue;
 } m_PlotPrefs[50];
-*/
+
 class CPlotSelectDlg : public IUI
 {
 public:
-  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier)
+  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier, PlotPrefs* PlotPrefs) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier), m_PlotPrefs(PlotPrefs)
   {
 		m_pLapDB = pLapDB;
   };
@@ -49,6 +49,7 @@ private:
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
 	ILapSupplier* m_ILapSupplier;
+	PlotPrefs* m_PlotPrefs;
 	ArtListBox m_sfYAxis;
 	RACESELECT_RESULT* m_pResults;
 };

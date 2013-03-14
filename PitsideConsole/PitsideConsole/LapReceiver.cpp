@@ -642,7 +642,6 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
         if(aDBIncoming.Process(buf[x]))
         {
           eRecv = RECV_DB;
-          TCHAR szBuf[200];
           lstDBBuf.clear();
         }
         if(aDBDone.Process(buf[x]))

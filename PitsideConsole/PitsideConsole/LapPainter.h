@@ -4,8 +4,6 @@
 #include "LapReceiver.h" // for TimePoint2D
 #include "ArtUI.h" // for ArtOpenGLWindow
 #include "LapData.h" // for CExtendedPoint
-//#include "DlgPlotSelect.h"	//	For Value display and Alarms
-//#include "PitsideConsole.h"
 
 using namespace std;
 
