@@ -305,7 +305,7 @@ public:
 
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
-  void InitPlotPrefs()
+/*  void InitPlotPrefs()
   {
 	swprintf(m_PlotPrefs[1].m_ChannelName, L"Velocity");
 	m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
@@ -318,7 +318,7 @@ public:
 		m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
 	}
   }
-
+*/
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
     if(m_sfLapPainter.HandleMessage(hWnd,uMsg,wParam,lParam))
@@ -326,8 +326,8 @@ public:
       return 0;
     }
   //	Load inital values for Upper and Lower Alarm limits
-  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
-  PlotPrefs* p_PlotPrefs = &m_PlotPrefs[0];		//	Create a pointer to m_PlotPrefs
+//  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
+//  PlotPrefs* p_PlotPrefs = &m_PlotPrefs[0];		//	Create a pointer to m_PlotPrefs
 
     switch(uMsg)
 	  {

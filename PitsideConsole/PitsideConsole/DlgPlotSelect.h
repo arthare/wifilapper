@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ArtUI.h"
-#include "ArtTools.h"
 #include "LapData.h"
 
+//#include "ArtTools.h"
 //#include "LapReceiver.h"
 //#include "PitsideConsole.h"
 //#include "DlgRaceSelect.h"
