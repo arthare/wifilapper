@@ -2,7 +2,7 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
-#include "DlgPlotSelect.h"	//	Needed to get the Graph/Value display information
+//#include "DlgPlotSelect.h"	//	Needed to get the Graph/Value display information
 
 struct HIGHLIGHTDATA
 {
@@ -196,14 +196,14 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         if(!pChannel || !pChannel->IsValid()) continue;
 
         const DATA_CHANNEL eType = lstDataY[y];
-
+/*
 		//	Determine if this Data Channel is one that we only want to display the values for
 			for (int u=0;u<50;u++)
 			{
 				if (eType == m_PlotPrefs[u].iDataChannel && m_PlotPrefs[u].iPlotView == false)
 				return;
 			}
-      if(mapMinY.find(eType) == mapMinY.end())
+*/      if(mapMinY.find(eType) == mapMinY.end())
         {
           mapMinY[eType] = min(pChannel->GetMin(),m_pLapSupplier->GetDataHardcodedMin(eType));
           mapMaxY[eType] = max(pChannel->GetMax(),m_pLapSupplier->GetDataHardcodedMax(eType));

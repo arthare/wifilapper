@@ -1,11 +1,12 @@
 #include "Stdafx.h"
 #include "DlgPlotSelect.h"
 #include "resource.h"
-#include "PitsideConsole.h"
-#include "LapReceiver.h"
-#include "ArtSQL/ArtSQLite.h"
-#include "LapData.h"
-#include "DlgRaceSelect.h"
+
+//#include "PitsideConsole.h"
+//#include "LapReceiver.h"
+//#include "ArtSQL/ArtSQLite.h"
+//#include "LapData.h"
+//#include "DlgRaceSelect.h"
 
 bool fCancelled = false;
 TCHAR szTemp[512];

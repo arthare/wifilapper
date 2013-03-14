@@ -587,7 +587,8 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier, p_PlotPrefs);
+//			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier, p_PlotPrefs);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			if(!sfResult.fCancelled)

@@ -2,11 +2,12 @@
 
 #include "ArtUI.h"
 #include "ArtTools.h"
-#include "LapReceiver.h"
-#include "PitsideConsole.h"
 #include "LapData.h"
-#include "DlgRaceSelect.h"
-#include "LapPainter.h"
+
+//#include "LapReceiver.h"
+//#include "PitsideConsole.h"
+//#include "DlgRaceSelect.h"
+//#include "LapPainter.h"
 
 struct PLOTSELECT_RESULT
 {
@@ -34,7 +35,8 @@ struct PlotPrefs
 class CPlotSelectDlg : public IUI
 {
 public:
-  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier, PlotPrefs* PlotPrefs) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier), m_PlotPrefs(PlotPrefs)
+//  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier, PlotPrefs* PlotPrefs) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier), m_PlotPrefs(PlotPrefs)
+  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId) : m_pPlotResults(pResults), m_iRaceId(iRaceId)
   {
 		m_pLapDB = pLapDB;
   };
@@ -48,8 +50,5 @@ private:
 	PLOTSELECT_RESULT* m_pPlotResults;
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
-	ILapSupplier* m_ILapSupplier;
-	PlotPrefs* m_PlotPrefs;
 	ArtListBox m_sfYAxis;
-	RACESELECT_RESULT* m_pResults;
 };
