@@ -200,7 +200,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		//	Determine if this Data Channel is one that we only want to display the values for
 			for (int u=0;u<50;u++)
 			{
-				if (eType == m_PlotPrefs[u].iDataChannel && m_PlotPrefs[u].iPlotView == false)
+				if (eType = m_PlotPrefs[u].iDataChannel && m_PlotPrefs[u].iPlotView == false)
 				return;
 			}
 */      if(mapMinY.find(eType) == mapMinY.end())

@@ -2,11 +2,12 @@
 #include "DlgPlotSelect.h"
 #include "resource.h"
 
-//#include "PitsideConsole.h"
-//#include "LapReceiver.h"
-//#include "ArtSQL/ArtSQLite.h"
-//#include "LapData.h"
-//#include "DlgRaceSelect.h"
+#include "PitsideConsole.h"
+#include "LapReceiver.h"
+#include "ArtSQL/ArtSQLite.h"
+#include "LapData.h"
+#include "DlgRaceSelect.h"
+#include "LapPainter.h"
 
 bool fCancelled = false;
 TCHAR szTemp[512];
@@ -15,7 +16,6 @@ CExtendedLap* m_pReferenceLap;
 ArtListBox m_LapList;
 vector<CExtendedLap*> GetAllLaps();
 int TotalYChannels;
-
 
 void LoadLaps(ILapReceiver* pReceiver, int m_iRaceId)
   {
@@ -112,7 +112,7 @@ vector<CExtendedLap*> GetAllLaps()
 		return 0;
     }
 
-      int SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
+      int CPlotSelectDlg::SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	  {
 		   //  Display all of the limits for all data channels
 
@@ -149,7 +149,7 @@ vector<CExtendedLap*> GetAllLaps()
         case WM_INITDIALOG:
         {
           //  Initialize all data channels, if not already set by user.
-          //  Assumes first data channel (LONG X) will always be a graph
+          //  Assumes first data channel will always be a graph
           if (m_PlotPrefs[1].iPlotView == false)
           {
             InitPlotPrefs(hWnd, lParam);

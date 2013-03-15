@@ -3,11 +3,11 @@
 #include "ArtUI.h"
 #include "LapData.h"
 
-//#include "ArtTools.h"
-//#include "LapReceiver.h"
-//#include "PitsideConsole.h"
-//#include "DlgRaceSelect.h"
-//#include "LapPainter.h"
+#include "ArtTools.h"
+#include "LapReceiver.h"
+#include "PitsideConsole.h"
+#include "DlgRaceSelect.h"
+#include "LapPainter.h"
 
 struct PLOTSELECT_RESULT
 {
@@ -30,17 +30,20 @@ struct PlotPrefs
 	bool iPlotView;
 	double fMinValue;
 	double fMaxValue;
-} m_PlotPrefs[50];
+//} m_PlotPrefs[50];
+};
+extern PlotPrefs m_PlotPrefs[50]; // extern tells the compiler: "someone somewhere will declare this for real.  Until you encounter that, assume that it'll get declared eventually"
+
 
 class CPlotSelectDlg : public IUI
 {
 public:
-//  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier, PlotPrefs* PlotPrefs) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier), m_PlotPrefs(PlotPrefs)
-  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId) : m_pPlotResults(pResults), m_iRaceId(iRaceId)
+  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier, PlotPrefs* PlotPrefs) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier), m_PlotPrefs(PlotPrefs)
   {
 		m_pLapDB = pLapDB;
   };
   int InitPlotPrefs (HWND hWnd, LPARAM lParam);
+  int SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable);
   void InitPlotChannels(set<DATA_CHANNEL> setAvailable);
 
   virtual void NotifyChange(WPARAM wParam, LPARAM lParam) {DASSERT(FALSE);};
@@ -51,4 +54,6 @@ private:
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
 	ArtListBox m_sfYAxis;
+	PlotPrefs* m_PlotPrefs;
+	ILapSupplier* m_ILapSupplier;
 };

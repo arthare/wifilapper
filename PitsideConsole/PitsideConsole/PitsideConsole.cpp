@@ -41,6 +41,8 @@ ILapReceiver* g_pLapDB = NULL;
 
 SimpleHTTPServer* g_pHTTPServer = NULL;
 
+PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
+
 struct COMPUTERDESC
 {
 public:
@@ -113,14 +115,14 @@ public:
     m_pUI->NotifyChange(NOTIFY_NEWDATA,(LPARAM)this);
   }
 
-	void AddLap(const ILap* pLap, int iRaceId) override
-	{
+  void AddLap(const ILap* pLap, int iRaceId) override
+  {
     {
       AutoLeaveCS _cs(&m_cs);
       m_lstLaps.push_back(pLap);
     }
-    m_pUI->NotifyChange(NOTIFY_NEWLAP,(LPARAM)this);
-	}
+  m_pUI->NotifyChange(NOTIFY_NEWLAP,(LPARAM)this);
+  }
   void AddDataChannel(const IDataChannel* pDataChannel) override
   {
     DASSERT(pDataChannel->IsLocked());
@@ -305,29 +307,13 @@ public:
 
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
-/*  void InitPlotPrefs()
-  {
-	swprintf(m_PlotPrefs[1].m_ChannelName, L"Velocity");
-	m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
-	for (int i=1; i < 50; i++)
-	{
-		swprintf(m_PlotPrefs[i+1].m_ChannelName, L"");
-		m_PlotPrefs[i+1].iDataChannel = DATA_CHANNEL_START;
-		m_PlotPrefs[i].iPlotView = true;  //  Default to display as a graph
-		m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
-		m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
-	}
-  }
-*/
+
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
     if(m_sfLapPainter.HandleMessage(hWnd,uMsg,wParam,lParam))
     {
       return 0;
     }
-  //	Load inital values for Upper and Lower Alarm limits
-//  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
-//  PlotPrefs* p_PlotPrefs = &m_PlotPrefs[0];		//	Create a pointer to m_PlotPrefs
 
     switch(uMsg)
 	  {
@@ -362,7 +348,7 @@ public:
         UpdateUI(UPDATE_ALL);
         InitBaseWindowPos();
 
-		    return 0;
+		return 0;
       }
       case WM_CLOSE:
         EndDialog(hWnd,0);
@@ -525,7 +511,7 @@ public:
           }
 		      case IDOK:
           {
-			      return TRUE;
+			  return TRUE;
           }
           case ID_OPTIONS_KMH:
           {
@@ -587,8 +573,8 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-//			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier, p_PlotPrefs);
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier, m_PlotPrefs);
+//			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			if(!sfResult.fCancelled)
@@ -616,7 +602,7 @@ public:
           case ID_FILE_EXIT:
           {
 				DestroyWindow(hWnd);
-			break;
+				break;
 		  }
           case ID_EDIT_COPY:
           {
@@ -699,10 +685,10 @@ public:
           {
             switch(HIWORD(wParam))
             {
-            case BN_CLICKED:
-              m_eLapDisplayStyle = LAPDISPLAYSTYLE_RECEPTION;
-              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
-              break;
+              case BN_CLICKED:
+                m_eLapDisplayStyle = LAPDISPLAYSTYLE_RECEPTION;
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                break;
             }
             return TRUE;
           }
@@ -710,10 +696,10 @@ public:
           {
             switch(HIWORD(wParam))
             {
-            case BN_CLICKED:
-              m_eLapDisplayStyle = LAPDISPLAYSTYLE_PLOT;
-              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
-              break;
+              case BN_CLICKED:
+                m_eLapDisplayStyle = LAPDISPLAYSTYLE_PLOT;
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                break;
             }
             return TRUE;
           }
@@ -756,10 +742,10 @@ public:
           {
             switch(HIWORD(wParam))
             {
-            case BN_CLICKED:
-              m_sfLapList.Clear();
-              UpdateUI(UPDATE_ALL);
-              break;
+				case BN_CLICKED:
+				  m_sfLapList.Clear();
+				  UpdateUI(UPDATE_ALL);
+				  break;
             }
             return TRUE;
           }
@@ -775,7 +761,7 @@ public:
               }
             }
             return TRUE;
-		      }
+		  }
         } // end switch for finding out what control WM_COMMAND hit
         break; // break out of WM_COMMAND handling
       }
@@ -873,7 +859,7 @@ public:
       }
         
       return 0;
-      }
+    }
       case WM_RBUTTONUP:
       {
         m_sfLapOpts.flWindowShiftX = 0;
@@ -975,10 +961,10 @@ public:
       CASSERT(LAPDISPLAYSTYLE_COUNT == 4);
       switch(m_eLapDisplayStyle)
       {
-      case LAPDISPLAYSTYLE_MAP:            CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_LINE); break;
-      case LAPDISPLAYSTYLE_PLOT:           CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_PLOT); break;
-      case LAPDISPLAYSTYLE_RECEPTION:      CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_RECEPTION); break;
-      default: DASSERT(FALSE); break;
+		  case LAPDISPLAYSTYLE_MAP:            CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_LINE); break;
+		  case LAPDISPLAYSTYLE_PLOT:           CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_PLOT); break;
+		  case LAPDISPLAYSTYLE_RECEPTION:      CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_RECEPTION); break;
+		  default: DASSERT(FALSE); break;
       }
     
       set<LPARAM> setXSelected,setYSelected;
@@ -1195,7 +1181,7 @@ void UpdateDisplays()
         swprintf(szLabel[x],NUMCHARS(szLabel[x]),L"%s: Min: %S, Max: %S, Mean: %3.1f",szChannelName,szMin,szMax,flAvg);
 
       }
-		//	Display the Data Value Channels
+	  //	Display the Data Value Channels
 	  for (int z=0; z<5; z++)
 	  {
 		HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
@@ -1806,6 +1792,20 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
+  void InitPlotPrefs()
+  {
+	swprintf(m_PlotPrefs[1].m_ChannelName, L"Velocity");
+	m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
+	m_PlotPrefs[1].iPlotView = false;  //  Default to display as a graph
+	for (int i=1; i < 50; i++)
+	{
+		swprintf(m_PlotPrefs[i+1].m_ChannelName, L"");
+		m_PlotPrefs[i+1].iDataChannel = DATA_CHANNEL_START;
+		m_PlotPrefs[i+1].iPlotView = true;  //  Default to display as a graph
+		m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
+		m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+	}
+  }
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
 {
@@ -1979,6 +1979,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
+    //	Load inital values for Upper and Lower Alarm limits
+  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
 
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
   exit(0);
