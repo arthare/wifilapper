@@ -30,20 +30,6 @@ void LoadLaps(ILapReceiver* pReceiver, int m_iRaceId)
     }
   }
 
-/*
-//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
-//	Use it to create a 50 term array to store these values
-struct PlotPrefs 
-{
-	TCHAR m_ChannelName[512];
-	DATA_CHANNEL iDataChannel;
-	bool iPlotView;
-	double fMinValue;
-	double fMaxValue;
-} p_PlotPrefs[50];
-//};
-//extern PlotPrefs p_PlotPrefs[50]; // extern tells the compiler: "someone somewhere will declare this for real.  Until you encounter that, assume that it'll get declared eventually"
-*/
 vector<CExtendedLap*> GetAllLaps()
   {
     set<LPARAM> setSelectedLaps = m_LapList.GetSelectedItemsData();
