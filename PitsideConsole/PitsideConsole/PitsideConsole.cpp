@@ -40,25 +40,13 @@ using namespace std;
 ILapReceiver* g_pLapDB = NULL;
 
 SimpleHTTPServer* g_pHTTPServer = NULL;
-/*
-//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
-//	Use it to create a 50 term array to store these values
-struct PlotPrefs 
-{
-	TCHAR m_ChannelName[512];
-	DATA_CHANNEL iDataChannel;
-	bool iPlotView;
-	double fMinValue;
-	double fMaxValue;
-//} m_PlotPrefs[50];
-};
-PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
-*/
+
 struct COMPUTERDESC
 {
 public:
   char szDesc[100]; // computer name
 };
+  PlotPrefs* z_PlotPrefs;
 
 class MCResponder : public MulticastResponseGenerator
 {
@@ -304,7 +292,7 @@ public:
       PostMessage(m_hWnd,WM_NOTIFYUPDATE,wParam,(LPARAM)lParam);
     }
   }
-  
+
   int str_ends_with(const TCHAR * str, const TCHAR * suffix) 
   {
     if( str == NULL || suffix == NULL )
@@ -325,7 +313,6 @@ public:
     {
       return 0;
     }
-
     switch(uMsg)
 	  {
 	    case WM_INITDIALOG:
@@ -583,8 +570,8 @@ public:
           }
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
-/*			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier/*, m_PlotPrefs*//*);
+			PLOTSELECT_RESULT sfResult;
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier, z_PlotPrefs);
 //			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
@@ -592,7 +579,7 @@ public:
 			{
 				UpdateUI(UPDATE_ALL);
 			}
-*/					
+					
 			return TRUE;
 		  }		
           case ID_HELP_IPS:
@@ -904,7 +891,7 @@ public:
   const static DWORD UPDATE_MENU = 0x8;
 
   const static DWORD UPDATE_ALL = 0xffffffff;
-
+ 
   void UpdateUI(DWORD fdwUpdateFlags)
   {
     m_fdwUpdateNeeded|= fdwUpdateFlags;
@@ -1816,7 +1803,8 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 		m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
 		m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
 	}
-  }	*/
+  }
+*/
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
 {
@@ -1991,7 +1979,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
     //	Load inital values for Upper and Lower Alarm limits
+  PlotPrefs m_PlotPrefs[50];
 //  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
+  z_PlotPrefs = &m_PlotPrefs[0];
 
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
   exit(0);

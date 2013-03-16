@@ -20,7 +20,7 @@ public:
   int iPlotId;
   bool fCancelled;
 };
-/*
+
 //	Create a data structure containing all of the Plotting preferences and make it available to entire program.
 //	Use it to create a 50 term array to store these values
 struct PlotPrefs 
@@ -30,15 +30,14 @@ struct PlotPrefs
 	bool iPlotView;
 	double fMinValue;
 	double fMaxValue;
-} m_PlotPrefs[50];
-//};
-//extern PlotPrefs m_PlotPrefs[50]; // extern tells the compiler: "someone somewhere will declare this for real.  Until you encounter that, assume that it'll get declared eventually"
-*/
+//} m_PlotPrefs[50];
+}; 
+extern PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
 
 class CPlotSelectDlg : public IUI
 {
 public:
-  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier/*, PlotPrefs* PlotPrefs*/) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier)/*, m_PlotPrefs(PlotPrefs)*/
+  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier, PlotPrefs* i_PlotPrefs) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier), p_PlotPrefs(i_PlotPrefs)
   {
 		m_pLapDB = pLapDB;
   };
@@ -54,6 +53,6 @@ private:
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
 	ArtListBox m_sfYAxis;
-//	PlotPrefs* m_PlotPrefs;
+	PlotPrefs* p_PlotPrefs;
 	ILapSupplier* m_ILapSupplier;
 };
