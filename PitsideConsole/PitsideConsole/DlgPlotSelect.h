@@ -30,7 +30,6 @@ struct PlotPrefs
 	bool iPlotView;
 	double fMinValue;
 	double fMaxValue;
-//} m_PlotPrefs[50];
 }; 
 extern PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
 
