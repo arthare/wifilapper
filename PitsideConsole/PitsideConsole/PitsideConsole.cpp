@@ -1150,57 +1150,62 @@ void UpdateDisplays()
 		  wcscpy(szLabel[z],(TCHAR*) L"");	//	Initialize the strings for Data Value Channels
 	  }
       //   Loop through the selected Y-axis data channels for this lap
-      for(int x = 0;x < this->m_lstYChannels.size() && x < 49; x++)
-      {
-		const DATA_CHANNEL eChannel = m_lstYChannels[x];
-		float flMin, flMax, flAvg;
-		//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
-		for (int u=0;u<49;u++)
+		for(int x = 0;x < this->m_lstYChannels.size() && x < 49; x++)
 		{
-			if (m_lstYChannels[x] == z_PlotPrefs[u].iDataChannel && z_PlotPrefs[u].iPlotView == true)
+			const DATA_CHANNEL eChannel = m_lstYChannels[x];
+			if(!eChannel /*|| !eChannel->IsValid()*/) continue;
+			float flMin, flMax, flAvg;
+			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
+			for (int u=0;u<49;u++)
 			{
+				if (m_lstYChannels[x] == z_PlotPrefs[u].iDataChannel && z_PlotPrefs[u].iPlotView == true)
+				{
+						break;
+				}
+				else if	(m_lstYChannels[x] == z_PlotPrefs[u].iDataChannel && z_PlotPrefs[u].iPlotView == false)
+				{
+					//	Let's get the statistical values for this channel for display
+					// go through all the laps we have selected to figure out min/max
+					flMin = 1e30;
+					flMax = -1e30;
+					float flVal;
+					char szAvg[MAX_PATH];
+					for(set<LPARAM>::const_iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
+					{
+					  CExtendedLap* pLap = (CExtendedLap*)*i;
+					  const IDataChannel* pChannel = pLap->GetChannel(eChannel);
+					  if (pChannel)	//	Check if pointer is valid
+					  {
+						flVal = pChannel->GetValue(m_mapLapHighlightTimes[pLap]);
+						flMin = pChannel->GetMin();
+						flMax = pChannel->GetMax();
+						// 951turbo: do more math here like averages, median, etc.
+						flAvg = Average(eChannel, pChannel, flVal, szAvg);
+					  }
+					}
+					//	Now assign these values to the Data Value variable for display
+					TCHAR szChannelName[MAX_PATH];
+					GetDataChannelName(eChannel,szChannelName,NUMCHARS(szChannelName));
+
+					char szMin[MAX_PATH];
+					char szMax[MAX_PATH];
+					GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMin,szMin,NUMCHARS(szMin));
+					GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMax,szMax,NUMCHARS(szMax));
+					//	Now assemble the string to display (max of 5)
+					if (w < cLabels)
+					{
+						swprintf(szLabel[w],NUMCHARS(szLabel[w]),L"%s: Min: %S, Max: %S, Mean: %3.1f",szChannelName,szMin,szMax,flAvg);
+						w++;	//	Increment Value string counter
+					}
 					break;
-			}
-			else if	(m_lstYChannels[x] == z_PlotPrefs[u].iDataChannel && z_PlotPrefs[u].iPlotView == false)
-			{
-				//	Let's get the statistical values for this channel for display
-				// go through all the laps we have selected to figure out min/max
-				flMin = 1e30;
-				flMax = -1e30;
-				float flVal;
-				char szAvg[MAX_PATH];
-				for(set<LPARAM>::const_iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
-				{
-				  CExtendedLap* pLap = (CExtendedLap*)*i;
-				  const IDataChannel* pChannel = pLap->GetChannel(eChannel);
-				  flVal = pChannel->GetValue(m_mapLapHighlightTimes[pLap]);
-				  flMin = pChannel->GetMin();
-				  flMax = pChannel->GetMax();
-				  // 951turbo: do more math here like averages, median, etc.
-				  flAvg = Average(eChannel, pChannel, flVal, szAvg);
 				}
-				//	Now assign these values to the Data Value variable for display
-				TCHAR szChannelName[MAX_PATH];
-				GetDataChannelName(eChannel,szChannelName,NUMCHARS(szChannelName));
-
-				char szMin[MAX_PATH];
-				char szMax[MAX_PATH];
-				GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMin,szMin,NUMCHARS(szMin));
-				GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMax,szMax,NUMCHARS(szMax));
-				//	Now assemble the string to display (max of 5)
-				if (w < cLabels)
+				else
 				{
-					swprintf(szLabel[w],NUMCHARS(szLabel[w]),L"%s: Min: %S, Max: %S, Mean: %3.1f",szChannelName,szMin,szMax,flAvg);
-					w++;	//	Increment Value string counter
 				}
-				break;
 			}
-			else
-			{
-		    }
-        }
+		}
 
-      }
+//      }
 	  //	Display the Data Value Channels
 	  for (int z=0; z<5; z++)
 	  {
