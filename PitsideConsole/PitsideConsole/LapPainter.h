@@ -4,7 +4,7 @@
 #include "LapReceiver.h" // for TimePoint2D
 #include "ArtUI.h" // for ArtOpenGLWindow
 #include "LapData.h" // for CExtendedPoint
-//#include "DlgPlotSelect.h" // For PlotPrefs structure
+#include "DlgPlotSelect.h" // For PlotPrefs structure
 
 using namespace std;
 
@@ -16,7 +16,6 @@ enum CHANNELDISPLAYSTYLE
   CHANNELDISPLAYSTYLE_VALUE,
   CHANNELDISPLAYSTYLE_GRAPH,
 };
-
 enum LAPDISPLAYSTYLE
 {
   LAPDISPLAYSTYLE_MAP,
@@ -26,24 +25,6 @@ enum LAPDISPLAYSTYLE
 
   LAPDISPLAYSTYLE_COUNT,
 };
-struct LAPSUPPLIEROPTIONS
-{
-public:
-  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(true),fDrawGuides(true),fDrawLines(true),fIOIOHardcoded(true), flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)//, p_PlotPrefs(0)
-  {
-  }
-  UNIT_PREFERENCE eUnitPreference;
-  bool fDrawSplitPoints;
-  bool fDrawGuides;
-  bool fDrawLines; // whether to draw lines between data points
-  bool fIOIOHardcoded;
-  bool fElapsedTime;
-  float flWindowShiftX;
-  float flWindowShiftY;
-  int iZoomLevels;
-//  PlotPrefs* p_PlotPrefs;	// Pull in PlotPrefs data
-};
-
 // LapSupplier interface - needed so that the lap painter knows what to paint
 interface ILapSupplier
 {

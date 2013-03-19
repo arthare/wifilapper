@@ -7,7 +7,37 @@
 #include "LapReceiver.h"
 #include "PitsideConsole.h"
 #include "DlgRaceSelect.h"
-#include "LapPainter.h"
+//#include "LapPainter.h"
+
+//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
+//	Use it to create a 50 term array to store these values
+struct PlotPrefs 
+{
+	TCHAR m_ChannelName[512];
+	DATA_CHANNEL iDataChannel;
+	bool iPlotView;
+	double fMinValue;
+	double fMaxValue;
+}; extern PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
+
+struct LAPSUPPLIEROPTIONS
+{
+public:
+  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(true),fDrawGuides(true),fDrawLines(true),fIOIOHardcoded(true), flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0), m_PlotPrefs()
+  {
+  }
+  UNIT_PREFERENCE eUnitPreference;
+  bool fDrawSplitPoints;
+  bool fDrawGuides;
+  bool fDrawLines; // whether to draw lines between data points
+  bool fIOIOHardcoded;
+  bool fElapsedTime;
+  float flWindowShiftX;
+  float flWindowShiftY;
+  int iZoomLevels;
+  PlotPrefs m_PlotPrefs[50];	// Pull in PlotPrefs data
+}; extern LAPSUPPLIEROPTIONS m_sfLapOpts;
+
 
 struct PLOTSELECT_RESULT
 {
@@ -21,22 +51,10 @@ public:
   bool fCancelled;
 };
 
-//	Create a data structure containing all of the Plotting preferences and make it available to entire program.
-//	Use it to create a 50 term array to store these values
-struct PlotPrefs 
-{
-	TCHAR m_ChannelName[512];
-	DATA_CHANNEL iDataChannel;
-	bool iPlotView;
-	double fMinValue;
-	double fMaxValue;
-}; 
-extern PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
-
 class CPlotSelectDlg : public IUI
 {
 public:
-  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, ILapSupplier* ILapSupplier, PlotPrefs* i_PlotPrefs) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_ILapSupplier(ILapSupplier), p_PlotPrefs(i_PlotPrefs)
+  CPlotSelectDlg(ILapReceiver* pLapDB, PLOTSELECT_RESULT* pResults, int iRaceId, LAPSUPPLIEROPTIONS* i_sfLapOpts) : m_pPlotResults(pResults), m_iRaceId(iRaceId), m_sfLapOpts(i_sfLapOpts)
   {
 		m_pLapDB = pLapDB;
   };
@@ -52,6 +70,5 @@ private:
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
 	ArtListBox m_sfYAxis;
-	PlotPrefs* p_PlotPrefs;
-	ILapSupplier* m_ILapSupplier;
+	LAPSUPPLIEROPTIONS* m_sfLapOpts;
 };

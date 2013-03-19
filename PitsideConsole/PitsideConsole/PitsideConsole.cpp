@@ -46,7 +46,8 @@ struct COMPUTERDESC
 public:
   char szDesc[100]; // computer name
 };
-  PlotPrefs* z_PlotPrefs;
+  LAPSUPPLIEROPTIONS* z_sfLapOpts;
+  LAPSUPPLIEROPTIONS m_sfLapOpts;
 
 class MCResponder : public MulticastResponseGenerator
 {
@@ -571,8 +572,7 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier, z_PlotPrefs);
-//			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, z_sfLapOpts);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			if(!sfResult.fCancelled)
@@ -1010,7 +1010,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0005\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0006\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1120,7 +1120,7 @@ private:
 	{
 	float sum = 0.0f;
 	int count; 
-    for (count=1; count <= sizeof pChannel->GetValue(count); count++)
+    for (count=1; count <= sizeof pChannel; count++)
 	{
 		GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flVal,szAvg,NUMCHARS(szAvg));
 		sum = sum + atof(szAvg); 
@@ -1136,33 +1136,33 @@ private:
 }
 void UpdateDisplays()
   {
-    m_sfLapPainter.Refresh();
-	//	Update the data channels are being displayed as values
+	//	Update the data channels that are being displayed as values
 	//	List of highlighted laps
 	set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
     if(setSelectedData.size() > 0 && setSelectedData.size() < 5)
     {
-      const int cLabels = 5;
+      const int cLabels = 5;	//	The maximum number of Value Data channels to display
+	  int m_Warning = 0;	//	Flag for changing color of Value display to show statistics are outside of bounds
 	  int w=0;	//	String variable counter for Vaue display
-      TCHAR szLabel[10][MAX_PATH];
-	  for (int z=0; z<10; z++)
+      TCHAR szLabel[cLabels][MAX_PATH];
+	  for (int z = 0; z < cLabels; z++)
 	  {
 		  wcscpy(szLabel[z],(TCHAR*) L"");	//	Initialize the strings for Data Value Channels
 	  }
       //   Loop through the selected Y-axis data channels for this lap
-		for(int x = 0;x < this->m_lstYChannels.size() && x < 49; x++)
-		{
+	  for(int x = 0; x < this->m_lstYChannels.size() && x < 49; x++)
+	  {
 			const DATA_CHANNEL eChannel = m_lstYChannels[x];
 			if(!eChannel /*|| !eChannel->IsValid()*/) continue;
 			float flMin, flMax, flAvg;
 			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
-			for (int u=0;u<49;u++)
+			for (int u = 0; u < 30; u++)	//	This can be improved, upper limit should be the total number of data channels, TotalYChannels plus all of the derived ones
 			{
-				if (m_lstYChannels[x] == z_PlotPrefs[u].iDataChannel && z_PlotPrefs[u].iPlotView == true)
+				if (m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == true)
 				{
-						break;
+						break;	//	Data channel is requested to be displayed as a graph, do nothing here
 				}
-				else if	(m_lstYChannels[x] == z_PlotPrefs[u].iDataChannel && z_PlotPrefs[u].iPlotView == false)
+				else if	(m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == false)
 				{
 					//	Let's get the statistical values for this channel for display
 					// go through all the laps we have selected to figure out min/max
@@ -1181,6 +1181,26 @@ void UpdateDisplays()
 						flMax = pChannel->GetMax();
 						// 951turbo: do more math here like averages, median, etc.
 						flAvg = Average(eChannel, pChannel, flVal, szAvg);
+						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
+						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
+						{
+							m_Warning = 1;	//	Change the background color to RED for Value Display
+						}
+						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
+						{
+							m_Warning = 1;
+						}
+						else
+						{
+							m_Warning = 0;
+						}
+					  }
+					  else
+					  {
+						  flVal=0.0f;
+						  flMin=0.0f;
+						  flMax=0.0f;
+						  flAvg=0.0f;
 					  }
 					}
 					//	Now assign these values to the Data Value variable for display
@@ -1203,16 +1223,28 @@ void UpdateDisplays()
 				{
 				}
 			}
-		}
-
-//      }
+	  }
 	  //	Display the Data Value Channels
-	  for (int z=0; z<5; z++)
+	  for (int z = 0; z < cLabels; z++)
 	  {
-		HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
-		SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
+		if (m_Warning)	//	Change background color to RED
+		{
+			COLORREF m_ColorRed = RGB(255, 0, 0);
+			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
+			SetBkColor((HDC) hWndLabel, m_ColorRed);
+			SetTextColor((HDC) hWndLabel, m_ColorRed);
+			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
+		}
+		else
+		{
+			COLORREF m_ColorGrey = RGB(50, 50, 50);
+			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
+			SetBkColor((HDC) hWndLabel, m_ColorGrey);
+			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
+		}
 	  }
     }
+    m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
 
   }
@@ -1719,7 +1751,7 @@ private:
   // lap display style data
   map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls
 
-  LAPSUPPLIEROPTIONS m_sfLapOpts;
+//  LAPSUPPLIEROPTIONS m_sfLapOpts;
   LAPDISPLAYSTYLE m_eLapDisplayStyle;
   DATA_CHANNEL m_eXChannel;
 //  vector<DATA_CHANNEL> m_lstYChannels;
@@ -1748,7 +1780,7 @@ private:
   MCResponder m_sfResponder;
 
   int m_iRaceId;
-  ILapSupplier* m_ILapSupplier;
+  ILapSupplier* z_ILapSupplier;
 };
 
 DWORD ReceiveThreadProc(LPVOID param)
@@ -1817,21 +1849,21 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
-/*  void InitPlotPrefs()
+  void InitPlotPrefs()
   {
-	swprintf(m_PlotPrefs[1].m_ChannelName, L"Velocity");
-	m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
-	m_PlotPrefs[1].iPlotView = false;  //  Default to display as a graph
-	for (int i=1; i < 50; i++)
+	swprintf(m_sfLapOpts.m_PlotPrefs[1].m_ChannelName, L"Velocity");
+	m_sfLapOpts.m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
+	m_sfLapOpts.m_PlotPrefs[1].iPlotView = false;  //  Default to display as a graph
+	for (int i=0; i < 50; i++)
 	{
-		swprintf(m_PlotPrefs[i+1].m_ChannelName, L"");
-		m_PlotPrefs[i+1].iDataChannel = DATA_CHANNEL_START;
-		m_PlotPrefs[i+1].iPlotView = true;  //  Default to display as a graph
-		m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
-		m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+		swprintf(m_sfLapOpts.m_PlotPrefs[i+1].m_ChannelName, L"");
+		m_sfLapOpts.m_PlotPrefs[i+1].iDataChannel = DATA_CHANNEL_START;
+		m_sfLapOpts.m_PlotPrefs[i+1].iPlotView = true;  //  Default to display as a graph
+		m_sfLapOpts.m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
+		m_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
 	}
   }
-*/
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
 {
@@ -1925,7 +1957,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   g_pLapDB = &sfLaps;
 
-  LAPSUPPLIEROPTIONS m_sfLapOpts;
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
 
@@ -2006,10 +2037,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
     //	Load inital values for Upper and Lower Alarm limits
-  PlotPrefs m_PlotPrefs[50];
-//  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
-  z_PlotPrefs = &m_PlotPrefs[0];
-
+  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
+  z_sfLapOpts = &m_sfLapOpts;
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
   exit(0);
 }

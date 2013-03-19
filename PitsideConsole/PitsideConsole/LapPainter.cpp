@@ -2,7 +2,7 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
-//#include "DlgPlotSelect.h"	//	Needed to get the Graph/Value display information
+#include "DlgPlotSelect.h"	//	Needed to get the Graph/Value display information
 
 struct HIGHLIGHTDATA
 {
@@ -190,20 +190,24 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       if(!pDataX || !pDataX->IsValid() || pDataX->GetData().size() <= 0) continue;
 
       vector<DATA_CHANNEL> lstDataY = m_pLapSupplier->GetYChannels();
-      for(int y = 0; y < lstDataY.size(); y++)
+      for(int y = 0; y < lstDataY.size(); y++)	//	Loop through the data channels and display them
       {
-        const IDataChannel* pChannel = pLap->GetChannel(lstDataY[y]);
+        int Display = 0;	//	Flag if we should display this channel as a graph or not 0 = yes, 1 = no
+		const IDataChannel* pChannel = pLap->GetChannel(lstDataY[y]);
         if(!pChannel || !pChannel->IsValid()) continue;
 
         const DATA_CHANNEL eType = lstDataY[y];
-/*
+
 		//	Determine if this Data Channel is one that we only want to display the values for
-			for (int u=0;u<50;u++)
+			for (int u=0;u<49;u++)
 			{
-				if (eType = m_PlotPrefs[u].iDataChannel && m_PlotPrefs[u].iPlotView == false)
-				return;
+				if (eType == sfLapOpts.m_PlotPrefs[u].iDataChannel && sfLapOpts.m_PlotPrefs[u].iPlotView == false)
+				{	//	We have found a display only channel. Let's prevent the graph from displaying
+					Display = 1;
+					break;
+				}
 			}
-*/      if(mapMinY.find(eType) == mapMinY.end())
+      if(mapMinY.find(eType) == mapMinY.end())
         {
           mapMinY[eType] = min(pChannel->GetMin(),m_pLapSupplier->GetDataHardcodedMin(eType));
           mapMaxY[eType] = max(pChannel->GetMax(),m_pLapSupplier->GetDataHardcodedMax(eType));
@@ -214,7 +218,10 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
           mapMaxY[eType] = max(pChannel->GetMax(),mapMaxY[eType]);
         }
         
-        setY.insert(eType);
+        if (Display == 0)
+	    {
+		  setY.insert(eType);
+	    }
       }
       if(pDataX)
       {
