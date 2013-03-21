@@ -201,7 +201,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		//	Determine if this Data Channel is one that we only want to display the values for
 			for (int u=0;u<49;u++)
 			{
-				if (eType == sfLapOpts.m_PlotPrefs[u].iDataChannel && sfLapOpts.m_PlotPrefs[u].iPlotView == false)
+//				if (eType == sfLapOpts.m_PlotPrefs[u].iDataChannel && sfLapOpts.m_PlotPrefs[u].iPlotView == false)
+				if (eType == m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iDataChannel && m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iPlotView == false)
 				{	//	We have found a display only channel. Let's prevent the graph from displaying
 					Display = 1;
 					break;
@@ -603,7 +604,8 @@ void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, floa
 		*pG = RandDouble(); 
 		*pB = RandDouble(); 
 	} 
-	while(*pR * *pG * *pB > 0.35); 
+//	while(*pR * *pG * *pB > 0.35); 
+	while(*pR + *pG + *pB > 1.5); 
 	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 }
 

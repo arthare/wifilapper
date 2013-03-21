@@ -41,13 +41,15 @@ ILapReceiver* g_pLapDB = NULL;
 
 SimpleHTTPServer* g_pHTTPServer = NULL;
 
+LAPSUPPLIEROPTIONS* z_sfLapOpts = NULL;
+ILapSupplier* z_ILapSupplier = NULL;	//	Make a global pointer to ILapSupplier
+
 struct COMPUTERDESC
 {
 public:
   char szDesc[100]; // computer name
 };
-  LAPSUPPLIEROPTIONS* z_sfLapOpts;
-  LAPSUPPLIEROPTIONS m_sfLapOpts;
+//  LAPSUPPLIEROPTIONS m_sfLapOpts;
 
 class MCResponder : public MulticastResponseGenerator
 {
@@ -307,6 +309,8 @@ public:
 
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
+  LAPSUPPLIEROPTIONS m_sfLapOpts;
+//  LAPSUPPLIEROPTIONS* z_sfLapOpts;
 
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
@@ -983,8 +987,8 @@ public:
       HWND hWndReference = GetDlgItem(m_hWnd, IDC_CURRENTREFERENCE);
       if(m_pReferenceLap)
       {
-        TCHAR szRefString[512];
-        TCHAR szLapString[512];
+        TCHAR szRefString[512] = L"";
+        TCHAR szLapString[512] = L"";
         m_pReferenceLap->GetString(szLapString, NUMCHARS(szLapString));
         swprintf(szRefString, NUMCHARS(szRefString), L"Reference Lap: %s", szLapString);
         SendMessage(hWndReference, WM_SETTEXT, 0, (LPARAM)szRefString);
@@ -1010,7 +1014,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0006\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0007\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1158,11 +1162,11 @@ void UpdateDisplays()
 			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
 			for (int u = 0; u < 30; u++)	//	This can be improved, upper limit should be the total number of data channels, TotalYChannels plus all of the derived ones
 			{
-				if (m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == true)
+				if (m_lstYChannels[x] == z_sfLapOpts->m_PlotPrefs[u].iDataChannel && z_sfLapOpts->m_PlotPrefs[u].iPlotView == true)
 				{
 						break;	//	Data channel is requested to be displayed as a graph, do nothing here
 				}
-				else if	(m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == false)
+				else if	(m_lstYChannels[x] == z_sfLapOpts->m_PlotPrefs[u].iDataChannel && z_sfLapOpts->m_PlotPrefs[u].iPlotView == false)
 				{
 					//	Let's get the statistical values for this channel for display
 					// go through all the laps we have selected to figure out min/max
@@ -1186,13 +1190,13 @@ void UpdateDisplays()
 						{
 							m_Warning = 1;	//	Change the background color to RED for Value Display
 						}
-						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
+						else if (flMin < z_sfLapOpts->m_PlotPrefs[u].fMinValue)
 						{
 							m_Warning = 1;
 						}
 						else
 						{
-							m_Warning = 0;
+//							m_Warning = 0;
 						}
 					  }
 					  else
@@ -1209,8 +1213,8 @@ void UpdateDisplays()
 
 					char szMin[MAX_PATH];
 					char szMax[MAX_PATH];
-					GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMin,szMin,NUMCHARS(szMin));
-					GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMax,szMax,NUMCHARS(szMax));
+					GetChannelValue(eChannel,z_sfLapOpts->eUnitPreference,flMin,szMin,NUMCHARS(szMin));
+					GetChannelValue(eChannel,z_sfLapOpts->eUnitPreference,flMax,szMax,NUMCHARS(szMax));
 					//	Now assemble the string to display (max of 5)
 					if (w < cLabels)
 					{
@@ -1233,6 +1237,7 @@ void UpdateDisplays()
 			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
 			SetBkColor((HDC) hWndLabel, m_ColorRed);
 			SetTextColor((HDC) hWndLabel, m_ColorRed);
+//		    MessageBox(NULL,L"You have exceeded an Alarm Limit",L"WARNING",MB_ICONERROR);
 			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
 		}
 		else
@@ -1243,6 +1248,8 @@ void UpdateDisplays()
 			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
 		}
 	  }
+//		if (m_Warning)	//	Pop up a warning message that an Alarm has been tripped
+//	  MessageBox(NULL,L"You have exceeded an Alarm Limit",L"WARNING",MB_OK);
     }
     m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
@@ -1751,7 +1758,6 @@ private:
   // lap display style data
   map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls
 
-//  LAPSUPPLIEROPTIONS m_sfLapOpts;
   LAPDISPLAYSTYLE m_eLapDisplayStyle;
   DATA_CHANNEL m_eXChannel;
 //  vector<DATA_CHANNEL> m_lstYChannels;
@@ -1849,18 +1855,17 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
-  void InitPlotPrefs()
+  void InitPlotPrefs(LAPSUPPLIEROPTIONS *p_sfLapOpts)
   {
-	swprintf(m_sfLapOpts.m_PlotPrefs[1].m_ChannelName, L"Velocity");
-	m_sfLapOpts.m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
-	m_sfLapOpts.m_PlotPrefs[1].iPlotView = false;  //  Default to display as a graph
 	for (int i=0; i < 50; i++)
 	{
-		swprintf(m_sfLapOpts.m_PlotPrefs[i+1].m_ChannelName, L"");
-		m_sfLapOpts.m_PlotPrefs[i+1].iDataChannel = DATA_CHANNEL_START;
-		m_sfLapOpts.m_PlotPrefs[i+1].iPlotView = true;  //  Default to display as a graph
-		m_sfLapOpts.m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
-		m_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+		swprintf(p_sfLapOpts->m_PlotPrefs[i].m_ChannelName, L"Velocity");
+//		p_sfLapOpts->m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
+//		swprintf(p_sfLapOpts->m_PlotPrefs[i+1].m_ChannelName, L"");
+		p_sfLapOpts->m_PlotPrefs[i].iDataChannel = DATA_CHANNEL_START;
+		p_sfLapOpts->m_PlotPrefs[i].iPlotView = true;  //  Default to display as a graph
+		p_sfLapOpts->m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
+		p_sfLapOpts->m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
 	}
   }
 
@@ -1957,6 +1962,13 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   g_pLapDB = &sfLaps;
 
+  //	Load inital values for Upper and Lower Alarm limits
+//  z_ILapSupplier = CMainUI->ILapSupplier;		//	Already defined in global scope area
+  LAPSUPPLIEROPTIONS m_sfLapOpts; //z_ILapSupplier->GetDisplayOptions();
+	//  z_sfLapOpts = &m_sfLapOpts;	//	Initialized global pointer to point to m_sfLapOpts, use in PlotPrefs and LapPainter
+  z_sfLapOpts = &m_sfLapOpts;
+  InitPlotPrefs(&m_sfLapOpts);	//	Initialize all PlotPrefs variables before displaying anything
+
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
 
@@ -2036,9 +2048,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
-    //	Load inital values for Upper and Lower Alarm limits
-  InitPlotPrefs();	//	Initialize all PlotPrefs variables before displaying anything
-  z_sfLapOpts = &m_sfLapOpts;
+
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
   exit(0);
 }

@@ -18,7 +18,7 @@ struct PlotPrefs
 	bool iPlotView;
 	double fMinValue;
 	double fMaxValue;
-}; extern PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
+}; // extern PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
 
 struct LAPSUPPLIEROPTIONS
 {
@@ -36,7 +36,7 @@ public:
   float flWindowShiftY;
   int iZoomLevels;
   PlotPrefs m_PlotPrefs[50];	// Pull in PlotPrefs data
-}; extern LAPSUPPLIEROPTIONS m_sfLapOpts;
+};
 
 
 struct PLOTSELECT_RESULT

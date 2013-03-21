@@ -398,7 +398,7 @@ vector<CExtendedLap*> GetAllLaps()
             return TRUE;
           }
           case IDCANCEL:
-                m_pPlotResults->fCancelled = true;
+            m_pPlotResults->fCancelled = true;
             EndDialog(hWnd,0);
             return TRUE;
           }

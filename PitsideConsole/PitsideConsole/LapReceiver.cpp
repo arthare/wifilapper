@@ -504,7 +504,7 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 					sockaddr_in* pIn = (sockaddr_in*)&sfAddr;
 							pLaps->SetNetStatus(NETSTATUS_STATUS, L"Connected");
 
-					TCHAR szIPString[512];
+					TCHAR szIPString[512] = L"";
 					GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
 					pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
 
