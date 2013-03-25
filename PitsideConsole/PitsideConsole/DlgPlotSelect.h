@@ -23,7 +23,7 @@ struct PlotPrefs
 struct LAPSUPPLIEROPTIONS
 {
 public:
-  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(true),fDrawGuides(true),fDrawLines(true),fIOIOHardcoded(true), flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0), m_PlotPrefs()
+  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(true),fDrawGuides(true),fDrawLines(true),fIOIOHardcoded(true), flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)//, m_PlotPrefs()
   {
   }
   UNIT_PREFERENCE eUnitPreference;

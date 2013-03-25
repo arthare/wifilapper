@@ -14,7 +14,7 @@ PIDDATA g_rgPIDData[] =
 	{L"Monitor status since DTCs cleared. (Includes malfunction indicator lamp (MIL) status and number of DTCs.)",""},
 	{L"Freeze DTC",""},
 	{L"Fuel sys status",""},
-	{L"Calc eng load&&","%3.1f"},
+	{L"Calc eng load%%","%3.1f"},
 	{L"Eng coolant temp,C","%3.1f"},
 	{L"ST fuel % trim—Bank 1%%","%4.1f"},
 	{L"LT fuel % trim—Bank 1%%","%4.1f"},
@@ -206,8 +206,8 @@ PIDDATA g_rgPIDData[] =
 };
 
 PIDDATA g_rgIOIOCustomData[] = {
-  {L"Fuel Level","%3.2f%%"},
-  {L"RPM","%5.2f"},
+  {L"Fuel Level%%","%3.2f"},
+  {L"RPM","%5.1f"},
   {L"Throttle Pos","%3.2f"},
   {L"Brake Pos","%3.2f"},
   {L"Clutch Pos","%3.2f"},
@@ -227,7 +227,7 @@ PIDDATA g_rgIOIOCustomData[] = {
   {L"Oil Pressure","%3.2f"},
   {L"Oil Temp","%3.1f"},
   {L"Coolant Temp","%3.1f"},
-  {L"Alt Voltage","%3.2fV"},
+  {L"Alt Voltage","%3.2f"},
 };
 
 void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)

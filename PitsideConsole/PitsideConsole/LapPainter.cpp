@@ -192,7 +192,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       vector<DATA_CHANNEL> lstDataY = m_pLapSupplier->GetYChannels();
       for(int y = 0; y < lstDataY.size(); y++)	//	Loop through the data channels and display them
       {
-        int Display = 0;	//	Flag if we should display this channel as a graph or not 0 = yes, 1 = no
+        int ValueDisplay = 0;	//	Flag if we should display this channel as a graph or not 0 = yes, 1 = no
 		const IDataChannel* pChannel = pLap->GetChannel(lstDataY[y]);
         if(!pChannel || !pChannel->IsValid()) continue;
 
@@ -201,10 +201,9 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		//	Determine if this Data Channel is one that we only want to display the values for
 			for (int u=0;u<49;u++)
 			{
-//				if (eType == sfLapOpts.m_PlotPrefs[u].iDataChannel && sfLapOpts.m_PlotPrefs[u].iPlotView == false)
 				if (eType == m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iDataChannel && m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iPlotView == false)
 				{	//	We have found a display only channel. Let's prevent the graph from displaying
-					Display = 1;
+					ValueDisplay = 1;
 					break;
 				}
 			}
@@ -219,7 +218,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
           mapMaxY[eType] = max(pChannel->GetMax(),mapMaxY[eType]);
         }
         
-        if (Display == 0)
+        if (ValueDisplay == 0)
 	    {
 		  setY.insert(eType);
 	    }

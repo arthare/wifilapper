@@ -80,7 +80,7 @@ vector<CExtendedLap*> GetAllLaps()
 		for (int i=1; i <= setYSelected.size(); i++)
 		{
 			m_sfLapOpts->m_PlotPrefs[i].iPlotView = true;  //  Default to display as a graph
-			m_sfLapOpts->m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
+			m_sfLapOpts->m_PlotPrefs[i].fMinValue = -3.0;    //  Set all lower limits to -3.0
 			m_sfLapOpts->m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
 		}
 		//  Display all of the data channels.

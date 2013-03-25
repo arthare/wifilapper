@@ -41,15 +41,11 @@ ILapReceiver* g_pLapDB = NULL;
 
 SimpleHTTPServer* g_pHTTPServer = NULL;
 
-LAPSUPPLIEROPTIONS* z_sfLapOpts = NULL;
-ILapSupplier* z_ILapSupplier = NULL;	//	Make a global pointer to ILapSupplier
-
 struct COMPUTERDESC
 {
 public:
   char szDesc[100]; // computer name
 };
-//  LAPSUPPLIEROPTIONS m_sfLapOpts;
 
 class MCResponder : public MulticastResponseGenerator
 {
@@ -58,7 +54,7 @@ public:
   {
     COMPUTERDESC* pResp = new COMPUTERDESC();
 
-    TCHAR szComputerName[MAX_COMPUTERNAME_LENGTH +1];
+    TCHAR szComputerName[MAX_COMPUTERNAME_LENGTH +1] = L"";
     DWORD cchComputerName = MAX_COMPUTERNAME_LENGTH +1;
     BOOL fSuccess = GetComputerName(szComputerName, &cchComputerName);
     
@@ -310,7 +306,6 @@ public:
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
   LAPSUPPLIEROPTIONS m_sfLapOpts;
-//  LAPSUPPLIEROPTIONS* z_sfLapOpts;
 
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
@@ -576,7 +571,7 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, z_sfLapOpts);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, &m_sfLapOpts);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			if(!sfResult.fCancelled)
@@ -896,6 +891,11 @@ public:
 
   const static DWORD UPDATE_ALL = 0xffffffff;
  
+  void SetDisplayOptions(const LAPSUPPLIEROPTIONS& lapOpts)
+  {
+    m_sfLapOpts = lapOpts;
+  }
+
   void UpdateUI(DWORD fdwUpdateFlags)
   {
     m_fdwUpdateNeeded|= fdwUpdateFlags;
@@ -1162,11 +1162,11 @@ void UpdateDisplays()
 			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
 			for (int u = 0; u < 30; u++)	//	This can be improved, upper limit should be the total number of data channels, TotalYChannels plus all of the derived ones
 			{
-				if (m_lstYChannels[x] == z_sfLapOpts->m_PlotPrefs[u].iDataChannel && z_sfLapOpts->m_PlotPrefs[u].iPlotView == true)
+				if (m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == true)
 				{
 						break;	//	Data channel is requested to be displayed as a graph, do nothing here
 				}
-				else if	(m_lstYChannels[x] == z_sfLapOpts->m_PlotPrefs[u].iDataChannel && z_sfLapOpts->m_PlotPrefs[u].iPlotView == false)
+				else if	(m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == false)
 				{
 					//	Let's get the statistical values for this channel for display
 					// go through all the laps we have selected to figure out min/max
@@ -1190,7 +1190,7 @@ void UpdateDisplays()
 						{
 							m_Warning = 1;	//	Change the background color to RED for Value Display
 						}
-						else if (flMin < z_sfLapOpts->m_PlotPrefs[u].fMinValue)
+						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
 						{
 							m_Warning = 1;
 						}
@@ -1213,8 +1213,8 @@ void UpdateDisplays()
 
 					char szMin[MAX_PATH];
 					char szMax[MAX_PATH];
-					GetChannelValue(eChannel,z_sfLapOpts->eUnitPreference,flMin,szMin,NUMCHARS(szMin));
-					GetChannelValue(eChannel,z_sfLapOpts->eUnitPreference,flMax,szMax,NUMCHARS(szMax));
+					GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMin,szMin,NUMCHARS(szMin));
+					GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMax,szMax,NUMCHARS(szMax));
 					//	Now assemble the string to display (max of 5)
 					if (w < cLabels)
 					{
@@ -1855,17 +1855,15 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
-  void InitPlotPrefs(LAPSUPPLIEROPTIONS *p_sfLapOpts)
+  void InitPlotPrefs(LAPSUPPLIEROPTIONS &p_sfLapOpts)
   {
 	for (int i=0; i < 50; i++)
 	{
-		swprintf(p_sfLapOpts->m_PlotPrefs[i].m_ChannelName, L"Velocity");
-//		p_sfLapOpts->m_PlotPrefs[1].iDataChannel = DATA_CHANNEL_VELOCITY;
-//		swprintf(p_sfLapOpts->m_PlotPrefs[i+1].m_ChannelName, L"");
-		p_sfLapOpts->m_PlotPrefs[i].iDataChannel = DATA_CHANNEL_START;
-		p_sfLapOpts->m_PlotPrefs[i].iPlotView = true;  //  Default to display as a graph
-		p_sfLapOpts->m_PlotPrefs[i].fMinValue = -1.0;    //  Set all lower limits to -1.0
-		p_sfLapOpts->m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+		swprintf(p_sfLapOpts.m_PlotPrefs[i].m_ChannelName, L"Velocity");
+		p_sfLapOpts.m_PlotPrefs[i].iDataChannel = DATA_CHANNEL_VELOCITY;
+		p_sfLapOpts.m_PlotPrefs[i].iPlotView = true;  //  Default to dsplay as a graph
+		p_sfLapOpts.m_PlotPrefs[i].fMinValue = -3.0;    //  Set all lower limits to -3.0
+		p_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
 	}
   }
 
@@ -1962,12 +1960,10 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   g_pLapDB = &sfLaps;
 
-  //	Load inital values for Upper and Lower Alarm limits
-//  z_ILapSupplier = CMainUI->ILapSupplier;		//	Already defined in global scope area
-  LAPSUPPLIEROPTIONS m_sfLapOpts; //z_ILapSupplier->GetDisplayOptions();
-	//  z_sfLapOpts = &m_sfLapOpts;	//	Initialized global pointer to point to m_sfLapOpts, use in PlotPrefs and LapPainter
-  z_sfLapOpts = &m_sfLapOpts;
-  InitPlotPrefs(&m_sfLapOpts);	//	Initialize all PlotPrefs variables before displaying anything
+  
+  LAPSUPPLIEROPTIONS x_sfLapOpts; //sfLapOpts contains all lap display options
+  InitPlotPrefs(x_sfLapOpts);	//	Initialize all PlotPrefs variables before displaying anything
+  sfUI.SetDisplayOptions(x_sfLapOpts);
 
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
@@ -1976,39 +1972,39 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   {
   case 0:
           {
-            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
+            x_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
 			break;
           }
   case 1:
           {
-            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MPH;
+            x_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MPH;
 			break;
           }
   case 2:
           {
-            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MS;
+            x_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MS;
 			break;
           }
   default:
           {
-            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
+            x_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
           }
   }
   switch (sfSettings.iMapLines)
   {
   case 0:
           {
-            m_sfLapOpts.fDrawLines = sfSettings.iMapLines;
+            x_sfLapOpts.fDrawLines = sfSettings.iMapLines;
 			break;
           }
   case 1:
           {
-            m_sfLapOpts.fDrawLines = sfSettings.iMapLines;
+            x_sfLapOpts.fDrawLines = sfSettings.iMapLines;
 			break;
           }
   default:
           {
-            m_sfLapOpts.fDrawLines = true;
+            x_sfLapOpts.fDrawLines = true;
           }
   }
 
