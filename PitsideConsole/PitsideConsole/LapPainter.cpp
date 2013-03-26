@@ -2,7 +2,6 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
-#include "DlgPlotSelect.h"	//	Needed to get the Graph/Value display information
 
 struct HIGHLIGHTDATA
 {
@@ -111,7 +110,7 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
     const IDataChannel* pReceptionY = pLap->GetChannel(DATA_CHANNEL_RECEPTION_Y);
     if(pReceptionX && pReceptionY)
     {
-      glPointSize(5.0f);
+      glPointSize(3.0f);
       glBegin(GL_POINTS);
 
       const vector<DataPoint>& lstPointsX = pReceptionX->GetData();
@@ -407,7 +406,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         }
         else
         {
-          glPointSize(5.0f);
+          glPointSize(3.0f);
           glBegin(GL_POINTS);
         }
 
@@ -647,43 +646,43 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   glScalef(1.0f, 1.0f, 1.0f);	// Scale it so that it fills up the window.
   glOrtho(rcAllLaps.left, rcAllLaps.right,rcAllLaps.bottom,rcAllLaps.top, -1.0,1.0);
   
-//		Set up the non-zoomed/panned view for the map
+  //		Set up the non-zoomed/panned view for the map
   GLdouble rgModelviewMatrix[16];
   GLdouble rgProjMatrix[16];
   GLint rgViewport[4];
 
   {
-//	Now that the matrices are correct, let's graph them.    
+	//	Now that the matrices are correct, let's graph them.    
 	glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
     glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
     glGetIntegerv(GL_VIEWPORT, rgViewport);
   
     const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
     const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-    double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+    double dScaleAmt = pow(1.06,sfLapOpts.iZoomLevels);
 
 	POINT ptMouse;
 	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
 	{
-	// the mouse is in our window, so let's enable panning and zooming!
+		// the mouse is in our window, so let's enable panning and zooming!
 		const double dTranslateShiftX = (rcAllLaps.left + rcAllLaps.right)/2;
 		const double dTranslateShiftY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-		double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+		double dScaleAmt = pow(1.06,sfLapOpts.iZoomLevels);
 		GLdouble dXShift,dYShift,dZ;
 
 		//		Project the window shift stuff so we know how far to translate the view
 		gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,sfLapOpts.flWindowShiftY/dScaleAmt,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZ);
 
-	//		Set up to perform the ZOOM function for MAP.   
-			glTranslated(dTranslateShiftX,dTranslateShiftY,0);	// Translate the map to origin
-			glScaled(dScaleAmt,dScaleAmt,dScaleAmt);	//	Scale the sucker
-			glTranslated(-dTranslateShiftX,-dTranslateShiftY,0);	// Now put the map back in its place
+		//		Set up to perform the ZOOM function for MAP.   
+		glTranslated(dTranslateShiftX,dTranslateShiftY,0);	// Translate the map to origin
+		glScaled(dScaleAmt,dScaleAmt,dScaleAmt);	//	Scale the sucker
+		glTranslated(-dTranslateShiftX,-dTranslateShiftY,0);	// Now put the map back in its place
 
-			glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);	// Now let's allow it to pan
-	  // now having shifted, let's get our new model matrices
-	  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
-	  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
-	  glGetIntegerv(GL_VIEWPORT, rgViewport);
+		glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);	// Now let's allow it to pan
+		// now having shifted, let's get our new model matrices
+		glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+		glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+		glGetIntegerv(GL_VIEWPORT, rgViewport);
 	}
   }
   POINT ptMouse;
@@ -695,7 +694,6 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
     gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
     vHighlight = V2D((float)dX,(float)dY);
-    
   }
   
   vector<MAPHIGHLIGHT> lstMousePointsToDraw;
@@ -716,7 +714,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     }
     else
     {
-      glPointSize(5.0f);
+      glPointSize(3.0f);
       glBegin(GL_POINTS);
     }
 	float r;
@@ -809,6 +807,54 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 //  }
 
 	glPopMatrix(); // popping us out of map-coords space.
+
+/*
+	//	The idea here is to get the mouse location and find the closest reference lap point to set the sector location
+	POINT ptMouse;
+	Vector2D vHighlight;
+	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+	{
+		// the mouse is in our window... we make our own highlighter
+		GLdouble dX,dY,dZ;
+
+		gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+		vHighlight = V2D((float)dX,(float)dY);
+	}
+
+    float dBestLength = -1;
+    float dTimeToHighlight = -1;
+    TimePoint2D ptBest;
+
+	const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
+    for(int x = 0; x< lstPoints.size(); x++)
+    {
+		const TimePoint2D& p = lstPoints[x];
+		glVertex2f(p.flX,p.flY);
+
+		// if we're a highlight source, try to figure out the closest point for this lap
+		if(m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+		{
+			Vector2D vPt = V2D(p.flX,p.flY);
+			Vector2D vDiff = vPt - vHighlight;
+			if(vDiff.Length() < dBestLength || dBestLength < 0)
+			{
+				dBestLength = vDiff.Length();
+				dTimeToHighlight = p.iTime;
+				ptBest = p;
+			}
+		}
+		else
+		{
+			int iTime = m_pLapSupplier->GetLapHighlightTime(pLap);
+			if(abs(p.iTime - iTime) < dBestLength || dBestLength < 0)
+			{
+				dBestLength = abs(p.iTime - iTime);
+				ptBest = p;
+				dTimeToHighlight = iTime;
+			}
+		}
+	}
+*/
 
   if(lstMousePointsToDraw.size() > 0)
   {

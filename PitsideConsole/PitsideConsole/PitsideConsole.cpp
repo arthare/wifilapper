@@ -1188,7 +1188,7 @@ void UpdateDisplays()
 						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
 						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
 						{
-							m_Warning = 1;	//	Change the background color to RED for Value Display
+							m_Warning = 1;	//	An alarm has been triggered!
 						}
 						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
 						{
@@ -1196,7 +1196,6 @@ void UpdateDisplays()
 						}
 						else
 						{
-//							m_Warning = 0;
 						}
 					  }
 					  else
@@ -1231,12 +1230,10 @@ void UpdateDisplays()
 	  //	Display the Data Value Channels
 	  for (int z = 0; z < cLabels; z++)
 	  {
-			COLORREF m_ColorGrey = RGB(50, 50, 50);
 			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
-			SetBkColor((HDC) hWndLabel, m_ColorGrey);
 			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
 	  }
-		if (m_Warning)	//	Change background color to RED
+		if (m_Warning)	//	Pop up dialog saying the alarm has been triggered
 		{
 			static bool fWarnedOnce = false;
 			if(!fWarnedOnce)
