@@ -605,7 +605,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
 	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
-	  pLapTimeSummary->AddPoint(p.iTime, GetLap()->GetTime()); // This should be a mapping from time to Laptime Summaries
+	  //	Let's get the last time in the lap (Lap Time) and use it for the result for each time point
+	  const TimePoint2D& q = lstPoints[lstPoints.size()-1];
+	  pLapTimeSummary->AddPoint(q.iTime, GetLap()->GetTime()); // This should be a mapping from time to Laptime Summaries
       TimePoint2D sfD1, sfD2;
       int iMatchedTime = 0;
       double dPct = (double)x / (double)lstPoints.size();
@@ -842,7 +844,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
 	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
-	  pLapTimeSummary->AddPoint(p.iTime, p.iTime); // this is a mapping from time to laptime summary, needs fixing
+     //   Let's get the last time in the lap (Lap Time) and use it for the result for each time point
+     const TimePoint2D& q = lstPoints[lstPoints.size()-1];
+     pLapTimeSummary->AddPoint(q.iTime, GetLap()->GetTime()); // This should be a mapping from time to Laptime Summaries
 	  const int iElapsedTime = lstPoints[x].iTime - lstPoints[0].iTime;
 	  pLapTime->AddPoint(p.iTime, (double)iElapsedTime);
       const double dX = p.flX - ptLast.flX;

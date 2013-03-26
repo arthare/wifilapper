@@ -1231,25 +1231,21 @@ void UpdateDisplays()
 	  //	Display the Data Value Channels
 	  for (int z = 0; z < cLabels; z++)
 	  {
-		if (m_Warning)	//	Change background color to RED
-		{
-			COLORREF m_ColorRed = RGB(255, 0, 0);
-			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
-			SetBkColor((HDC) hWndLabel, m_ColorRed);
-			SetTextColor((HDC) hWndLabel, m_ColorRed);
-//		    MessageBox(NULL,L"You have exceeded an Alarm Limit",L"WARNING",MB_ICONERROR);
-			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
-		}
-		else
-		{
 			COLORREF m_ColorGrey = RGB(50, 50, 50);
 			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
 			SetBkColor((HDC) hWndLabel, m_ColorGrey);
 			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
-		}
 	  }
-//		if (m_Warning)	//	Pop up a warning message that an Alarm has been tripped
-//	  MessageBox(NULL,L"You have exceeded an Alarm Limit",L"WARNING",MB_OK);
+		if (m_Warning)	//	Change background color to RED
+		{
+			static bool fWarnedOnce = false;
+			if(!fWarnedOnce)
+			{
+				fWarnedOnce = true;
+				MessageBox(NULL,L"One or more of the alarm limits has been triggered\n\nMove the cursor over to the Lap List area and \nhit the 'Enter' key to remove this dialog",L"***WARNING***",MB_OK);
+				fWarnedOnce = false;
+			}
+		}
     }
     m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
