@@ -13,39 +13,39 @@ PIDDATA g_rgPIDData[] =
   {L"PIDs supported [01 - 20]",""},
 	{L"Monitor status since DTCs cleared. (Includes malfunction indicator lamp (MIL) status and number of DTCs.)",""},
 	{L"Freeze DTC",""},
-	{L"Fuel system status",""},
-	{L"Calculated engine load value","%3.1f%%"},
-	{L"Engine coolant temperature","%3.1f C"},
-	{L"Short term fuel % trim—Bank 1","%4.1f%%"},
-	{L"Long term fuel % trim—Bank 1","%4.1f%%"},
-	{L"Short term fuel % trim—Bank 2","%4.1f%%"},
-	{L"Long term fuel % trim—Bank 2","%4.1f%%"},
-	{L"Fuel pressure","%3.1f kPa"},
-	{L"Intake manifold absolute pressure","%4.1f kPa"},
-	{L"Engine RPM","%5.0f RPM"},
-	{L"Vehicle speed","%3.1f km/h"},
-	{L"Timing advance","%2.2f degrees"},
-	{L"Intake air temperature","%3.1f C"},
-	{L"MAF air flow rate","%3.2f grams/sec"},
-	{L"Throttle position","%3.1f%%"},
-	{L"Commanded secondary air status",""},
-	{L"Oxygen sensors present",""},
-	{L"Bank 1, Sensor 1: Oxygen sensor voltage, Short term fuel trim",""},
-	{L"Bank 1, Sensor 2: Oxygen sensor voltage, Short term fuel trim",""},
-	{L"Bank 1, Sensor 3: Oxygen sensor voltage, Short term fuel trim",""},
-	{L"Bank 1, Sensor 4: Oxygen sensor voltage, Short term fuel trim",""},
-	{L"Bank 2, Sensor 1: Oxygen sensor voltage, Short term fuel trim",""},
-	{L"Bank 2, Sensor 2: Oxygen sensor voltage, Short term fuel trim",""},
-	{L"Bank 2, Sensor 3: Oxygen sensor voltage, Short term fuel trim",""},
-	{L"Bank 2, Sensor 4: Oxygen sensor voltage, Short term fuel trim",""},
+	{L"Fuel sys status",""},
+	{L"Calc eng load%%","%3.1f"},
+	{L"Eng coolant temp,C","%3.1f"},
+	{L"ST fuel % trim—Bank 1%%","%4.1f"},
+	{L"LT fuel % trim—Bank 1%%","%4.1f"},
+	{L"ST fuel % trim—Bank 2%%","%4.1f"},
+	{L"LT fuel % trim—Bank 2%%","%4.1f"},
+	{L"Fuel press, kPa","%3.1f"},
+	{L"Int mani abs press,kPa","%4.1f"},
+	{L"Engine RPM","%5.0f"},
+	{L"Vehicle speed,kph","%3.1f"},
+	{L"Timing advance,d","%2.2f"},
+	{L"Int air temp,C","%3.1f"},
+	{L"MAF air flow rate,g/s","%3.2f"},
+	{L"Throttle pos%%","%3.1f"},
+	{L"Comm sec air status",""},
+	{L"O2 sensors present",""},
+	{L"Bank 1, Sens 1: O2 sens volt, Short term fuel trim",""},
+	{L"Bank 1, Sens 2: O2 sens volt, Short term fuel trim",""},
+	{L"Bank 1, Sens 3: O2 sens volt, Short term fuel trim",""},
+	{L"Bank 1, Sens 4: O2 sens volt, Short term fuel trim",""},
+	{L"Bank 2, Sens 1: O2 sens volt, Short term fuel trim",""},
+	{L"Bank 2, Sens 2: O2 sens volt, Short term fuel trim",""},
+	{L"Bank 2, Sens 3: O2 sens volt, Short term fuel trim",""},
+	{L"Bank 2, Sens 4: O2 sens volt, Short term fuel trim",""},
 	{L"OBD standards this vehicle conforms to",""},
-	{L"Oxygen sensors present",""},
-	{L"Auxiliary input status",""},
-	{L"Run time since engine start","%5.0f seconds"},
+	{L"O2 sens present",""},
+	{L"Aux input status",""},
+	{L"Run time since engine start,s","%5.0f"},
 	{L"PIDs supported [21 - 40]",""},
-	{L"Distance traveled with malfunction indicator lamp (MIL) on","%5.1f km"},
-	{L"Fuel Rail Pressure (relative to manifold vacuum)","%5.1f kPa"},
-	{L"Fuel Rail Pressure (diesel, or gasoline direct inject)","%6.1f kPa"},
+	{L"Dist traveled w/MIL on,km","%5.1f"},
+	{L"Fuel Rail Press (rel mani vacuum)","%5.1f"},
+	{L"Fuel Rail Press (direct inject)kPa","%6.1f"},
 	{L"O2S1_WR_lambda(1): Equivalence Ratio Voltage",""},
 	{L"O2S2_WR_lambda(1): Equivalence Ratio Voltage",""},
 	{L"O2S3_WR_lambda(1): Equivalence Ratio Voltage",""},
@@ -54,14 +54,14 @@ PIDDATA g_rgPIDData[] =
 	{L"O2S6_WR_lambda(1): Equivalence Ratio Voltage",""},
 	{L"O2S7_WR_lambda(1): Equivalence Ratio Voltage",""},
 	{L"O2S8_WR_lambda(1): Equivalence Ratio Voltage",""},
-	{L"Commanded EGR","%3.1f%%"},
-	{L"EGR Error","%3.1f%%"},
-	{L"Commanded evaporative purge","%3.1f%%"},
-	{L"Fuel Level Input","%3.1f%%"},
+	{L"Commanded EGR%%","%3.1f"},
+	{L"EGR Error%%","%3.1f"},
+	{L"Comm evap purge%%","%3.1f"},
+	{L"Fuel Level Input%%","%3.1f"},
 	{L"# of warm-ups since codes cleared","%3.0f"},
-	{L"Distance traveled since codes cleared","%5.1f km"},
-	{L"Evap. System Vapor Pressure","%4.1f Pa"},
-	{L"Barometric pressure","%3.1f kPa"},
+	{L"Dist traveled since codes cleared","%5.1f"},
+	{L"Evap Sys Vapor Press,Pa","%4.1f"},
+	{L"Barometric press,kPa","%3.1f"},
 	{L"O2S1_WR_lambda(1): Equivalence Ratio Current",""},
 	{L"O2S2_WR_lambda(1): Equivalence Ratio Current",""},
 	{L"O2S3_WR_lambda(1): Equivalence Ratio Current",""},
@@ -70,82 +70,82 @@ PIDDATA g_rgPIDData[] =
 	{L"O2S6_WR_lambda(1): Equivalence Ratio Current",""},
 	{L"O2S7_WR_lambda(1): Equivalence Ratio Current",""},
 	{L"O2S8_WR_lambda(1): Equivalence Ratio Current",""},
-	{L"Catalyst Temperature Bank 1, Sensor 1",""},
-	{L"Catalyst Temperature Bank 2, Sensor 1",""},
-	{L"Catalyst Temperature Bank 1, Sensor 2",""},
-	{L"Catalyst Temperature Bank 2, Sensor 2",""},
+	{L"Cat Temp Bank 1, Sens 1",""},
+	{L"Cat Temp Bank 2, Sens 1",""},
+	{L"Cat Temp Bank 1, Sens 2",""},
+	{L"Cat Temp Bank 2, Sens 2",""},
 	{L"PIDs supported [41 - 60]",""},
-	{L"Monitor status this drive cycle",""},
-	{L"Control module voltage",""},
-	{L"Absolute load value",""},
-	{L"Command equivalence ratio",""},
-	{L"Relative throttle position",""},
-	{L"Ambient air temperature",""},
-	{L"Absolute throttle position B",""},
-	{L"Absolute throttle position C",""},
-	{L"Accelerator pedal position D",""},
-	{L"Accelerator pedal position E",""},
-	{L"Accelerator pedal position F",""},
+	{L"Mon status this drive cycle",""},
+	{L"Ctrl module voltage",""},
+	{L"Abs load value",""},
+	{L"Command equiv ratio",""},
+	{L"Rel thrott pos",""},
+	{L"Amb air temp",""},
+	{L"Abs throt pos B",""},
+	{L"Abs throt pos C",""},
+	{L"Accel ped pos D",""},
+	{L"Accel ped pos E",""},
+	{L"Accel ped pos F",""},
 	{L"Commanded throttle actuator",""},
 	{L"Time run with MIL on",""},
 	{L"Time since trouble codes cleared",""},
-	{L"Maximum value for equivalence ratio, oxygen sensor voltage, oxygen sensor current, and intake manifold absolute pressure",""},
-	{L"Maximum value for air flow rate from mass air flow sensor",""},
+	{L"Max val equiv rat, O2 sens volt/current, mani press",""},
+	{L"Max val air flow rate MAF sens",""},
 	{L"Fuel Type",""},
 	{L"Ethanol fuel %",""},
-	{L"Absolute Evap system Vapour Pressure",""},
-	{L"Evap system vapor pressure",""},
+	{L"Abs Evap sys Vap Press",""},
+	{L"Evap sys vap press",""},
 	{L"Short term secondary oxygen sensor trim bank 1 and bank 3",""},
 	{L"Long term secondary oxygen sensor trim bank 1 and bank 3",""},
 	{L"Short term secondary oxygen sensor trim bank 2 and bank 4",""},
 	{L"Long term secondary oxygen sensor trim bank 2 and bank 4",""},
-	{L"Fuel rail pressure (absolute)",""},
-	{L"Relative accelerator pedal position",""},
-	{L"Hybrid battery pack remaining life",""},
-	{L"Engine oil temperature",""},
-	{L"Fuel injection timing",""},
-	{L"Engine fuel rate",""},
-	{L"Emission requirements to which vehicle is designed",""},
+	{L"Fuel rail press (abs)",""},
+	{L"Rel accel pedal pos",""},
+	{L"Hybrid batt pack rem life",""},
+	{L"Eng oil temp",""},
+	{L"Fuel inject timing",""},
+	{L"Eng fuel rate",""},
+	{L"Emission reqts",""},
 	{L"PIDs supported [61 - 80]",""},
-	{L"Driver's demand engine - percent torque",""},
-	{L"Actual engine - percent torque",""},
-	{L"Engine reference torque",""},
-	{L"Engine percent torque data",""},
-	{L"Auxiliary input / output supported",""},
+	{L"Drvr dmnd eng pct torque",""},
+	{L"Act eng pct torque",""},
+	{L"Eng ref torque",""},
+	{L"Eng pct torque data",""},
+	{L"Aux input/output supp",""},
 	{L"Mass air flow sensor",""},
-	{L"Engine coolant temperature",""},
-	{L"Intake air temperature sensor",""},
-	{L"Commanded EGR and EGR Error",""},
-	{L"Commanded Diesel intake air flow control and relative intake air flow position",""},
-	{L"Exhaust gas recirculation temperature",""},
-	{L"Commanded throttle actuator control and relative throttle position",""},
-	{L"Fuel pressure control system",""},
-	{L"Injection pressure control system",""},
-	{L"Turbocharger compressor inlet pressure",""},
+	{L"Eng coolant temp",""},
+	{L"Int air temp sensor",""},
+	{L"Comm EGR and EGR Error",""},
+	{L"Diesel int air flow ctrl",""},
+	{L"Exh gas recirc temp",""},
+	{L"Throt act ctrl/rel thrott pos",""},
+	{L"Fuel press ctrl system",""},
+	{L"Inj press ctrl system",""},
+	{L"Turbo comp inlet press",""},
 	{L"Boost pressure control",""},
-	{L"Variable Geometry turbo (VGT) control",""},
+	{L"Var Geom turbo control",""},
 	{L"Wastegate control",""},
 	{L"Exhaust pressure",""},
 	{L"Turbocharger RPM",""},
-	{L"Turbocharger temperature",""},
-	{L"Turbocharger temperature",""},
-	{L"Charge air cooler temperature (CACT)",""},
-	{L"Exhaust Gas temperature (EGT) Bank 1",""},
-	{L"Exhaust Gas temperature (EGT) Bank 2",""},
-	{L"Diesel particulate filter (DPF)",""},
-	{L"Diesel particulate filter (DPF)",""},
-	{L"Diesel Particulate filter (DPF) temperature",""},
-	{L"NOx NTE control area status",""},
-	{L"PM NTE control area status",""},
+	{L"Turbocharger temp",""},
+	{L"Turbocharger temp",""},
+	{L"CACT temperature",""},
+	{L"Exh Gas temp Bank 1",""},
+	{L"Exh Gas temp Bank 2",""},
+	{L"Diesel part filter DPF",""},
+	{L"Diesel part filter DPF",""},
+	{L"Diesel Part filter temp",""},
+	{L"NOx NTE control status",""},
+	{L"PM NTE control status",""},
 	{L"Engine run time",""},
 	{L"PIDs supported [81 - A0]",""},
-	{L"Engine run time for AECD",""},
-	{L"Engine run time for AECD",""},
+	{L"Eng run time AECD",""},
+	{L"Eng run time AECD",""},
 	{L"NOx sensor",""},
-	{L"Manifold surface temperature",""},
+	{L"Mani surface temp",""},
 	{L"NOx reagent system",""},
-	{L"Particulate matter (PM) sensor",""},
-	{L"Intake manifold absolute pressure",""},
+	{L"Part matter sensor",""},
+	{L"Intake man abs press",""},
 	{L"",""},
 	{L"",""},
 	{L"",""},
@@ -206,28 +206,28 @@ PIDDATA g_rgPIDData[] =
 };
 
 PIDDATA g_rgIOIOCustomData[] = {
-  {L"Fuel Level","%3.2f%%"},
-  {L"RPM","%5.2f"},
-  {L"Throttle Position","%3.2f"},
-  {L"Brake Position","%3.2f"},
-  {L"Clutch Position","%3.2f"},
+  {L"Fuel Level%%","%3.2f"},
+  {L"RPM","%5.1f"},
+  {L"Throttle Pos","%3.2f"},
+  {L"Brake Pos","%3.2f"},
+  {L"Clutch Pos","%3.2f"},
   {L"LF Wheelspeed","%3.2f"},
   {L"RF Wheelspeed","%3.2f"},
   {L"LR Wheelspeed","%3.2f"},
   {L"RR Wheelspeed","%3.2f"},
-  {L"Exhaust Temperature","%3.1f"},
-  {L"LF Tire Temperature","%3.1f"},
-  {L"RF Tire Temperature","%3.1f"},
-  {L"LR Tire Temperature","%3.1f"},
-  {L"RR Tire Temperature","%3.1f"},
-  {L"LF Brake Temperature","%3.1f"},
-  {L"RF Brake Temperature","%3.1f"},
-  {L"LR Brake Temperature","%3.1f"},
-  {L"RR Brake Temperature","%3.1f"},
+  {L"Exhaust Temp","%3.1f"},
+  {L"LF Tire Temp","%3.1f"},
+  {L"RF Tire Tempe","%3.1f"},
+  {L"LR Tire Tempe","%3.1f"},
+  {L"RR Tire Tempe","%3.1f"},
+  {L"LF Brake Temp","%3.1f"},
+  {L"RF Brake Temp","%3.1f"},
+  {L"LR Brake Temp","%3.1f"},
+  {L"RR Brake Temp","%3.1f"},
   {L"Oil Pressure","%3.2f"},
-  {L"Oil Temperature","%3.1f"},
-  {L"Coolant Temperature","%3.1f"},
-  {L"Alternator voltage","%3.2fV"},
+  {L"Oil Temp","%3.1f"},
+  {L"Coolant Temp","%3.1f"},
+  {L"Alt Voltage","%3.2f"},
 };
 
 void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
@@ -264,7 +264,7 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
       }
       else
       {
-        lpszDataName = L"Unrecognized IOIO pin";
+        lpszDataName = L"Ukwn IOIO pin";
       }
     }
     else
@@ -421,17 +421,17 @@ void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPS
   {
     case DATA_CHANNEL_X:
     {
-      sprintf(lpsz, "%1.4f%", abs(flValue));
+      sprintf(lpsz, "%1.4f", abs(flValue));
       break;
     }
     case DATA_CHANNEL_Y:
     {
-      sprintf(lpsz, "%1.4f%", abs(flValue));
+      sprintf(lpsz, "%1.4f", abs(flValue));
       break;
     }
     case DATA_CHANNEL_DISTANCE:
     {
-      sprintf(lpsz, "%3.1f", flValue/1000.0f);
+      sprintf(lpsz, "%3.2f", flValue/1000.0f);
       break;
     }
     case DATA_CHANNEL_LAPTIME_SUMMARY:
@@ -445,16 +445,15 @@ void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPS
       sprintf(lpsz, "%4.2f", flValue/1000.0f);
       break;
     }
-
 	case DATA_CHANNEL_VELOCITY:
     {
       // note: velocity is in m/s, but most humans will like km/h (well... except for americans, but screw them for now)
-      sprintf(lpsz, "%4.2f", ConvertSpeed(eUnits,flValue));
+      sprintf(lpsz, "%4.1f", ConvertSpeed(eUnits,flValue));
       break;
     }
     case DATA_CHANNEL_TIMESLIP:
     {
-      sprintf(lpsz, "%4.2fs", abs(flValue/1000.0));
+      sprintf(lpsz, "%3.2f", abs(flValue/1000.0));
       break;
     }
     case DATA_CHANNEL_X_ACCEL:
@@ -493,7 +492,7 @@ void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPS
       else if(eX >= DATA_CHANNEL_IOIOPIN_START && eX <= DATA_CHANNEL_IOIOPIN_END)
       {
         const int pin = eX - DATA_CHANNEL_IOIOPIN_START;
-        sprintf(lpsz, "%2.3f", flValue);
+        sprintf(lpsz, "%3.2f", flValue);
       }
       else if(eX >= DATA_CHANNEL_IOIOCUSTOM_START && eX <= DATA_CHANNEL_IOIOCUSTOM_END)
       {
@@ -606,7 +605,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
 	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
-	  pLapTimeSummary->AddPoint(p.iTime, GetLap()->GetTime()); // This should be a mapping from time to Laptime Summaries
+	  //	Let's get the last time in the lap (Lap Time) and use it for the result for each time point
+	  const TimePoint2D& q = lstPoints[lstPoints.size()-1];
+	  pLapTimeSummary->AddPoint(q.iTime, GetLap()->GetTime()); // This should be a mapping from time to Laptime Summaries
       TimePoint2D sfD1, sfD2;
       int iMatchedTime = 0;
       double dPct = (double)x / (double)lstPoints.size();
@@ -620,7 +621,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
         Line<2> lnPerp(p.V2D(),vD.RotateAboutOrigin(PI/2));
 
         double dHitLength;
-//        if(lnD.IntersectLine(lnPerp, &dHitLength) && dHitLength >= 0 && dHitLength <= 1.0)
 		if(lnD.IntersectLine(lnPerp, &dHitLength) && dHitLength >= -1 && dHitLength <= 2.0)	//	Widening the accept limit
         {
           // hooray, they intersect
@@ -636,7 +636,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 		}
 		else
 		{
-		  //	Added by KDJ to fix lost graphing points, this is only an approximation at this point, and can be improved
           if (abs(sfD1.iTime - sfD2.iTime) <= 3000)	
 		  //	Check to make sure that points are not wrapping around, need to be within 3s of each other
 		  {
@@ -709,7 +708,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 			pTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIME);
 
 			const int iStartTime = m_lstPoints[0].iTime;
-//			for(int x = 1;x < m_lstPoints.size() - 1; x++)
 			for(int x = 1;x < m_lstPoints.size(); x++)
 			{
 			const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
@@ -743,7 +741,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       const int iStartTime = m_lstPoints[0].iTime;
       const int iReferenceStartTime = lstReference[0].iTime;
       for(int x = 1;x < m_lstPoints.size(); x++)
-//      for(int x = 1;x < m_lstPoints.size() - 1; x++)	//	Done to reduce graphical errors
       {
         const int iElapsedTime = m_lstPoints[x].iTime - iStartTime;
         const double dDistance = pDistance->GetValue(m_lstPoints[x].iTime);
@@ -847,7 +844,9 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pX->AddPoint(p.iTime,p.flX);
       pY->AddPoint(p.iTime,p.flY);
 	  pTime->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
-	  pLapTimeSummary->AddPoint(p.iTime, p.iTime); // this is a mapping from time to time
+     //   Let's get the last time in the lap (Lap Time) and use it for the result for each time point
+     const TimePoint2D& q = lstPoints[lstPoints.size()-1];
+     pLapTimeSummary->AddPoint(q.iTime, GetLap()->GetTime()); // This should be a mapping from time to Laptime Summaries
 	  const int iElapsedTime = lstPoints[x].iTime - lstPoints[0].iTime;
 	  pLapTime->AddPoint(p.iTime, (double)iElapsedTime);
       const double dX = p.flX - ptLast.flX;

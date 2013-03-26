@@ -54,7 +54,7 @@ public:
   {
     COMPUTERDESC* pResp = new COMPUTERDESC();
 
-    TCHAR szComputerName[MAX_COMPUTERNAME_LENGTH +1];
+    TCHAR szComputerName[MAX_COMPUTERNAME_LENGTH +1] = L"";
     DWORD cchComputerName = MAX_COMPUTERNAME_LENGTH +1;
     BOOL fSuccess = GetComputerName(szComputerName, &cchComputerName);
     
@@ -75,7 +75,6 @@ bool CLap_SortByTime(const ILap* p1, const ILap* p2)
 {
   return p1->GetStartTime() < p2->GetStartTime();
 }
-
 // this object takes the laps received on the net thread, stores them, and notifies the UI of the new laps
 class CLapReceiver : public ILapReceiver
 {
@@ -114,14 +113,14 @@ public:
     m_pUI->NotifyChange(NOTIFY_NEWDATA,(LPARAM)this);
   }
 
-	void AddLap(const ILap* pLap, int iRaceId) override
-	{
+  void AddLap(const ILap* pLap, int iRaceId) override
+  {
     {
       AutoLeaveCS _cs(&m_cs);
       m_lstLaps.push_back(pLap);
     }
-    m_pUI->NotifyChange(NOTIFY_NEWLAP,(LPARAM)this);
-	}
+  m_pUI->NotifyChange(NOTIFY_NEWLAP,(LPARAM)this);
+  }
   void AddDataChannel(const IDataChannel* pDataChannel) override
   {
     DASSERT(pDataChannel->IsLocked());
@@ -231,7 +230,6 @@ private:
   
   IUI* m_pUI;
   TCHAR szLastNetStatus[NETSTATUS_COUNT][200];
-
   mutable ManagedCS m_cs;
 };
 
@@ -293,7 +291,7 @@ public:
       PostMessage(m_hWnd,WM_NOTIFYUPDATE,wParam,(LPARAM)lParam);
     }
   }
-  
+
   int str_ends_with(const TCHAR * str, const TCHAR * suffix) 
   {
     if( str == NULL || suffix == NULL )
@@ -307,6 +305,7 @@ public:
 
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
+  LAPSUPPLIEROPTIONS m_sfLapOpts;
 
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
@@ -347,7 +346,7 @@ public:
         UpdateUI(UPDATE_ALL);
         InitBaseWindowPos();
 
-		    return 0;
+		return 0;
       }
       case WM_CLOSE:
         EndDialog(hWnd,0);
@@ -491,11 +490,11 @@ public:
             }
             break;
         } // end switch on wParam
-        } // end body of case WM_NOTIFY
+      } // end body of case WM_NOTIFY
 	  case WM_COMMAND:
       {
-		    switch(LOWORD(wParam)) // find out the control ID
-		    {
+	    switch(LOWORD(wParam)) // find out the control ID
+	    {
           case IDC_SENDMESSAGE:
           {
             MESSAGEDLG_RESULT sfResult;
@@ -510,7 +509,7 @@ public:
           }
 		      case IDOK:
           {
-			      return TRUE;
+			  return TRUE;
           }
           case ID_OPTIONS_KMH:
           {
@@ -572,7 +571,7 @@ public:
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, m_ILapSupplier);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, &m_sfLapOpts);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			if(!sfResult.fCancelled)
@@ -600,7 +599,7 @@ public:
           case ID_FILE_EXIT:
           {
 				DestroyWindow(hWnd);
-			break;
+				break;
 		  }
           case ID_EDIT_COPY:
           {
@@ -683,10 +682,10 @@ public:
           {
             switch(HIWORD(wParam))
             {
-            case BN_CLICKED:
-              m_eLapDisplayStyle = LAPDISPLAYSTYLE_RECEPTION;
-              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
-              break;
+              case BN_CLICKED:
+                m_eLapDisplayStyle = LAPDISPLAYSTYLE_RECEPTION;
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                break;
             }
             return TRUE;
           }
@@ -694,10 +693,10 @@ public:
           {
             switch(HIWORD(wParam))
             {
-            case BN_CLICKED:
-              m_eLapDisplayStyle = LAPDISPLAYSTYLE_PLOT;
-              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
-              break;
+              case BN_CLICKED:
+                m_eLapDisplayStyle = LAPDISPLAYSTYLE_PLOT;
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                break;
             }
             return TRUE;
           }
@@ -740,10 +739,10 @@ public:
           {
             switch(HIWORD(wParam))
             {
-            case BN_CLICKED:
-              m_sfLapList.Clear();
-              UpdateUI(UPDATE_ALL);
-              break;
+				case BN_CLICKED:
+				  m_sfLapList.Clear();
+				  UpdateUI(UPDATE_ALL);
+				  break;
             }
             return TRUE;
           }
@@ -759,7 +758,7 @@ public:
               }
             }
             return TRUE;
-		      }
+		  }
         } // end switch for finding out what control WM_COMMAND hit
         break; // break out of WM_COMMAND handling
       }
@@ -854,10 +853,10 @@ public:
           UpdateUI(UPDATE_DASHBOARD);
           return TRUE;
         }
-        }
-        
-        return 0;
       }
+        
+      return 0;
+    }
       case WM_RBUTTONUP:
       {
         m_sfLapOpts.flWindowShiftX = 0;
@@ -879,9 +878,9 @@ public:
         HandleResize(sNewSize);
         return TRUE;
       }
-	  }
+    }
 
-	  return FALSE;
+	return FALSE;
   }
   DWORD GetDlgId() const {return IDD_DLGFIRST;}
 
@@ -891,6 +890,11 @@ public:
   const static DWORD UPDATE_MENU = 0x8;
 
   const static DWORD UPDATE_ALL = 0xffffffff;
+ 
+  void SetDisplayOptions(const LAPSUPPLIEROPTIONS& lapOpts)
+  {
+    m_sfLapOpts = lapOpts;
+  }
 
   void UpdateUI(DWORD fdwUpdateFlags)
   {
@@ -959,10 +963,10 @@ public:
       CASSERT(LAPDISPLAYSTYLE_COUNT == 4);
       switch(m_eLapDisplayStyle)
       {
-      case LAPDISPLAYSTYLE_MAP:            CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_LINE); break;
-      case LAPDISPLAYSTYLE_PLOT:           CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_PLOT); break;
-      case LAPDISPLAYSTYLE_RECEPTION:      CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_RECEPTION); break;
-      default: DASSERT(FALSE); break;
+		  case LAPDISPLAYSTYLE_MAP:            CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_LINE); break;
+		  case LAPDISPLAYSTYLE_PLOT:           CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_PLOT); break;
+		  case LAPDISPLAYSTYLE_RECEPTION:      CheckRadioButton(m_hWnd, IDC_DISPLAYTYPE_LINE, IDC_DISPLAYTYPE_LAST, IDC_DISPLAYTYPE_RECEPTION); break;
+		  default: DASSERT(FALSE); break;
       }
     
       set<LPARAM> setXSelected,setYSelected;
@@ -983,8 +987,8 @@ public:
       HWND hWndReference = GetDlgItem(m_hWnd, IDC_CURRENTREFERENCE);
       if(m_pReferenceLap)
       {
-        TCHAR szRefString[512];
-        TCHAR szLapString[512];
+        TCHAR szRefString[512] = L"";
+        TCHAR szLapString[512] = L"";
         m_pReferenceLap->GetString(szLapString, NUMCHARS(szLapString));
         swprintf(szRefString, NUMCHARS(szRefString), L"Reference Lap: %s", szLapString);
         SendMessage(hWndReference, WM_SETTEXT, 0, (LPARAM)szRefString);
@@ -1010,7 +1014,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0004\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0007\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1116,28 +1120,131 @@ private:
     HandleCtlResize(sNewSize, IDC_SUBDISPLAY, true, false); // sub display window
     HandleCtlResize(sNewSize, IDC_LAPS, false, true); // lap list
   }
-  void UpdateDisplays()
+	float Average(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal, char szAvg[MAX_PATH])
+	{
+	float sum = 0.0f;
+	int count; 
+    for (count=1; count <= sizeof pChannel; count++)
+	{
+		GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flVal,szAvg,NUMCHARS(szAvg));
+		sum = sum + atof(szAvg); 
+	}
+	if (count != 0) 
+	{
+		return sum / count; 
+	}
+	else
+	{
+		return sum;
+	}
+}
+void UpdateDisplays()
   {
-    m_sfLapPainter.Refresh();
-	//	Update the data channels are being displayed as values
+	//	Update the data channels that are being displayed as values
+	//	List of highlighted laps
+	set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
+    if(setSelectedData.size() > 0 && setSelectedData.size() < 5)
+    {
+      const int cLabels = 5;	//	The maximum number of Value Data channels to display
+	  int m_Warning = 0;	//	Flag for changing color of Value display to show statistics are outside of bounds
+	  int w=0;	//	String variable counter for Vaue display
+      TCHAR szLabel[cLabels][MAX_PATH];
+	  for (int z = 0; z < cLabels; z++)
+	  {
+		  wcscpy(szLabel[z],(TCHAR*) L"");	//	Initialize the strings for Data Value Channels
+	  }
+      //   Loop through the selected Y-axis data channels for this lap
+	  for(int x = 0; x < this->m_lstYChannels.size() && x < 49; x++)
+	  {
+			const DATA_CHANNEL eChannel = m_lstYChannels[x];
+			if(!eChannel /*|| !eChannel->IsValid()*/) continue;
+			float flMin, flMax, flAvg;
+			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
+			for (int u = 0; u < 30; u++)	//	This can be improved, upper limit should be the total number of data channels, TotalYChannels plus all of the derived ones
+			{
+				if (m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == true)
+				{
+						break;	//	Data channel is requested to be displayed as a graph, do nothing here
+				}
+				else if	(m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == false)
+				{
+					//	Let's get the statistical values for this channel for display
+					// go through all the laps we have selected to figure out min/max
+					flMin = 1e30;
+					flMax = -1e30;
+					float flVal;
+					char szAvg[MAX_PATH];
+					for(set<LPARAM>::const_iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
+					{
+					  CExtendedLap* pLap = (CExtendedLap*)*i;
+					  const IDataChannel* pChannel = pLap->GetChannel(eChannel);
+					  if (pChannel)	//	Check if pointer is valid
+					  {
+						flVal = pChannel->GetValue(m_mapLapHighlightTimes[pLap]);
+						flMin = pChannel->GetMin();
+						flMax = pChannel->GetMax();
+						// 951turbo: do more math here like averages, median, etc.
+						flAvg = Average(eChannel, pChannel, flVal, szAvg);
+						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
+						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
+						{
+							m_Warning = 1;	//	An alarm has been triggered!
+						}
+						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
+						{
+							m_Warning = 1;
+						}
+						else
+						{
+						}
+					  }
+					  else
+					  {
+						  flVal=0.0f;
+						  flMin=0.0f;
+						  flMax=0.0f;
+						  flAvg=0.0f;
+					  }
+					}
+					//	Now assign these values to the Data Value variable for display
+					TCHAR szChannelName[MAX_PATH];
+					GetDataChannelName(eChannel,szChannelName,NUMCHARS(szChannelName));
 
-		HWND Value1_hWnd=NULL, Value2_hWnd=NULL, Value3_hWnd=NULL, Value4_hWnd=NULL, Value5_hWnd=NULL;
-		TCHAR szTxt[10][MAX_PATH];
-		float f_Min = 2.34;
-		float f_Max = 5.34;
-		swprintf (szTxt[1], NUMCHARS(szTxt[1]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"ALT", L"  1.00,   1.00,  1.00,  1.03,  1.99", f_Min, f_Max);
-        swprintf (szTxt[2], NUMCHARS(szTxt[2]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"OILP", L"  2.22,   2.33,  2.53,  2.33,  2.99", f_Min, f_Max);
-        swprintf (szTxt[3], NUMCHARS(szTxt[3]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"TEMP", L"  3.02,   3.22,  3.54,  3.33,  3.99", f_Min, f_Max);
-        swprintf (szTxt[4], NUMCHARS(szTxt[4]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"FUEL", L"  4.22,   4.33,  4.53,  4.33,  4.99", f_Min, f_Max);
-        swprintf (szTxt[5], NUMCHARS(szTxt[5]), L"%s: %s, Mn/Mx: %3.0f/%3.0f", L"OILT", L"  5.22,   5.03,  5.53,  5.55,  5.99", f_Min, f_Max);
-
-		//	Now display the values on the page
-		for (int i=1; i <= 5; i++)
+					char szMin[MAX_PATH];
+					char szMax[MAX_PATH];
+					GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMin,szMin,NUMCHARS(szMin));
+					GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flMax,szMax,NUMCHARS(szMax));
+					//	Now assemble the string to display (max of 5)
+					if (w < cLabels)
+					{
+						swprintf(szLabel[w],NUMCHARS(szLabel[w]),L"%s: Min: %S, Max: %S, Mean: %3.1f",szChannelName,szMin,szMax,flAvg);
+						w++;	//	Increment Value string counter
+					}
+					break;
+				}
+				else
+				{
+				}
+			}
+	  }
+	  //	Display the Data Value Channels
+	  for (int z = 0; z < cLabels; z++)
+	  {
+			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
+			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
+	  }
+		if (m_Warning)	//	Pop up dialog saying the alarm has been triggered
 		{
-			Value1_hWnd = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL0 + i);
-			SendMessage(Value1_hWnd, WM_SETTEXT, 0, (LPARAM)szTxt[i]);
-//			SendMessage(Value1_hWnd, WM_SETTEXT, 0, (LPARAM)m_szTxt.szTxt[i]);
+			static bool fWarnedOnce = false;
+			if(!fWarnedOnce)
+			{
+				fWarnedOnce = true;
+				MessageBox(NULL,L"One or more of the alarm limits has been triggered\n\nMove the cursor over to the Lap List area and \nhit the 'Enter' key to remove this dialog",L"***WARNING***",MB_OK);
+				fWarnedOnce = false;
+			}
 		}
+    }
+    m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
 
   }
@@ -1286,8 +1393,6 @@ private:
     }
 
 	//	Set up for showing Reference lap similar to how we show Fastest Lap. 
-	//	This currently can cause program crashes, so remarked out.
-//	if(m_pReferenceLap != NULL && m_lstPoints.size() > 0)
 	if(m_pReferenceLap != NULL)
     {
 		lstLaps.push_back(m_pReferenceLap);
@@ -1646,7 +1751,6 @@ private:
   // lap display style data
   map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls
 
-  LAPSUPPLIEROPTIONS m_sfLapOpts;
   LAPDISPLAYSTYLE m_eLapDisplayStyle;
   DATA_CHANNEL m_eXChannel;
 //  vector<DATA_CHANNEL> m_lstYChannels;
@@ -1675,7 +1779,7 @@ private:
   MCResponder m_sfResponder;
 
   int m_iRaceId;
-  ILapSupplier* m_ILapSupplier;
+  ILapSupplier* z_ILapSupplier;
 };
 
 DWORD ReceiveThreadProc(LPVOID param)
@@ -1744,6 +1848,18 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
+  void InitPlotPrefs(LAPSUPPLIEROPTIONS &p_sfLapOpts)
+  {
+	for (int i=0; i < 50; i++)
+	{
+		swprintf(p_sfLapOpts.m_PlotPrefs[i].m_ChannelName, L"Velocity");
+		p_sfLapOpts.m_PlotPrefs[i].iDataChannel = DATA_CHANNEL_VELOCITY;
+		p_sfLapOpts.m_PlotPrefs[i].iPlotView = true;  //  Default to dsplay as a graph
+		p_sfLapOpts.m_PlotPrefs[i].fMinValue = -3.0;    //  Set all lower limits to -3.0
+		p_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+	}
+  }
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
 {
@@ -1837,7 +1953,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   g_pLapDB = &sfLaps;
 
-  LAPSUPPLIEROPTIONS m_sfLapOpts;
+  
+  LAPSUPPLIEROPTIONS x_sfLapOpts; //sfLapOpts contains all lap display options
+  InitPlotPrefs(x_sfLapOpts);	//	Initialize all PlotPrefs variables before displaying anything
+  sfUI.SetDisplayOptions(x_sfLapOpts);
+
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
 
@@ -1845,39 +1965,39 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   {
   case 0:
           {
-            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
+            x_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
 			break;
           }
   case 1:
           {
-            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MPH;
+            x_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MPH;
 			break;
           }
   case 2:
           {
-            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MS;
+            x_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MS;
 			break;
           }
   default:
           {
-            m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
+            x_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_KMH;
           }
   }
   switch (sfSettings.iMapLines)
   {
   case 0:
           {
-            m_sfLapOpts.fDrawLines = sfSettings.iMapLines;
+            x_sfLapOpts.fDrawLines = sfSettings.iMapLines;
 			break;
           }
   case 1:
           {
-            m_sfLapOpts.fDrawLines = sfSettings.iMapLines;
+            x_sfLapOpts.fDrawLines = sfSettings.iMapLines;
 			break;
           }
   default:
           {
-            m_sfLapOpts.fDrawLines = true;
+            x_sfLapOpts.fDrawLines = true;
           }
   }
 
@@ -1917,9 +2037,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
-
-  //	Load inital values for Upper and Lower Alarm limits
-//	DlgPlotSelect :: InitPlotPrefs(set<DATA_CHANNEL> setAvailable);
 
   ArtShowDialog<IDD_DLGFIRST>(&sfUI);
   exit(0);
