@@ -1014,7 +1014,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0007\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0008\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1482,12 +1482,12 @@ void UpdateDisplays()
 	  case DATA_CHANNEL_VELOCITY:
       {
         int iMin = (int)(flMin);
-        return (float)(iMin-1);
+        return (float)(iMin);
       }
       case DATA_CHANNEL_DISTANCE:
       {
         int iMin = (int)(flMin);
-        return (float)(iMin-1);
+        return (float)(iMin);
       }
 	  case DATA_CHANNEL_TIME:
 	  case DATA_CHANNEL_ELAPSEDTIME:
@@ -1495,14 +1495,14 @@ void UpdateDisplays()
 	  case DATA_CHANNEL_LAPTIME_SUMMARY:
 	  {
         int iMin = (int)(flMin/1000.0f);
-        return (float)(iMin-1)*1000.0f;
+        return (float)(iMin)*1000.0f;
       }
       case DATA_CHANNEL_X_ACCEL:
       case DATA_CHANNEL_Y_ACCEL:
       case DATA_CHANNEL_Z_ACCEL:
       {
         int iMin = (int)(flMin);
-        return (float)(iMin-1);
+        return (float)(iMin);
       }
       case DATA_CHANNEL_TEMP: return 0;
       case (DATA_CHANNEL_PID_START+0x5): return -40;
@@ -1531,18 +1531,22 @@ void UpdateDisplays()
       case DATA_CHANNEL_DISTANCE: return 1e30;
       case DATA_CHANNEL_TIME: return 1e30;
       case DATA_CHANNEL_ELAPSEDTIME: return 1e30;
-      case DATA_CHANNEL_LAPTIME_SUMMARY: return 1e30;
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
-        return (float)(iMin-1)*1000.0f;
+        return (float)(iMin)*1000.0f;
+      }
+	  case DATA_CHANNEL_LAPTIME_SUMMARY:
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin);
       }
       case DATA_CHANNEL_X_ACCEL:
       case DATA_CHANNEL_Y_ACCEL:
       case DATA_CHANNEL_Z_ACCEL:
       {
         int iMin = (int)(flMin);
-        return (float)(iMin-1);
+        return (float)(iMin);
       }
       case DATA_CHANNEL_TEMP: return 0;
       case (DATA_CHANNEL_PID_START+0x5): return -40;
@@ -1598,7 +1602,6 @@ void UpdateDisplays()
 
     case DATA_CHANNEL_TIME:					
     case DATA_CHANNEL_ELAPSEDTIME:					
-    case DATA_CHANNEL_LAPTIME_SUMMARY:					
 		{
 		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
 		  if(flSpread < 5000) return 100.0f;
@@ -1608,6 +1611,17 @@ void UpdateDisplays()
 		  if(flSpread < 1100000) return 10000.0f;
 		  if(flSpread < 10000000) return 100000.0f;
 		  return 10000000;
+		}
+    case DATA_CHANNEL_LAPTIME_SUMMARY:					
+		{
+		  if(flSpread < 1) return 0.50f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 5) return 1.0f;
+		  if(flSpread < 10) return 5.0f;
+		  if(flSpread < 50) return 25.0f;
+		  if(flSpread < 110) return 50.0f;
+		  if(flSpread < 1100) return 100.0f;
+		  if(flSpread < 10000) return 1000.0f;
+		  return 100000;
 		}
 	default:
     return 1e30;
@@ -1653,8 +1667,9 @@ void UpdateDisplays()
     case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
     case DATA_CHANNEL_TIMESLIP:
 	case DATA_CHANNEL_ELAPSEDTIME:
-	case DATA_CHANNEL_LAPTIME_SUMMARY:
     {
+	  if(flSpread < 10) return 1.0f;		//	Added by KDJ to improve TS display
+	  if(flSpread < 100) return 10.0f;		//	Added by KDJ to improve TS display
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
 	  if(flSpread < 5000) return 500.0f;
 	  if(flSpread < 10000) return 1000.0f;
@@ -1662,6 +1677,17 @@ void UpdateDisplays()
 	  if(flSpread < 110000) return 10000.0f;
       if(flSpread < 1100000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
+	  return 10000000.0f;
+    }
+	case DATA_CHANNEL_LAPTIME_SUMMARY:
+    {
+	  if(flSpread < 5) return 0.5f;
+	  if(flSpread < 10) return 1.0f;
+      if(flSpread < 50) return 5.0f;
+	  if(flSpread < 100) return 10.0f;
+      if(flSpread < 1100) return 100.0f;
+      if(flSpread < 10000) return 1000.0f;
+	  return 10000.0f;
     }
     case DATA_CHANNEL_X_ACCEL: return 0.5f;
     case DATA_CHANNEL_Y_ACCEL: return 0.5f;

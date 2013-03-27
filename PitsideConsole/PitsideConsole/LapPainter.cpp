@@ -110,7 +110,7 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
     const IDataChannel* pReceptionY = pLap->GetChannel(DATA_CHANNEL_RECEPTION_Y);
     if(pReceptionX && pReceptionY)
     {
-      glPointSize(3.0f);
+      glPointSize(4.0f);
       glBegin(GL_POINTS);
 
       const vector<DataPoint>& lstPointsX = pReceptionX->GetData();
@@ -406,7 +406,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         }
         else
         {
-          glPointSize(3.0f);
+          glPointSize(4.0f);
           glBegin(GL_POINTS);
         }
 
@@ -492,39 +492,43 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		float b;
 		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
-		// if we're the main screen, we want to draw some text data for each point
-        TCHAR szLapName[256];
-        pLap->GetString(szLapName, NUMCHARS(szLapName));	// <-- gets the string "10:11:12 - 1:40.59 - Keith", aka the "lap name"
+		if (lstMousePointsToDraw[x].m_eChannelY != DATA_CHANNEL_LAPTIME_SUMMARY)
+		{
 
-        float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);	//  <-- asks the ILapSupplier interface what we should highlight
+			// if we're the main screen, we want to draw some text data for each point
+			TCHAR szLapName[256];
+			pLap->GetString(szLapName, NUMCHARS(szLapName));	// <-- gets the string "10:11:12 - 1:40.59 - Keith", aka the "lap name"
 
-        TCHAR szTypeX[256];
-        ::GetDataChannelName(eX,szTypeX,NUMCHARS(szTypeX));	// <-- converts the data channel type into a string, like "Oil Temperature"
+			float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);	//  <-- asks the ILapSupplier interface what we should highlight
 
-        TCHAR szTypeY[256];
-        ::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szTypeY, NUMCHARS(szTypeY));	// <-- converts the y channel into a string
+			TCHAR szTypeX[256];
+			::GetDataChannelName(eX,szTypeX,NUMCHARS(szTypeX));	// <-- converts the data channel type into a string, like "Oil Temperature"
 
-        char szYString[256];
-        GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
-		// <-- gets the actual unit string for the data channel.  For speed, this might be "100.0km/h"
+			TCHAR szTypeY[256];
+			::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szTypeY, NUMCHARS(szTypeY));	// <-- converts the y channel into a string
 
-		char szXString[256];
-        GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
-		// <-- same for x channel
+			char szYString[256];
+			GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
+			// <-- gets the actual unit string for the data channel.  For speed, this might be "100.0km/h"
 
-        char szText[256];
-        sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
+			char szXString[256];
+			GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
+			// <-- same for x channel
 
-		DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
+			char szText[256];
+			sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
-        // we also want to draw a highlighted square
-//        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
-        // we also want to draw a highlighted LINE for that individual lap/graph combination
-				glLineWidth(1);								// Added by KDJ. Skinny line for Distance markers.
-				glBegin(GL_LINE_STRIP);						// Added by KDJ
-				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
-				glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
-				glEnd();									// Added by KDJ
+			DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
+
+			// we also want to draw a highlighted square
+			DrawGLFilledSquare(ptWindow.x, ptWindow.y, 3);	// <-- draws the stupid little box at ptWindow.x.
+			// we also want to draw a highlighted LINE for that individual lap/graph combination
+			glLineWidth(1);								// Added by KDJ. Skinny line for Distance markers.
+			glBegin(GL_LINE_STRIP);						// Added by KDJ
+			glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
+			glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
+		}
+			glEnd();									// Added by KDJ
 	  }
       glPopMatrix();
       glPopMatrix();	//	Should there be two of these here?
@@ -714,7 +718,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     }
     else
     {
-      glPointSize(3.0f);
+      glPointSize(4.0f);
       glBegin(GL_POINTS);
     }
 	float r;
