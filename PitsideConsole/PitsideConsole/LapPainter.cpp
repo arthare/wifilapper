@@ -2,7 +2,6 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
-#include "DlgPlotSelect.h"	//	Needed to get the Graph/Value display information
 
 struct HIGHLIGHTDATA
 {
@@ -89,7 +88,7 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
   // we have now determined the bounds of the thing we're going to draw
   glPushMatrix();
   glLoadIdentity();
-  glScalef(1.0f, 0.70f, 1.0f);	//	Keep the same scaling - KDJ
+  glScalef(1.0f, 0.90f, 1.0f);	//	Keep the same scaling - KDJ
   glOrtho(rcAllLaps.right, rcAllLaps.left, rcAllLaps.top, rcAllLaps.bottom,-1.0,1.0);
   
   GLdouble rgModelviewMatrix[16];
@@ -111,7 +110,7 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
     const IDataChannel* pReceptionY = pLap->GetChannel(DATA_CHANNEL_RECEPTION_Y);
     if(pReceptionX && pReceptionY)
     {
-      glPointSize(5.0f);
+      glPointSize(3.0f);
       glBegin(GL_POINTS);
 
       const vector<DataPoint>& lstPointsX = pReceptionX->GetData();
@@ -141,7 +140,7 @@ void CLapPainter::DrawSelectLapsPrompt() const
 
   glPushMatrix();
   glLoadIdentity();
-  glScalef(1.0f, 0.70f, 1.0f);	//	Keep the same scaling - KDJ
+  glScalef(1.0f, 0.90f, 1.0f);	//	Keep the same scaling - KDJ
   glOrtho(0, RECT_WIDTH(&rcClient),0, RECT_HEIGHT(&rcClient),-1.0,1.0);
 
   DrawText(20.0, 20, "No laps selected.  Select some laps in the lap list");
@@ -180,7 +179,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   map<DATA_CHANNEL,float> mapMaxY;
   float dMaxX = -1e30;
   float dMinX = 1e30;
-
   { // figuring out bounds and getting matrices all set up
     //	First lets load up all of the data into an array and determine its size
     for(int x = 0;x < lstLaps.size(); x++)
@@ -191,13 +189,24 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       if(!pDataX || !pDataX->IsValid() || pDataX->GetData().size() <= 0) continue;
 
       vector<DATA_CHANNEL> lstDataY = m_pLapSupplier->GetYChannels();
-      for(int y = 0; y < lstDataY.size(); y++)
+      for(int y = 0; y < lstDataY.size(); y++)	//	Loop through the data channels and display them
       {
-        const IDataChannel* pChannel = pLap->GetChannel(lstDataY[y]);
+        int ValueDisplay = 0;	//	Flag if we should display this channel as a graph or not 0 = yes, 1 = no
+		const IDataChannel* pChannel = pLap->GetChannel(lstDataY[y]);
         if(!pChannel || !pChannel->IsValid()) continue;
 
         const DATA_CHANNEL eType = lstDataY[y];
-        if(mapMinY.find(eType) == mapMinY.end())
+
+		//	Determine if this Data Channel is one that we only want to display the values for
+			for (int u=0;u<49;u++)
+			{
+				if (eType == m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iDataChannel && m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iPlotView == false)
+				{	//	We have found a display only channel. Let's prevent the graph from displaying
+					ValueDisplay = 1;
+					break;
+				}
+			}
+      if(mapMinY.find(eType) == mapMinY.end())
         {
           mapMinY[eType] = min(pChannel->GetMin(),m_pLapSupplier->GetDataHardcodedMin(eType));
           mapMaxY[eType] = max(pChannel->GetMax(),m_pLapSupplier->GetDataHardcodedMax(eType));
@@ -208,7 +217,10 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
           mapMaxY[eType] = max(pChannel->GetMax(),mapMaxY[eType]);
         }
         
-        setY.insert(eType);
+        if (ValueDisplay == 0)
+	    {
+		  setY.insert(eType);
+	    }
       }
       if(pDataX)
       {
@@ -219,7 +231,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       }
     }
   }
-  
+	 
   if(setY.size() <= 0)
   {
     DrawSelectLapsPrompt();
@@ -249,7 +261,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     // now we have the bounds of all the laps we've looked at, so let's draw them
     glPushMatrix();
     glLoadIdentity();
-    glScalef(1.0f, 0.70f, 1.0f);	// Let's scale it so that graphs don't touch each other.
+    glScalef(1.0f, 0.90f, 1.0f);	// Let's scale it so that graphs don't touch each other.
     glOrtho(dMinX, dMaxX,mapMinY[*i], mapMaxY[*i],-1.0,1.0);
 
     // draw horizontal guide lines and text on the background. Yes this should probably go into a function, Art ;)
@@ -339,7 +351,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		{
 		//		The mouse is in our window, so panning and zooming are active!
 			const double dCenterX = (dMinX + dMaxX)/2;		//	Center of X for scaling transformation
-			double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+			double dScaleAmt = pow(1.08,sfLapOpts.iZoomLevels);
 			GLdouble dXShift,dYShift,dZShift;
 		//		Project the window shift stuff so we know how far to translate the view
 			dYShift = 0;	// No Y shift or zoom for Map Plot.
@@ -369,7 +381,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
       ptHighlight = V2D(dX,0);
     }
-
     for(int x = 0; x < lstLaps.size(); x++)
     {
       CExtendedLap* pLap = lstLaps[x];
@@ -395,7 +406,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         }
         else
         {
-          glPointSize(5.0f);
+          glPointSize(3.0f);
           glBegin(GL_POINTS);
         }
 
@@ -504,24 +515,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         char szText[256];
         sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
-		//	Code for displaying Value in Dashboard
-		char szYValue[256];
-        GetChannelValue(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYValue, NUMCHARS(szYValue));
-		// <-- gets the actual value of the data channel in string format.  For speed, this might be "100.0"
-
-        TCHAR szAbbrY[6];
-        ::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szAbbrY, 6);	// <-- Abbreviates and converts the y channel into a string
-
-		LAPSUPPLIEROPTIONS m_szTxt;
-/*		float f_Mean = 2.34;
-		//		Build the strings for the data channels to be displayed as Values
-		swprintf (m_szTxt.szTxt[1], NUMCHARS(m_szTxt.szTxt[1]), L"%s: %s, Mn/Mx: %3.2f", L"ALT", L"  1.00,   1.00,  1.00,  1.03,  1.99", f_Mean);
-        swprintf (m_szTxt.szTxt[2], NUMCHARS(m_szTxt.szTxt[2]), L"%s: %s, Mn/Mx: %3.2f", L"OILP", L"  2.22,   2.33,  2.53,  2.33,  2.99", f_Mean);
-        swprintf (m_szTxt.szTxt[3], NUMCHARS(m_szTxt.szTxt[3]), L"%s: %s, Mn/Mx: %3.2f", L"TEMP", L"  3.02,   3.22,  3.54,  3.33,  3.99", f_Mean);
-        swprintf (m_szTxt.szTxt[4], NUMCHARS(m_szTxt.szTxt[4]), L"%s: %s, Mn/Mx: %3.2f", L"FUEL", L"  4.22,   4.33,  4.53,  4.33,  4.99", f_Mean);
-        swprintf (m_szTxt.szTxt[5], NUMCHARS(m_szTxt.szTxt[5]), L"%s: %s, Mn/Mx: %3.2f", L"OILT", L"  5.22,   5.03,  5.53,  5.55,  5.99", f_Mean);
-*/
-        DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
+		DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
 
         // we also want to draw a highlighted square
 //        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
@@ -608,7 +602,8 @@ void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, floa
 		*pG = RandDouble(); 
 		*pB = RandDouble(); 
 	} 
-	while(*pR * *pG * *pB > 0.35); 
+//	while(*pR * *pG * *pB > 0.35); 
+	while(*pR + *pG + *pB > 1.5); 
 	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 }
 
@@ -651,43 +646,43 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   glScalef(1.0f, 1.0f, 1.0f);	// Scale it so that it fills up the window.
   glOrtho(rcAllLaps.left, rcAllLaps.right,rcAllLaps.bottom,rcAllLaps.top, -1.0,1.0);
   
-//		Set up the non-zoomed/panned view for the map
+  //		Set up the non-zoomed/panned view for the map
   GLdouble rgModelviewMatrix[16];
   GLdouble rgProjMatrix[16];
   GLint rgViewport[4];
 
   {
-//	Now that the matrices are correct, let's graph them.    
+	//	Now that the matrices are correct, let's graph them.    
 	glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
     glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
     glGetIntegerv(GL_VIEWPORT, rgViewport);
   
     const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
     const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-    double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+    double dScaleAmt = pow(1.06,sfLapOpts.iZoomLevels);
 
 	POINT ptMouse;
 	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
 	{
-	// the mouse is in our window, so let's enable panning and zooming!
+		// the mouse is in our window, so let's enable panning and zooming!
 		const double dTranslateShiftX = (rcAllLaps.left + rcAllLaps.right)/2;
 		const double dTranslateShiftY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-		double dScaleAmt = pow(1.05,sfLapOpts.iZoomLevels);
+		double dScaleAmt = pow(1.06,sfLapOpts.iZoomLevels);
 		GLdouble dXShift,dYShift,dZ;
 
 		//		Project the window shift stuff so we know how far to translate the view
 		gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,sfLapOpts.flWindowShiftY/dScaleAmt,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZ);
 
-	//		Set up to perform the ZOOM function for MAP.   
-			glTranslated(dTranslateShiftX,dTranslateShiftY,0);	// Translate the map to origin
-			glScaled(dScaleAmt,dScaleAmt,dScaleAmt);	//	Scale the sucker
-			glTranslated(-dTranslateShiftX,-dTranslateShiftY,0);	// Now put the map back in its place
+		//		Set up to perform the ZOOM function for MAP.   
+		glTranslated(dTranslateShiftX,dTranslateShiftY,0);	// Translate the map to origin
+		glScaled(dScaleAmt,dScaleAmt,dScaleAmt);	//	Scale the sucker
+		glTranslated(-dTranslateShiftX,-dTranslateShiftY,0);	// Now put the map back in its place
 
-			glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);	// Now let's allow it to pan
-	  // now having shifted, let's get our new model matrices
-	  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
-	  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
-	  glGetIntegerv(GL_VIEWPORT, rgViewport);
+		glTranslated(dXShift-rcAllLaps.left,dYShift-rcAllLaps.bottom,0);	// Now let's allow it to pan
+		// now having shifted, let's get our new model matrices
+		glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+		glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+		glGetIntegerv(GL_VIEWPORT, rgViewport);
 	}
   }
   POINT ptMouse;
@@ -699,7 +694,6 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
     gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
     vHighlight = V2D((float)dX,(float)dY);
-    
   }
   
   vector<MAPHIGHLIGHT> lstMousePointsToDraw;
@@ -720,7 +714,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     }
     else
     {
-      glPointSize(5.0f);
+      glPointSize(3.0f);
       glBegin(GL_POINTS);
     }
 	float r;
@@ -814,6 +808,54 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
 	glPopMatrix(); // popping us out of map-coords space.
 
+/*
+	//	The idea here is to get the mouse location and find the closest reference lap point to set the sector location
+	POINT ptMouse;
+	Vector2D vHighlight;
+	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+	{
+		// the mouse is in our window... we make our own highlighter
+		GLdouble dX,dY,dZ;
+
+		gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+		vHighlight = V2D((float)dX,(float)dY);
+	}
+
+    float dBestLength = -1;
+    float dTimeToHighlight = -1;
+    TimePoint2D ptBest;
+
+	const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
+    for(int x = 0; x< lstPoints.size(); x++)
+    {
+		const TimePoint2D& p = lstPoints[x];
+		glVertex2f(p.flX,p.flY);
+
+		// if we're a highlight source, try to figure out the closest point for this lap
+		if(m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+		{
+			Vector2D vPt = V2D(p.flX,p.flY);
+			Vector2D vDiff = vPt - vHighlight;
+			if(vDiff.Length() < dBestLength || dBestLength < 0)
+			{
+				dBestLength = vDiff.Length();
+				dTimeToHighlight = p.iTime;
+				ptBest = p;
+			}
+		}
+		else
+		{
+			int iTime = m_pLapSupplier->GetLapHighlightTime(pLap);
+			if(abs(p.iTime - iTime) < dBestLength || dBestLength < 0)
+			{
+				dBestLength = abs(p.iTime - iTime);
+				ptBest = p;
+				dTimeToHighlight = iTime;
+			}
+		}
+	}
+*/
+
   if(lstMousePointsToDraw.size() > 0)
   {
     RECT rcClient;
@@ -827,7 +869,6 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     {
       const CExtendedLap* pLap = lstMousePointsToDraw[x].pLap;
       const POINT& ptWindow = lstMousePointsToDraw[x].pt;
-//      srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
 	  float r;
 	  float g;
 	  float b;

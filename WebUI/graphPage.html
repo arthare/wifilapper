@@ -1,0 +1,147 @@
+<html>
+<head>
+
+<script>
+  switch(window.location.protocol) {
+   case 'http:':
+   case 'https:':
+     //remote file over http or https
+     break;
+   case 'file:':
+     //local file
+     alert("You are attempting to open Pitside WebUI incorrectly. \nYou will be automatically forwarded to http://127.0.0.1/");
+     window.location = "http://127.0.0.1/"
+     break;
+   default: 
+     //some other protocol
+  }
+  if (navigator.appVersion.indexOf("MSIE") != -1) {
+    alert("Internet Explorer is not supported by Pitside.  \nPlease try again using a standards-compliant browser like Google Chrome or Firefox.");
+    
+  } 
+</script>
+<!--  These lines are for development purposes...
+<script type="text/javascript" src="dygraphs/dygraph-dev.js"></script>
+<script type="text/javascript" src="trackmap.js"></script>
+<script type="text/javascript" src="lapdata.js"></script>
+<script type="text/javascript" src="spin.min.js"></script>
+<script type="text/javascript" src="pitside.js"></script>
+-->
+<script type="text/javascript" src="pitside.min.js"></script>
+
+    
+<link rel="stylesheet" type="text/css" href="wifilapper.css" />
+
+</head>
+<body>
+
+
+
+  <div id="middle">
+    <div id="trackContainer">  
+      <div class="titleBar">Track Map</div>
+      <div id="trackArea" ></div>
+    </div>
+    <div id="dataContainer">
+      <div class="titleBar">Data Values</div>
+			<div id="labels">
+			<div id="trackLabel"></div>
+      <div id="distLabel">
+      <table id="legendTable"></table>
+      </div>	
+      <div id="debugOut"></div>
+			</div><!-- #content-->
+		</div><!-- #container-->
+  </div>
+  
+  <div id="graphContainer">
+    <div class="titleBar">Lap Graph</div>
+    <div id="renderArea"></div>    
+  </div>
+<div id="fullPageOnClick" onclick="toggle2('datamenuframe','datamenutab')"></div>
+<div id="datamenuframe">
+  <div id="datamenu">
+    <form id=laplist>
+    Race:<br>
+    <select name=race id=race onChange="popLaps()"></select>  <br>
+    Laps:<br>
+    <select name=lap id=lap size=10 multiple onChange="graphUpdate()"></select>
+    Data Channels:<br>
+    <select name=data id=data size=4 multiple onChange="dataUpdate()"></select>
+    </form>
+  </div>
+  <div id="datamenutab" onclick="toggle2('datamenuframe','datamenutab');"><canvas id="menuImage" width="25" height="150">&gt;<br>&gt;<br>&gt;<br>&gt;</canvas></div>
+</div>
+
+<div id="settingsmenuframe">
+  <div id="settingsmenu">
+    <div id="channeltablediv">
+    <table id="channeltable">
+    <thead><tr><td></td><td>Pos</td><td>Siz</td><td>Min</td><td>Max</td><td>Data Channel Name</td></tr></thead>
+    <tbody></tbody>
+    </table>
+    <input type="button" onClick="autoFillChannelSettings()" value="Auto Fill Selected">
+    <input type="button" onClick="updateGraph()" value="Update Graph">
+    </div>
+  </div>
+  <div id="settingsmenutab" onclick="toggle2('settingsmenuframe','settingsmenutab');"><canvas id="settingsImage" width="25" height="150">&gt;<br>&gt;<br>&gt;<br>&gt;</canvas></div>
+</div>
+
+<script>
+    function toggle2(showHideDiv, switchTextDiv) {
+      var ele = document.getElementById(showHideDiv);
+      var text = document.getElementById(switchTextDiv);
+      if(document.getElementById("fullPageOnClick").style.display === "inline") {
+          document.getElementById("fullPageOnClick").style.display="none";
+          
+      }
+      if(ele.style.marginLeft == "0px") {
+      // hid the div
+          document.getElementById("fullPageOnClick").style.display="none";
+          ele.style.marginLeft = "-475px";
+          ele.style.zIndex = "auto"
+//          text.innerHTML = "&gt<br>&gt<br>&gt<br>&gt";
+        }
+      else {
+      // show the div
+          document.getElementById("fullPageOnClick").style.display="inline";
+          document.getElementById("fullPageOnClick").onclick = function(){
+            toggle2(showHideDiv,switchTextDiv);
+          };
+          ele.style.marginLeft = "0";
+          ele.style.zIndex = 9999;
+//          text.innerHTML = "&lt<br>&lt<br>&lt<br>&lt";
+      }
+    }
+    
+    // draw the tab text on the canvases
+    var tabctx = document.getElementById("menuImage").getContext("2d");
+    tabctx.font = "20px Trebuchet MS";
+    tabctx.rotate(-Math.PI/2);
+    tabctx.textAlign="center";
+    tabctx.fillText("Lap Selection", -75, 18);
+    
+    var tabctx = document.getElementById("settingsImage").getContext("2d");
+    tabctx.font = "20px Trebuchet MS";
+    tabctx.rotate(-Math.PI/2);
+    tabctx.textAlign="center";
+    tabctx.fillText("Settings", -75, 18);
+    
+</script>
+
+<script>
+
+var g1;
+var g2;
+
+var div = document.getElementById("renderArea");
+var trackDiv = document.getElementById("trackArea");
+var laps = new lapData();
+init();
+popRaces();
+
+</script>
+
+
+</body>
+</html>

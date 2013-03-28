@@ -1,0 +1,274 @@
+/*
+ * Colors for search and replace:
+ * Background:  93B3BF
+ * Menu:        495F73
+ * Active Menu: 192E40
+ * Menu Hover:  324759 
+ * Graphs:      BEB1A4 
+ *    
+*/
+table {
+    width: 100%;
+    border-width: 1px;
+    border-spacing: 0px;
+    border-style: solid;
+    border-color: black;
+    border-collapse: collapse;
+}
+
+table td {
+        padding: 0;
+	line-height: 20px;
+	color: #ffffff;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size: 12px;
+}
+
+tr:nth-child(even) {
+    background: #333333
+}
+
+tr:nth-child(odd) {
+    background: #555555
+}
+
+#legendTable thead tr {
+    background: #111111;
+    color: #ffffff;    
+}
+
+#channelTable thead tr {
+    background: #111111;
+    color: #ffffff;    
+}
+
+#fullPageOnClick {
+    background: black;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    opacity: .5;
+}
+
+#datamenuframe {
+    background: none repeat scroll 0 0 transparent;
+    z-index: 9999;
+    height: 100%;
+    margin-left: -475px;
+    position: absolute;
+    top: 0;
+    width: 475px;
+}
+#datamenu {
+    background: none repeat scroll 0 0 grey;
+    border-radius: 0 20px 20px 0;
+    border-style: solid;
+    border-width: 0 2px 2px;
+    height: 100%;
+    padding: 10px;
+    position: relative;
+    width: 451px;
+}
+#datamenutab {
+    background: none repeat scroll 0 0 grey;
+    border-radius: 0 10px 10px 0;
+    border-style: solid;
+    border-width: 2px 2px 2px 0;
+    position: absolute;
+    margin-left: 25px;
+    right: -25px;
+    top: 20px;
+    width: 25px;
+}
+
+#settingsmenuframe {
+    background: none repeat scroll 0 0 transparent;
+    height: 100%;
+    margin-left: -475px;
+    position: absolute;
+    top: 0;
+    width: 475px;
+}
+#settingsmenu {
+    background: none repeat scroll 0 0 grey;
+    border-radius: 0 20px 20px 0;
+    border-style: solid;
+    border-width: 0 2px 2px;
+    height: 100%;
+    padding: 10px;
+    position: relative;
+    width: 451px;
+}
+#settingsmenutab {
+    background: none repeat scroll 0 0 grey;
+    border-radius: 0 10px 10px 0;
+    border-style: solid;
+    border-width: 2px 2px 2px 0;
+    position: absolute;
+    right: -25px;
+    top: 200px;
+    width: 25px;
+}
+
+html {
+    background-color: #93B3BF;
+}
+body {
+    font-family: "Trebuchet MS",Arial,sans-serif;
+    margin: 0;
+}
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+div.menu_search {
+    overflow: hidden;
+    width: 800px;
+}
+div.menu_search div.menu {
+    float: left;
+}
+div.menu_search div.menu ul {
+    overflow: hidden;
+    padding: 0 0 0 7px;
+}
+div.menu_search div.menu ul li {
+    float: left;
+    font-size: 12px;
+    line-height: 18px;
+    margin: 1px 0 0;
+    padding: 0 1px;
+    text-align: center;
+    width: 125px;
+}
+div.menu_search div.menu ul li a {
+    background: none no-repeat scroll 0 0 #192E40;
+    border-radius: 10px 10px 0 0;
+    border-style: solid;
+    border-width: 1px 1px 0;
+    color: white;
+    cursor: pointer;
+    display: block;
+    float: left;
+    padding: 7px 0 5px;
+    position: relative;
+    width: 120px;
+}
+div.menu_search div.menu ul li a {
+    text-decoration: none;
+    text-transform: uppercase;
+}
+div.menu_search div.menu ul li.active {
+    height: 18px;
+    margin: 0;
+    width: 125px;
+}
+div.menu_search div.menu ul li.active a {
+    background: none no-repeat scroll 0 0 #324759;
+    color: white;
+    height: 18px;
+    padding-top: 8px;
+    width: 120px;
+}
+div.menu_search div.menu ul li.active a:hover {
+    background: none no-repeat scroll 0 0 #324759 !important;
+    width: 120px;
+}
+div.menu_search div.menu ul li a:hover {
+    background: none no-repeat scroll 0 0 #324759;
+    color: white;
+    width: 120px;
+}
+#laplist {
+     height: 190;
+}
+
+#race {
+  width: 100%
+}
+
+#data {
+
+     width: 100%
+}
+
+#lap {
+     height: 100%;
+     width: 100%
+}
+#wrapper {
+    margin: 0 auto;
+    width: 800px;
+}
+#header {
+    background: none repeat scroll 0 0 #495F73;
+    border-radius: 10px 10px 0 0;
+    border-style: solid;
+    border-width: 1px 1px 0;
+    padding: 0 0 0 10px;
+    width: 790px;
+}
+#middle {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    right: 5px;
+    width: 195px;
+    overflow: hidden;
+}
+#dataContainer {
+    background: none repeat scroll 0 0 #BEB1A4;
+    border-style: solid;
+    border-width: 1px;
+    position: absolute;
+    top: 198px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+}
+#trackContainer {
+    background: none repeat scroll 0 0 #050505;
+    border-style: solid;
+    border-width: 1px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 193px;
+    width: 193px;
+}
+#trackArea {
+    position: absolute;
+    top: 0;
+    right:0;
+    left: 0;
+    bottom: 0;
+}
+#graphContainer {
+    background: none repeat scroll 0 0 #050505;
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 30px;
+    right: 205px;
+    border-style: solid;
+    border-width: 1px;
+}
+#renderArea {
+    position: absolute;
+    top: 18px;
+    bottom: 20px;
+    width: 100%;
+    cursor: pointer;
+}
+
+.titleBar {
+    background: darkblue;
+    color: white;
+    height: 18;
+    width: 100%;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
