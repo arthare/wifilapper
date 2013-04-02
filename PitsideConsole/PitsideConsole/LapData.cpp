@@ -337,6 +337,10 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
       break;
     }
     case DATA_CHANNEL_LAPTIME_SUMMARY:
+    {
+      sprintf(lpsz, "%4.1fs", flValue);
+      break;
+    }
     case DATA_CHANNEL_TIME:
     {
       sprintf(lpsz, "%4.1fs", flValue/1000.0f);
@@ -435,6 +439,10 @@ void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPS
       break;
     }
     case DATA_CHANNEL_LAPTIME_SUMMARY:
+    {
+      sprintf(lpsz, "%4.1f", flValue);
+      break;
+    }
     case DATA_CHANNEL_TIME:
     {
       sprintf(lpsz, "%4.1f", flValue/1000.0f);

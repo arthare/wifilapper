@@ -23,7 +23,14 @@ CLapPainter::~CLapPainter()
 
 void CLapPainter::OGL_Paint()
 {
-  glClearColor( 0.95f, 0.95f, 0.95f, 0.95f );  //  Background color is white. May want to allow a user option to set this
+  if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+  {
+		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );  //  Background color is black.
+  }
+  else
+  {
+		glClearColor( 0.95f, 0.95f, 0.95f, 0.95f );  //  Background color is grey.
+  }
   glClear( GL_COLOR_BUFFER_BIT );
   
   RECT rcClient;
@@ -110,7 +117,7 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
     const IDataChannel* pReceptionY = pLap->GetChannel(DATA_CHANNEL_RECEPTION_Y);
     if(pReceptionX && pReceptionY)
     {
-      glPointSize(3.0f);
+      glPointSize(4.0f);
       glBegin(GL_POINTS);
 
       const vector<DataPoint>& lstPointsX = pReceptionX->GetData();
@@ -266,14 +273,16 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
     // draw horizontal guide lines and text on the background. Yes this should probably go into a function, Art ;)
     // first draw the starting guideline
-	{	float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]);
-		glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
+	{	
+		float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]);
+		LineColor();	//	Pick guideline color, based upon chosen color scheme
 		glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
 		glBegin(GL_LINE_STRIP);
 		glVertex2f(dMinX,flLine);
 		glVertex2f(dMaxX,flLine);
 		glEnd();
-		glColor3d(0.1,0.1,0.5);
+
+		LineColor();	//	Pick guideline color, based upon chosen color scheme
 		char szText[256];
 		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		DrawText(dMinX, flLine, szText);
@@ -281,14 +290,14 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	// now draw the rest of them
 	for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
-      glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
+	  LineColor();	//	Pick guideline color, based upon chosen color scheme
       glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
       glBegin(GL_LINE_STRIP);
       glVertex2f(dMinX,flLine);
       glVertex2f(dMaxX,flLine);
       glEnd();
       
-      glColor3d(0.1,0.1,0.5);
+	  LineColor();	//	Pick guideline color, based upon chosen color scheme
       char szText[256];
       GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
       DrawText(dMinX, flLine, szText);
@@ -304,13 +313,13 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		// first draw the starting guideline
 		{
 			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
-			glColor3d(0.1,0.5,0.1);  
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			glLineWidth(1);      
 			glBegin(GL_LINE_STRIP);
 			glVertex3f(flLine,mapMinY[*i],0);
 			glVertex3f(flLine,mapMaxY[*i],0);
 			glEnd();
-			glColor3d(0.1,0.5,0.1);
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			char szText[256];
 			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 			DrawText(flLine, mapMinY[*i]-12, szText);
@@ -318,14 +327,14 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	// now draw the rest of them
 		for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
 		{
-			glColor3d(0.1,0.5,0.1);  
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			glLineWidth(1);      
 			glBegin(GL_LINE_STRIP);
 			glVertex3f(flLine,mapMinY[*i],0);
 			glVertex3f(flLine,mapMaxY[*i],0);
 			glEnd();
 
-			glColor3d(0.1,0.5,0.1);
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			char szText[256];
 			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		
@@ -406,7 +415,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         }
         else
         {
-          glPointSize(3.0f);
+          glPointSize(4.0f);
           glBegin(GL_POINTS);
         }
 
@@ -492,39 +501,43 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		float b;
 		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
-		// if we're the main screen, we want to draw some text data for each point
-        TCHAR szLapName[256];
-        pLap->GetString(szLapName, NUMCHARS(szLapName));	// <-- gets the string "10:11:12 - 1:40.59 - Keith", aka the "lap name"
+		if (lstMousePointsToDraw[x].m_eChannelY != DATA_CHANNEL_LAPTIME_SUMMARY)
+		{
 
-        float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);	//  <-- asks the ILapSupplier interface what we should highlight
+			// if we're the main screen, we want to draw some text data for each point
+			TCHAR szLapName[256];
+			pLap->GetString(szLapName, NUMCHARS(szLapName));	// <-- gets the string "10:11:12 - 1:40.59 - Keith", aka the "lap name"
 
-        TCHAR szTypeX[256];
-        ::GetDataChannelName(eX,szTypeX,NUMCHARS(szTypeX));	// <-- converts the data channel type into a string, like "Oil Temperature"
+			float dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);	//  <-- asks the ILapSupplier interface what we should highlight
 
-        TCHAR szTypeY[256];
-        ::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szTypeY, NUMCHARS(szTypeY));	// <-- converts the y channel into a string
+			TCHAR szTypeX[256];
+			::GetDataChannelName(eX,szTypeX,NUMCHARS(szTypeX));	// <-- converts the data channel type into a string, like "Oil Temperature"
 
-        char szYString[256];
-        GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
-		// <-- gets the actual unit string for the data channel.  For speed, this might be "100.0km/h"
+			TCHAR szTypeY[256];
+			::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szTypeY, NUMCHARS(szTypeY));	// <-- converts the y channel into a string
 
-		char szXString[256];
-        GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
-		// <-- same for x channel
+			char szYString[256];
+			GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
+			// <-- gets the actual unit string for the data channel.  For speed, this might be "100.0km/h"
 
-        char szText[256];
-        sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
+			char szXString[256];
+			GetChannelString(eX, sfLapOpts.eUnitPreference, pDataX->GetValue(dTimeToHighlight), szXString, NUMCHARS(szXString));
+			// <-- same for x channel
 
-		DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
+			char szText[256];
+			sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
-        // we also want to draw a highlighted square
-//        DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);	// <-- draws the stupid little box at ptWindow.x. Commented out by KDJ
-        // we also want to draw a highlighted LINE for that individual lap/graph combination
-				glLineWidth(1);								// Added by KDJ. Skinny line for Distance markers.
-				glBegin(GL_LINE_STRIP);						// Added by KDJ
-				glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
-				glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
-				glEnd();									// Added by KDJ
+			DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
+
+			// we also want to draw a highlighted square
+			DrawGLFilledSquare(ptWindow.x, ptWindow.y, 3);	// <-- draws the stupid little box at ptWindow.x.
+			// we also want to draw a highlighted LINE for that individual lap/graph combination
+			glLineWidth(1);								// Added by KDJ. Skinny line for Distance markers.
+			glBegin(GL_LINE_STRIP);						// Added by KDJ
+			glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
+			glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
+		}
+			glEnd();									// Added by KDJ
 	  }
       glPopMatrix();
       glPopMatrix();	//	Should there be two of these here?
@@ -597,14 +610,40 @@ struct MAPHIGHLIGHT
 void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float* pB) 
 { 
 	srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw... 
-	do { 
-		*pR = RandDouble(); 
-		*pG = RandDouble(); 
-		*pB = RandDouble(); 
-	} 
-//	while(*pR * *pG * *pB > 0.35); 
-	while(*pR + *pG + *pB > 1.5); 
-	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+	{
+		do 
+		{ 
+			*pR = RandDouble(); 
+			*pG = RandDouble(); 
+			*pB = RandDouble(); 
+		} 
+		while(*pR + *pG + *pB > 1.5); 
+		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+	}
+	else
+	{
+		do 
+		{ 
+			*pR = RandDouble(); 
+			*pG = RandDouble(); 
+			*pB = RandDouble(); 
+		} 
+		while(*pR + *pG + *pB < 1.5); 
+		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+	}
+}
+
+void CLapPainter::LineColor() 
+{ 
+	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+	{
+		glColor3d(0.7,0.7,0.7);	//	Make guidelines grey to show up on black background
+	}
+	else
+	{
+		glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
+	}
 }
 
 void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
@@ -714,7 +753,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
     }
     else
     {
-      glPointSize(3.0f);
+      glPointSize(4.0f);
       glBegin(GL_POINTS);
     }
 	float r;

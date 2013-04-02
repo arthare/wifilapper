@@ -18,18 +18,37 @@ struct PlotPrefs
 	bool iPlotView;
 	double fMinValue;
 	double fMaxValue;
-}; // extern PlotPrefs m_PlotPrefs[50];	//	Declare the PlotPrefs array so it's of global scope
+};
+
+struct PITSIDE_SETTINGS
+{
+  void Default()
+  {
+    fRunHTTP = true;
+    iHTTPPort = 80;
+	iVelocity = 1;
+	iMapLines = 1;
+	iColorScheme = 0;
+  }
+
+  int fRunHTTP;
+  int iHTTPPort;
+  int iVelocity;
+  int iMapLines;
+  int iColorScheme;
+};
 
 struct LAPSUPPLIEROPTIONS
 {
 public:
-  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(true),fDrawGuides(true),fDrawLines(true),fIOIOHardcoded(true), flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)//, m_PlotPrefs()
+  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(true),fDrawGuides(true),fDrawLines(true),fColorScheme(false),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)
   {
   }
   UNIT_PREFERENCE eUnitPreference;
   bool fDrawSplitPoints;
   bool fDrawGuides;
   bool fDrawLines; // whether to draw lines between data points
+  bool fColorScheme;
   bool fIOIOHardcoded;
   bool fElapsedTime;
   float flWindowShiftX;
