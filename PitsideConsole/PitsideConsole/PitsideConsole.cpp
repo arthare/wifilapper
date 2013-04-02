@@ -541,6 +541,12 @@ public:
             UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
             return TRUE;
           }
+          case ID_OPTIONS_BACKGROUND:
+          {
+            m_sfLapOpts.fColorScheme = !m_sfLapOpts.fColorScheme;
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            return TRUE;
+          }
           case ID_OPTIONS_IOIO5VSCALE:
           {
             m_sfLapOpts.fIOIOHardcoded = !m_sfLapOpts.fIOIOHardcoded;
@@ -1269,6 +1275,7 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_DRAWLINES, m_sfLapOpts.fDrawLines);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_BACKGROUND, m_sfLapOpts.fColorScheme);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_IOIO5VSCALE, m_sfLapOpts.fIOIOHardcoded);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_ELAPSEDTIME, m_sfLapOpts.fElapsedTime);
   }

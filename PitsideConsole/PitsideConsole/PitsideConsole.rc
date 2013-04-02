@@ -214,8 +214,9 @@ POPUP "&Options"
         MENUITEM "Show driver bests",ID_OPTIONS_SHOWDRIVERBESTS
         MENUITEM SEPARATOR
         MENUITEM "Draw lines between data points",ID_OPTIONS_DRAWLINES
+        MENUITEM "Use dark background for plots",ID_OPTIONS_BACKGROUND
         MENUITEM SEPARATOR
-        MENUITEM "Force IOIO data to fixed scales",ID_OPTIONS_IOIO5VSCALE
+        MENUITEM "Force plotted data to fixed scales",ID_OPTIONS_IOIO5VSCALE
         MENUITEM SEPARATOR
 		MENUITEM "Plotting Options...",ID_OPTIONS_PLOTPREFS
 
