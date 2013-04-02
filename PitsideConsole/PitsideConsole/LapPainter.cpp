@@ -23,7 +23,15 @@ CLapPainter::~CLapPainter()
 
 void CLapPainter::OGL_Paint()
 {
-  glClearColor( 0.95f, 0.95f, 0.95f, 0.95f );  //  Background color is white. May want to allow a user option to set this
+  if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+//  if (m_sfLapOpts.eUnitPreference)
+  {
+		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );  //  Background color is black.
+  }
+  else
+  {
+		glClearColor( 0.95f, 0.95f, 0.95f, 0.95f );  //  Background color is grey.
+  }
   glClear( GL_COLOR_BUFFER_BIT );
   
   RECT rcClient;
@@ -601,14 +609,28 @@ struct MAPHIGHLIGHT
 void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float* pB) 
 { 
 	srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw... 
-	do { 
-		*pR = RandDouble(); 
-		*pG = RandDouble(); 
-		*pB = RandDouble(); 
-	} 
-//	while(*pR * *pG * *pB > 0.35); 
-	while(*pR + *pG + *pB > 1.5); 
-	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+	{
+		do 
+		{ 
+			*pR = RandDouble(); 
+			*pG = RandDouble(); 
+			*pB = RandDouble(); 
+		} 
+		while(*pR + *pG + *pB > 1.5); 
+		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+	}
+	else
+	{
+		do 
+		{ 
+			*pR = RandDouble(); 
+			*pG = RandDouble(); 
+			*pB = RandDouble(); 
+		} 
+		while(*pR + *pG + *pB < 1.5); 
+		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+	}
 }
 
 void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
