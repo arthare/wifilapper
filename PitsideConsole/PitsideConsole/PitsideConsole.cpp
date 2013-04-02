@@ -611,10 +611,6 @@ public:
           {
 			  return TRUE;
           }
-          case ID_EDIT_PREFERENCES:
-          {
-			  return TRUE;
-          }
           
 		  case ID_DATA_OPENDB:
           {

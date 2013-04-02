@@ -202,7 +202,6 @@ POPUP "&File"
 POPUP "&Edit"
     BEGIN
         MENUITEM "Copy", ID_EDIT_COPY
-        MENUITEM "Preferences", ID_EDIT_PREFERENCES
     END
 POPUP "&Options"
     BEGIN

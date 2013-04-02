@@ -24,7 +24,6 @@ CLapPainter::~CLapPainter()
 void CLapPainter::OGL_Paint()
 {
   if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
-//  if (m_sfLapOpts.eUnitPreference)
   {
 		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );  //  Background color is black.
   }
@@ -274,14 +273,16 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
     // draw horizontal guide lines and text on the background. Yes this should probably go into a function, Art ;)
     // first draw the starting guideline
-	{	float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]);
-		glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
+	{	
+		float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]);
+		LineColor();	//	Pick guideline color, based upon chosen color scheme
 		glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
 		glBegin(GL_LINE_STRIP);
 		glVertex2f(dMinX,flLine);
 		glVertex2f(dMaxX,flLine);
 		glEnd();
-		glColor3d(0.1,0.1,0.5);
+
+		LineColor();	//	Pick guideline color, based upon chosen color scheme
 		char szText[256];
 		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		DrawText(dMinX, flLine, szText);
@@ -289,14 +290,14 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	// now draw the rest of them
 	for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
-      glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
+	  LineColor();	//	Pick guideline color, based upon chosen color scheme
       glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
       glBegin(GL_LINE_STRIP);
       glVertex2f(dMinX,flLine);
       glVertex2f(dMaxX,flLine);
       glEnd();
       
-      glColor3d(0.1,0.1,0.5);
+	  LineColor();	//	Pick guideline color, based upon chosen color scheme
       char szText[256];
       GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
       DrawText(dMinX, flLine, szText);
@@ -312,13 +313,13 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		// first draw the starting guideline
 		{
 			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
-			glColor3d(0.1,0.5,0.1);  
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			glLineWidth(1);      
 			glBegin(GL_LINE_STRIP);
 			glVertex3f(flLine,mapMinY[*i],0);
 			glVertex3f(flLine,mapMaxY[*i],0);
 			glEnd();
-			glColor3d(0.1,0.5,0.1);
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			char szText[256];
 			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 			DrawText(flLine, mapMinY[*i]-12, szText);
@@ -326,14 +327,14 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	// now draw the rest of them
 		for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
 		{
-			glColor3d(0.1,0.5,0.1);  
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			glLineWidth(1);      
 			glBegin(GL_LINE_STRIP);
 			glVertex3f(flLine,mapMinY[*i],0);
 			glVertex3f(flLine,mapMaxY[*i],0);
 			glEnd();
 
-			glColor3d(0.1,0.5,0.1);
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			char szText[256];
 			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		
@@ -630,6 +631,18 @@ void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, floa
 		} 
 		while(*pR + *pG + *pB < 1.5); 
 		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+	}
+}
+
+void CLapPainter::LineColor() 
+{ 
+	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+	{
+		glColor3d(0.7,0.7,0.7);	//	Make guidelines grey to show up on black background
+	}
+	else
+	{
+		glColor3d(0.1,0.1,0.5);	// Reduced the brightness of the guidelines to match text, and to better see the data lines
 	}
 }
 
