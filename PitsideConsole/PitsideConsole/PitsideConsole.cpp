@@ -1157,7 +1157,7 @@ void UpdateDisplays()
     if(setSelectedData.size() > 0 && setSelectedData.size() < 5)
     {
       const int cLabels = 5;	//	The maximum number of Value Data channels to display
-	  int m_Warning = false;	//	Flag for showing dialog of Value display to indicate statistics are outside of bounds
+	  bool m_Warning = false;	//	Flag for showing dialog of Value display to indicate statistics are outside of bounds
 	  int w=0;	//	String variable counter for Vaue display
       TCHAR szLabel[cLabels][MAX_PATH];
 	  for (int z = 0; z < cLabels; z++)
@@ -1845,7 +1845,7 @@ int str_ends_with(const TCHAR * str, const TCHAR * suffix)
 
 void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 {
-//  pSettings->Default();
+  pSettings->Default();
 
   TCHAR szModule[MAX_PATH];
   if(GetAppFolder(szModule,NUMCHARS(szModule)))

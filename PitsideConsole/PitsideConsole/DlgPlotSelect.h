@@ -41,7 +41,7 @@ struct PITSIDE_SETTINGS
 struct LAPSUPPLIEROPTIONS
 {
 public:
-  LAPSUPPLIEROPTIONS() : /*eUnitPreference(UNIT_PREFERENCE_MPH),*/fDrawSplitPoints(true),fDrawGuides(true),/*fDrawLines(true),fColorScheme(false),*/fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)
+  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(true),fDrawGuides(true),fDrawLines(true),fColorScheme(false),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)
   {
   }
   UNIT_PREFERENCE eUnitPreference;
