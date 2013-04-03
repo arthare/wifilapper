@@ -150,9 +150,8 @@ vector<CExtendedLap*> GetAllLaps()
         case WM_INITDIALOG:
         {
           //  Initialize all data channels, if not already set by user.
-          //  Assumes first data channel will be either true or false if user has set things up already
-          if (!m_sfLapOpts->m_PlotPrefs[1].iPlotView == false && !m_sfLapOpts->m_PlotPrefs[1].iPlotView == true)
-          {
+          if (m_sfLapOpts->m_PlotPrefs[1].m_ChannelName[512] == m_sfLapOpts->m_PlotPrefs[0].m_ChannelName[512])
+		  {
             InitPlotPrefs(hWnd, lParam);
           }
           else
