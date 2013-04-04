@@ -16,6 +16,9 @@
 
 package com.artsoft.wifilapper;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -91,6 +94,8 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 
 	private void Complete()
 	{
+		NumberFormat nf = NumberFormat.getInstance();
+		
 		TextView txt1 = (TextView)findViewById(R.id.txtParam1);
 		String str1 = txt1.getText().toString();
 		
@@ -104,9 +109,9 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 		
 		try
 		{
-			final double d1 = Double.parseDouble(str1);
-			final double d2 = Double.parseDouble(str2);
-			final double d3 = Double.parseDouble(str3);
+			final double d1 = nf.parse(str1).doubleValue();
+			final double d2 = nf.parse(str2).doubleValue();
+			final double d3 = nf.parse(str3).doubleValue();
 			int iFilterType = IOIOManager.PinParams.FILTERTYPE_NONE;
 			
 			if(idChecked == R.id.rbWheelSpeed) iFilterType = IOIOManager.PinParams.FILTERTYPE_WHEELSPEED;
@@ -125,7 +130,7 @@ public class ConfigureIOIOFilter extends Activity implements OnCheckedChangeList
 			this.setResult(Activity.RESULT_OK, i);
 			this.finish();
 		}
-		catch(NumberFormatException nfe)
+		catch(ParseException pe)
 		{
 			Toast.makeText(this, "Bad numeric value", Toast.LENGTH_SHORT).show();
 			this.setResult(Activity.RESULT_FIRST_USER);

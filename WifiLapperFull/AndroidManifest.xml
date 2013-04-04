@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.artsoft.wifilapperfull"
-      android:versionCode="34"
-      android:versionName="1.34">
+      android:versionCode="37"
+      android:versionName="1.37">
     <supports-screens  android:smallScreens="true"/>
 	<supports-screens  android:normalScreens="true"/>
 	<supports-screens android:largeScreens="true"/>
