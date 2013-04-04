@@ -541,6 +541,12 @@ public:
             UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
             return TRUE;
           }
+          case ID_OPTIONS_BACKGROUND:
+          {
+            m_sfLapOpts.fColorScheme = !m_sfLapOpts.fColorScheme;
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            return TRUE;
+          }
           case ID_OPTIONS_IOIO5VSCALE:
           {
             m_sfLapOpts.fIOIOHardcoded = !m_sfLapOpts.fIOIOHardcoded;
@@ -602,10 +608,6 @@ public:
 				break;
 		  }
           case ID_EDIT_COPY:
-          {
-			  return TRUE;
-          }
-          case ID_EDIT_PREFERENCES:
           {
 			  return TRUE;
           }
@@ -890,7 +892,7 @@ public:
   const static DWORD UPDATE_MENU = 0x8;
 
   const static DWORD UPDATE_ALL = 0xffffffff;
- 
+  //	Pull in PlotPrefs array as well as lines vs. dots and Painting color scheme settings from Settings.txt file
   void SetDisplayOptions(const LAPSUPPLIEROPTIONS& lapOpts)
   {
     m_sfLapOpts = lapOpts;
@@ -1014,7 +1016,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0007\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0009\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1120,24 +1122,29 @@ private:
     HandleCtlResize(sNewSize, IDC_SUBDISPLAY, true, false); // sub display window
     HandleCtlResize(sNewSize, IDC_LAPS, false, true); // lap list
   }
-	float Average(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal, char szAvg[MAX_PATH])
+	float Average(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal)
 	{
-	float sum = 0.0f;
-	int count; 
-    for (count=1; count <= sizeof pChannel; count++)
-	{
-		GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flVal,szAvg,NUMCHARS(szAvg));
-		sum = sum + atof(szAvg); 
+		//	This function currently only returns the current value where the cursor is pointed (flValue).
+		//	It needs an iterator type loop to calculate the average value across all of the points in this data channel for this lap
+		char szAvg[MAX_PATH];
+		float sum = 0.0f;
+		int count; 
+	//	set<DATA_CHANNEL> channels = pChannel->GetData(); // get all the points that this lap / channel has
+	//	for(set<DATA_CHANNEL>::const_iterator i = channels.begin(); i != channels.end(); i++) // loop through them, insert them into our "all data channels" set
+		for (count = 0; count < sizeof pChannel->GetData(); count++)
+		{
+			GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flVal,szAvg,NUMCHARS(szAvg));
+			sum = sum + atof(szAvg); 
+		}
+		if (count != 0) 
+		{
+			return sum / count; 
+		}
+		else
+		{
+			return sum;
+		}
 	}
-	if (count != 0) 
-	{
-		return sum / count; 
-	}
-	else
-	{
-		return sum;
-	}
-}
 void UpdateDisplays()
   {
 	//	Update the data channels that are being displayed as values
@@ -1146,7 +1153,7 @@ void UpdateDisplays()
     if(setSelectedData.size() > 0 && setSelectedData.size() < 5)
     {
       const int cLabels = 5;	//	The maximum number of Value Data channels to display
-	  int m_Warning = 0;	//	Flag for changing color of Value display to show statistics are outside of bounds
+	  bool m_Warning = false;	//	Flag for showing dialog of Value display to indicate statistics are outside of bounds
 	  int w=0;	//	String variable counter for Vaue display
       TCHAR szLabel[cLabels][MAX_PATH];
 	  for (int z = 0; z < cLabels; z++)
@@ -1173,7 +1180,6 @@ void UpdateDisplays()
 					flMin = 1e30;
 					flMax = -1e30;
 					float flVal;
-					char szAvg[MAX_PATH];
 					for(set<LPARAM>::const_iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
 					{
 					  CExtendedLap* pLap = (CExtendedLap*)*i;
@@ -1184,15 +1190,15 @@ void UpdateDisplays()
 						flMin = pChannel->GetMin();
 						flMax = pChannel->GetMax();
 						// 951turbo: do more math here like averages, median, etc.
-						flAvg = Average(eChannel, pChannel, flVal, szAvg);
+						flAvg = Average(eChannel, pChannel, flVal);
 						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
 						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
 						{
-							m_Warning = 1;	//	An alarm has been triggered!
+							m_Warning = true;	//	An alarm has been triggered!
 						}
 						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
 						{
-							m_Warning = 1;
+							m_Warning = true;
 						}
 						else
 						{
@@ -1265,6 +1271,7 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_DRAWLINES, m_sfLapOpts.fDrawLines);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_BACKGROUND, m_sfLapOpts.fColorScheme);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_IOIO5VSCALE, m_sfLapOpts.fIOIOHardcoded);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_ELAPSEDTIME, m_sfLapOpts.fElapsedTime);
   }
@@ -1482,12 +1489,12 @@ void UpdateDisplays()
 	  case DATA_CHANNEL_VELOCITY:
       {
         int iMin = (int)(flMin);
-        return (float)(iMin-1);
+        return (float)(iMin);
       }
       case DATA_CHANNEL_DISTANCE:
       {
         int iMin = (int)(flMin);
-        return (float)(iMin-1);
+        return (float)(iMin);
       }
 	  case DATA_CHANNEL_TIME:
 	  case DATA_CHANNEL_ELAPSEDTIME:
@@ -1495,14 +1502,14 @@ void UpdateDisplays()
 	  case DATA_CHANNEL_LAPTIME_SUMMARY:
 	  {
         int iMin = (int)(flMin/1000.0f);
-        return (float)(iMin-1)*1000.0f;
+        return (float)(iMin)*1000.0f;
       }
       case DATA_CHANNEL_X_ACCEL:
       case DATA_CHANNEL_Y_ACCEL:
       case DATA_CHANNEL_Z_ACCEL:
       {
         int iMin = (int)(flMin);
-        return (float)(iMin-1);
+        return (float)(iMin);
       }
       case DATA_CHANNEL_TEMP: return 0;
       case (DATA_CHANNEL_PID_START+0x5): return -40;
@@ -1531,18 +1538,22 @@ void UpdateDisplays()
       case DATA_CHANNEL_DISTANCE: return 1e30;
       case DATA_CHANNEL_TIME: return 1e30;
       case DATA_CHANNEL_ELAPSEDTIME: return 1e30;
-      case DATA_CHANNEL_LAPTIME_SUMMARY: return 1e30;
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
-        return (float)(iMin-1)*1000.0f;
+        return (float)(iMin)*1000.0f;
+      }
+	  case DATA_CHANNEL_LAPTIME_SUMMARY:
+      {
+        int iMin = (int)(flMin);
+        return (float)(iMin);
       }
       case DATA_CHANNEL_X_ACCEL:
       case DATA_CHANNEL_Y_ACCEL:
       case DATA_CHANNEL_Z_ACCEL:
       {
         int iMin = (int)(flMin);
-        return (float)(iMin-1);
+        return (float)(iMin);
       }
       case DATA_CHANNEL_TEMP: return 0;
       case (DATA_CHANNEL_PID_START+0x5): return -40;
@@ -1598,7 +1609,6 @@ void UpdateDisplays()
 
     case DATA_CHANNEL_TIME:					
     case DATA_CHANNEL_ELAPSEDTIME:					
-    case DATA_CHANNEL_LAPTIME_SUMMARY:					
 		{
 		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
 		  if(flSpread < 5000) return 100.0f;
@@ -1608,6 +1618,17 @@ void UpdateDisplays()
 		  if(flSpread < 1100000) return 10000.0f;
 		  if(flSpread < 10000000) return 100000.0f;
 		  return 10000000;
+		}
+    case DATA_CHANNEL_LAPTIME_SUMMARY:					
+		{
+		  if(flSpread < 1) return 0.50f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 5) return 1.0f;
+		  if(flSpread < 10) return 5.0f;
+		  if(flSpread < 50) return 25.0f;
+		  if(flSpread < 110) return 50.0f;
+		  if(flSpread < 1100) return 100.0f;
+		  if(flSpread < 10000) return 1000.0f;
+		  return 100000;
 		}
 	default:
     return 1e30;
@@ -1653,8 +1674,9 @@ void UpdateDisplays()
     case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
     case DATA_CHANNEL_TIMESLIP:
 	case DATA_CHANNEL_ELAPSEDTIME:
-	case DATA_CHANNEL_LAPTIME_SUMMARY:
     {
+	  if(flSpread < 10) return 1.0f;		//	Added by KDJ to improve TS display
+	  if(flSpread < 100) return 10.0f;		//	Added by KDJ to improve TS display
 	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
 	  if(flSpread < 5000) return 500.0f;
 	  if(flSpread < 10000) return 1000.0f;
@@ -1662,6 +1684,17 @@ void UpdateDisplays()
 	  if(flSpread < 110000) return 10000.0f;
       if(flSpread < 1100000) return 100000.0f;
       if(flSpread < 10000000) return 1000000.0f;
+	  return 10000000.0f;
+    }
+	case DATA_CHANNEL_LAPTIME_SUMMARY:
+    {
+	  if(flSpread < 5) return 0.5f;
+	  if(flSpread < 10) return 1.0f;
+      if(flSpread < 50) return 5.0f;
+	  if(flSpread < 100) return 10.0f;
+      if(flSpread < 1100) return 100.0f;
+      if(flSpread < 10000) return 1000.0f;
+	  return 10000.0f;
     }
     case DATA_CHANNEL_X_ACCEL: return 0.5f;
     case DATA_CHANNEL_Y_ACCEL: return 0.5f;
@@ -1806,22 +1839,6 @@ int str_ends_with(const TCHAR * str, const TCHAR * suffix)
   return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
 }
 
-struct PITSIDE_SETTINGS
-{
-  void Default()
-  {
-    fRunHTTP = true;
-    iHTTPPort = 80;
-	iVelocity = 1;
-	iMapLines = 1;
-  }
-
-  int fRunHTTP;
-  int iHTTPPort;
-  int iVelocity;
-  int iMapLines;
-};
-
 void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 {
   pSettings->Default();
@@ -1839,6 +1856,7 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
       in>>pSettings->iHTTPPort;
       in>>pSettings->iVelocity;
       in>>pSettings->iMapLines;
+	  in>>pSettings->iColorScheme;
       in.close();
     }
   }
@@ -1956,7 +1974,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   
   LAPSUPPLIEROPTIONS x_sfLapOpts; //sfLapOpts contains all lap display options
   InitPlotPrefs(x_sfLapOpts);	//	Initialize all PlotPrefs variables before displaying anything
-  sfUI.SetDisplayOptions(x_sfLapOpts);
+//  sfUI.SetDisplayOptions(x_sfLapOpts);
 
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
@@ -1986,10 +2004,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   switch (sfSettings.iMapLines)
   {
   case 0:
-          {
-            x_sfLapOpts.fDrawLines = sfSettings.iMapLines;
-			break;
-          }
   case 1:
           {
             x_sfLapOpts.fDrawLines = sfSettings.iMapLines;
@@ -2000,6 +2014,20 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             x_sfLapOpts.fDrawLines = true;
           }
   }
+  switch (sfSettings.iColorScheme)
+  {
+  case 0:
+  case 1:
+          {
+            x_sfLapOpts.fColorScheme = sfSettings.iColorScheme;	//	Assign color scheme from Settings.txt file
+			break;
+          }
+  default:
+          {
+            x_sfLapOpts.fColorScheme = false;	//	Grey background as a default, true = black
+          }
+  }
+  sfUI.SetDisplayOptions(x_sfLapOpts);
 
   PitsideHTTP aResponder(g_pLapDB,&sfUI);
   if(sfSettings.fRunHTTP && sfSettings.iHTTPPort > 0 && sfSettings.iHTTPPort < 65536)
