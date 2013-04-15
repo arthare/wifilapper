@@ -10,8 +10,8 @@ public:
   MESSAGEDLG_RESULT()
   {
     fCancelled = true;
-    iTime = 0;
-    iAttemptTime = 0;
+    iTime = 1;
+    iAttemptTime = 1;
     szMessage[0] = '\0';
   }
   bool fCancelled;
@@ -23,7 +23,7 @@ public:
 
 struct WIFILAPPER_MESSAGE
 {
-  WIFILAPPER_MESSAGE() : WFLP('WFLP'),iTime(0)
+  WIFILAPPER_MESSAGE() : WFLP('WFLP'),iTime(1)
   {
     memset(szMessage,0,sizeof(szMessage));
   }

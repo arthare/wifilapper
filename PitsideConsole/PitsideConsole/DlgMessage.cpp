@@ -15,6 +15,18 @@ LRESULT CMessageDlg::DlgProc
 {
   switch(uMsg)
   {
+    case WM_INITDIALOG:
+    {
+        //  Initialize the send message parameters.
+		TCHAR szTime[100] = L"1";
+		HWND hWndTime = GetDlgItem(hWnd, IDC_EDTTIME);
+		SendMessage(hWndTime, WM_SETTEXT, NUMCHARS(szTime), (LPARAM)szTime);
+		int iTime = _wtoi(szTime);
+		HWND hWndAttemptTime = GetDlgItem(hWnd, IDC_EDTATTEMPTTIME);
+		SendMessage(hWndAttemptTime, WM_SETTEXT, NUMCHARS(szTime), (LPARAM)szTime);
+		int iAttemptTime = _wtoi(szTime);
+        return TRUE;
+	}
     case WM_COMMAND:
     {
       switch(LOWORD(wParam))
