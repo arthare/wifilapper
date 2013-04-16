@@ -503,8 +503,11 @@ public:
             LPCTSTR lpsz = g_pLapDB->GetNetStatus(NETSTATUS_REMOTEIP);
             sprintf(sfResult.szIP, "%S", lpsz);
 
+            if(!sfResult.fCancelled)
+            {
             SendMsg(sfResult, this);
             // now that we're done, we should have a result!
+            }
             return TRUE;
           }
 		      case IDOK:
