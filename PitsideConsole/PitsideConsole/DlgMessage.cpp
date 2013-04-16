@@ -116,9 +116,10 @@ void CMsgThread::Start(const MESSAGEDLG_RESULT& msg)
 void CMsgThread::Shutdown()
 {
   m_fContinue = false;
-  WaitForSingleObject(m_hExit,INFINITE);
-  WaitForSingleObject(m_hThread,INFINITE);
-  WaitForSingleObject(m_hRecvThread,INFINITE);
+  //	Wait a maximum of 3 minutes, then end the thread process.
+  WaitForSingleObject(m_hExit,180*1000);
+  WaitForSingleObject(m_hThread,180*1000);
+  WaitForSingleObject(m_hRecvThread,180*1000);
   {
     AutoLeaveCS _cs(&m_cs);
     if(m_hThread == NULL && m_hExit == NULL) return; // nothing is going on
