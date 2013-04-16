@@ -505,8 +505,8 @@ public:
 
             if(!sfResult.fCancelled)
             {
-            SendMsg(sfResult, this);
-            // now that we're done, we should have a result!
+				// now that we're done, we should have a result!
+				SendMsg(sfResult, this);
             }
             return TRUE;
           }
