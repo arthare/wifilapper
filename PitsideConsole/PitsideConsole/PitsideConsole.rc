@@ -53,9 +53,9 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "Message",IDC_LBLMESSAGE,5,5,100,12
     EDITTEXT        IDC_EDTMESSAGE,105,5,100,12
-    LTEXT           "Time to display (min, Max=3)",IDC_LBLTIME,5,19,100,12
+    LTEXT           "Time to display, min (Max=3)",IDC_LBLTIME,5,19,100,12
     EDITTEXT        IDC_EDTTIME,105,19,100,12
-    LTEXT           "Send attempt time (min, Max=3)",IDC_LBLATTEMPTTIME,5,33,100,12
+    LTEXT           "Send attempt time, min (Max=3)",IDC_LBLATTEMPTTIME,5,33,100,12
     EDITTEXT        IDC_EDTATTEMPTTIME,105,33,100,12
     PUSHBUTTON      "OK", IDOK, 5,47,95,12
     PUSHBUTTON      "Cancel", IDCANCEL, 100,47,95,12
