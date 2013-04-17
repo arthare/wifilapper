@@ -610,7 +610,7 @@ struct MAPHIGHLIGHT
 void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float* pB) 
 { 
 	srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw... 
-	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)	//	Background color is black, make sure there is enough contrast with the lines
 	{
 		do 
 		{ 
@@ -618,7 +618,7 @@ void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, floa
 			*pG = RandDouble(); 
 			*pB = RandDouble(); 
 		} 
-		while(*pR + *pG + *pB > 1.5); 
+		while(*pR + *pG + *pB < 0.5); 
 		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 	}
 	else
@@ -629,14 +629,14 @@ void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, floa
 			*pG = RandDouble(); 
 			*pB = RandDouble(); 
 		} 
-		while(*pR + *pG + *pB < 1.5); 
+		while(*pR + *pG + *pB > 2.5); 
 		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 	}
 }
 
 void CLapPainter::LineColor() 
 { 
-	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)	//	Background color is black
 	{
 		glColor3d(0.7,0.7,0.7);	//	Make guidelines grey to show up on black background
 	}

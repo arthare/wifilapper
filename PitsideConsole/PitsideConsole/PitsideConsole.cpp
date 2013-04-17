@@ -503,8 +503,11 @@ public:
             LPCTSTR lpsz = g_pLapDB->GetNetStatus(NETSTATUS_REMOTEIP);
             sprintf(sfResult.szIP, "%S", lpsz);
 
-            SendMsg(sfResult, this);
-            // now that we're done, we should have a result!
+            if(!sfResult.fCancelled)
+            {
+				// now that we're done, we should have a result!
+				SendMsg(sfResult, this);
+            }
             return TRUE;
           }
 		      case IDOK:
@@ -1016,7 +1019,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0009\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0011\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
