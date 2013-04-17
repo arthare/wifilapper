@@ -15,6 +15,18 @@ LRESULT CMessageDlg::DlgProc
 {
   switch(uMsg)
   {
+    case WM_INITDIALOG:
+    {
+        //  Initialize the send message parameters.
+		TCHAR szTime[100] = L"1";
+		HWND hWndTime = GetDlgItem(hWnd, IDC_EDTTIME);
+		SendMessage(hWndTime, WM_SETTEXT, NUMCHARS(szTime), (LPARAM)szTime);
+		int iTime = _wtoi(szTime);
+		HWND hWndAttemptTime = GetDlgItem(hWnd, IDC_EDTATTEMPTTIME);
+		SendMessage(hWndAttemptTime, WM_SETTEXT, NUMCHARS(szTime), (LPARAM)szTime);
+		int iAttemptTime = _wtoi(szTime);
+        return TRUE;
+	}
     case WM_COMMAND:
     {
       switch(LOWORD(wParam))
@@ -104,9 +116,10 @@ void CMsgThread::Start(const MESSAGEDLG_RESULT& msg)
 void CMsgThread::Shutdown()
 {
   m_fContinue = false;
-  WaitForSingleObject(m_hExit,INFINITE);
-  WaitForSingleObject(m_hThread,INFINITE);
-  WaitForSingleObject(m_hRecvThread,INFINITE);
+  //	Wait a maximum of 1 minute, then end the thread process.
+  WaitForSingleObject(m_hExit,60*1000);
+  WaitForSingleObject(m_hThread,60*1000);
+  WaitForSingleObject(m_hRecvThread,60*1000);
   {
     AutoLeaveCS _cs(&m_cs);
     if(m_hThread == NULL && m_hExit == NULL) return; // nothing is going on

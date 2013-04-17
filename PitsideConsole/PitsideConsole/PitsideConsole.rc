@@ -26,7 +26,7 @@ BEGIN
     PUSHBUTTON      "Use as reference lap", IDC_SETREFERENCE, 250,14,75,12
     PUSHBUTTON      "Clear Selection", IDC_CLEARSELECTION, 250,28,75,12
 
-    LTEXT           "", IDC_MESSAGESTATUS,155,43,93,12
+    LTEXT           "", IDC_MESSAGESTATUS,155,43,93,24
     PUSHBUTTON      "Send Message", IDC_SENDMESSAGE, 250,42,75,12
     //LTEXT           "", IDC_CURRENTIP, 155,43,100,10
     LTEXT           "", IDC_CURRENTREMOTEIP, 155,55,100,10
@@ -46,19 +46,20 @@ BEGIN
     PUSHBUTTON      "OK", IDOK, 0,180,200,20
 END
 
-IDD_DLGMESSAGE DIALOG 100, 100, 200, 65
+IDD_DLGMESSAGE DIALOG 100, 100, 200, 85
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Pit->Car Message"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "Message",IDC_LBLMESSAGE,5,5,100,12
     EDITTEXT        IDC_EDTMESSAGE,105,5,100,12
-    LTEXT           "Time to display (min)",IDC_LBLTIME,5,19,100,12
+    LTEXT           "Time to display, min (Max=3)",IDC_LBLTIME,5,19,100,12
     EDITTEXT        IDC_EDTTIME,105,19,100,12
-    LTEXT           "Send attempt time (min)",IDC_LBLATTEMPTTIME,5,33,100,12
+    LTEXT           "Send attempt time, min (Max=3)",IDC_LBLATTEMPTTIME,5,33,100,12
     EDITTEXT        IDC_EDTATTEMPTTIME,105,33,100,12
-    PUSHBUTTON      "OK", IDOK, 5,47,100,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 100,47,100,12
+    LTEXT           "Pitside may hang for up to 60s on next message send\nif previous attempt failed or was aborted",IDC_LBLMESSAGE2,5,47,195,24
+    PUSHBUTTON      "OK", IDOK, 5,67,95,12
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,12
 END
 
 // dialog for selecting which race in a DB we want to use
