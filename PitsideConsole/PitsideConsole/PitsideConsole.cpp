@@ -499,7 +499,11 @@ public:
           {
             MESSAGEDLG_RESULT sfResult;
             CMessageDlg dlgMessage(&sfResult);
+            
+            HWND hWndButton = GetDlgItem(this->m_hWnd,IDC_SENDMESSAGE);
+            EnableWindow(hWndButton,FALSE);
             ArtShowDialog<IDD_DLGMESSAGE>(&dlgMessage);
+            EnableWindow(hWndButton,TRUE);
             LPCTSTR lpsz = g_pLapDB->GetNetStatus(NETSTATUS_REMOTEIP);
             sprintf(sfResult.szIP, "%S", lpsz);
 
