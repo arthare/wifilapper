@@ -264,7 +264,8 @@ DWORD CMsgThread::MessageRecvThreadProc()
       struct timeval t;
       FD_ZERO(&socks);
       FD_SET(sIncoming, &socks);
-      t.tv_sec = 250;
+      t.tv_sec = 1;
+      t.tv_usec = 0;
 
       if(select(1,&socks,NULL,NULL,&t))
       {
