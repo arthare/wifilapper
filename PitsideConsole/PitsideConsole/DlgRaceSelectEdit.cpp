@@ -1,10 +1,10 @@
 #include "Stdafx.h"
-#include "DlgRaceSelect.h"
+#include "DlgRaceSelectEdit.h"
 #include "resource.h"
 #include "PitsideConsole.h"
 #include "LapReceiver.h"
 #include "ArtSQL/ArtSQLite.h"
-LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
   {
@@ -58,7 +58,44 @@ LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
           }
           else
           {
+              if(set.size() >= 1)
+              {
+//                for(set<LPARAM> set::iterator i = set.begin(); i != set.end(); i++)
+                {
+					m_pResults->iRaceId = *set.begin();
+					m_pResults->fCancelled = false;
+					EndDialog(hWnd,0);
+                }
+              }
+
           }
+          return TRUE;
+        }
+        case IDC_RACEEDIT_MERGE:
+        {
+          set<LPARAM> set = sfListBox.GetSelectedItemsData();
+          if(set.size() == 1)
+          {
+			//	Do nothing, only 1 race session chosen
+		  }
+          else if(set.size() >= 1)
+		  {
+			  //	Need to find all Race Sessions selected, and then merge them into a single RaceID
+			  //	int m_iRaceId(100), x;
+			  //	x = 0;
+			  //	for(set<LPARAM> set::iterator i = set.begin(); i != set.end(); i++)
+			  //		{
+			  //			m_iRaceId(x) = *i;
+				//			x++;
+				//		}
+			  //	Now let's change the SQL RaceId so that they are all the same as set.beging()
+
+				{
+					m_pResults->iRaceId = *set.begin();
+					m_pResults->fCancelled = false;
+					EndDialog(hWnd,0);
+				}
+		  }
           return TRUE;
         }
         case IDCANCEL:

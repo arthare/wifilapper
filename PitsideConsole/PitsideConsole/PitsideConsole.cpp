@@ -20,6 +20,7 @@
 #include "LapData.h"
 #include "DlgMessage.h"
 #include "DlgRaceSelect.h"
+#include "DlgRaceSelectEdit.h"
 #include "DlgPlotSelect.h"	//	Added by KDJ for Preferences menu
 #include "Iphlpapi.h"
 #include "ArtSQL/ArtSQLite.h"
@@ -268,6 +269,7 @@ public:
       m_eLapDisplayStyle(LAPDISPLAYSTYLE_PLOT),		//	Make data plot the default initial view
       m_fShowBests(false), 
       m_fShowDriverBests(false),
+	  m_fShowReferenceLap(true),
       m_pReferenceLap(NULL),
       m_eXChannel(DATA_CHANNEL_DISTANCE),
       m_fdwUpdateNeeded(0),
@@ -542,6 +544,12 @@ public:
             UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
             return TRUE;
           }
+          case ID_OPTIONS_SHOWREFERENCELAP:
+          {
+            m_fShowReferenceLap = !m_fShowReferenceLap;
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            return TRUE;
+          }
           case ID_OPTIONS_DRAWLINES:
           {
             m_sfLapOpts.fDrawLines = !m_sfLapOpts.fDrawLines;
@@ -571,6 +579,21 @@ public:
             RACESELECT_RESULT sfResult;
             CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
             ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
+
+            if(!sfResult.fCancelled)
+            {
+              m_iRaceId = sfResult.iRaceId;
+              ClearUILaps();
+              LoadLaps(g_pLapDB);
+              UpdateUI(UPDATE_ALL);
+            }
+            return TRUE;
+          }
+          case ID_DATA_EDITSESSION:
+          {
+            RACESELECTEDIT_RESULT sfResult;
+            CRaceSelectEditDlg dlgRace(g_pLapDB, &sfResult);
+            ArtShowDialog<IDD_SELECTRACEEDIT>(&dlgRace);
 
             if(!sfResult.fCancelled)
             {
@@ -1023,7 +1046,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0012\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0013\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
@@ -1277,6 +1300,7 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MS, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MS);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
+	CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWREFERENCELAP, m_fShowReferenceLap);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_DRAWLINES, m_sfLapOpts.fDrawLines);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_BACKGROUND, m_sfLapOpts.fColorScheme);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_IOIO5VSCALE, m_sfLapOpts.fIOIOHardcoded);
@@ -1407,7 +1431,8 @@ void UpdateDisplays()
     }
 
 	//	Set up for showing Reference lap similar to how we show Fastest Lap. 
-	if(m_pReferenceLap != NULL)
+//	if(m_pReferenceLap != NULL)
+	if(m_fShowReferenceLap && m_pReferenceLap != NULL)
     {
 		lstLaps.push_back(m_pReferenceLap);
     }
@@ -1796,6 +1821,7 @@ private:
 //  vector<DATA_CHANNEL> m_lstYChannels;
   bool m_fShowBests;
   bool m_fShowDriverBests;
+  bool m_fShowReferenceLap;
 
   CExtendedLap* m_pReferenceLap;
   map<int,CExtendedLap*> m_mapLaps; // maps from iLapId to a lap object

@@ -501,7 +501,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		float b;
 		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
-		if (lstMousePointsToDraw[x].m_eChannelY != DATA_CHANNEL_LAPTIME_SUMMARY)
+		//	For TIME displayed on X-axis, remove all data channel text so that user can see the trends more clearly.
+		if (pDataX->GetChannelType() != DATA_CHANNEL_TIME)
 		{
 
 			// if we're the main screen, we want to draw some text data for each point
