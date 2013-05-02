@@ -4,6 +4,7 @@
 #include "PitsideConsole.h"
 #include "LapReceiver.h"
 #include "ArtSQL/ArtSQLite.h"
+#include "SQLiteLapDB.h"	//	Added by KDJ
 LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
@@ -60,7 +61,7 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
           {
               if(set.size() >= 1)
               {
-//                for(set<LPARAM> set::iterator i = set.begin(); i != set.end(); i++)
+//                for(set<LPARAM>::const_iterator i = set.begin(); i != set.end(); i++)
                 {
 					m_pResults->iRaceId = *set.begin();
 					m_pResults->fCancelled = false;
@@ -73,28 +74,32 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         }
         case IDC_RACEEDIT_MERGE:
         {
-          set<LPARAM> set = sfListBox.GetSelectedItemsData();
-          if(set.size() == 1)
+          set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+          if(setSelected.size() == 1)
           {
 			//	Do nothing, only 1 race session chosen
 		  }
-          else if(set.size() >= 1)
+          else if(setSelected.size() >= 1)
 		  {
 			  //	Need to find all Race Sessions selected, and then merge them into a single RaceID
-			  //	int m_iRaceId(100), x;
-			  //	x = 0;
-			  //	for(set<LPARAM> set::iterator i = set.begin(); i != set.end(); i++)
-			  //		{
-			  //			m_iRaceId(x) = *i;
-				//			x++;
-				//		}
-			  //	Now let's change the SQL RaceId so that they are all the same as set.beging()
-
-				{
-					m_pResults->iRaceId = *set.begin();
-					m_pResults->fCancelled = false;
-					EndDialog(hWnd,0);
-				}
+			  int m_iRaceId[100], x;
+			  x = 0;
+			  for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
+			  	{
+			  		m_iRaceId[x] = *i;
+			  		x++;
+			  	}
+			  //	Now let's change the SQL RaceId so that they are all the same as set.begin()
+			  for (int y = 1; y <= x; y++)
+			  {
+			  	MergeLaps(m_iRaceId[1], m_iRaceId[y]);	//	Merge all Race sessions in m_RaceId
+			  }
+			  //	Finally, let's load this new combined Race Session as current and close the dialog box.
+			  {
+				  m_pResults->iRaceId = *setSelected.begin();
+				  m_pResults->fCancelled = false;
+				  EndDialog(hWnd,0);
+			  }
 		  }
           return TRUE;
         }
@@ -114,4 +119,3 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
   }
   return FALSE;
 }
-

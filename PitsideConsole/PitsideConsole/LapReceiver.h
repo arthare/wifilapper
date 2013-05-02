@@ -388,6 +388,7 @@ public:
   virtual void NotifyDBArrival(LPCTSTR lpszPath) = 0;
   virtual void SetNetStatus(NETSTATUSSTRING eString, LPCTSTR szData) = 0; // network man tells us the latest status
   virtual LPCTSTR GetNetStatus(NETSTATUSSTRING eString) const = 0;
+  virtual bool MergeLaps(int m_iRaceId1, int m_iRaceId2) = 0;
 };
 
 // net-thread entry point.  Fills a ILapReceiver from the network

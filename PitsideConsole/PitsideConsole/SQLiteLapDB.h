@@ -25,6 +25,7 @@ public:
   virtual int GetLapCount(int iRaceId) const override; // gets the lap count for a given race
   virtual vector<RACEDATA> GetRaces() override;
   virtual vector<const ILap*> GetLaps(int iRaceId) override;
+  virtual bool MergeLaps(int m_iRaceId1, int m_iRaceId2);
   virtual const ILap* GetLap(int iLapId) override;
   virtual const IDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const override;
   virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const override;
