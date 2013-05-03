@@ -497,6 +497,7 @@ bool CSQLiteLapDB::MergeLaps(int m_iRaceId1, int m_iRaceId2)
 {
   TCHAR szQuery[MAX_PATH];
   _snwprintf(szQuery, NUMCHARS(szQuery), L"Update laps set raceid = %d where raceid = %d", m_iRaceId1, m_iRaceId2);
+  m_sfDB.ExecuteSQL((const char(szQuery));
   return true;
 }
 //////////////////////////////////////////////////////////////

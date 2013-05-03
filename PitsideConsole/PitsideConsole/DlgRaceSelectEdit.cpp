@@ -5,6 +5,9 @@
 #include "LapReceiver.h"
 #include "ArtSQL/ArtSQLite.h"
 #include "SQLiteLapDB.h"	//	Added by KDJ
+
+extern ILapReceiver* g_pLapDB;
+
 LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
@@ -74,32 +77,36 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         }
         case IDC_RACEEDIT_MERGE:
         {
-          set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+		  //	Let's make sure that the user really wants to do this.
+/*		  CSplashDlg splash;
+		  ArtShowDialog<IDD_DLGSPLASH>(&splash);
+*/		  MessageBox(NULL,L"Are you sure you want to merge these race sessions?\n\nThis operation cannot be undone",L"", MB_OK);
+		  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
           if(setSelected.size() == 1)
           {
 			//	Do nothing, only 1 race session chosen
 		  }
           else if(setSelected.size() >= 1)
 		  {
-			  //	Need to find all Race Sessions selected, and then merge them into a single RaceID
-			  int m_iRaceId[100], x;
-			  x = 0;
-			  for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
-			  	{
-			  		m_iRaceId[x] = *i;
-			  		x++;
-			  	}
-			  //	Now let's change the SQL RaceId so that they are all the same as set.begin()
-			  for (int y = 1; y <= x; y++)
+			//   Need to find all Race Sessions selected, and then merge them into a single RaceID
+			int iFirstRaceId = -1;
+			for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
+			{
+			  if(iFirstRaceId == -1)
 			  {
-			  	MergeLaps(m_iRaceId[1], m_iRaceId[y]);	//	Merge all Race sessions in m_RaceId
+				iFirstRaceId = *i;
+				continue; // don't need to merge this lap with itself
 			  }
-			  //	Finally, let's load this new combined Race Session as current and close the dialog box.
+			  else
 			  {
-				  m_pResults->iRaceId = *setSelected.begin();
-				  m_pResults->fCancelled = false;
-				  EndDialog(hWnd,0);
+				g_pLapDB->MergeLaps(iFirstRaceId, *i); // merges the current race with the first race.
 			  }
+			}
+			//	Finally, let's load this new combined Race Session as current and close the dialog box.
+			if (iFirstRaceId != -1) m_pResults->iRaceId = iFirstRaceId;
+			m_pResults->fCancelled = false;
+			EndDialog(hWnd,0);
+
 		  }
           return TRUE;
         }

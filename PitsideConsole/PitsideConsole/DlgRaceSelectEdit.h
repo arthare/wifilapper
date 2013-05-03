@@ -3,7 +3,7 @@
 #include "ArtUI.h"
 #include "ArtTools.h"
 #include "LapReceiver.h"
-#include "SQLiteLapDB.h"	//	Added by KDJ
+//#include "SQLiteLapDB.h"	//	Added by KDJ
 
 struct RACESELECTEDIT_RESULT
 {
