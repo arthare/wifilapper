@@ -80,7 +80,7 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		  //	Let's make sure that the user really wants to do this.
 /*		  CSplashDlg splash;
 		  ArtShowDialog<IDD_DLGSPLASH>(&splash);
-*/		  MessageBox(NULL,L"Are you sure you want to merge these race sessions?\n\nThis operation cannot be undone",L"", MB_OK);
+*/		  MessageBox(NULL,L"Are you sure you want to merge these race sessions?\n\nONLY merge race sessions that are on the same track!\nEven then, Start/Finish differences will disrupt graphs such as Time Slip.\n\nTHIS OPERATION CANNOT BE UNDONE",L"", MB_OK);
 		  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
           if(setSelected.size() == 1)
           {
@@ -99,14 +99,17 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			  }
 			  else
 			  {
-				g_pLapDB->MergeLaps(iFirstRaceId, *i); // merges the current race with the first race.
+				bool RaceCheck = g_pLapDB->MergeLaps(iFirstRaceId, *i); // merges the current race with the first race.
+				if (RaceCheck == false)
+				{
+				  MessageBox(NULL,L"Race session merging failed!\n\nPost on Wifilapper Forum about this issue",L"", MB_OK);
+				}
 			  }
 			}
 			//	Finally, let's load this new combined Race Session as current and close the dialog box.
 			if (iFirstRaceId != -1) m_pResults->iRaceId = iFirstRaceId;
 			m_pResults->fCancelled = false;
 			EndDialog(hWnd,0);
-
 		  }
           return TRUE;
         }

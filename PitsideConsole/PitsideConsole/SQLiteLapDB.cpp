@@ -495,10 +495,24 @@ vector<RACEDATA> CSQLiteLapDB::GetRaces()
 //////////////////////////////////////////////////////////////
 bool CSQLiteLapDB::MergeLaps(int m_iRaceId1, int m_iRaceId2)
 {
-  TCHAR szQuery[MAX_PATH];
-  _snwprintf(szQuery, NUMCHARS(szQuery), L"Update laps set raceid = %d where raceid = %d", m_iRaceId1, m_iRaceId2);
-  m_sfDB.ExecuteSQL((const char*)szQuery);
-  return true;
+//  TCHAR szQuery[MAX_PATH];
+//  _snwprintf(szQuery, NUMCHARS(szQuery), L"Update laps set raceid = %d where raceid = %d", m_iRaceId1, m_iRaceId2);
+
+  CSfArtSQLiteQuery sfQuery(m_sfDB);
+  if(sfQuery.Init(L"Update laps set raceid = ? where raceid = ?"))
+  {
+    sfQuery.BindValue(m_iRaceId1);
+    sfQuery.BindValue(m_iRaceId2);
+    if(sfQuery.Next() || sfQuery.IsDone())
+    {
+      // data update complete, hooray!
+      return true;
+    }
+  }
+  return false;
+
+//  m_sfDB.ExecuteSQL((const char*)szQuery);
+//  return true;
 }
 //////////////////////////////////////////////////////////////
 vector<const ILap*> CSQLiteLapDB::GetLaps(int iRaceId)
