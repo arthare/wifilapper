@@ -84,18 +84,18 @@ BEGIN
     PUSHBUTTON      "OK", IDOK, 5,193,95,12
     PUSHBUTTON      "Cancel", IDCANCEL, 100,193,95,12
 END
-/*
+
 // confirm dialog for editing races in a DB
-IDD_RACEEDITCONFIRM DIALOG 100, 100, 200, 85
+IDD_RACEEDITCONFIRM DIALOG 100, 100, 250, 125
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "**Confirm**"
+CAPTION "**WARNING**"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT           "Are you sure you want to merge these race sessions?\n\nThis operation cannot be undone",IDC_LBLMESSAGE3,5,47,195,24
-    PUSHBUTTON      "OK", IDOK, 5,67,95,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,12
+    LTEXT           "Are you sure you want to merge these race sessions?\n\nONLY merge race sessions that are on the same track!\n\nEven then, Start/Finish differences will disrupt graphs such as Time Slip.\n\n\nTHIS OPERATION CANNOT BE UNDONE",IDC_LBLMESSAGE3,5,5,245,90
+    PUSHBUTTON      "Merge", IDOK, 5,100,120,24
+    PUSHBUTTON      "Cancel", IDCANCEL, 125,100,120,24
 END
-*/
+
 // dialog for selecting plotting preferences
 IDD_PLOTPREFS DIALOG 50, 50, 370, 312
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX

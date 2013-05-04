@@ -5,6 +5,7 @@
 #include "LapReceiver.h"
 #include "ArtSQL/ArtSQLite.h"
 #include "SQLiteLapDB.h"	//	Added by KDJ
+#include "DlgRaceEditConfirm.h"
 
 extern ILapReceiver* g_pLapDB;
 
@@ -56,6 +57,7 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
           set<LPARAM> set = sfListBox.GetSelectedItemsData();
           if(set.size() == 1)
           {
+			MessageBox(NULL,L"Only 1 race session selected\n\nNo changes were made",L"", MB_OK);
             m_pResults->iRaceId = *set.begin();
             m_pResults->fCancelled = false;
             EndDialog(hWnd,0);
@@ -64,54 +66,59 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
           {
               if(set.size() >= 1)
               {
-//                for(set<LPARAM>::const_iterator i = set.begin(); i != set.end(); i++)
-                {
+					MessageBox(NULL,L"No changes were made",L"", MB_OK);
 					m_pResults->iRaceId = *set.begin();
 					m_pResults->fCancelled = false;
 					EndDialog(hWnd,0);
-                }
               }
-
           }
           return TRUE;
         }
         case IDC_RACEEDIT_MERGE:
         {
 		  //	Let's make sure that the user really wants to do this.
-/*		  CSplashDlg splash;
-		  ArtShowDialog<IDD_DLGSPLASH>(&splash);
-*/		  MessageBox(NULL,L"Are you sure you want to merge these race sessions?\n\nONLY merge race sessions that are on the same track!\nEven then, Start/Finish differences will disrupt graphs such as Time Slip.\n\nTHIS OPERATION CANNOT BE UNDONE",L"", MB_OK);
-		  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
-          if(setSelected.size() == 1)
-          {
-			//	Do nothing, only 1 race session chosen
-		  }
-          else if(setSelected.size() >= 1)
+		  RACEEDITCONFIRM_RESULT sfResult;
+		  CRaceEditConfirmDlg dlgRaceEditConfirm(&sfResult);
+		  ArtShowDialog<IDD_RACEEDITCONFIRM>(&dlgRaceEditConfirm);
+		  if(!sfResult.fCancelled)
 		  {
-			//   Need to find all Race Sessions selected, and then merge them into a single RaceID
-			int iFirstRaceId = -1;
-			for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
-			{
-			  if(iFirstRaceId == -1)
+			  // Okay they are serious and really want to merge these race sessions
+			  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+			  if(setSelected.size() == 1)
 			  {
-				iFirstRaceId = *i;
-				continue; // don't need to merge this lap with itself
+				//	Do nothing, only 1 race session chosen
+				MessageBox(NULL,L"Only 1 race session selected\n\nNo changes were made",L"", MB_OK);
 			  }
-			  else
+			  else if(setSelected.size() >= 1)
 			  {
-				bool RaceCheck = g_pLapDB->MergeLaps(iFirstRaceId, *i); // merges the current race with the first race.
-				if (RaceCheck == false)
+				//   Need to find all Race Sessions selected, and then merge them into a single RaceID
+				int iFirstRaceId = -1;
+				for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
 				{
-				  MessageBox(NULL,L"Race session merging failed!\n\nPost on Wifilapper Forum about this issue",L"", MB_OK);
+				  if(iFirstRaceId == -1)
+				  {
+					iFirstRaceId = *i;
+					continue; // don't need to merge this lap with itself
+				  }
+				  else
+				  {
+					bool RaceCheck = g_pLapDB->MergeLaps(iFirstRaceId, *i); // merges the current race with the first race.
+					if (RaceCheck == false)
+					{
+					  MessageBox(NULL,L"Race session merging failed!\n\nPost on Wifilapper Forum about this issue",L"", MB_OK);
+					}
+				  }
 				}
+				//	Finally, let's load this new combined Race Session as current and close the dialog box.
+				if (iFirstRaceId != -1) m_pResults->iRaceId = iFirstRaceId;
+				m_pResults->fCancelled = false;
+				EndDialog(hWnd,0);
 			  }
-			}
-			//	Finally, let's load this new combined Race Session as current and close the dialog box.
-			if (iFirstRaceId != -1) m_pResults->iRaceId = iFirstRaceId;
-			m_pResults->fCancelled = false;
-			EndDialog(hWnd,0);
+			  return TRUE;
 		  }
-          return TRUE;
+          m_pResults->fCancelled = true;	//	User cancelled the operation at the warning/confirm screen
+          EndDialog(hWnd,0);
+		  return TRUE;
         }
         case IDCANCEL:
           m_pResults->fCancelled = true;
