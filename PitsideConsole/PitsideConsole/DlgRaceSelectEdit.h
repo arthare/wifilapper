@@ -31,7 +31,6 @@ public:
   RACESELECTEDIT_RESULT* m_pResults;
 
 private:
-//  RACESELECT_RESULT* m_pResults;
   ILapReceiver* m_pLapDB;
   ArtListBox sfListBox;
 };

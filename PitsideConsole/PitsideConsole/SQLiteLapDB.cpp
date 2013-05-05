@@ -514,7 +514,7 @@ bool CSQLiteLapDB::RenameLaps(TCHAR szName[MAX_PATH], int m_iRaceId1)
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   if(sfQuery.Init(L"update races set name = ? where _id = ?"))
   {
-    sfQuery.BindValue(szName[NUMCHARS(szName)]);
+    sfQuery.BindValue(szName);
     sfQuery.BindValue(m_iRaceId1);
     if(sfQuery.Next() || sfQuery.IsDone())
     {
