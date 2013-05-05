@@ -389,6 +389,7 @@ public:
   virtual void SetNetStatus(NETSTATUSSTRING eString, LPCTSTR szData) = 0; // network man tells us the latest status
   virtual LPCTSTR GetNetStatus(NETSTATUSSTRING eString) const = 0;
   virtual bool MergeLaps(int m_iRaceId1, int m_iRaceId2) = 0;
+  virtual bool RenameLaps(TCHAR szName[260], int m_RaceId1) = 0;
 };
 
 // net-thread entry point.  Fills a ILapReceiver from the network

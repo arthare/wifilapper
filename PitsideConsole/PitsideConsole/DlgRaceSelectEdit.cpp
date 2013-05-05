@@ -1,5 +1,6 @@
 #include "Stdafx.h"
 #include "DlgRaceSelectEdit.h"
+#include "DlgRaceNameEdit.h"
 #include "resource.h"
 #include "PitsideConsole.h"
 #include "LapReceiver.h"
@@ -118,6 +119,45 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		  }
           m_pResults->fCancelled = true;	//	User cancelled the operation at the warning/confirm screen
           EndDialog(hWnd,0);
+		  return TRUE;
+        }
+        case IDC_RACEEDIT_RENAME:
+        {
+		  //	Let's make sure that the user really wants to do this.
+		  RENAMEDLG_RESULT sfResult;
+		  CRenameDlg dlgRaceRename(&sfResult);
+		  ArtShowDialog<IDD_RACENAMECHANGE>(&dlgRaceRename);
+		  if(!sfResult.fCancelled)
+		  {
+			  // Okay they are serious and really want to rename these race sessions
+			  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+			  if(setSelected.size() == 0)
+			  {
+				//	Do nothing, no race sessions chosen
+				MessageBox(NULL,L"No race sessions selected\n\nNo changes were made",L"", MB_OK);
+			  }
+			  else if(setSelected.size() >= 1)
+			  {
+				//	The new name for the chosen race sessions is contained in m_pResults->szName				
+				//   Need to find all Race Sessions selected, and then reanme them with szName
+				int iFirstRaceId = -1;
+				for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
+				{
+					bool RaceCheck = g_pLapDB->RenameLaps(sfResult.szName, *i); // renames the current race with the inputed string.
+					if (RaceCheck == false)
+					{
+					  MessageBox(NULL,L"Race session renaming failed!\n\nPost on Wifilapper Forum about this issue",L"", MB_OK);
+					}
+				}
+				//	Close the dialog. User will have to reopen it to see the changed names
+				m_pResults->iRaceId = *setSelected.begin();
+				m_pResults->fCancelled = false;
+				EndDialog(hWnd,0);
+			  }
+			  return TRUE;
+		  }
+	      m_pResults->fCancelled = true;	//	User cancelled the operation at the warning/confirm screen
+	      EndDialog(hWnd,0);
 		  return TRUE;
         }
         case IDCANCEL:

@@ -78,6 +78,9 @@
     <ClInclude Include="DlgRaceEditConfirm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DlgRaceNameEdit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -126,6 +129,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DlgRaceEditConfirm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgRaceNameEdit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
