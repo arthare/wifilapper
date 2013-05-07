@@ -38,6 +38,12 @@ struct PITSIDE_SETTINGS
   int iColorScheme;
 };
 
+enum LAPSORTSTYLE
+{
+	SORTSTYLE_BYTIMEOFRACE, // sort by the time the lap was done: 2:31pm comes before 4:45pm (well... on the same day)
+	SORTSTYLE_BYLAPTIME, // sort by lap time.  1:12.15 comes before 1:13.45
+};
+
 struct LAPSUPPLIEROPTIONS
 {
 public:
@@ -55,6 +61,7 @@ public:
   float flWindowShiftY;
   int iZoomLevels;
   PlotPrefs m_PlotPrefs[50];	// Pull in PlotPrefs data
+  LAPSORTSTYLE eSortPreference;
 };
 
 

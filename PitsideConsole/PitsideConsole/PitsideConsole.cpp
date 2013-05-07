@@ -252,7 +252,10 @@ bool CExtendedLap_SortByTime(const CExtendedLap* p1, const CExtendedLap* p2)
 {
   return p1->GetLap()->GetStartTime() < p2->GetLap()->GetStartTime();
 }
-
+bool CExtendedLap_SortByLapTime(const CExtendedLap* p1, const CExtendedLap* p2)
+{
+  return p1->GetLap()->GetTime() < p2->GetLap()->GetTime(); // GetTime() or whatever the function is that gets lap time
+}
 // supplier IDs - each lap painter is given a supplier ID, which it uses to identify itself when asking for more data
 enum SUPPLIERID
 {
@@ -536,6 +539,18 @@ public:
           {
             m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MS;
             UpdateUI(UPDATE_MAP | UPDATE_MENU);
+            return TRUE;
+          }
+          case ID_OPTIONS_SORTTIME:
+          {
+            m_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;
+            UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
+            return TRUE;
+          }
+          case ID_OPTIONS_SORTLAP:
+          {
+            m_sfLapOpts.eSortPreference = SORTSTYLE_BYLAPTIME;
+            UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
             return TRUE;
           }
           case ID_OPTIONS_SHOWBESTS:
@@ -936,38 +951,38 @@ public:
   void UpdateUI_Internal(DWORD fdwUpdateFlags)
   {
     set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
-    vector<CExtendedLap*> laps = GetSortedLaps(); // translates our m_mapLaps into a vector sorted by time
+	vector<CExtendedLap*> laps = GetSortedLaps(m_sfLapOpts.eSortPreference); // translates our m_mapLaps into a vector sorted by time
+	// do some memory cleanup
+	for(int x = 0;x < laps.size(); x++)
+	{
+		if(setSelectedData.find((LPARAM)laps[x]) != setSelectedData.end() || laps[x] == m_pReferenceLap)
+		{
+		// this lap is still selected, as it is in the set of selected items
+		}
+		else
+		{
+		// this lap is not selected.  we should compact it so that it doesn't gobble memory.
+		laps[x]->Compact();
+		}
+	}
 
-    // do some memory cleanup
-    for(int x = 0;x < laps.size(); x++)
-    {
-      if(setSelectedData.find((LPARAM)laps[x]) != setSelectedData.end() || laps[x] == m_pReferenceLap)
-      {
-        // this lap is still selected, as it is in the set of selected items
-      }
-      else
-      {
-        // this lap is not selected.  we should compact it so that it doesn't gobble memory.
-        laps[x]->Compact();
-      }
-    }
 
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_LIST))
     {
-      int iPosition = m_sfLapList.GetPosition();
-      m_sfLapList.Clear();
-      vector<CExtendedLap*> laps = GetSortedLaps(); // translates our m_mapLaps into a vector sorted by time
-      for(int x = 0;x < laps.size(); x++)
-      {
-        vector<wstring> lstStrings;
-        laps[x]->GetStrings(lstStrings);
-        m_sfLapList.AddStrings(lstStrings, (LPARAM)laps[x]);
-      }
-      m_sfLapList.SetSelectedData(setSelectedData);
-      if(laps.size() > 0)
-      {
-        m_sfLapList.MakeVisible((LPARAM)laps[laps.size()-1]);
-      }
+		int iPosition = m_sfLapList.GetPosition();
+		m_sfLapList.Clear();
+		vector<CExtendedLap*> laps = GetSortedLaps(m_sfLapOpts.eSortPreference); // translates our m_mapLaps into a vector sorted by time
+		for(int x = 0;x < laps.size(); x++)
+		{
+		vector<wstring> lstStrings;
+		laps[x]->GetStrings(lstStrings);
+		m_sfLapList.AddStrings(lstStrings, (LPARAM)laps[x]);
+		}
+		m_sfLapList.SetSelectedData(setSelectedData);
+		if(laps.size() > 0)
+		{
+		m_sfLapList.MakeVisible((LPARAM)laps[laps.size()-1]);
+		}
     }
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_MAP))
     {
@@ -1298,6 +1313,8 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_KMH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_KMH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MPH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MPH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MS, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MS);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_SORTTIME, m_sfLapOpts.eSortPreference == SORTSTYLE_BYTIMEOFRACE);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_SORTLAP, m_sfLapOpts.eSortPreference == SORTSTYLE_BYLAPTIME);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
 	CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWREFERENCELAP, m_fShowReferenceLap);
@@ -1306,16 +1323,27 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_IOIO5VSCALE, m_sfLapOpts.fIOIOHardcoded);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_ELAPSEDTIME, m_sfLapOpts.fElapsedTime);
   }
-  vector<CExtendedLap*> GetSortedLaps()
+
+  vector<CExtendedLap*> GetSortedLaps(LAPSORTSTYLE eSortStyle)
   {
     vector<CExtendedLap*> lstLaps;
     for(map<int,CExtendedLap*>::iterator i = m_mapLaps.begin(); i != m_mapLaps.end(); i++)
     {
       lstLaps.push_back(i->second);
     }
-    sort(lstLaps.begin(),lstLaps.end(), CExtendedLap_SortByTime);
+    switch(eSortStyle)
+    {
+    case SORTSTYLE_BYTIMEOFRACE:
+      sort(lstLaps.begin(),lstLaps.end(), CExtendedLap_SortByTime);
+      break;
+    case SORTSTYLE_BYLAPTIME:
+      sort(lstLaps.begin(),lstLaps.end(), CExtendedLap_SortByLapTime);
+      break;
+     
+    }
     return lstLaps;
   }
+  
   void LoadLaps(ILapReceiver* pReceiver)
   {
     vector<const ILap*> laps = pReceiver->GetLaps(m_iRaceId);
@@ -1431,7 +1459,6 @@ void UpdateDisplays()
     }
 
 	//	Set up for showing Reference lap similar to how we show Fastest Lap. 
-//	if(m_pReferenceLap != NULL)
 	if(m_fShowReferenceLap && m_pReferenceLap != NULL)
     {
 		lstLaps.push_back(m_pReferenceLap);
@@ -1568,8 +1595,8 @@ void UpdateDisplays()
       case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
       case DATA_CHANNEL_VELOCITY: return 0;
       case DATA_CHANNEL_DISTANCE: return 1e30;
-      case DATA_CHANNEL_TIME: return 1e30;
-      case DATA_CHANNEL_ELAPSEDTIME: return 1e30;
+      case DATA_CHANNEL_TIME:
+      case DATA_CHANNEL_ELAPSEDTIME:
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
@@ -1649,18 +1676,24 @@ void UpdateDisplays()
 		  if(flSpread < 110000) return 5000.0f;
 		  if(flSpread < 1100000) return 10000.0f;
 		  if(flSpread < 10000000) return 100000.0f;
-		  return 10000000;
+		  if(flSpread < 100000000) return 1000000.0f;
+		  return 10000000.0f;
 		}
     case DATA_CHANNEL_LAPTIME_SUMMARY:					
 		{
-		  if(flSpread < 1) return 0.50f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 1) return 0.50f;		//	Added by KDJ to improve Laptime display
 		  if(flSpread < 5) return 1.0f;
 		  if(flSpread < 10) return 5.0f;
 		  if(flSpread < 50) return 25.0f;
 		  if(flSpread < 110) return 50.0f;
 		  if(flSpread < 1100) return 100.0f;
 		  if(flSpread < 10000) return 1000.0f;
-		  return 100000;
+		  if(flSpread < 50000) return 2500.0f;
+		  if(flSpread < 110000) return 5000.0f;
+		  if(flSpread < 1100000) return 10000.0f;
+		  if(flSpread < 10000000) return 100000.0f;
+		  if(flSpread < 100000000) return 1000000.0f;
+		  return 10000000.0f;
 		}
 	default:
     return 1e30;
@@ -1726,7 +1759,11 @@ void UpdateDisplays()
 	  if(flSpread < 100) return 10.0f;
       if(flSpread < 1100) return 100.0f;
       if(flSpread < 10000) return 1000.0f;
-	  return 10000.0f;
+      if(flSpread < 50000) return 5000.0f;
+	  if(flSpread < 110000) return 10000.0f;
+      if(flSpread < 1100000) return 100000.0f;
+      if(flSpread < 10000000) return 1000000.0f;
+	  return 10000000.0f;
     }
     case DATA_CHANNEL_X_ACCEL: return 0.5f;
     case DATA_CHANNEL_Y_ACCEL: return 0.5f;
@@ -2060,6 +2097,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             x_sfLapOpts.fColorScheme = false;	//	Grey background as a default, true = black
           }
   }
+  x_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;		//	Default sort Lap List by time of lap
   sfUI.SetDisplayOptions(x_sfLapOpts);
 
   PitsideHTTP aResponder(g_pLapDB,&sfUI);

@@ -193,4 +193,7 @@
 #define IDC_EDTMESSAGE2 301
 #define IDC_LBLMESSAGE4 302
 #define IDD_RACENAMECHANGE 303
+
+#define ID_OPTIONS_SORTTIME 310
+#define ID_OPTIONS_SORTLAP 311
 // don't put anything below this
