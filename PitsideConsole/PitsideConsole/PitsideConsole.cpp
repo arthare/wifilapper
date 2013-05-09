@@ -632,6 +632,11 @@ public:
 					
 			return TRUE;
 		  }		
+          case ID_HELP_SHOWHELP:
+          {
+            ShowHelp(hWnd);
+            return TRUE;
+          }
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -1061,9 +1066,31 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0015\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0016\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
+	}
+   bool ShowHelp(HWND hWnd)
+	{
+		TCHAR lpOpen[MAX_PATH] = L"open";
+		
+		TCHAR lpFile[MAX_PATH] = L"PitsideHelp.pdf";
+		TCHAR lpDir[MAX_PATH];
+		if(GetAppFolder(lpDir,NUMCHARS(lpDir)))
+		{
+			//	Set up the Filename string for the Help PDF file.
+			wcsncat(lpDir,L"", NUMCHARS(lpDir)-1);
+		}
+		else
+		{
+			// trouble.  just bail.
+			return false;
+		}
+		int nShowCmd = SW_RESTORE;	//	Restore the Help document, if it is minimized or whatever.
+
+		//	Shell to the Help PDF file
+		ShellExecuteW(hWnd, lpOpen, lpFile, NULL, lpDir, nShowCmd);
+		return true;
 	}
   void ShowNetInfo()
   {
