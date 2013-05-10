@@ -96,11 +96,11 @@ vector<CExtendedLap*> GetAllLaps()
 
 				if (m_sfLapOpts->m_PlotPrefs[z].iPlotView)	//	Load the dialog with the radio buttons
 				{
-					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z, IDC_PLOTTYPE_VALUE0 + z, IDC_PLOTTYPE_GRAPH0 + z);
+					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z*2, IDC_PLOTTYPE_VALUE0 + z*2, IDC_PLOTTYPE_GRAPH0 + z*2);
 				}
-				else
+				else 
 				{
-					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z, IDC_PLOTTYPE_VALUE0 + z, IDC_PLOTTYPE_VALUE0 + z);
+					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z*2, IDC_PLOTTYPE_VALUE0 + z*2, IDC_PLOTTYPE_VALUE0 + z*2);
 				}
 
 				TCHAR szText[MAX_PATH];	//	Load the dialog with the alarm limits
@@ -132,11 +132,11 @@ vector<CExtendedLap*> GetAllLaps()
 
 				if (m_sfLapOpts->m_PlotPrefs[z].iPlotView == true)
 				{
-					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z, IDC_PLOTTYPE_VALUE0 + z, IDC_PLOTTYPE_GRAPH0 + z);
+					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z*2, IDC_PLOTTYPE_VALUE0 + z*2, IDC_PLOTTYPE_GRAPH0 + z*2);
 				}
-				else if (m_sfLapOpts->m_PlotPrefs[z].iPlotView == false)
+				else 
 				{
-					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z, IDC_PLOTTYPE_VALUE0 + z, IDC_PLOTTYPE_VALUE0 + z);
+					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z*2, IDC_PLOTTYPE_VALUE0 + z*2, IDC_PLOTTYPE_VALUE0 + z*2);
 				}
 			}
 		  return 0;
@@ -144,8 +144,7 @@ vector<CExtendedLap*> GetAllLaps()
 
     LRESULT CPlotSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
-
-		switch(uMsg)
+	  switch(uMsg)
       {
         case WM_INITDIALOG:
         {
@@ -166,250 +165,257 @@ vector<CExtendedLap*> GetAllLaps()
         {
           switch(LOWORD(wParam))
           {
-          case IDC_PLOTTYPE_GRAPH1:
-          {
-            m_sfLapOpts->m_PlotPrefs[1].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE1:
-          {
-            m_sfLapOpts->m_PlotPrefs[1].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH2:
-          {
-            m_sfLapOpts->m_PlotPrefs[2].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE2:
-          {
-            m_sfLapOpts->m_PlotPrefs[2].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH3:
-          {
-            m_sfLapOpts->m_PlotPrefs[3].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE3:
-          {
-            m_sfLapOpts->m_PlotPrefs[3].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH4:
-          {
-            m_sfLapOpts->m_PlotPrefs[4].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE4:
-          {
-            m_sfLapOpts->m_PlotPrefs[4].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH5:
-          {
-            m_sfLapOpts->m_PlotPrefs[5].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE5:
-          {
-            m_sfLapOpts->m_PlotPrefs[5].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH6:
-          {
-            m_sfLapOpts->m_PlotPrefs[6].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE6:
-          {
-            m_sfLapOpts->m_PlotPrefs[6].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH7:
-          {
-            m_sfLapOpts->m_PlotPrefs[7].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE7:
-          {
-            m_sfLapOpts->m_PlotPrefs[7].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH8:
-          {
-            m_sfLapOpts->m_PlotPrefs[8].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE8:
-          {
-            m_sfLapOpts->m_PlotPrefs[8].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH9:
-          {
-            m_sfLapOpts->m_PlotPrefs[9].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE9:
-          {
-            m_sfLapOpts->m_PlotPrefs[9].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH10:
-          {
-            m_sfLapOpts->m_PlotPrefs[10].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE10:
-          {
-            m_sfLapOpts->m_PlotPrefs[10].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH11:
-          {
-            m_sfLapOpts->m_PlotPrefs[11].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE11:
-          {
-            m_sfLapOpts->m_PlotPrefs[11].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH12:
-          {
-            m_sfLapOpts->m_PlotPrefs[12].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE12:
-          {
-            m_sfLapOpts->m_PlotPrefs[12].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH13:
-          {
-            m_sfLapOpts->m_PlotPrefs[13].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE13:
-          {
-            m_sfLapOpts->m_PlotPrefs[13].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH14:
-          {
-            m_sfLapOpts->m_PlotPrefs[14].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE14:
-          {
-            m_sfLapOpts->m_PlotPrefs[14].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH15:
-          {
-            m_sfLapOpts->m_PlotPrefs[15].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE15:
-          {
-            m_sfLapOpts->m_PlotPrefs[15].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH16:
-          {
-            m_sfLapOpts->m_PlotPrefs[16].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE16:
-          {
-            m_sfLapOpts->m_PlotPrefs[16].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH17:
-          {
-            m_sfLapOpts->m_PlotPrefs[17].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE17:
-          {
-            m_sfLapOpts->m_PlotPrefs[17].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH18:
-          {
-            m_sfLapOpts->m_PlotPrefs[18].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE18:
-          {
-            m_sfLapOpts->m_PlotPrefs[18].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH19:
-          {
-            m_sfLapOpts->m_PlotPrefs[19].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE19:
-          {
-            m_sfLapOpts->m_PlotPrefs[19].iPlotView = false;
-            break;
-          }
-          case IDC_PLOTTYPE_GRAPH20:
-          {
-            m_sfLapOpts->m_PlotPrefs[20].iPlotView = true;
-            break;
-          }
-          case IDC_PLOTTYPE_VALUE20:
-          {
-            m_sfLapOpts->m_PlotPrefs[20].iPlotView = false;
-            break;
-          }
-		  case IDC_PLOTTYPE_RESCAN:
-		  {
-			  //  Initialize all data channels, if not already set by user.
-			  //  Assumes first data channel (LONG X) will always be a graph
-			  InitPlotPrefs(hWnd, lParam);
-			  return TRUE;
-		  }
-		  case IDOK:
-          {
-            //  Let's get the values for each channel and store it for program execution
-            TCHAR szText[MAX_PATH];
-            int len;
-            float flValue;
+			  case IDC_PLOTTYPE_GRAPH1:
+			  {
+				m_sfLapOpts->m_PlotPrefs[1].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE1:
+			  {
+				m_sfLapOpts->m_PlotPrefs[1].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH2:
+			  {
+				m_sfLapOpts->m_PlotPrefs[2].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE2:
+			  {
+				m_sfLapOpts->m_PlotPrefs[2].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH3:
+			  {
+				m_sfLapOpts->m_PlotPrefs[3].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE3:
+			  {
+				m_sfLapOpts->m_PlotPrefs[3].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH4:
+			  {
+				m_sfLapOpts->m_PlotPrefs[4].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE4:
+			  {
+				m_sfLapOpts->m_PlotPrefs[4].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH5:
+			  {
+				m_sfLapOpts->m_PlotPrefs[5].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE5:
+			  {
+				m_sfLapOpts->m_PlotPrefs[5].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH6:
+			  {
+				m_sfLapOpts->m_PlotPrefs[6].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE6:
+			  {
+				m_sfLapOpts->m_PlotPrefs[6].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH7:
+			  {
+				m_sfLapOpts->m_PlotPrefs[7].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE7:
+			  {
+				m_sfLapOpts->m_PlotPrefs[7].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH8:
+			  {
+				m_sfLapOpts->m_PlotPrefs[8].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE8:
+			  {
+				m_sfLapOpts->m_PlotPrefs[8].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH9:
+			  {
+				m_sfLapOpts->m_PlotPrefs[9].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE9:
+			  {
+				m_sfLapOpts->m_PlotPrefs[9].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH10:
+			  {
+				m_sfLapOpts->m_PlotPrefs[10].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE10:
+			  {
+				m_sfLapOpts->m_PlotPrefs[10].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH11:
+			  {
+				m_sfLapOpts->m_PlotPrefs[11].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE11:
+			  {
+				m_sfLapOpts->m_PlotPrefs[11].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH12:
+			  {
+				m_sfLapOpts->m_PlotPrefs[12].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE12:
+			  {
+				m_sfLapOpts->m_PlotPrefs[12].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH13:
+			  {
+				m_sfLapOpts->m_PlotPrefs[13].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE13:
+			  {
+				m_sfLapOpts->m_PlotPrefs[13].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH14:
+			  {
+				m_sfLapOpts->m_PlotPrefs[14].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE14:
+			  {
+				m_sfLapOpts->m_PlotPrefs[14].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH15:
+			  {
+				m_sfLapOpts->m_PlotPrefs[15].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE15:
+			  {
+				m_sfLapOpts->m_PlotPrefs[15].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH16:
+			  {
+				m_sfLapOpts->m_PlotPrefs[16].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE16:
+			  {
+				m_sfLapOpts->m_PlotPrefs[16].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH17:
+			  {
+				m_sfLapOpts->m_PlotPrefs[17].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE17:
+			  {
+				m_sfLapOpts->m_PlotPrefs[17].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH18:
+			  {
+				m_sfLapOpts->m_PlotPrefs[18].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE18:
+			  {
+				m_sfLapOpts->m_PlotPrefs[18].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH19:
+			  {
+				m_sfLapOpts->m_PlotPrefs[19].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE19:
+			  {
+				m_sfLapOpts->m_PlotPrefs[19].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_GRAPH20:
+			  {
+				m_sfLapOpts->m_PlotPrefs[20].iPlotView = true;
+				break;
+			  }
+			  case IDC_PLOTTYPE_VALUE20:
+			  {
+				m_sfLapOpts->m_PlotPrefs[20].iPlotView = false;
+				break;
+			  }
+			  case IDC_PLOTTYPE_RESCAN:
+			  {
+				  //  Initialize all data channels, if not already set by user.
+				  //  Assumes first data channel (LONG X) will always be a graph
+				  InitPlotPrefs(hWnd, lParam);
+				  break;
+				  return TRUE;
+			  }
+			  case IDOK:
+			  {
+				//  Let's get the values for each channel and store it for program execution
+				TCHAR szText[MAX_PATH];
+				int len;
+				float flValue;
 
-			for (int z=1; z <= TotalYChannels -1; z++)
-			{
-				len = GetWindowTextLength(GetDlgItem(hWnd, IDC_PLOTTYPE_LOWLIMIT0 + z));
-				GetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT0 + z, szText, len+1);
-				flValue = _wtof(szText);
-				m_sfLapOpts->m_PlotPrefs[z].fMinValue = flValue;
-				len = GetWindowTextLength(GetDlgItem(hWnd, IDC_PLOTTYPE_HIGHLIMIT0 + z));
-				GetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT0 + z, szText, len+1);
-				flValue = _wtof(szText);
-				m_sfLapOpts->m_PlotPrefs[z].fMaxValue = flValue;
-			}
+				for (int z=1; z <= TotalYChannels -1; z++)
+				{
+					len = GetWindowTextLength(GetDlgItem(hWnd, IDC_PLOTTYPE_LOWLIMIT0 + z));
+					GetDlgItemText(hWnd, IDC_PLOTTYPE_LOWLIMIT0 + z, szText, len+1);
+					flValue = _wtof(szText);
+					m_sfLapOpts->m_PlotPrefs[z].fMinValue = flValue;
+					len = GetWindowTextLength(GetDlgItem(hWnd, IDC_PLOTTYPE_HIGHLIMIT0 + z));
+					GetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT0 + z, szText, len+1);
+					flValue = _wtof(szText);
+					m_sfLapOpts->m_PlotPrefs[z].fMaxValue = flValue;
+				}
 						
-            m_pPlotResults->fCancelled = false;
-            EndDialog(hWnd,0);
-            return TRUE;
-          }
-          case IDCANCEL:
-            m_pPlotResults->fCancelled = true;
-            EndDialog(hWnd,0);
-            return TRUE;
-          }
+				m_pPlotResults->fCancelled = false;
+				EndDialog(hWnd,0);
+				return TRUE;
+			  }
+			  case IDCANCEL:
+			  {
+				m_pPlotResults->fCancelled = true;
+				EndDialog(hWnd,0);
+				return TRUE;
+			  }
+			  default:
+			  {
+				  break;
+			  }
+		  }	//	End LOWORD loop
           break;
         } // end WM_COMMAND
         case WM_CLOSE:
         {
             m_pPlotResults->fCancelled = true;
-          EndDialog(hWnd,0);
-          break;
+			EndDialog(hWnd,0);
+			break;
         }
 		default:
-      return FALSE;
+	    return FALSE;
       }
     }

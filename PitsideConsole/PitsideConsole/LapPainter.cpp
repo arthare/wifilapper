@@ -317,21 +317,24 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
 			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			glLineWidth(1);      
-			dCenterOvalX = (dMaxX - dMinX) / 2.0f + dMinX;
-			dCenterOvalY = (mapMaxY[*i] - mapMinY[*i]) / 2.0f + mapMinY[*i];
+			dCenterOvalX = 0.0f;	//	Center oval at the origin
+			dCenterOvalY = 0.0f;
+//			dCenterOvalX = (dMaxX - dMinX) / 2.0f + dMinX;
+//			dCenterOvalY = (mapMaxY[*i] - mapMinY[*i]) / 2.0f + mapMinY[*i];
 			//		If this is for drawing the Traction Circle, let's draw a circle as well (Oval really)
 			if (eX == DATA_CHANNEL_X_ACCEL)
 			{
 				float w, h;
 				w = 3.0f;
 				h = 3.0f;
-				drawOval (dCenterOvalX, dCenterOvalY, w, h);
+				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 1.5G circle
 				w = 1.0f;
 				h = 1.0f;
-				drawOval (dCenterOvalX, dCenterOvalY, w, h);
+				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 0.5G circle
 				w = 2.0f;
 				h = 2.0f;
-				drawOval (dCenterOvalX, dCenterOvalY, w, h);
+				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 1.0G circle
+				//	Now let's draw a vertical line at the origin
 				glBegin(GL_LINE_STRIP);
 				glVertex3f(0.0f,mapMinY[*i],0);
 				glVertex3f(0.0f,mapMaxY[*i],0);
@@ -631,17 +634,10 @@ struct MAPHIGHLIGHT
   POINT pt;
 };
 
-//-------------------------------------------------------------------------
-//  Draws an oval centered at (x_center, y_center)
-//
-// The oval is bound inside a rectangle whose width is w
-// and height is h.
-//
-// n represents the number of line segments used to draw the oval.
-//-------------------------------------------------------------------------
+//  Draws an oval centered at (x_center, y_center) and is is bound inside a rectangle whose width is w and height is h.
 void CLapPainter::drawOval (float x_center, float y_center, float w, float h)
 {
-    int n = 50;
+    int n = 50;	// n represents the number of line segments used to draw the oval.
 	float PI_2 = 3.14159 * 2;
 	float theta, angle_increment;
     float x, y;
@@ -654,8 +650,8 @@ void CLapPainter::drawOval (float x_center, float y_center, float w, float h)
  
     for (theta = 0.0f; theta < PI_2; theta += angle_increment)
     {
-        x = w/2 * cos (theta);
-        y = h/2 * sin (theta);
+        x = x_center + w/2 * cos (theta);
+        y = y_center + h/2 * sin (theta);
 		//	Draw the vertices  
         glVertex2f (x, y);
     }
