@@ -317,14 +317,9 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
 			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			glLineWidth(1);      
-			glBegin(GL_LINE_STRIP);
-			glVertex3f(flLine,mapMinY[*i],0);
-			glVertex3f(flLine,mapMaxY[*i],0);
-			glEnd();
 			dCenterOvalX = (dMaxX - dMinX) / 2.0f + dMinX;
 			dCenterOvalY = (mapMaxY[*i] - mapMinY[*i]) / 2.0f + mapMinY[*i];
 			//		If this is for drawing the Traction Circle, let's draw a circle as well (Oval really)
-			//	if (eX->GetChannelType() == DATA_CHANNEL_X_ACCEL && eType->GetChannelType() == DATA_CHANNEL_Y_ACCEL)
 			if (eX == DATA_CHANNEL_X_ACCEL)
 			{
 				float w, h;
@@ -337,6 +332,17 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 				w = 2.0f;
 				h = 2.0f;
 				drawOval (dCenterOvalX, dCenterOvalY, w, h);
+				glBegin(GL_LINE_STRIP);
+				glVertex3f(0.0f,mapMinY[*i],0);
+				glVertex3f(0.0f,mapMaxY[*i],0);
+				glEnd();
+			}
+			else
+			{
+				glBegin(GL_LINE_STRIP);
+				glVertex3f(flLine,mapMinY[*i],0);
+				glVertex3f(flLine,mapMaxY[*i],0);
+				glEnd();
 			}
 			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			char szText[256];
