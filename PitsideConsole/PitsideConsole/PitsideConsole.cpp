@@ -1089,7 +1089,9 @@ private:
 		int nShowCmd = SW_RESTORE;	//	Restore the Help document, if it is minimized or whatever.
 
 		//	Shell to the Help PDF file
-		ShellExecuteW(hWnd, lpOpen, lpFile, NULL, lpDir, nShowCmd);
+		HINSTANCE Check = ShellExecuteW(hWnd, lpOpen, lpFile, NULL, lpDir, nShowCmd);
+		if ((int)Check <= 32)
+          MessageBox(NULL, L"The Help file requires Acrobat Reader\n\nPlease install Reader and try again", L"Acrobat Reader Not Found", MB_OK);
 		return true;
 	}
   void ShowNetInfo()
