@@ -58,7 +58,6 @@ LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
           }
           else
           {
-
           }
           return TRUE;
         }

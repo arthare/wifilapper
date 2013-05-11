@@ -186,6 +186,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   map<DATA_CHANNEL,float> mapMaxY;
   float dMaxX = -1e30;
   float dMinX = 1e30;
+  float dCenterOvalX = 0;
+  float dCenterOvalY = 0;
   { // figuring out bounds and getting matrices all set up
     //	First lets load up all of the data into an array and determine its size
     for(int x = 0;x < lstLaps.size(); x++)
@@ -315,16 +317,42 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
 			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			glLineWidth(1);      
-			glBegin(GL_LINE_STRIP);
-			glVertex3f(flLine,mapMinY[*i],0);
-			glVertex3f(flLine,mapMaxY[*i],0);
-			glEnd();
+			dCenterOvalX = 0.0f;	//	Center oval at the origin
+			dCenterOvalY = 0.0f;
+//			dCenterOvalX = (dMaxX - dMinX) / 2.0f + dMinX;
+//			dCenterOvalY = (mapMaxY[*i] - mapMinY[*i]) / 2.0f + mapMinY[*i];
+			//		If this is for drawing the Traction Circle, let's draw a circle as well (Oval really)
+			if (eX == DATA_CHANNEL_X_ACCEL)
+			{
+				float w, h;
+				w = 3.0f;
+				h = 3.0f;
+				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 1.5G circle
+				w = 1.0f;
+				h = 1.0f;
+				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 0.5G circle
+				w = 2.0f;
+				h = 2.0f;
+				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 1.0G circle
+				//	Now let's draw a vertical line at the origin
+				glBegin(GL_LINE_STRIP);
+				glVertex3f(0.0f,mapMinY[*i],0);
+				glVertex3f(0.0f,mapMaxY[*i],0);
+				glEnd();
+			}
+			else
+			{
+				glBegin(GL_LINE_STRIP);
+				glVertex3f(flLine,mapMinY[*i],0);
+				glVertex3f(flLine,mapMaxY[*i],0);
+				glEnd();
+			}
 			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			char szText[256];
 			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 			DrawText(flLine, mapMinY[*i]-12, szText);
 		}
-	// now draw the rest of them
+		// now draw the rest of them
 		for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
 		{
 			LineColor();	//	Pick guideline color, based upon chosen color scheme
@@ -340,9 +368,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		
 			DrawText(flLine, mapMinY[*i]-12, szText);
 		}
+
 	}
-
-
 
 //		Set up the non-zoomed/panned view for the map
     GLdouble rgModelviewMatrix[16];
@@ -501,7 +528,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		float b;
 		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
-		if (lstMousePointsToDraw[x].m_eChannelY != DATA_CHANNEL_LAPTIME_SUMMARY)
+		//	For TIME displayed on X-axis, remove all data channel text so that user can see the trends more clearly.
+		if (pDataX->GetChannelType() != DATA_CHANNEL_TIME)
 		{
 
 			// if we're the main screen, we want to draw some text data for each point
@@ -606,6 +634,29 @@ struct MAPHIGHLIGHT
   POINT pt;
 };
 
+//  Draws an oval centered at (x_center, y_center) and is is bound inside a rectangle whose width is w and height is h.
+void CLapPainter::drawOval (float x_center, float y_center, float w, float h)
+{
+    int n = 50;	// n represents the number of line segments used to draw the oval.
+	float PI_2 = 3.14159 * 2;
+	float theta, angle_increment;
+    float x, y;
+    if (n <= 0)
+        n = 1;
+    angle_increment = PI_2 / n;
+    //  center the oval at x_center, y_center
+    //  draw the oval using line segments
+    glBegin (GL_LINE_LOOP);
+ 
+    for (theta = 0.0f; theta < PI_2; theta += angle_increment)
+    {
+        x = x_center + w/2 * cos (theta);
+        y = y_center + h/2 * sin (theta);
+		//	Draw the vertices  
+        glVertex2f (x, y);
+    }
+    glEnd ();
+}
 // Function for setting highlighting color, making sure that there is enough contrast to a black background
 void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float* pB) 
 { 

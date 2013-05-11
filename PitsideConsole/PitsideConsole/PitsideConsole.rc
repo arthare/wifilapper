@@ -46,7 +46,7 @@ BEGIN
     PUSHBUTTON      "OK", IDOK, 0,180,200,20
 END
 
-IDD_DLGMESSAGE DIALOG 100, 100, 200, 85
+IDD_DLGMESSAGE DIALOG 280, 200, 200, 85
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Pit->Car Message"
 FONT 8, "MS Shell Dlg"
@@ -63,7 +63,7 @@ BEGIN
 END
 
 // dialog for selecting which race in a DB we want to use
-IDD_SELECTRACE DIALOG 100, 100, 200, 200
+IDD_SELECTRACE DIALOG 150, 200, 200, 200
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Select race to load"
 FONT 8, "MS Shell Dlg"
@@ -73,8 +73,44 @@ BEGIN
     PUSHBUTTON      "Cancel", IDCANCEL, 100,180,95,12
 END
 
+// dialog for selecting which race in a DB we want to edit
+IDD_SELECTRACEEDIT DIALOG 150, 200, 200, 213
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Select race(s) to edit"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "", IDC_RACE, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_ALIGNLEFT | LVS_REPORT | LVS_SHOWSELALWAYS, 0,0,200,180
+    PUSHBUTTON      "Rename", IDC_RACEEDIT_RENAME, 5,180,95,12
+    PUSHBUTTON      "Merge", IDC_RACEEDIT_MERGE, 100,180,95,12
+    PUSHBUTTON      "OK", IDOK, 5,193,95,12
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,193,95,12
+END
+
+// confirm dialog for editing races in a DB
+IDD_RACEEDITCONFIRM DIALOG 350, 200, 250, 125
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "**WARNING**"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "Are you sure you want to merge these race sessions?\n\nONLY merge race sessions that are on the same track!\n\nEven then, Start/Finish differences will disrupt graphs such as Time Slip.\n\n\nTHIS OPERATION CANNOT BE UNDONE",IDC_LBLMESSAGE3,5,5,245,90
+    PUSHBUTTON      "Merge", IDOK, 5,100,120,24
+    PUSHBUTTON      "Cancel", IDCANCEL, 125,100,120,24
+END
+
+// name input dialog for renaming races in a DB
+IDD_RACENAMECHANGE DIALOG 350, 200, 200, 85
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Enter New Race Session Name"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "Race Session(s) name?",IDC_LBLMESSAGE4,5,5,100,12
+    EDITTEXT        IDC_EDTMESSAGE2,5,25,190,12
+    PUSHBUTTON      "Rename", IDOK, 5,67,95,12
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,12
+END
+
 // dialog for selecting plotting preferences
-IDD_PLOTPREFS DIALOG 50, 50, 370, 312
+IDD_PLOTPREFS DIALOG 250, 120, 370, 312
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX
 CAPTION "Choose plotting preferences"
 FONT 8, "MS Shell Dlg"
@@ -210,8 +246,12 @@ POPUP "&Options"
         MENUITEM "MPH", ID_OPTIONS_MPH
         MENUITEM "m/s", ID_OPTIONS_MS
         MENUITEM SEPARATOR
+		MENUITEM "Sort laplist by Time",ID_OPTIONS_SORTTIME
+		MENUITEM "Sort laplist by Laptime",ID_OPTIONS_SORTLAP
+		MENUITEM SEPARATOR
         MENUITEM "Show all-time bests",ID_OPTIONS_SHOWBESTS
         MENUITEM "Show driver bests",ID_OPTIONS_SHOWDRIVERBESTS
+        MENUITEM "Show Reference Lap",ID_OPTIONS_SHOWREFERENCELAP
         MENUITEM SEPARATOR
         MENUITEM "Draw lines between data points",ID_OPTIONS_DRAWLINES
         MENUITEM "Use dark background for plots",ID_OPTIONS_BACKGROUND
@@ -226,10 +266,12 @@ POPUP "&Options"
     BEGIN
         MENUITEM "Switch Race Session", ID_DATA_SWITCHSESSION
         MENUITEM "Open .wflp DB", ID_DATA_OPENDB
+		MENUITEM "Edit/Merge Race Sessions", ID_DATA_EDITSESSION
 		MENUITEM "Export selected laps to CSV format", ID_DATA_DASHWARE
     END
     POPUP "&Help"
     BEGIN
+        MENUITEM "Show Help File", ID_HELP_SHOWHELP
         MENUITEM "Show IPs", ID_HELP_IPS
         MENUITEM "About", ID_HELP_ABOUT
     END
