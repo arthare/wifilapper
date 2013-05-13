@@ -20,6 +20,7 @@
 #include "LapData.h"
 #include "DlgMessage.h"
 #include "DlgRaceSelect.h"
+#include "DlgRaceSelectEdit.h"
 #include "DlgPlotSelect.h"	//	Added by KDJ for Preferences menu
 #include "Iphlpapi.h"
 #include "ArtSQL/ArtSQLite.h"
@@ -251,7 +252,10 @@ bool CExtendedLap_SortByTime(const CExtendedLap* p1, const CExtendedLap* p2)
 {
   return p1->GetLap()->GetStartTime() < p2->GetLap()->GetStartTime();
 }
-
+bool CExtendedLap_SortByLapTime(const CExtendedLap* p1, const CExtendedLap* p2)
+{
+  return p1->GetLap()->GetTime() < p2->GetLap()->GetTime(); // GetTime() or whatever the function is that gets lap time
+}
 // supplier IDs - each lap painter is given a supplier ID, which it uses to identify itself when asking for more data
 enum SUPPLIERID
 {
@@ -268,6 +272,7 @@ public:
       m_eLapDisplayStyle(LAPDISPLAYSTYLE_PLOT),		//	Make data plot the default initial view
       m_fShowBests(false), 
       m_fShowDriverBests(false),
+	  m_fShowReferenceLap(true),
       m_pReferenceLap(NULL),
       m_eXChannel(DATA_CHANNEL_DISTANCE),
       m_fdwUpdateNeeded(0),
@@ -536,9 +541,27 @@ public:
             UpdateUI(UPDATE_MAP | UPDATE_MENU);
             return TRUE;
           }
+          case ID_OPTIONS_SORTTIME:
+          {
+            m_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;
+            UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
+            return TRUE;
+          }
+          case ID_OPTIONS_SORTLAP:
+          {
+            m_sfLapOpts.eSortPreference = SORTSTYLE_BYLAPTIME;
+            UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
+            return TRUE;
+          }
           case ID_OPTIONS_SHOWBESTS:
           {
             m_fShowBests = !m_fShowBests;
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            return TRUE;
+          }
+          case ID_OPTIONS_SHOWREFERENCELAP:
+          {
+            m_fShowReferenceLap = !m_fShowReferenceLap;
             UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
             return TRUE;
           }
@@ -581,6 +604,21 @@ public:
             }
             return TRUE;
           }
+          case ID_DATA_EDITSESSION:
+          {
+            RACESELECTEDIT_RESULT sfResult;
+            CRaceSelectEditDlg dlgRace(g_pLapDB, &sfResult);
+            ArtShowDialog<IDD_SELECTRACEEDIT>(&dlgRace);
+
+            if(!sfResult.fCancelled)
+            {
+              m_iRaceId = sfResult.iRaceId;
+              ClearUILaps();
+              LoadLaps(g_pLapDB);
+              UpdateUI(UPDATE_ALL);
+            }
+            return TRUE;
+          }
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
@@ -594,6 +632,11 @@ public:
 					
 			return TRUE;
 		  }		
+          case ID_HELP_SHOWHELP:
+          {
+            ShowHelp(hWnd);
+            return TRUE;
+          }
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -913,38 +956,38 @@ public:
   void UpdateUI_Internal(DWORD fdwUpdateFlags)
   {
     set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
-    vector<CExtendedLap*> laps = GetSortedLaps(); // translates our m_mapLaps into a vector sorted by time
+	vector<CExtendedLap*> laps = GetSortedLaps(m_sfLapOpts.eSortPreference); // translates our m_mapLaps into a vector sorted by time
+	// do some memory cleanup
+	for(int x = 0;x < laps.size(); x++)
+	{
+		if(setSelectedData.find((LPARAM)laps[x]) != setSelectedData.end() || laps[x] == m_pReferenceLap)
+		{
+		// this lap is still selected, as it is in the set of selected items
+		}
+		else
+		{
+		// this lap is not selected.  we should compact it so that it doesn't gobble memory.
+		laps[x]->Compact();
+		}
+	}
 
-    // do some memory cleanup
-    for(int x = 0;x < laps.size(); x++)
-    {
-      if(setSelectedData.find((LPARAM)laps[x]) != setSelectedData.end() || laps[x] == m_pReferenceLap)
-      {
-        // this lap is still selected, as it is in the set of selected items
-      }
-      else
-      {
-        // this lap is not selected.  we should compact it so that it doesn't gobble memory.
-        laps[x]->Compact();
-      }
-    }
 
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_LIST))
     {
-      int iPosition = m_sfLapList.GetPosition();
-      m_sfLapList.Clear();
-      vector<CExtendedLap*> laps = GetSortedLaps(); // translates our m_mapLaps into a vector sorted by time
-      for(int x = 0;x < laps.size(); x++)
-      {
-        vector<wstring> lstStrings;
-        laps[x]->GetStrings(lstStrings);
-        m_sfLapList.AddStrings(lstStrings, (LPARAM)laps[x]);
-      }
-      m_sfLapList.SetSelectedData(setSelectedData);
-      if(laps.size() > 0)
-      {
-        m_sfLapList.MakeVisible((LPARAM)laps[laps.size()-1]);
-      }
+		int iPosition = m_sfLapList.GetPosition();
+		m_sfLapList.Clear();
+		vector<CExtendedLap*> laps = GetSortedLaps(m_sfLapOpts.eSortPreference); // translates our m_mapLaps into a vector sorted by time
+		for(int x = 0;x < laps.size(); x++)
+		{
+		vector<wstring> lstStrings;
+		laps[x]->GetStrings(lstStrings);
+		m_sfLapList.AddStrings(lstStrings, (LPARAM)laps[x]);
+		}
+		m_sfLapList.SetSelectedData(setSelectedData);
+		if(laps.size() > 0)
+		{
+		m_sfLapList.MakeVisible((LPARAM)laps[laps.size()-1]);
+		}
     }
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_MAP))
     {
@@ -1023,9 +1066,33 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0012\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0017\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
+	}
+   bool ShowHelp(HWND hWnd)
+	{
+		TCHAR lpOpen[MAX_PATH] = L"open";
+		
+		TCHAR lpFile[MAX_PATH] = L"PitsideHelp.pdf";
+		TCHAR lpDir[MAX_PATH];
+		if(GetAppFolder(lpDir,NUMCHARS(lpDir)))
+		{
+			//	Set up the Filename string for the Help PDF file.
+			wcsncat(lpDir,L"", NUMCHARS(lpDir)-1);
+		}
+		else
+		{
+			// trouble.  just bail.
+			return false;
+		}
+		int nShowCmd = SW_RESTORE;	//	Restore the Help document, if it is minimized or whatever.
+
+		//	Shell to the Help PDF file
+		HINSTANCE Check = ShellExecuteW(hWnd, lpOpen, lpFile, NULL, lpDir, nShowCmd);
+		if ((int)Check <= 32)
+          MessageBox(NULL, L"The Help file requires Acrobat Reader\n\nPlease install Reader and try again", L"Acrobat Reader Not Found", MB_OK);
+		return true;
 	}
   void ShowNetInfo()
   {
@@ -1275,23 +1342,37 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_KMH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_KMH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MPH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MPH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MS, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MS);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_SORTTIME, m_sfLapOpts.eSortPreference == SORTSTYLE_BYTIMEOFRACE);
+    CheckMenuHelper(hSubMenu, ID_OPTIONS_SORTLAP, m_sfLapOpts.eSortPreference == SORTSTYLE_BYLAPTIME);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
+	CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWREFERENCELAP, m_fShowReferenceLap);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_DRAWLINES, m_sfLapOpts.fDrawLines);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_BACKGROUND, m_sfLapOpts.fColorScheme);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_IOIO5VSCALE, m_sfLapOpts.fIOIOHardcoded);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_ELAPSEDTIME, m_sfLapOpts.fElapsedTime);
   }
-  vector<CExtendedLap*> GetSortedLaps()
+
+  vector<CExtendedLap*> GetSortedLaps(LAPSORTSTYLE eSortStyle)
   {
     vector<CExtendedLap*> lstLaps;
     for(map<int,CExtendedLap*>::iterator i = m_mapLaps.begin(); i != m_mapLaps.end(); i++)
     {
       lstLaps.push_back(i->second);
     }
-    sort(lstLaps.begin(),lstLaps.end(), CExtendedLap_SortByTime);
+    switch(eSortStyle)
+    {
+    case SORTSTYLE_BYTIMEOFRACE:
+      sort(lstLaps.begin(),lstLaps.end(), CExtendedLap_SortByTime);
+      break;
+    case SORTSTYLE_BYLAPTIME:
+      sort(lstLaps.begin(),lstLaps.end(), CExtendedLap_SortByLapTime);
+      break;
+     
+    }
     return lstLaps;
   }
+  
   void LoadLaps(ILapReceiver* pReceiver)
   {
     vector<const ILap*> laps = pReceiver->GetLaps(m_iRaceId);
@@ -1407,7 +1488,7 @@ void UpdateDisplays()
     }
 
 	//	Set up for showing Reference lap similar to how we show Fastest Lap. 
-	if(m_pReferenceLap != NULL)
+	if(m_fShowReferenceLap && m_pReferenceLap != NULL)
     {
 		lstLaps.push_back(m_pReferenceLap);
     }
@@ -1543,8 +1624,8 @@ void UpdateDisplays()
       case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
       case DATA_CHANNEL_VELOCITY: return 0;
       case DATA_CHANNEL_DISTANCE: return 1e30;
-      case DATA_CHANNEL_TIME: return 1e30;
-      case DATA_CHANNEL_ELAPSEDTIME: return 1e30;
+      case DATA_CHANNEL_TIME:
+      case DATA_CHANNEL_ELAPSEDTIME:
       case DATA_CHANNEL_TIMESLIP:
       {
         int iMin = (int)(flMin/1000.0f);
@@ -1624,18 +1705,24 @@ void UpdateDisplays()
 		  if(flSpread < 110000) return 5000.0f;
 		  if(flSpread < 1100000) return 10000.0f;
 		  if(flSpread < 10000000) return 100000.0f;
-		  return 10000000;
+		  if(flSpread < 100000000) return 1000000.0f;
+		  return 10000000.0f;
 		}
     case DATA_CHANNEL_LAPTIME_SUMMARY:					
 		{
-		  if(flSpread < 1) return 0.50f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 1) return 0.50f;		//	Added by KDJ to improve Laptime display
 		  if(flSpread < 5) return 1.0f;
 		  if(flSpread < 10) return 5.0f;
 		  if(flSpread < 50) return 25.0f;
 		  if(flSpread < 110) return 50.0f;
 		  if(flSpread < 1100) return 100.0f;
 		  if(flSpread < 10000) return 1000.0f;
-		  return 100000;
+		  if(flSpread < 50000) return 2500.0f;
+		  if(flSpread < 110000) return 5000.0f;
+		  if(flSpread < 1100000) return 10000.0f;
+		  if(flSpread < 10000000) return 100000.0f;
+		  if(flSpread < 100000000) return 1000000.0f;
+		  return 10000000.0f;
 		}
 	default:
     return 1e30;
@@ -1701,7 +1788,11 @@ void UpdateDisplays()
 	  if(flSpread < 100) return 10.0f;
       if(flSpread < 1100) return 100.0f;
       if(flSpread < 10000) return 1000.0f;
-	  return 10000.0f;
+      if(flSpread < 50000) return 5000.0f;
+	  if(flSpread < 110000) return 10000.0f;
+      if(flSpread < 1100000) return 100000.0f;
+      if(flSpread < 10000000) return 1000000.0f;
+	  return 10000000.0f;
     }
     case DATA_CHANNEL_X_ACCEL: return 0.5f;
     case DATA_CHANNEL_Y_ACCEL: return 0.5f;
@@ -1796,6 +1887,7 @@ private:
 //  vector<DATA_CHANNEL> m_lstYChannels;
   bool m_fShowBests;
   bool m_fShowDriverBests;
+  bool m_fShowReferenceLap;
 
   CExtendedLap* m_pReferenceLap;
   map<int,CExtendedLap*> m_mapLaps; // maps from iLapId to a lap object
@@ -2034,6 +2126,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             x_sfLapOpts.fColorScheme = false;	//	Grey background as a default, true = black
           }
   }
+  x_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;		//	Default sort Lap List by time of lap
   sfUI.SetDisplayOptions(x_sfLapOpts);
 
   PitsideHTTP aResponder(g_pLapDB,&sfUI);

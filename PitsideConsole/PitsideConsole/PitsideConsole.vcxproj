@@ -104,7 +104,10 @@ copyjs_rel.bat</Command>
     <ClInclude Include="DlgMessage.h" />
     <ClInclude Include="DlgPlotSelect.h" />
     <ClInclude Include="DlgProgress.h" />
+    <ClInclude Include="DlgRaceEditConfirm.h" />
+    <ClInclude Include="DlgRaceNameEdit.h" />
     <ClInclude Include="DlgRaceSelect.h" />
+    <ClInclude Include="DlgRaceSelectEdit.h" />
     <ClInclude Include="DlgSplash.h" />
     <ClInclude Include="LapData.h" />
     <ClInclude Include="LapPainter.h" />
@@ -122,7 +125,10 @@ copyjs_rel.bat</Command>
     <ClCompile Include="DlgMessage.cpp" />
     <ClCompile Include="DlgPlotSelect.cpp" />
     <ClCompile Include="DlgProgress.cpp" />
+    <ClCompile Include="DlgRaceEditConfirm.cpp" />
+    <ClCompile Include="DlgRaceNameEdit.cpp" />
     <ClCompile Include="DlgRaceSelect.cpp" />
+    <ClCompile Include="DlgRaceSelectEdit.cpp" />
     <ClCompile Include="DlgSplash.cpp" />
     <ClCompile Include="LapData.cpp" />
     <ClCompile Include="LapPainter.cpp" />

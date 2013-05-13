@@ -493,6 +493,38 @@ vector<RACEDATA> CSQLiteLapDB::GetRaces()
   return lstRaces;
 }
 //////////////////////////////////////////////////////////////
+bool CSQLiteLapDB::MergeLaps(int m_iRaceId1, int m_iRaceId2)
+{
+  CSfArtSQLiteQuery sfQuery(m_sfDB);
+  if(sfQuery.Init(L"Update laps set raceid = ? where raceid = ?"))
+  {
+    sfQuery.BindValue(m_iRaceId1);
+    sfQuery.BindValue(m_iRaceId2);
+    if(sfQuery.Next() || sfQuery.IsDone())
+    {
+      // data update complete, hooray!
+      return true;
+    }
+  }
+  return false;
+}
+//////////////////////////////////////////////////////////////
+bool CSQLiteLapDB::RenameLaps(TCHAR szName[MAX_PATH], int m_iRaceId1)
+{
+  CSfArtSQLiteQuery sfQuery(m_sfDB);
+  if(sfQuery.Init(L"update races set name = ? where _id = ?"))
+  {
+    sfQuery.BindValue(szName);
+    sfQuery.BindValue(m_iRaceId1);
+    if(sfQuery.Next() || sfQuery.IsDone())
+    {
+      // data update complete, hooray!
+      return true;
+    }
+  }
+  return false;
+}
+//////////////////////////////////////////////////////////////
 vector<const ILap*> CSQLiteLapDB::GetLaps(int iRaceId)
 {
   vector<const ILap*> lstLaps;
