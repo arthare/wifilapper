@@ -949,6 +949,7 @@ public:
   const static DWORD UPDATE_LIST = 0x2;
   const static DWORD UPDATE_DASHBOARD = 0x4;
   const static DWORD UPDATE_MENU = 0x8;
+  const static DWORD UPDATE_VALUES = 0x9;
 
   const static DWORD UPDATE_ALL = 0xffffffff;
   //	Pull in PlotPrefs array as well as lines vs. dots and Painting color scheme settings from Settings.txt file
@@ -998,6 +999,10 @@ public:
 		m_sfLapList.MakeVisible((LPARAM)laps[laps.size()-1]);
 		}
     }
+/*    if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_VALUES))
+    {
+      UpdateValues();
+    }	*/
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_MAP))
     {
       UpdateDisplays();
@@ -1009,6 +1014,7 @@ public:
 
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_DASHBOARD))
     {
+      UpdateValues();	//	First update the Values Only display
       set<DATA_CHANNEL> setSelectedChannels;
 
       for(set<LPARAM>::const_iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
@@ -1220,7 +1226,7 @@ private:
 			return sum;
 		}
 	}
-void UpdateDisplays()
+void UpdateValues()
   {
 	//	Update the data channels that are being displayed as values
 	//	List of highlighted laps
@@ -1325,6 +1331,9 @@ void UpdateDisplays()
 			}
 		}
     }
+  }
+void UpdateDisplays()
+  {
     m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
 
