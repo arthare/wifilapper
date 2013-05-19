@@ -37,15 +37,18 @@ BEGIN
     LTEXT           "5: ", IDC_VALUE_CHANNEL5,328,48,190,12
 END
 
-IDD_DLGSPLASH DIALOG 100,100,200,200
+//	Dialog box showing the splash screen
+IDD_DLGSPLASH DIALOG 100,100,200,250
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 CAPTION "Welcome to Pitside"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "",IDC_SPLASHIMAGE,"Static",SS_BITMAP,0,0,200,200
-    PUSHBUTTON      "OK", IDOK, 0,180,200,20
+	CTEXT			"https://sites.google.com/site/wifilapper",IDC_LBLMESSAGE6,0,200,200,20
+    PUSHBUTTON      "OK", IDOK, 0,220,200,30
 END
 
+//	Dialog box for sending messages to the car
 IDD_DLGMESSAGE DIALOG 280, 200, 200, 85
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Pit->Car Message"
@@ -103,8 +106,8 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Pitside Console"
 FONT 8, "MS Shell Dlg"
 BEGIN
-	LTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0018\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
-	LTEXT			"https://sites.google.com/site/wifilapper",IDC_LBLMESSAGE6,5,60,245,20
+	CTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0018\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
+	CTEXT			"https://sites.google.com/site/wifilapper",IDC_LBLMESSAGE6,5,60,245,20
     PUSHBUTTON      "OK", IDOK, 5,100,240,24
 END
 

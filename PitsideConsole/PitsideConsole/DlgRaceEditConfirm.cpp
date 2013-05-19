@@ -22,9 +22,11 @@ LRESULT CRaceEditConfirmDlg::DlgProc(HWND c_hWnd, UINT uMsg, WPARAM wParam, LPAR
           return TRUE;
         }
         case IDCANCEL:
-          m_sfResult->fCancelled = true;
-          EndDialog(c_hWnd,0);
-          return TRUE;
+		{
+			m_sfResult->fCancelled = true;
+			EndDialog(c_hWnd,0);
+			return TRUE;
+		}
       }
       break;
     } // end WM_COMMAND

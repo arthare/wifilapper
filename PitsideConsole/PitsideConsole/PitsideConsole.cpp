@@ -644,10 +644,6 @@ public:
             return TRUE;
           }
           case ID_HELP_ABOUT:
-/*          {
-			  ShowAbout();
-			  return TRUE;
-          }	*/
 		  {
 			ABOUT_RESULT sfResult;
 			CAboutDlg dlgAbout(&sfResult);
@@ -1077,12 +1073,6 @@ private:
     m_mapLaps.clear();
     m_sfLapList.Clear();
   }
-   void ShowAbout()
-	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0018\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
-			L"About Pitside Console",MB_OK);
-		return;
-	}
    bool ShowHelp(HWND hWnd)
 	{
 		TCHAR lpOpen[MAX_PATH] = L"open";

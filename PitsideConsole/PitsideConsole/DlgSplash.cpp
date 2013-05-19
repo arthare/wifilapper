@@ -2,6 +2,7 @@
 #include "resource.h"
 #include "pitsideconsole.h"
 #include "DlgSplash.h"
+#include "Hyperlinks.h"
 
 LRESULT CSplashDlg::DlgProc
 (
@@ -16,6 +17,7 @@ LRESULT CSplashDlg::DlgProc
     case WM_INITDIALOG:
     {
       HBITMAP hBitmap = (HBITMAP)::LoadImage( GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_SPLASHIMAGE), IMAGE_BITMAP, 0, 0, LR_DEFAULTSIZE);
+	  ConvertStaticToHyperlink(hWnd, IDC_LBLMESSAGE6);
       HWND hWndSplash = GetDlgItem( hWnd, IDC_SPLASHIMAGE );
       SendMessage(hWndSplash,STM_SETIMAGE,IMAGE_BITMAP,(LPARAM)hBitmap);
       break;
