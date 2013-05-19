@@ -1199,18 +1199,16 @@ private:
     HandleCtlResize(sNewSize, IDC_SUBDISPLAY, true, false); // sub display window
     HandleCtlResize(sNewSize, IDC_LAPS, false, true); // lap list
   }
-	float Average(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal)
+	float fAverage(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal)
 	{
-		//	This function currently only returns the current value where the cursor is pointed (flValue).
-		//	It needs an iterator type loop to calculate the average value across all of the points in this data channel for this lap
+		//	This function returns the average value for the data channel across all data points from this lap.
 		char szAvg[MAX_PATH];
 		float sum = 0.0f;
 		int count; 
-	//	set<DATA_CHANNEL> channels = pChannel->GetData(); // get all the points that this lap / channel has
-	//	for(set<DATA_CHANNEL>::const_iterator i = channels.begin(); i != channels.end(); i++) // loop through them, insert them into our "all data channels" set
-		for (count = 0; count < sizeof pChannel->GetData(); count++)
+		vector<DataPoint> channels = pChannel->GetData(); // get the values for all of the data points
+		for (count = 0; count < channels.size(); count++)
 		{
-			GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flVal,szAvg,NUMCHARS(szAvg));
+			GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,channels[count].flValue,szAvg,NUMCHARS(szAvg));
 			sum = sum + atof(szAvg); 
 		}
 		if (count != 0) 
@@ -1267,7 +1265,7 @@ void UpdateDisplays()
 						flMin = pChannel->GetMin();
 						flMax = pChannel->GetMax();
 						// 951turbo: do more math here like averages, median, etc.
-						flAvg = Average(eChannel, pChannel, flVal);
+						flAvg = fAverage(eChannel, pChannel, flVal);
 						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
 						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
 						{
