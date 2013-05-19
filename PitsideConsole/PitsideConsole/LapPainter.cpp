@@ -322,7 +322,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 //			dCenterOvalX = (dMaxX - dMinX) / 2.0f + dMinX;
 //			dCenterOvalY = (mapMaxY[*i] - mapMinY[*i]) / 2.0f + mapMinY[*i];
 			//		If this is for drawing the Traction Circle, let's draw a circle as well (Oval really)
-			if (eX == DATA_CHANNEL_X_ACCEL)
+			if (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL)
 			{
 				float w, h;
 				w = 3.0f;

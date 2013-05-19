@@ -101,6 +101,7 @@ copyjs_rel.bat</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DashWare.h" />
+    <ClInclude Include="DlgAbout.h" />
     <ClInclude Include="DlgMessage.h" />
     <ClInclude Include="DlgPlotSelect.h" />
     <ClInclude Include="DlgProgress.h" />
@@ -109,6 +110,7 @@ copyjs_rel.bat</Command>
     <ClInclude Include="DlgRaceSelect.h" />
     <ClInclude Include="DlgRaceSelectEdit.h" />
     <ClInclude Include="DlgSplash.h" />
+    <ClInclude Include="Hyperlinks.h" />
     <ClInclude Include="LapData.h" />
     <ClInclude Include="LapPainter.h" />
     <ClInclude Include="LapReceiver.h" />
@@ -122,6 +124,7 @@ copyjs_rel.bat</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DashWare.cpp" />
+    <ClCompile Include="DlgAbout.cpp" />
     <ClCompile Include="DlgMessage.cpp" />
     <ClCompile Include="DlgPlotSelect.cpp" />
     <ClCompile Include="DlgProgress.cpp" />
@@ -130,6 +133,7 @@ copyjs_rel.bat</Command>
     <ClCompile Include="DlgRaceSelect.cpp" />
     <ClCompile Include="DlgRaceSelectEdit.cpp" />
     <ClCompile Include="DlgSplash.cpp" />
+    <ClCompile Include="Hyperlinks.cpp" />
     <ClCompile Include="LapData.cpp" />
     <ClCompile Include="LapPainter.cpp" />
     <ClCompile Include="LapReceiver.cpp" />

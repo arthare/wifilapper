@@ -197,4 +197,7 @@
 
 #define ID_OPTIONS_SORTTIME 310
 #define ID_OPTIONS_SORTLAP 311
+#define IDD_ABOUT 312
+#define IDC_LBLMESSAGE5 313
+#define IDC_LBLMESSAGE6 314
 // don't put anything below this

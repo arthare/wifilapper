@@ -81,6 +81,12 @@
     <ClInclude Include="DlgRaceNameEdit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Hyperlinks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgAbout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -132,6 +138,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DlgRaceNameEdit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Hyperlinks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgAbout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -33,7 +33,8 @@
 #include "UnitTests.h"
 #include <fstream>
 #include "Winuser.h"
-
+#include "Hyperlinks.h"
+#include "DlgAbout.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -643,10 +644,22 @@ public:
             return TRUE;
           }
           case ID_HELP_ABOUT:
-          {
+/*          {
 			  ShowAbout();
 			  return TRUE;
-          }
+          }	*/
+		  {
+			ABOUT_RESULT sfResult;
+			CAboutDlg dlgAbout(&sfResult);
+			ArtShowDialog<IDD_ABOUT>(&dlgAbout);
+
+			if(!sfResult.fCancelled)
+			{
+				UpdateUI(UPDATE_ALL);
+			}
+					
+			return TRUE;
+		  }		
           case ID_FILE_PRINT:
           {
 			  HRESULT WINAPI PrintDlgEx(_Inout_  LPPRINTDLGEX lppd);
@@ -1066,7 +1079,7 @@ private:
   }
    void ShowAbout()
 	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0017\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
+        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0018\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
 			L"About Pitside Console",MB_OK);
 		return;
 	}
