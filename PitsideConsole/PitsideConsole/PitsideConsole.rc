@@ -61,8 +61,8 @@ BEGIN
     LTEXT           "Send attempt time, min (Max=3)",IDC_LBLATTEMPTTIME,5,33,100,12
     EDITTEXT        IDC_EDTATTEMPTTIME,105,33,100,12
     LTEXT           "Pitside may hang for up to 60s on next message send\nif previous attempt failed or was aborted",IDC_LBLMESSAGE2,5,47,195,24
-    PUSHBUTTON      "OK", IDOK, 5,67,95,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,12
+    PUSHBUTTON      "OK", IDOK, 5,67,95,18
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,18
 END
 
 // dialog for selecting which race in a DB we want to use
@@ -119,8 +119,8 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "Race Session(s) name?",IDC_LBLMESSAGE4,5,5,100,12
     EDITTEXT        IDC_EDTMESSAGE2,5,25,190,12
-    PUSHBUTTON      "Rename", IDOK, 5,67,95,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,12
+    PUSHBUTTON      "Rename", IDOK, 5,67,95,18
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,18
 END
 
 // dialog for selecting plotting preferences
@@ -231,8 +231,8 @@ BEGIN
     EDITTEXT        IDC_PLOTTYPE_LOWLIMIT20,270,260,45,12
 	EDITTEXT        IDC_PLOTTYPE_HIGHLIMIT20,315,260,45,12
     PUSHBUTTON      "Rescan/Reset", IDC_PLOTTYPE_RESCAN, 90,275,180,12
-    PUSHBUTTON      "OK", IDOK, 5,290,175,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 180,290,180,12
+    PUSHBUTTON      "OK", IDOK, 5,290,175,22
+    PUSHBUTTON      "Cancel", IDCANCEL, 180,290,180,22
 END
 
 
@@ -289,4 +289,35 @@ POPUP "&Options"
         MENUITEM "Show IPs", ID_HELP_IPS
         MENUITEM "About", ID_HELP_ABOUT
     END
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+//    ID_FILE_PAGE_SETUP      "Change the printing options\nPage Setup"
+//    ID_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
+    ID_FILE_PRINT            "Print the active document\nPrint (Not active yet)"
+//    ID_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
+    ID_FILE_EXIT             "Quit the application\nExit"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_CLEARSELECTION      "Clear selected laps\nClear"
+    ID_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_OPTIONS_KMH          "Velocity in Kilometers per Hour\nKPH"
+    ID_OPTIONS_MPH          "Velocity in Miles per Hour\nMPH"
+    ID_OPTIONS_MS           "Velocity in Meters per Second\nM/S"
+	ID_OPTIONS_SORTTIME		"Sort the Lap List by Time received, most recent last\nSort by Time"
+	ID_OPTIONS_SORTLAP		"Sort the Lap List by Lap Time, shortest first\nSort by Lap Time"
+    ID_OPTIONS_SHOWBESTS    "Display all-time best lap in graphs\nBest Lap"
+    ID_OPTIONS_SHOWDRIVERBESTS    "Display each drivers' best lap in graphs\nBest Lap"
+	ID_OPTIONS_SHOWREFERENCELAP	"Display Reference Lap in all graphs\nReference Lap"
+	ID_OPTIONS_DRAWLINES	"Display graphs either as dots or continuous lines\nDots Lines"
+	ID_OPTIONS_BACKGROUND	"Toggle between Grey and Black backgrounds\nGrey Black background"
+	ID_OPTIONS_IOIO5VSCALE	"Toggle between 0-5V scale for IOIO pins, or self-scaling\nFixed Moving Scales"
+	ID_OPTIONS_PLOTPREFS	"Set up graph display options, including alarm limits\nGraphs and Alarms"
 END

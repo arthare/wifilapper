@@ -452,7 +452,7 @@ public:
               NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
               if(pDetails->iItem >= 0)
               {
-                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
               }
               return TRUE;
             }
@@ -468,7 +468,7 @@ public:
                 NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
                 if(pDetails->iItem >= 0)
                 {
-                  UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                  UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
                 }
               }
               return TRUE;
@@ -489,7 +489,7 @@ public:
                 NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
                 if(pDetails->iItem >= 0)
                 {
-                  UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                  UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
                 }
               }
               return TRUE;
@@ -557,13 +557,13 @@ public:
           case ID_OPTIONS_SHOWBESTS:
           {
             m_fShowBests = !m_fShowBests;
-            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
             return TRUE;
           }
           case ID_OPTIONS_SHOWREFERENCELAP:
           {
             m_fShowReferenceLap = !m_fShowReferenceLap;
-            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
             return TRUE;
           }
           case ID_OPTIONS_DRAWLINES:
@@ -587,7 +587,7 @@ public:
           case ID_OPTIONS_SHOWDRIVERBESTS:
           {
             m_fShowDriverBests = !m_fShowDriverBests;
-            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
             return TRUE;
           }
           case ID_DATA_SWITCHSESSION:
@@ -734,7 +734,7 @@ public:
             {
             case BN_CLICKED:
               m_eLapDisplayStyle = LAPDISPLAYSTYLE_MAP;
-              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
               break;
             }
             return TRUE;
@@ -745,7 +745,7 @@ public:
             {
               case BN_CLICKED:
                 m_eLapDisplayStyle = LAPDISPLAYSTYLE_RECEPTION;
-                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
                 break;
             }
             return TRUE;
@@ -756,7 +756,7 @@ public:
             {
               case BN_CLICKED:
                 m_eLapDisplayStyle = LAPDISPLAYSTYLE_PLOT;
-                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
                 break;
             }
             return TRUE;
@@ -782,7 +782,7 @@ public:
             {
               // what's going on?  This should've been disabled
             }
-            UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
             return TRUE;
           }
           case IDC_SETDRIVER: // they want to set the driver of the selected laps
@@ -861,7 +861,7 @@ public:
           else
           {
             LoadLaps((ILapReceiver*)lParam);
-            UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
           }
           return TRUE;
         }
@@ -949,7 +949,7 @@ public:
   const static DWORD UPDATE_LIST = 0x2;
   const static DWORD UPDATE_DASHBOARD = 0x4;
   const static DWORD UPDATE_MENU = 0x8;
-  const static DWORD UPDATE_VALUES = 0x9;
+  const static DWORD UPDATE_VALUES = 0x10;
 
   const static DWORD UPDATE_ALL = 0xffffffff;
   //	Pull in PlotPrefs array as well as lines vs. dots and Painting color scheme settings from Settings.txt file
@@ -999,10 +999,10 @@ public:
 		m_sfLapList.MakeVisible((LPARAM)laps[laps.size()-1]);
 		}
     }
-/*    if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_VALUES))
+    if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_VALUES))
     {
       UpdateValues();
-    }	*/
+    }
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_MAP))
     {
       UpdateDisplays();
@@ -1014,7 +1014,6 @@ public:
 
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_DASHBOARD))
     {
-      UpdateValues();	//	First update the Values Only display
       set<DATA_CHANNEL> setSelectedChannels;
 
       for(set<LPARAM>::const_iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
