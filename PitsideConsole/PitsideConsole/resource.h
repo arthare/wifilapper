@@ -47,9 +47,9 @@
 #define ID_DATA_SWITCHSESSION 48
 #define ID_OPTIONS_IOIO5VSCALE 49
 #define ID_HELP_ABOUT 50
-#define ID_FILE_PRINT 51
+#define IDD_PRINT 51
 #define ID_FILE_EXIT 52
-#define ID_EDIT_COPY 53
+#define IDD_EDIT_COPY 53
 #define ID_OPTIONS_ELAPSEDTIME 55
 #define ID_OPTIONS_PLOTPREFS 56
 #define IDC_GRAPHYESNO 57
@@ -200,4 +200,11 @@
 #define IDD_ABOUT 312
 #define IDC_LBLMESSAGE5 313
 #define IDC_LBLMESSAGE6 314
+#define IDD_FILE_PRINT_PREVIEW 315
+#define IDD_FILE_PRINT_SETUP 316
+
+#define ICO1           320 
+#define IDM_OPEN_BM    321
+#define IDM_PRINT_BM   322
+#define IDM_SAVE_BM    323
 // don't put anything below this

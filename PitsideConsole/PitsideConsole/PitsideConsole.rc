@@ -243,16 +243,21 @@ FONT 8, "MS Shell Dlg"
 BEGIN
 END
 
+//hMenu MENU DISCARDABLE
 IDM_OPTIONS MENU
 BEGIN
 POPUP "&File"
     BEGIN
-        MENUITEM "Print...", ID_FILE_PRINT
+		MENUITEM "Open Bitmap",  IDM_OPEN_BM
+		MENUITEM "Save Bitmap",  IDM_SAVE_BM
+        MENUITEM "Print Preview", IDD_FILE_PRINT_PREVIEW
+		MENUITEM "Print...", IDM_PRINT_BM
+		MENUITEM "Print Setup", IDD_FILE_PRINT_SETUP
         MENUITEM "Exit", ID_FILE_EXIT
     END
 POPUP "&Edit"
     BEGIN
-        MENUITEM "Copy", ID_EDIT_COPY
+        MENUITEM "Copy", IDD_EDIT_COPY
     END
 POPUP "&Options"
     BEGIN
@@ -293,17 +298,16 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-//    ID_FILE_PAGE_SETUP      "Change the printing options\nPage Setup"
-//    ID_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
-    ID_FILE_PRINT            "Print the active document\nPrint (Not active yet)"
-//    ID_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
+    IDD_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
+    IDM_PRINT_BM            "Print the active document\nPrint (Not active yet)"
+    IDD_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
     ID_FILE_EXIT             "Quit the application\nExit"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDC_CLEARSELECTION      "Clear selected laps\nClear"
-    ID_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
+    IDD_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
 END
 
 STRINGTABLE DISCARDABLE 

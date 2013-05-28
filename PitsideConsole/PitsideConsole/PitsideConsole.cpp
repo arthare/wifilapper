@@ -35,7 +35,8 @@
 #include "Winuser.h"
 #include "Hyperlinks.h"
 #include "DlgAbout.h"
-
+#include "DlgPrint.h"
+#include <Winspool.h>
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
 
@@ -286,7 +287,20 @@ public:
     m_szMessageStatus[0] = '\0';
     SetupMulticast();
   }
-  void SetRaceId(int iRaceId)
+  
+//////////////////////////////////////////////////////////////////////////////////
+	RECT rect;
+	HBITMAP hBitmap;
+	BITMAP bitmap;
+	int bxWidth, bxHeight, flag;
+	HDC hdc,hdcMem;
+	HMENU menu;
+	HPALETTE hpal;
+	int cxsize, cxpage;
+	int cysize, cypage;
+//////////////////////////////////////////////////////////////////////////////////
+
+void SetRaceId(int iRaceId)
   {
     m_iRaceId = iRaceId;
   }
@@ -312,6 +326,160 @@ public:
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
   LAPSUPPLIEROPTIONS m_sfLapOpts;
+
+/////////////////////////////////////////////////////////////////////////////////
+  //	Functions for enabling Printing of OpenGL graphs
+  HDC GetPrinterDC (HWND Hwnd)
+	{
+	// Initialize a PRINTDLG structure's size and set the PD_RETURNDC flag set the Owner flag to hwnd.
+	// The PD_RETURNDC flag tells the dialog to return a printer device context.
+		PRINTDLG pd = {0};
+		pd.lStructSize = sizeof( pd );
+		pd.hwndOwner = Hwnd;
+		pd.Flags = PD_RETURNDC;
+
+	// Retrieves the printer DC
+		PrintDlg(&pd);
+		hdc =pd.hDC;
+		return hdc ;
+	}
+
+  void SaveBMPFile(HWND hwnd, LPTSTR pszFile, PBITMAPINFO pbi, HBITMAP hBMP, HDC hDC)
+{
+    wofstream hf;               // file handle
+    BITMAPFILEHEADER hdr;       // bitmap file-header
+    PBITMAPINFOHEADER pbih;     // bitmap info-header
+    LPBYTE lpBits;              // memory pointer
+    DWORD dwTotal;              // total count of bytes
+    DWORD cb;                   // incremental count of bytes
+    BYTE *hp;                   // byte pointer
+    //DWORD dwTmp;
+
+    pbih = (PBITMAPINFOHEADER) pbi;
+    lpBits = (LPBYTE) GlobalAlloc(GMEM_FIXED, pbih->biSizeImage);
+
+    if (!lpBits)
+    {
+        MessageBox(hwnd,L"GlobalAlloc",L"Error", MB_OK );
+    }
+// Retrieve the color table (RGBQUAD array) and the bits
+// (array of palette indices) from the DIB.
+    if (!GetDIBits(hDC, hBMP, 0, (WORD) pbih->biHeight, lpBits, pbi,DIB_RGB_COLORS))
+    {
+        MessageBox(hwnd,L"GetDIBits",L"Error",MB_OK );
+    }
+// Create the .BMP file.
+    hf.open(pszFile,std::ios::binary);
+    if (hf.fail() == true)
+    {
+        MessageBox( hwnd,L"CreateFile",L"Error", MB_OK);
+    }
+
+    hdr.bfType = 0x4d42;  // File type designator "BM" 0x42 = "B" 0x4d = "M"
+// Compute the size of the entire file.
+    hdr.bfSize = (DWORD) (sizeof(BITMAPFILEHEADER) + pbih->biSize + pbih->biClrUsed * sizeof(RGBQUAD) + pbih->biSizeImage);
+    hdr.bfReserved1 = 0;
+    hdr.bfReserved2 = 0;
+// Compute the offset to the array of color indices.
+    hdr.bfOffBits = (DWORD) sizeof(BITMAPFILEHEADER) + pbih->biSize + pbih->biClrUsed * sizeof (RGBQUAD);
+// Copy the BITMAPFILEHEADER into the .BMP file.
+    hf.write((wchar_t*) &hdr, sizeof(BITMAPFILEHEADER));
+    if (hf.fail() == true )
+    {
+        MessageBox(hwnd,L"WriteFileHeader",L"Error",MB_OK );
+    }
+// Copy the BITMAPINFOHEADER and RGBQUAD array into the file.
+     hf.write((wchar_t*) pbih, sizeof(BITMAPINFOHEADER) + pbih->biClrUsed * sizeof (RGBQUAD));
+    if (hf.fail() == true )
+    {
+        MessageBox(hwnd,L"WriteInfoHeader",L"Error",MB_OK );
+    }
+// Copy the array of color indices into the .BMP file.
+    dwTotal = cb = pbih->biSizeImage;
+    hp = lpBits;
+    hf.write((wchar_t*) hp, (int) cb);
+    if (hf.fail() == true )
+    {
+        MessageBox(hwnd,L"WriteData",L"Error",MB_OK );
+    }
+// Close the .BMP file.
+    hf.close();
+    if (hf.fail() == true)
+    {
+        MessageBox(hwnd,L"CloseHandle",L"Error",MB_OK );
+    }
+
+// Free memory.
+    GlobalFree((HGLOBAL)lpBits);
+}
+//End of BMP Save
+
+
+PBITMAPINFO CreateBitmapInfoStruct(HWND hwnd, HBITMAP hBmp)
+{
+    BITMAP bmp;
+    PBITMAPINFO pbmi;
+    WORD cClrBits;
+// Retrieve the bitmap color format, width, and height.
+    if (!GetObject(hBmp, sizeof(BITMAP), (LPSTR)&bmp))
+    {
+        MessageBox(hwnd,L"GetObject",L"Error",MB_OK );
+    }
+// Convert the color format to a count of bits.
+    cClrBits = (WORD)(bmp.bmPlanes * bmp.bmBitsPixel);
+    if (cClrBits == 1)
+        cClrBits = 1;
+    else if (cClrBits <= 4)
+        cClrBits = 4;
+    else if (cClrBits <= 8)
+        cClrBits = 8;
+    else if (cClrBits <= 16)
+        cClrBits = 16;
+    else if (cClrBits <= 24)
+        cClrBits = 24;
+    else cClrBits = 32;
+
+// Allocate memory for the BITMAPINFO structure. (This structure
+// contains a BITMAPINFOHEADER structure and an array of RGBQUAD
+// data structures.)
+
+//    if (cClrBits < 24)
+    if (cClrBits != 24)
+    {
+        pbmi = (PBITMAPINFO) LocalAlloc(LPTR,sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1<< cClrBits));
+    }
+// There is no RGBQUAD array for the 24-bit-per-pixel format.
+    else
+        pbmi = (PBITMAPINFO) LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER));
+
+// Initialize the fields in the BITMAPINFO structure.
+    pbmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    pbmi->bmiHeader.biWidth = bmp.bmWidth;
+    pbmi->bmiHeader.biHeight = bmp.bmHeight;
+    pbmi->bmiHeader.biPlanes = bmp.bmPlanes;
+    pbmi->bmiHeader.biBitCount = bmp.bmBitsPixel;
+    if (cClrBits < 24)
+    {
+        pbmi->bmiHeader.biClrUsed = (1<<cClrBits);
+    }
+// If the bitmap is not compressed, set the BI_RGB flag.
+    pbmi->bmiHeader.biCompression = BI_RGB;
+
+// Compute the number of bytes in the array of color
+// indices and store the result in biSizeImage.
+// For Windows NT, the width must be DWORD aligned unless
+// the bitmap is RLE compressed. This example shows this.
+// For Windows 95/98/Me, the width must be WORD aligned unless the
+// bitmap is RLE compressed.
+    pbmi->bmiHeader.biSizeImage = ((pbmi->bmiHeader.biWidth * cClrBits +31) & ~31) /8 * pbmi->bmiHeader.biHeight;
+// Set biClrImportant to 0, indicating that all of the
+// device colors are important.
+    pbmi->bmiHeader.biClrImportant = 0;
+
+    return pbmi; //return BITMAPINFO
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
 
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
@@ -648,29 +816,329 @@ public:
 			ABOUT_RESULT sfResult;
 			CAboutDlg dlgAbout(&sfResult);
 			ArtShowDialog<IDD_ABOUT>(&dlgAbout);
+			UpdateUI(UPDATE_ALL);
+			return TRUE;
+		  }		
+          case IDM_PRINT_BM:
+          {
+			PRINT_RESULT sfResult;
+
+			////////////////////////////////////////////////////////////////////////////////
+			static OPENFILENAME ofn;
+			flag=0;
+			cxsize=0, cxpage=0;
+			cysize=0, cypage=0;
+			PAINTSTRUCT ps;
+
+			//	Let's get the Bitmap image for printing
+
+			TCHAR szFileName[MAX_PATH];
+			if(ArtGetOpenFileName(hWnd, L"Open a Bitmap File.", szFileName, NUMCHARS(szFileName),L"Bitmap Files (*.bmp)\0*.BMP\0\0"))
+			{
+				ZeroMemory(&hBitmap, sizeof(HBITMAP));
+
+
+
+
+				hBitmap = (HBITMAP)LoadImage(NULL,szFileName,IMAGE_BITMAP,0,0,LR_CREATEDIBSECTION|LR_DEFAULTSIZE|LR_LOADFROMFILE|LR_VGACOLOR);
+//				hBitmap = memBM;
+				if(hBitmap)
+				{
+/*					cxpage = rc.right-rc.left;
+					cypage = rc.bottom-rc.top;
+					GetObject(hBitmap,sizeof(BITMAP),&bitmap);
+					bxWidth = rc.right-rc.left;
+					bxHeight = rc.bottom-rc.top;
+*/					cxpage = GetDeviceCaps (hdc, HORZRES);
+					cypage = GetDeviceCaps (hdc, VERTRES);
+					GetObject(hBitmap,sizeof(BITMAP),&bitmap);
+					bxWidth = bitmap.bmWidth;
+					bxHeight = bitmap.bmHeight;
+ 
+//					rect.left = 0;
+//					rect.top =0;
+//					rect.right = (long)&cxpage;
+//					rect.bottom = (long)&cypage;
+
+
+//					InvalidateRect(hWnd,&rect,true);
+				}
+				
+				//	Let's paint the image into a Device Context
+
+				hdc = BeginPaint(hWnd, &ps);
+
+				hdcMem = CreateCompatibleDC(hdc);
+
+				SelectObject(hdcMem, hBitmap);
+
+
+//				cxpage = GetDeviceCaps (hdc, HORZRES);
+//				cypage = GetDeviceCaps (hdc, VERTRES);
+
+				SetMapMode (hdc, MM_ISOTROPIC);
+				SetWindowExtEx(hdc, cxpage,cypage, NULL);
+				SetViewportExtEx(hdc, cxsize, cysize,NULL);
+
+				SetViewportOrgEx(hdc, 0, 0, NULL);
+
+				SetStretchBltMode(hdc,COLORONCOLOR);
+
+				StretchBlt(hdc, 0, 0, bxWidth, bxHeight, hdcMem, 0, 0,bxWidth,bxHeight, SRCCOPY);
+
+				EndPaint(hWnd, &ps);
+				DeleteDC(hdcMem);
+
+				//	Now let's print the  loaded image
+
+				DOCINFO di= { sizeof (DOCINFO), TEXT ("Printing Picture...")};
+				HDC prn = NULL;
+				//	Open up the standard printer dialog and get our printer DC
+				prn = GetPrinterDC(hWnd);
+				if (prn)
+				{
+					cxpage = GetDeviceCaps (prn, HORZRES);
+					cypage = GetDeviceCaps (prn, VERTRES);
+					hdcMem = CreateCompatibleDC(prn);
+					HBITMAP hbmOld = (HBITMAP)SelectObject(hdcMem, hBitmap);
+
+					StartDoc (prn, &di);
+					StartPage (prn) ;
+					SetMapMode (prn, MM_ISOTROPIC);
+					SetWindowExtEx(prn, cxpage,cypage, NULL);
+					SetViewportExtEx(prn, cxpage, cypage,NULL);
+
+					SetViewportOrgEx(prn, 0, 0, NULL);
+					StretchBlt(prn, 0, 0, cxpage, cypage, hdcMem, 0, 0,bxWidth,bxHeight, SRCCOPY);
+					EndPage (prn);
+					EndDoc(prn);
+					DeleteDC(prn);
+					SelectObject(hdcMem, hbmOld);
+					DeleteDC(hdcMem);
+				}
+				////////////////////////////////////////////////////////////////////////////////
+				return TRUE;
+			}
 
 			if(!sfResult.fCancelled)
 			{
 				UpdateUI(UPDATE_ALL);
 			}
-					
+
 			return TRUE;
-		  }		
-          case ID_FILE_PRINT:
+          }
+          case IDD_FILE_PRINT_PREVIEW:
           {
-			  HRESULT WINAPI PrintDlgEx(_Inout_  LPPRINTDLGEX lppd);
+			  MessageBox (hWnd, L"Sorry, but Print Preview is not currently available",L"Error",NULL);
 			  return TRUE;
           }
-          case ID_FILE_EXIT:
+          case IDD_FILE_PRINT_SETUP:
+          {
+			  MessageBox (hWnd, L"Sorry, but Print Setup is not currently available",L"Error",NULL);
+			  return TRUE;
+          }
+		  case ID_FILE_EXIT:
           {
 				DestroyWindow(hWnd);
 				break;
 		  }
-          case ID_EDIT_COPY:
+          case IDD_EDIT_COPY:
           {
+			  MessageBox (hWnd, L"Sorry, but Copy is not currently available",L"Error",NULL);
 			  return TRUE;
           }
           
+          case IDM_SAVE_BM:
+          {
+
+			  //	Let's get the output file name from the user.
+
+
+						// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+						// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+						// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
+						// PARTICULAR PURPOSE.
+						//
+						// Copyright (c) Microsoft Corporation. All rights reserved
+
+						//
+						//   FUNCTION: CaptureAnImage(HWND hWnd)
+						//
+						//   PURPOSE: Captures a screenshot into a window and then saves it in a .bmp file.
+						//
+						//   COMMENTS: 
+						//
+						//      Note: This sample will attempt to create a file called captureqwsx.bmp 
+						//        
+
+
+
+							HDC hdcSource;
+							HDC hdcWindow;
+							HDC hdcMemDC = NULL;
+							HBITMAP hbmSource = NULL;
+							BITMAP bmpSource;
+
+							// Retrieve the handle to a display device context for the client 
+							// area of the window. 
+							hdcSource = GetDC(NULL);
+							hdcWindow = GetDC(hWnd);
+//							hdcWindow = GetDC(GetDlgItem(hWnd,IDC_DISPLAY));
+
+							// Create a compatible DC which is used in a BitBlt from the window DC
+							hdcMemDC = CreateCompatibleDC(hdcWindow); 
+
+							if(!hdcMemDC)
+							{
+								MessageBox(hWnd, L"CreateCompatibleDC has failed",L"Failed", MB_OK);
+								goto done;
+							}
+						    
+							//	Redraw the Main Display
+//							UpdateDisplays();
+
+							// Get the client area for size calculation
+							RECT rcClient;
+//							GetClientRect(hWnd, &rcClient);
+//							GetClientRect(GetDlgItem(hWnd,IDC_DISPLAY), &rcClient);
+//							::GetWindowRect (GetDlgItem(hWnd,IDC_DISPLAY),&rcClient); 
+							//	Get the windows coordinates for the Main Display, hWnd
+							::GetWindowRect (hWnd,&rcClient); 
+							//	Get the dimensions of the target image handle, hWnd
+							RECT rc;
+//							::GetWindowRect (GetDlgItem(hWnd,IDC_DISPLAY),&rc); 
+							::GetWindowRect (hWnd,&rc); 
+							//GetClientRect(hWnd,&rc);
+							//This is the best stretch mode
+							SetStretchBltMode(hdcWindow,HALFTONE);
+
+							//The source DC is the current window and the destination DC is the current window (HWND)
+							if(!StretchBlt(hdcWindow, 
+									   0,0,
+									   //rcClient.left, rcClient.top,
+									   rcClient.right-rcClient.left, rcClient.bottom-rcClient.top,
+//									   rc.left, rc.top,
+//									   rc.right, rc.bottom, 
+									   hdcSource, 
+									   rc.left+8, rc.top+50,
+									   rc.right-rc.left, rc.bottom-rc.top, 
+//									   rcClient.left, rcClient.top,
+//									   rcClient.right, rcClient.bottom,
+									   SRCCOPY))
+							{
+								MessageBox(hWnd, L"StretchBlt has failed",L"Failed", MB_OK);
+								goto done;
+							}
+    
+							// Create a compatible bitmap from the Window DC
+							hbmSource = CreateCompatibleBitmap(hdcWindow, rcClient.right-rcClient.left, rcClient.bottom-rcClient.top);
+    
+							if(!hbmSource)
+							{
+								MessageBox(hWnd, L"CreateCompatibleBitmap Failed",L"Failed", MB_OK);
+								goto done;
+							}
+
+							// Select the compatible bitmap into the compatible memory DC.
+							SelectObject(hdcMemDC,hbmSource);
+    
+							// Bit block transfer into our compatible memory DC.
+							if(!BitBlt(hdcMemDC, 
+									   0,0,
+									   //rcClient.left,rcClient.top, 
+									   rcClient.right-rcClient.left, rcClient.bottom-rcClient.top, 
+									   hdcSource,
+									   //hdcWindow, 
+									   rcClient.left,rcClient.top,
+									   SRCCOPY))
+							{
+								MessageBox(hWnd, L"BitBlt has failed", L"Failed", MB_OK);
+								goto done;
+							}
+
+							// Get the BITMAP from the HBITMAP
+							GetObject(hbmSource,sizeof(BITMAP),&bmpSource);
+     
+							BITMAPFILEHEADER   bmfHeader;    
+							BITMAPINFOHEADER   bi;
+     
+							bi.biSize = sizeof(BITMAPINFOHEADER);    
+							bi.biWidth = bmpSource.bmWidth;    
+							bi.biHeight = bmpSource.bmHeight;  
+							bi.biPlanes = 1;    
+							bi.biBitCount = 32;    
+							bi.biCompression = BI_RGB;    
+							bi.biSizeImage = 0;  
+							bi.biXPelsPerMeter = 0;    
+							bi.biYPelsPerMeter = 0;    
+							bi.biClrUsed = 0;    
+							bi.biClrImportant = 0;
+
+							DWORD dwBmpSize = ((bmpSource.bmWidth * bi.biBitCount + 31) / 32) * 4 * bmpSource.bmHeight;
+
+							// Starting with 32-bit Windows, GlobalAlloc and LocalAlloc are implemented as wrapper functions that 
+							// call HeapAlloc using a handle to the process's default heap. Therefore, GlobalAlloc and LocalAlloc 
+							// have greater overhead than HeapAlloc.
+							HANDLE hDIB = GlobalAlloc(GHND,dwBmpSize); 
+							char *lpbitmap = (char *)GlobalLock(hDIB);    
+
+							// Gets the "bits" from the bitmap and copies them into a buffer 
+							// which is pointed to by lpbitmap.
+							GetDIBits(hdcWindow, hbmSource, 0,
+								(UINT)bmpSource.bmHeight,
+								lpbitmap,
+								(BITMAPINFO *)&bi, DIB_RGB_COLORS);
+
+							TCHAR szFileName[MAX_PATH];
+							if(ArtGetSaveFileName(hWnd, L"Choose Filename to save as a Bitmap File.", szFileName, NUMCHARS(szFileName),L"BMP Files (*.bmp)\0*.BMP\0\0"))
+							{
+								if(!str_ends_with(szFileName,L".bmp"))
+								{
+									wcsncat(szFileName,L".bmp", NUMCHARS(szFileName));
+								}
+											// A file is created, this is where we will save the screen capture.
+											HANDLE hFile = CreateFile(szFileName,
+												GENERIC_WRITE,
+												0,
+												NULL,
+												CREATE_ALWAYS,
+												FILE_ATTRIBUTE_NORMAL, NULL);   
+    
+											// Add the size of the headers to the size of the bitmap to get the total file size
+											DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+ 
+											//Offset to where the actual bitmap bits start.
+											bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER); 
+    
+											//Size of the file
+											bmfHeader.bfSize = dwSizeofDIB; 
+    
+											//bfType must always be BM for Bitmaps
+											bmfHeader.bfType = 0x4D42; //BM   
+ 
+											DWORD dwBytesWritten = 0;
+											WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
+											WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
+											WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
+    
+											//Unlock and Free the DIB from the heap
+											GlobalUnlock(hDIB);    
+											GlobalFree(hDIB);
+
+											//Close the handle for the file that was created
+											CloseHandle(hFile);
+       
+											//Clean up
+										done:
+											DeleteObject(hbmSource);
+											DeleteObject(hdcMemDC);
+											ReleaseDC(NULL,hdcSource);
+											ReleaseDC(hWnd,hdcWindow);
+
+							  }
+			                  UpdateUI(UPDATE_ALL);
+							  return TRUE;
+		  }
 		  case ID_DATA_OPENDB:
           {
             TCHAR szFilename[MAX_PATH];

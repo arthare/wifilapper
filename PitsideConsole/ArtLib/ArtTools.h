@@ -63,7 +63,7 @@ template<int i> void TemplatedFunction();
 #define DASSERT(x)
 #endif
 
-#define VERIFY(x) (  (x) ? Noop() : Break())
+#define VERIFY(x) (  (x) ? Noop() : Break())		//	Remarked out due to MFC
 #define CASSERT(x) (TemplatedFunction<x>())
 void FormatTimeMinutesSecondsMs(float flTimeInSeconds, LPTSTR lpszBuffer, int cchBuffer);
 

@@ -20,12 +20,14 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -53,6 +55,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -78,6 +81,7 @@ copyjs_dbg.bat</Command>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -104,6 +108,7 @@ copyjs_rel.bat</Command>
     <ClInclude Include="DlgAbout.h" />
     <ClInclude Include="DlgMessage.h" />
     <ClInclude Include="DlgPlotSelect.h" />
+    <ClInclude Include="DlgPrint.h" />
     <ClInclude Include="DlgProgress.h" />
     <ClInclude Include="DlgRaceEditConfirm.h" />
     <ClInclude Include="DlgRaceNameEdit.h" />
@@ -127,6 +132,7 @@ copyjs_rel.bat</Command>
     <ClCompile Include="DlgAbout.cpp" />
     <ClCompile Include="DlgMessage.cpp" />
     <ClCompile Include="DlgPlotSelect.cpp" />
+    <ClCompile Include="DlgPrint.cpp" />
     <ClCompile Include="DlgProgress.cpp" />
     <ClCompile Include="DlgRaceEditConfirm.cpp" />
     <ClCompile Include="DlgRaceNameEdit.cpp" />
