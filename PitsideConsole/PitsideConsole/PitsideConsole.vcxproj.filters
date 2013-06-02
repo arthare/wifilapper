@@ -84,9 +84,6 @@
     <ClInclude Include="Hyperlinks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DlgPrint.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DlgAbout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -147,9 +144,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DlgAbout.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DlgPrint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

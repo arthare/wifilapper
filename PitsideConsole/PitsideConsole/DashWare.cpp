@@ -43,11 +43,12 @@ namespace DashWare
 
     for(int ixLap = 0;ixLap < lstLaps.size(); ixLap++)
     {
-      for(int y = 0; y < DATA_CHANNEL_COUNT; y++)
+	  for(int y = 0; y < DATA_CHANNEL_COUNT; y++)
       {
         const IDataChannel* pChannel = g_pLapDB->GetDataChannel(lstLaps[ixLap]->GetLapId(),(DATA_CHANNEL)y);
         DASSERT(pChannel->IsLocked() && pChannel->IsValid());
-        if(pChannel && pChannel->IsLocked() && pChannel->IsValid())
+//        if(pChannel && pChannel->IsLocked() && pChannel->IsValid())
+        if(pChannel && pChannel->IsValid())
         {
           mapChannels[(DATA_CHANNEL)y] = pChannel;
         }
@@ -73,7 +74,8 @@ namespace DashWare
       {
         const IDataChannel* pChannel = g_pLapDB->GetDataChannel(pLap->GetLapId(),(DATA_CHANNEL)y);
         DASSERT(pChannel->IsLocked() && pChannel->IsValid() && pChannel->GetChannelType() == (DATA_CHANNEL)y);
-        if(pChannel && pChannel->IsLocked() && pChannel->IsValid())
+//        if(pChannel && pChannel->IsLocked() && pChannel->IsValid())
+        if(pChannel && pChannel->IsValid())
         {
           mapChannels[(DATA_CHANNEL)y] = pChannel;
         }
@@ -127,7 +129,7 @@ namespace DashWare
               {
                 flRunningAverage[i->first] = 0.7*flValue + 0.3*flRunningAverage[i->first];
               }
-              _snwprintf(szTemp,NUMCHARS(szTemp),L"%5.2f",fUseRunningAverage[i->first] ? flRunningAverage[i->first] : flValue);
+              _snwprintf(szTemp,NUMCHARS(szTemp),L"%5.6f",fUseRunningAverage[i->first] ? flRunningAverage[i->first] : flValue);
               out<<","<<szTemp;
             }
             else

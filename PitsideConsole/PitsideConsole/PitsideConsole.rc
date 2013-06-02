@@ -236,7 +236,7 @@ BEGIN
 END
 
 
-IDD_PROGRESS DIALOG 100, 100, 200, 30
+IDD_PROGRESS DIALOG 250, 150, 200, 50
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Working..."
 FONT 8, "MS Shell Dlg"
@@ -248,11 +248,8 @@ IDM_OPTIONS MENU
 BEGIN
 POPUP "&File"
     BEGIN
-		MENUITEM "Open Bitmap",  IDM_OPEN_BM
-		MENUITEM "Save Bitmap",  IDM_SAVE_BM
-        MENUITEM "Print Preview", IDD_FILE_PRINT_PREVIEW
+		MENUITEM "Save Image",  IDM_SAVE_BM
 		MENUITEM "Print...", IDM_PRINT_BM
-		MENUITEM "Print Setup", IDD_FILE_PRINT_SETUP
         MENUITEM "Exit", ID_FILE_EXIT
     END
 POPUP "&Edit"
@@ -294,34 +291,4 @@ POPUP "&Options"
         MENUITEM "Show IPs", ID_HELP_IPS
         MENUITEM "About", ID_HELP_ABOUT
     END
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDD_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
-    IDM_PRINT_BM            "Print the active document\nPrint (Not active yet)"
-    IDD_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
-    ID_FILE_EXIT             "Quit the application\nExit"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDC_CLEARSELECTION      "Clear selected laps\nClear"
-    IDD_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    ID_OPTIONS_KMH          "Velocity in Kilometers per Hour\nKPH"
-    ID_OPTIONS_MPH          "Velocity in Miles per Hour\nMPH"
-    ID_OPTIONS_MS           "Velocity in Meters per Second\nM/S"
-	ID_OPTIONS_SORTTIME		"Sort the Lap List by Time received, most recent last\nSort by Time"
-	ID_OPTIONS_SORTLAP		"Sort the Lap List by Lap Time, shortest first\nSort by Lap Time"
-    ID_OPTIONS_SHOWBESTS    "Display all-time best lap in graphs\nBest Lap"
-    ID_OPTIONS_SHOWDRIVERBESTS    "Display each drivers' best lap in graphs\nBest Lap"
-	ID_OPTIONS_SHOWREFERENCELAP	"Display Reference Lap in all graphs\nReference Lap"
-	ID_OPTIONS_DRAWLINES	"Display graphs either as dots or continuous lines\nDots Lines"
-	ID_OPTIONS_BACKGROUND	"Toggle between Grey and Black backgrounds\nGrey Black background"
-	ID_OPTIONS_IOIO5VSCALE	"Toggle between 0-5V scale for IOIO pins, or self-scaling\nFixed Moving Scales"
-	ID_OPTIONS_PLOTPREFS	"Set up graph display options, including alarm limits\nGraphs and Alarms"
 END
