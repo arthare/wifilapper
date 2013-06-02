@@ -84,8 +84,8 @@ public:
   {
 		m_pLapDB = pLapDB;
   };
-  int InitPlotPrefs (HWND hWnd, LPARAM lParam);
-  int SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable);
+  void InitPlotPrefs (HWND hWnd, LPARAM lParam);
+  void SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable);
   void InitPlotChannels(set<DATA_CHANNEL> setAvailable);
 
   virtual void NotifyChange(WPARAM wParam, LPARAM lParam) {DASSERT(FALSE);};

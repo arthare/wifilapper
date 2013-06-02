@@ -797,10 +797,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, &m_sfLapOpts);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
-			if(!sfResult.fCancelled)
-			{
-				UpdateUI(UPDATE_ALL);
-			}
+			UpdateUI(UPDATE_ALL | UPDATE_VALUES);
 					
 			return TRUE;
 		  }		

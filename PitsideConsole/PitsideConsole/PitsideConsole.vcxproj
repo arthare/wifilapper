@@ -44,11 +44,13 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>..\ArtLib;$(IncludePath);</IncludePath>
     <LibraryPath>$(LibraryPath);../Debug/</LibraryPath>
+    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\ArtLib;$(IncludePath)</IncludePath>
     <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -64,13 +66,14 @@
       <EntryPointSymbol>
       </EntryPointSymbol>
       <AdditionalDependencies>comctl32.lib; Iphlpapi.lib; kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies) opengl32.lib;glu32.lib;ws2_32.lib;winmm.lib</AdditionalDependencies>
+      <ProgramDatabaseFile>$(TargetDir)\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <PreBuildEvent>
       <Command>$(MSBuildBinPath)\msbuild.exe "$(ProjectDir)..\MSBuild\MSBuild.xml" /p:JavaScriptOutputFile="$(TargetDir)\pitside.min.js" /p:SourceLocation=$(ProjectDir)
 copyjs_dbg.bat</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>runtests_debug</Command>
+      <Command>runtests_debug.bat</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -90,6 +93,7 @@ copyjs_dbg.bat</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>comctl32.lib; iphlpapi.lib; kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)opengl32.lib;glu32.lib;ws2_32.lib; winmm.lib</AdditionalDependencies>
+      <ProgramDatabaseFile>$(TargetDir)\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
       <Command>runtests_release.bat</Command>
