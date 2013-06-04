@@ -353,7 +353,7 @@ int copyBitmapToClipboard(char *bitmapBuffer, size_t buflen)
  if (!OpenClipboard(NULL)) return 1;//PASTE_OPEN_ERROR;
  if (!EmptyClipboard()) return 2;//PASTE_CLEAR_ERROR;
 
- buflen -= sizeof(BITMAPFILEHEADER);
+ //buflen -= sizeof(BITMAPFILEHEADER);
  hResult = GlobalAlloc(GMEM_MOVEABLE, buflen);
 //						buflen -= sizeof(BITMAPFILEHEADER);
 //						hResult = GlobalAlloc(GMEM_MOVEABLE, dwBmpSize);
@@ -389,8 +389,8 @@ int copyBitmapToClipboard(char *bitmapBuffer, size_t buflen)
 */
 
 //	memcpy(GlobalLock(hResult), bitmapBuffer + sizeof(BITMAPFILEHEADER), buflen);
-//	memcpy(GlobalLock(hResult), bitmapBuffer, buflen);
- memcpy(GlobalLock(hResult), bitmapBuffer + sizeof(BITMAPFILEHEADER), buflen);
+	memcpy(GlobalLock(hResult), bitmapBuffer, buflen);
+// memcpy(GlobalLock(hResult), bitmapBuffer + sizeof(BITMAPFILEHEADER), buflen);
  GlobalUnlock(hResult);
 
  if (SetClipboardData(CF_DIB, hResult) == NULL) {
@@ -1009,15 +1009,13 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 					//	Now let's convert this Bitmap into a JPEG file, if the user wants to save it.
 					if (SaveFlag)
 					{
-						{
-							//	Load the BMP from a temporary file on the disk, and convert it
-							CString path = szTempName;
-							CImage *image = new CImage;
-							HRESULT hResult = image->Load(path);
-							hResult = image->Save(szFileName);
-							//	Now let's delete the temporaray BMP file
-							DeleteFile(szTempName);
-						}
+						//	Load the BMP from a temporary file on the disk, and convert it
+						CString path = szTempName;
+						CImage *image = new CImage;
+						HRESULT hResult = image->Load(path);
+						hResult = image->Save(szFileName);
+						//	Now let's delete the temporaray BMP file
+						DeleteFile(szTempName);
 					}
 					else if (PrintFlag)
 					{
@@ -1097,7 +1095,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 				{
 					//	User wants to copy image to Clipboard.
 
-					// Add the size of the headers to the size of the bitmap to get the total file size
+					// Add the size of the headers to the size of the bitmap to get the total DIB size
 					DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
  
 					//Offset to where the actual bitmap bits start.
@@ -1113,8 +1111,15 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 					{
 						char* bitmapBuffer = lpbitmap;
 						size_t buflen = dwSizeofDIB;
+//						size_t buflen = dwBmpSize;
 
 						copyBitmapToClipboard(bitmapBuffer, buflen);
+
+//						DWORD dwBytesWritten = 0;
+//						WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
+//						WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
+//						WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
+
 					}
 				}
 				//Unlock and Free the DIB from the heap

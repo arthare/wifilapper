@@ -19,7 +19,7 @@ int TimeoutRead(SOCKET s, char* buf, int cbBuf, int flags, int timeout, bool* pf
       }
       else
       {
-        if(timeGetTime() - tmNow > timeout)
+        if(timeGetTime() - tmNow > (UINT)timeout)
         {
           // timed out
           *pfConnectionLost = true;

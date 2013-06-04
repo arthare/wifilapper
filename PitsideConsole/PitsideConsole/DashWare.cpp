@@ -97,7 +97,7 @@ namespace DashWare
       msEndTime = max(msEndTime, msStartTime + pLap->GetTime()*1000);
 
       const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
-      float flRunningAverage[DATA_CHANNEL_COUNT];
+	  float flRunningAverage[DATA_CHANNEL_COUNT] = {0.0f};
       bool fUseRunningAverage[DATA_CHANNEL_COUNT] = {0};
       fUseRunningAverage[DATA_CHANNEL_X_ACCEL] = true;
       fUseRunningAverage[DATA_CHANNEL_Y_ACCEL] = true;

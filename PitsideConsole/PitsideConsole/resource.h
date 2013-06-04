@@ -201,7 +201,6 @@
 #define IDC_LBLMESSAGE5 313
 #define IDC_LBLMESSAGE6 314
 
-#define ICO1           320 
 #define IDM_PRINT_BM   322
 #define IDM_SAVE_BM    323
 // don't put anything below this
