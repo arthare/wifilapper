@@ -1708,9 +1708,9 @@ void UpdateValues()
 	//	Update the data channels that are being displayed as values
 	//	List of highlighted laps
 	set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
-    if(setSelectedData.size() > 0 && setSelectedData.size() < 5)
+    if(setSelectedData.size() > 0) // && setSelectedData.size() < 5)
     {
-      const int cLabels = 5;	//	The maximum number of Value Data channels to display
+      const int cLabels = 5;	//	The maximum number of Value Data channels to display, gated by display area
 	  bool m_Warning = false;	//	Flag for showing dialog of Value display to indicate statistics are outside of bounds
 	  int w=0;	//	String variable counter for Vaue display
       TCHAR szLabel[cLabels][MAX_PATH];
@@ -1725,7 +1725,7 @@ void UpdateValues()
 			if(!eChannel /*|| !eChannel->IsValid()*/) continue;
 			float flMin, flMax, flAvg;
 			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
-			for (int u = 0; u < 30; u++)	//	This can be improved, upper limit should be the total number of data channels, TotalYChannels plus all of the derived ones
+			for (int u = 0; u < sizeof m_lstYChannels; u++)
 			{
 				if (m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == true)
 				{
@@ -1803,7 +1803,7 @@ void UpdateValues()
 			if(!fWarnedOnce)
 			{
 				fWarnedOnce = true;
-				MessageBox(NULL,L"One or more of the alarm limits has been triggered\n\nMove the cursor over to the Lap List area and \nhit the 'Enter' key to remove this dialog",L"***WARNING***",MB_OK);
+				MessageBox(NULL,L"One or more of the alarm limits has been triggered\n\nCheck your Data Value parameters!!",L"***WARNING***",MB_OK);
 				fWarnedOnce = false;
 			}
 		}

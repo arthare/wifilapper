@@ -207,7 +207,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         const DATA_CHANNEL eType = lstDataY[y];
 
 		//	Determine if this Data Channel is one that we only want to display the values for
-			for (int u=0;u<49;u++)
+			for (int u = 0; u < sizeof lstDataY; u++)
 			{
 				if (eType == m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iDataChannel && m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iPlotView == false)
 				{	//	We have found a display only channel. Let's prevent the graph from displaying
