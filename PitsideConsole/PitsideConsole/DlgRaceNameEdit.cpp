@@ -42,9 +42,11 @@ LRESULT CRenameDlg::DlgProc
           return TRUE;
         }
         case IDCANCEL:
+		{
           m_pResults->fCancelled = true;
           EndDialog(hWnd,0);
           return TRUE;
+		}
       }
       break;
     } // end WM_COMMAND

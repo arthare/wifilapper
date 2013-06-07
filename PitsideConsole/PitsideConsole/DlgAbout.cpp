@@ -1,15 +1,17 @@
 #include "Stdafx.h"
 #include "resource.h"
 #include "pitsideconsole.h"
-#include "DlgRaceEditConfirm.h"
+#include "DlgAbout.h"
+#include "Hyperlinks.h"
 
-LRESULT CRaceEditConfirmDlg::DlgProc(HWND c_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CAboutDlg::DlgProc(HWND c_hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
   {
     case WM_INITDIALOG:
     {
-      break;
+		ConvertStaticToHyperlink(c_hWnd, IDC_LBLMESSAGE6);
+		break;
     }
     case WM_COMMAND:
     {
@@ -21,12 +23,6 @@ LRESULT CRaceEditConfirmDlg::DlgProc(HWND c_hWnd, UINT uMsg, WPARAM wParam, LPAR
           EndDialog(c_hWnd,0);
           return TRUE;
         }
-        case IDCANCEL:
-		{
-			m_sfResult->fCancelled = true;
-			EndDialog(c_hWnd,0);
-			return TRUE;
-		}
       }
       break;
     } // end WM_COMMAND

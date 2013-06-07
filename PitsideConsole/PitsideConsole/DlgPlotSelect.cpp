@@ -43,7 +43,7 @@ vector<CExtendedLap*> GetAllLaps()
     return lstLaps;
   }
 
-    int CPlotSelectDlg::InitPlotPrefs(HWND hWnd, LPARAM lParam)
+    void CPlotSelectDlg::InitPlotPrefs(HWND hWnd, LPARAM lParam)
 	{
 		//  We need to get all of the Y-axis data channels being displayed
 		// First load all laps and get their channels
@@ -109,10 +109,9 @@ vector<CExtendedLap*> GetAllLaps()
 				swprintf (szText, NUMCHARS(szText), L"%9.2f%", m_sfLapOpts->m_PlotPrefs[z].fMaxValue);
 				SetDlgItemText(hWnd, IDC_PLOTTYPE_HIGHLIMIT0 + z, LPCWSTR(&szText));       
 			}
-		return 0;
     }
 
-      int CPlotSelectDlg::SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
+      void CPlotSelectDlg::SetPlotPrefs(HWND hWnd, set<DATA_CHANNEL> setAvailable)
 	  {
 		   //  Display all of the limits for all data channels
 
@@ -139,7 +138,6 @@ vector<CExtendedLap*> GetAllLaps()
 					CheckRadioButton(hWnd, IDC_PLOTTYPE_GRAPH0 + z*2, IDC_PLOTTYPE_VALUE0 + z*2, IDC_PLOTTYPE_VALUE0 + z*2);
 				}
 			}
-		  return 0;
 	  }
 
     LRESULT CPlotSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -370,7 +368,6 @@ vector<CExtendedLap*> GetAllLaps()
 				  //  Initialize all data channels, if not already set by user.
 				  //  Assumes first data channel (LONG X) will always be a graph
 				  InitPlotPrefs(hWnd, lParam);
-				  break;
 				  return TRUE;
 			  }
 			  case IDOK:
@@ -407,13 +404,13 @@ vector<CExtendedLap*> GetAllLaps()
 				  break;
 			  }
 		  }	//	End LOWORD loop
-          break;
+		  return TRUE;
         } // end WM_COMMAND
         case WM_CLOSE:
         {
             m_pPlotResults->fCancelled = true;
 			EndDialog(hWnd,0);
-			break;
+		    return TRUE;
         }
 		default:
 	    return FALSE;

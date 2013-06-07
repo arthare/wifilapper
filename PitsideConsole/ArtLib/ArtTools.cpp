@@ -75,7 +75,7 @@ int GetSecondsSince1970()
 
   const LONGLONG iSecsSince1601 = (ulTime.QuadPart / 10000000);
   const LONGLONG iSecsSince1970 = iSecsSince1601 - llSecondsBetween1601And1970;
-  return iSecsSince1970;
+  return (int)iSecsSince1970;
 }
 
 

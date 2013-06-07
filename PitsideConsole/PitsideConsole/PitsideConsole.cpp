@@ -33,7 +33,13 @@
 #include "UnitTests.h"
 #include <fstream>
 #include "Winuser.h"
-
+#include "Hyperlinks.h"
+#include "DlgAbout.h"
+#include <Winspool.h>
+#include "atlstr.h"
+#include "atlimage.h"
+#include "DlgProgress.h"
+#include "DlgWarning.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -285,7 +291,20 @@ public:
     m_szMessageStatus[0] = '\0';
     SetupMulticast();
   }
-  void SetRaceId(int iRaceId)
+  
+//////////////////////////////////////////////////////////////////////////////////
+	RECT rect;
+	HBITMAP hBitmap;
+	BITMAP bitmap;
+	int bxWidth, bxHeight, flag;
+	HDC hdc,hdcMem;
+	HMENU menu;
+	HPALETTE hpal;
+	int cxsize, cxpage;
+	int cysize, cypage;
+//////////////////////////////////////////////////////////////////////////////////
+
+void SetRaceId(int iRaceId)
   {
     m_iRaceId = iRaceId;
   }
@@ -311,6 +330,160 @@ public:
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
   LAPSUPPLIEROPTIONS m_sfLapOpts;
+
+/////////////////////////////////////////////////////////////////////////////////
+  //	Functions for enabling Printing of OpenGL graphs
+  HDC GetPrinterDC (HWND Hwnd)
+	{
+	// Initialize a PRINTDLG structure's size and set the PD_RETURNDC flag set the Owner flag to hwnd.
+	// The PD_RETURNDC flag tells the dialog to return a printer device context.
+		PRINTDLG pd = {0};
+		pd.lStructSize = sizeof( pd );
+		pd.hwndOwner = Hwnd;
+		pd.Flags = PD_RETURNDC;
+
+	// Retrieves the printer DC
+		PrintDlg(&pd);
+		hdc =pd.hDC;
+		return hdc ;
+	}
+
+int copyBitmapToClipboard(char *bitmapBuffer, size_t buflen)
+{
+ HGLOBAL hResult;
+ if (!OpenClipboard(NULL)) return 1;//PASTE_OPEN_ERROR;
+ if (!EmptyClipboard()) return 2;//PASTE_CLEAR_ERROR;
+
+ //buflen -= sizeof(BITMAPFILEHEADER);
+ hResult = GlobalAlloc(GMEM_MOVEABLE, buflen);
+//						buflen -= sizeof(BITMAPFILEHEADER);
+//						hResult = GlobalAlloc(GMEM_MOVEABLE, dwBmpSize);
+ if (hResult == NULL) return 3;//PASTE_DATA_ERROR;
+
+ /*
+			 WORD cClrBits;
+			// Convert the color format to a count of bits.
+				cClrBits = (WORD)(bmp.bmPlanes * bmp.bmBitsPixel);
+				if (cClrBits == 1)
+					cClrBits = 1;
+				else if (cClrBits <= 4)
+					cClrBits = 4;
+				else if (cClrBits <= 8)
+					cClrBits = 8;
+				else if (cClrBits <= 16)
+					cClrBits = 16;
+				else if (cClrBits <= 24)
+					cClrBits = 24;
+				else cClrBits = 32;
+
+			// Allocate memory for the BITMAPINFO structure. (This structure
+			// contains a BITMAPINFOHEADER structure and an array of RGBQUAD
+			// data structures.)
+
+				if (cClrBits != 24)
+				{
+					pbmi = (PBITMAPINFO) LocalAlloc(LPTR,sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1<< cClrBits));
+				}
+			// There is no RGBQUAD array for the 24-bit-per-pixel format.
+				else
+					pbmi = (PBITMAPINFO) LocalAlloc(LPTR, sizeof(BITMAPINFOHEADER));
+*/
+
+//	memcpy(GlobalLock(hResult), bitmapBuffer + sizeof(BITMAPFILEHEADER), buflen);
+	memcpy(GlobalLock(hResult), bitmapBuffer, buflen);
+// memcpy(GlobalLock(hResult), bitmapBuffer + sizeof(BITMAPFILEHEADER), buflen);
+ GlobalUnlock(hResult);
+
+ if (SetClipboardData(CF_DIB, hResult) == NULL) {
+  CloseClipboard();
+  return 4;//PASTE_PASTE_ERROR;
+ }
+
+ CloseClipboard();
+ GlobalFree(hResult);
+ return 5;//PASTE_WE_DID_IT_YAY;
+}
+
+//	Function that sets the printer default to Landscape Mode and Double-Sided printing, if available
+LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
+{
+//  HANDLE      hPrinter;
+  LPDEVMODE   pDevMode;
+  DWORD       dwNeeded, dwRet;
+
+  // Start by opening the printer 
+  if (!OpenPrinter(pDevice, &hPrinter, NULL))
+  {
+	  MessageBox(hWnd, L"Printer not found, Landscape mode disabled",L"Error", MB_OK);
+      return NULL;
+  }
+
+  // Step 1:
+  // Allocate a buffer of the correct size.
+  dwNeeded = DocumentProperties(hWnd,
+       hPrinter,       /* Handle to our printer. */ 
+       pDevice,        /* Name of the printer. */ 
+       NULL,           /* Asking for size, so */ 
+       NULL,           /* these are not used. */ 
+       0);             /* Zero returns buffer size. */ 
+  pDevMode = (LPDEVMODE)malloc(dwNeeded);
+
+  // Step 2:
+  // Get the default DevMode for the printer and
+  // modify it for your needs.
+  dwRet = DocumentProperties(hWnd,
+       hPrinter,
+       pDevice,
+       pDevMode,       // The address of the buffer to fill.
+       NULL,           // Not using the input buffer.
+       DM_OUT_BUFFER); // Have the output buffer filled. 
+  if (dwRet != IDOK)
+  {
+       // If failure, cleanup and return failure. 
+       free(pDevMode);
+       ClosePrinter(hPrinter);
+       return NULL;
+  }
+
+  //	Make changes to the DevMode which are supported.
+  if (pDevMode->dmFields & DM_ORIENTATION)
+  {
+       // If the printer supports paper orientation, set it.
+       pDevMode->dmOrientation = DMORIENT_LANDSCAPE;
+  }
+
+  if (pDevMode->dmFields & DM_DUPLEX)
+  {
+       // If it supports duplex printing, use it.  
+       pDevMode->dmDuplex = DMDUP_HORIZONTAL;
+  }
+
+  // Step 3:
+  // Merge the new settings with the old.
+  // This gives the driver an opportunity to update any private
+  // portions of the DevMode structure.
+  dwRet = DocumentProperties(hWnd,
+       hPrinter,
+       pDevice,
+       pDevMode,       // Reuse our buffer for output.
+       pDevMode,       // Pass the driver our changes. 
+       DM_IN_BUFFER |  // Commands to Merge our changes and 
+       DM_OUT_BUFFER); // write the result. 
+
+  // Finished with the printer
+  ClosePrinter(hPrinter);
+
+  if (dwRet != IDOK)
+  {
+       // If failure, cleanup and return failure.
+       free(pDevMode);
+       return NULL;
+  }
+
+  // Return the modified DevMode structure.
+  return pDevMode;
+}
+///////////////////////////////////////////////////////////////////////////////////////
 
   LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
@@ -451,7 +624,7 @@ public:
               NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
               if(pDetails->iItem >= 0)
               {
-                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
               }
               return TRUE;
             }
@@ -467,7 +640,7 @@ public:
                 NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
                 if(pDetails->iItem >= 0)
                 {
-                  UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                  UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
                 }
               }
               return TRUE;
@@ -488,7 +661,7 @@ public:
                 NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
                 if(pDetails->iItem >= 0)
                 {
-                  UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                  UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
                 }
               }
               return TRUE;
@@ -556,13 +729,13 @@ public:
           case ID_OPTIONS_SHOWBESTS:
           {
             m_fShowBests = !m_fShowBests;
-            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
             return TRUE;
           }
           case ID_OPTIONS_SHOWREFERENCELAP:
           {
             m_fShowReferenceLap = !m_fShowReferenceLap;
-            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
             return TRUE;
           }
           case ID_OPTIONS_DRAWLINES:
@@ -586,7 +759,7 @@ public:
           case ID_OPTIONS_SHOWDRIVERBESTS:
           {
             m_fShowDriverBests = !m_fShowDriverBests;
-            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
             return TRUE;
           }
           case ID_DATA_SWITCHSESSION:
@@ -625,10 +798,7 @@ public:
 			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, &m_sfLapOpts);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
-			if(!sfResult.fCancelled)
-			{
-				UpdateUI(UPDATE_ALL);
-			}
+			UpdateUI(UPDATE_ALL | UPDATE_VALUES);
 					
 			return TRUE;
 		  }		
@@ -643,25 +813,331 @@ public:
             return TRUE;
           }
           case ID_HELP_ABOUT:
+		  {
+			ABOUT_RESULT sfResult;
+			CAboutDlg dlgAbout(&sfResult);
+			ArtShowDialog<IDD_ABOUT>(&dlgAbout);
+			UpdateUI(UPDATE_ALL);
+			return TRUE;
+		  }		
+		  //	Nested loop for the following functions
+		  case IDM_PRINT_BM:
+          case IDD_EDIT_COPY:
+		  case IDM_SAVE_BM:
           {
-			  ShowAbout();
-			  return TRUE;
+			  int SaveFlag = false, PrintFlag = false;	
+			  //	Set flag to sending image to Clipboard, if requested by user
+			  if (LOWORD(wParam) == IDM_SAVE_BM)
+				  SaveFlag = true;
+			  if (LOWORD(wParam) == IDM_PRINT_BM)
+				  PrintFlag = true;
+          
+				// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+				// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+				// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
+				// PARTICULAR PURPOSE.
+				//
+				// Copyright (c) Microsoft Corporation. All rights reserved
+
+				//
+				//   FUNCTION: CaptureAnImage(HWND hWnd)
+				//
+				//   PURPOSE: Captures a screenshot into a window and then saves it in a .bmp file.
+				//
+				//   COMMENTS: 
+				//
+				//      Note: This sample will attempt to create a file called captureqwsx.bmp 
+				//        
+
+				HDC hdcSource;
+				HDC hdcWindow;
+				HDC hdcMemDC = NULL;
+				HBITMAP hbmSource = NULL;
+				BITMAP bmpSource;
+
+				// Retrieve the handle to a display device context for the client area of the window. 
+				hdcSource = GetDC(NULL);
+				hdcWindow = GetDC(hWnd);
+
+				// Create a compatible DC which is used in a BitBlt from the window DC
+				hdcMemDC = CreateCompatibleDC(hdcWindow); 
+
+				if(!hdcMemDC)
+				{
+					MessageBox(hWnd, L"CreateCompatibleDC has failed",L"Failed", MB_OK);
+					break;
+				}
+						    
+				// Get the client area for size calculation
+				RECT rcClient;
+				//	Get the windows coordinates for the Window, hWnd
+				::GetWindowRect (hWnd,&rcClient); 
+				//	Get the dimensions of the target image handle, hWnd
+				RECT rc;
+				::GetWindowRect (hWnd,&rc); 
+				//This is the best stretch mode
+				SetStretchBltMode(hdcWindow,HALFTONE);
+
+				//The source DC is the current window and the destination DC is the current window (HWND)
+				if(!StretchBlt(hdcWindow, 
+							0,0,
+							rcClient.right-rcClient.left, rcClient.bottom-rcClient.top,
+							hdcSource, 
+							rc.left+8, rc.top+50,	//	Adjustments to remove menu duplicate
+							rc.right-rc.left, rc.bottom-rc.top, 
+							SRCCOPY))
+				{
+					MessageBox(hWnd, L"StretchBlt has failed",L"Failed", MB_OK);
+					break;
+				}
+    
+				// Create a compatible bitmap from the Window DC
+				hbmSource = CreateCompatibleBitmap(hdcWindow, rcClient.right-rcClient.left, rcClient.bottom-rcClient.top);
+    
+				if(!hbmSource)
+				{
+					MessageBox(hWnd, L"CreateCompatibleBitmap Failed",L"Failed", MB_OK);
+					break;
+				}
+
+				// Select the compatible bitmap into the compatible memory DC.
+				SelectObject(hdcMemDC,hbmSource);
+    
+				// Bit block transfer into our compatible memory DC.
+				if(!BitBlt(hdcMemDC, 
+							0,0,
+							rcClient.right-rcClient.left, rcClient.bottom-rcClient.top, 
+							hdcSource,
+							rcClient.left,rcClient.top,
+							SRCCOPY))
+				{
+					MessageBox(hWnd, L"BitBlt has failed", L"Failed", MB_OK);
+					break;
+				}
+
+				// Get the BITMAP from the HBITMAP
+				GetObject(hbmSource,sizeof(BITMAP),&bmpSource);
+     
+				BITMAPFILEHEADER   bmfHeader = {0};    
+				BITMAPINFOHEADER   bi = {0};
+     
+				bi.biSize = sizeof(BITMAPINFOHEADER);    
+				bi.biWidth = bmpSource.bmWidth;    
+				bi.biHeight = bmpSource.bmHeight;  
+				bi.biPlanes = 1;    
+				bi.biBitCount = 32;    
+				bi.biCompression = BI_RGB;    
+				bi.biSizeImage = 0;  
+				bi.biXPelsPerMeter = 0;    
+				bi.biYPelsPerMeter = 0;    
+				bi.biClrUsed = 0;    
+				bi.biClrImportant = 0;
+
+				DWORD dwBmpSize = ((bmpSource.bmWidth * bi.biBitCount + 31) / 32) * 4 * bmpSource.bmHeight;
+
+				// Starting with 32-bit Windows, GlobalAlloc and LocalAlloc are implemented as wrapper functions that 
+				// call HeapAlloc using a handle to the process's default heap. Therefore, GlobalAlloc and LocalAlloc 
+				// have greater overhead than HeapAlloc.
+				HANDLE hDIB = GlobalAlloc(GHND,dwBmpSize); 
+				char *lpbitmap = (char *)GlobalLock(hDIB);    
+
+				// Gets the "bits" from the bitmap and copies them into a buffer 
+				// which is pointed to by lpbitmap.
+				GetDIBits(hdcWindow, hbmSource, 0,
+					(UINT)bmpSource.bmHeight,
+					lpbitmap,
+					(BITMAPINFO *)&bi, DIB_RGB_COLORS);
+
+				//	If request is to save or print an image file, request name and save it.
+				if (SaveFlag || PrintFlag)
+				{
+
+					//	Let's get the output file name from the user.
+				    TCHAR szTempPath[MAX_PATH];
+					TCHAR szFileName[MAX_PATH], szTempName[MAX_PATH];
+					if (PrintFlag)
+					{
+					    GetTempPath(NUMCHARS(szTempPath),szTempPath);	//	Get the TEMP folder path
+						swprintf(szTempName,NUMCHARS(szTempName), L"%sTmpFile.bmp", szTempPath);
+					}
+					else
+					{
+						if(ArtGetSaveFileName(hWnd, L"Choose Filename to save as a JPEG File.", szFileName, NUMCHARS(szFileName),L"JPG Files (*.jpg)\0*.JPG\0\0"))
+						{
+							if(!str_ends_with(szFileName,L".jpg"))
+							{
+								wcsncat(szFileName,L".jpg", NUMCHARS(szFileName));
+							}
+						}
+						else
+						{
+							break;
+						}
+							// Create a temporary BMP file, this is where we will save the screen capture.
+							swprintf(szTempName, NUMCHARS(szTempName), L"%s.bmp", szFileName);
+					}
+					HANDLE hFile = CreateFile(szTempName,
+						GENERIC_WRITE,
+						0,
+						NULL,
+						CREATE_ALWAYS,
+						FILE_ATTRIBUTE_NORMAL, NULL);   
+    
+					// Add the size of the headers to the size of the bitmap to get the total file size
+					DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+ 
+					//Offset to where the actual bitmap bits start.
+					bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER); 
+    
+					//Size of the file
+					bmfHeader.bfSize = dwSizeofDIB; 
+    
+					//bfType must always be BM for Bitmaps
+					bmfHeader.bfType = 0x4D42; //BM   
+ 
+					DWORD dwBytesWritten = 0;
+					WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
+					WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
+					WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
+    
+					//Unlock and Free the DIB from the heap
+					GlobalUnlock(hDIB);    
+					GlobalFree(hDIB);
+
+					//Close the handle for the file that was created
+					CloseHandle(hFile);
+
+					//	Now let's convert this Bitmap into a JPEG file, if the user wants to save it.
+					if (SaveFlag)
+					{
+						//	Load the BMP from a temporary file on the disk, and convert it
+						CString path = szTempName;
+						CImage *image = new CImage;
+						HRESULT hResult = image->Load(path);
+						hResult = image->Save(szFileName);
+						//	Now let's delete the temporaray BMP file
+						DeleteFile(szTempName);
+					}
+					else if (PrintFlag)
+					{
+						////////////////////////////////////////////////////////////////////////////////
+						cxsize=0, cxpage=0;
+						cysize=0, cypage=0;
+						PAINTSTRUCT ps;
+
+						//	Let's get the Bitmap image for printing
+						{
+							ZeroMemory(&hBitmap, sizeof(HBITMAP));
+
+							hBitmap = (HBITMAP)LoadImage(NULL,szTempName,IMAGE_BITMAP,0,0,LR_CREATEDIBSECTION|LR_DEFAULTSIZE|LR_LOADFROMFILE|LR_VGACOLOR);
+							if(hBitmap)
+							{
+								cxpage = GetDeviceCaps (hdc, HORZRES);
+								cypage = GetDeviceCaps (hdc, VERTRES);
+								GetObject(hBitmap,sizeof(BITMAP),&bitmap);
+								bxWidth = bitmap.bmWidth;
+								bxHeight = bitmap.bmHeight;
+ 							}
+				
+							//	Let's paint the image into a Device Context
+							hdc = BeginPaint(hWnd, &ps);
+							hdcMem = CreateCompatibleDC(hdc);
+							SelectObject(hdcMem, hBitmap);
+							SetMapMode (hdc, MM_ISOTROPIC);
+							SetWindowExtEx(hdc, cxpage,cypage, NULL);
+							SetViewportExtEx(hdc, cxsize, cysize,NULL);
+							SetViewportOrgEx(hdc, 0, 0, NULL);
+							SetStretchBltMode(hdc,COLORONCOLOR);
+							StretchBlt(hdc, 0, 0, bxWidth, bxHeight, hdcMem, 0, 0,bxWidth,bxHeight, SRCCOPY);
+
+							EndPaint(hWnd, &ps);
+							DeleteDC(hdcMem);
+
+							//	Now let's print the  loaded image
+							DOCINFO di= { sizeof (DOCINFO), TEXT ("Printing Picture...")};
+							HDC prn = NULL;
+							//	Open up the standard printer dialog and get our printer DC
+							prn = GetPrinterDC(hWnd);
+
+							//	Let's set up the printer for Landscape Mode printing
+//							TCHAR pDevice[MAX_PATH];
+//							swprintf(pDevice, NUMCHARS(pDevice), L"PrinterName, Job 0001");
+//							GetLandscapeDevMode(hWnd, pDevice, (HANDLE)prn);
+
+							if (prn)
+							{
+								cxpage = GetDeviceCaps (prn, HORZRES);
+								cypage = GetDeviceCaps (prn, VERTRES);
+								hdcMem = CreateCompatibleDC(prn);
+								HBITMAP hbmOld = (HBITMAP)SelectObject(hdcMem, hBitmap);
+
+								StartDoc (prn, &di);
+								StartPage (prn) ;
+								SetMapMode (prn, MM_ISOTROPIC);
+								SetWindowExtEx(prn, cxpage,cypage, NULL);
+								SetViewportExtEx(prn, cxpage, cypage,NULL);
+
+								SetViewportOrgEx(prn, 0, 0, NULL);
+								StretchBlt(prn, 0, 0, cxpage, cypage, hdcMem, 0, 0,bxWidth,bxHeight, SRCCOPY);
+								EndPage (prn);
+								EndDoc(prn);
+								DeleteDC(prn);
+								SelectObject(hdcMem, hbmOld);
+								DeleteDC(hdcMem);
+							}
+							DeleteFile(szTempName);
+							////////////////////////////////////////////////////////////////////////////////
+						  }
+					}
+					UpdateUI(UPDATE_DASHBOARD | UPDATE_MENU | UPDATE_ALL);
+					return TRUE;
+				}
+				else
+				{
+					//	User wants to copy image to Clipboard.
+
+					// Add the size of the headers to the size of the bitmap to get the total DIB size
+					DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+ 
+					//Offset to where the actual bitmap bits start.
+					bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER); 
+    
+					//Size of the file
+					bmfHeader.bfSize = dwSizeofDIB; 
+    
+					//bfType must always be BM for Bitmaps
+					bmfHeader.bfType = 0x4D42; //BM   
+
+					//	lpbitmap is the pointer to the BMP byte array
+					{
+						char* bitmapBuffer = lpbitmap;
+						size_t buflen = dwSizeofDIB;
+//						size_t buflen = dwBmpSize;
+
+						copyBitmapToClipboard(bitmapBuffer, buflen);
+
+//						DWORD dwBytesWritten = 0;
+//						WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
+//						WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
+//						WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
+
+					}
+				}
+				//Unlock and Free the DIB from the heap
+				GlobalUnlock(hDIB);    
+				GlobalFree(hDIB);
+				DeleteObject(hbmSource);
+				DeleteObject(hdcMemDC);
+				ReleaseDC(NULL,hdcSource);
+				ReleaseDC(hWnd,hdcWindow);
+				UpdateUI(UPDATE_DASHBOARD | UPDATE_MENU | UPDATE_ALL);
+				return TRUE;
           }
-          case ID_FILE_PRINT:
-          {
-			  HRESULT WINAPI PrintDlgEx(_Inout_  LPPRINTDLGEX lppd);
-			  return TRUE;
-          }
-          case ID_FILE_EXIT:
+		  case ID_FILE_EXIT:
           {
 				DestroyWindow(hWnd);
 				break;
 		  }
-          case ID_EDIT_COPY:
-          {
-			  return TRUE;
-          }
-          
 		  case ID_DATA_OPENDB:
           {
             TCHAR szFilename[MAX_PATH];
@@ -692,7 +1168,22 @@ public:
               TCHAR szFilename[MAX_PATH];
               if(ArtGetSaveFileName(hWnd, L"Choose Output file", szFilename, NUMCHARS(szFilename),L"CSV Files (*.csv)\0*.CSV\0\0"))
               {
-                vector<const ILap*> lstLaps;
+                // let's make sure there's a .csv suffix on that bugger.
+				if(!str_ends_with(szFilename,L".csv"))
+				{
+					wcsncat(szFilename,L".csv", NUMCHARS(szFilename));
+				}
+                
+				//	Display the "Working...." dialog, as this is going to take some time.
+				DLGPROC working = NULL;
+				HWND hwndGoto = NULL;  // Window handle of dialog box  
+				if (!IsWindow(hwndGoto)) 
+				{ 
+					hwndGoto = CreateDialog(NULL, MAKEINTRESOURCE (IDD_PROGRESS), hWnd, working); 
+					ShowWindow(hwndGoto, SW_SHOW); 
+				} 
+
+				vector<const ILap*> lstLaps;
                 map<const ILap*, const IDataChannel*> mapData;
                 for(set<LPARAM>::iterator i = setSelectedData.begin(); i != setSelectedData.end(); i++)
                 {
@@ -705,12 +1196,9 @@ public:
                   }
                   lstLaps.push_back(pLap->GetLap());
                 }
-                // let's make sure there's a .csv suffix on that bugger.
-				if(!str_ends_with(szFilename,L".csv"))
-				{
-					wcsncat(szFilename,L".csv", NUMCHARS(szFilename));
-				}
 				DashWare::SaveToDashware(szFilename, lstLaps);
+				DestroyWindow(hwndGoto); //	Close the "Working..." dialog
+                hwndGoto = NULL; 
               }
             }
             else
@@ -725,7 +1213,7 @@ public:
             {
             case BN_CLICKED:
               m_eLapDisplayStyle = LAPDISPLAYSTYLE_MAP;
-              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+              UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
               break;
             }
             return TRUE;
@@ -736,7 +1224,7 @@ public:
             {
               case BN_CLICKED:
                 m_eLapDisplayStyle = LAPDISPLAYSTYLE_RECEPTION;
-                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
                 break;
             }
             return TRUE;
@@ -747,7 +1235,7 @@ public:
             {
               case BN_CLICKED:
                 m_eLapDisplayStyle = LAPDISPLAYSTYLE_PLOT;
-                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
                 break;
             }
             return TRUE;
@@ -773,7 +1261,7 @@ public:
             {
               // what's going on?  This should've been disabled
             }
-            UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
             return TRUE;
           }
           case IDC_SETDRIVER: // they want to set the driver of the selected laps
@@ -852,7 +1340,7 @@ public:
           else
           {
             LoadLaps((ILapReceiver*)lParam);
-            UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD);
+            UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
           }
           return TRUE;
         }
@@ -940,6 +1428,7 @@ public:
   const static DWORD UPDATE_LIST = 0x2;
   const static DWORD UPDATE_DASHBOARD = 0x4;
   const static DWORD UPDATE_MENU = 0x8;
+  const static DWORD UPDATE_VALUES = 0x10;
 
   const static DWORD UPDATE_ALL = 0xffffffff;
   //	Pull in PlotPrefs array as well as lines vs. dots and Painting color scheme settings from Settings.txt file
@@ -988,6 +1477,10 @@ public:
 		{
 		m_sfLapList.MakeVisible((LPARAM)laps[laps.size()-1]);
 		}
+    }
+    if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_VALUES))
+    {
+      UpdateValues();
     }
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_MAP))
     {
@@ -1064,12 +1557,6 @@ private:
     m_mapLaps.clear();
     m_sfLapList.Clear();
   }
-   void ShowAbout()
-	{
-        MessageBox(NULL,L"Piside Console for Wifilapper\n\nVersion 2.003.0017\n\nThis is an Open Source project. If you want to contribute\n\nhttp://sites.google.com/site/wifilapper",
-			L"About Pitside Console",MB_OK);
-		return;
-	}
    bool ShowHelp(HWND hWnd)
 	{
 		TCHAR lpOpen[MAX_PATH] = L"open";
@@ -1196,18 +1683,16 @@ private:
     HandleCtlResize(sNewSize, IDC_SUBDISPLAY, true, false); // sub display window
     HandleCtlResize(sNewSize, IDC_LAPS, false, true); // lap list
   }
-	float Average(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal)
+	float fAverage(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal)
 	{
-		//	This function currently only returns the current value where the cursor is pointed (flValue).
-		//	It needs an iterator type loop to calculate the average value across all of the points in this data channel for this lap
+		//	This function returns the average value for the data channel across all data points from this lap.
 		char szAvg[MAX_PATH];
 		float sum = 0.0f;
 		int count; 
-	//	set<DATA_CHANNEL> channels = pChannel->GetData(); // get all the points that this lap / channel has
-	//	for(set<DATA_CHANNEL>::const_iterator i = channels.begin(); i != channels.end(); i++) // loop through them, insert them into our "all data channels" set
-		for (count = 0; count < sizeof pChannel->GetData(); count++)
+		vector<DataPoint> channels = pChannel->GetData(); // get the values for all of the data points
+		for (count = 0; count < channels.size(); count++)
 		{
-			GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,flVal,szAvg,NUMCHARS(szAvg));
+			GetChannelValue(eChannel,m_sfLapOpts.eUnitPreference,channels[count].flValue,szAvg,NUMCHARS(szAvg));
 			sum = sum + atof(szAvg); 
 		}
 		if (count != 0) 
@@ -1219,15 +1704,17 @@ private:
 			return sum;
 		}
 	}
-void UpdateDisplays()
+void UpdateValues()
   {
 	//	Update the data channels that are being displayed as values
 	//	List of highlighted laps
 	set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
-    if(setSelectedData.size() > 0 && setSelectedData.size() < 5)
+    if(setSelectedData.size() > 0) // && setSelectedData.size() < 5)
     {
-      const int cLabels = 5;	//	The maximum number of Value Data channels to display
+      const int cLabels = 5;	//	The maximum number of Value Data channels to display, gated by display area
 	  bool m_Warning = false;	//	Flag for showing dialog of Value display to indicate statistics are outside of bounds
+	  TCHAR m_szYString[512] = L"";
+	  TCHAR m_szWarningChannel[MAX_PATH]  = L"";
 	  int w=0;	//	String variable counter for Vaue display
       TCHAR szLabel[cLabels][MAX_PATH];
 	  for (int z = 0; z < cLabels; z++)
@@ -1241,7 +1728,7 @@ void UpdateDisplays()
 			if(!eChannel /*|| !eChannel->IsValid()*/) continue;
 			float flMin, flMax, flAvg;
 			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
-			for (int u = 0; u < 30; u++)	//	This can be improved, upper limit should be the total number of data channels, TotalYChannels plus all of the derived ones
+			for (int u = 0; u < sizeof m_lstYChannels; u++)
 			{
 				if (m_lstYChannels[x] == m_sfLapOpts.m_PlotPrefs[u].iDataChannel && m_sfLapOpts.m_PlotPrefs[u].iPlotView == true)
 				{
@@ -1264,15 +1751,22 @@ void UpdateDisplays()
 						flMin = pChannel->GetMin();
 						flMax = pChannel->GetMax();
 						// 951turbo: do more math here like averages, median, etc.
-						flAvg = Average(eChannel, pChannel, flVal);
+						flAvg = fAverage(eChannel, pChannel, flVal);
 						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
 						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
 						{
-							m_Warning = true;	//	An alarm has been triggered!
+							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.
+							GetDataChannelName(eChannel,m_szWarningChannel,NUMCHARS(m_szWarningChannel));
+							//	Build the failing channels string for output
+							swprintf(m_szYString,NUMCHARS(m_szYString),L"%s\n%s",m_szYString, m_szWarningChannel);
+
 						}
 						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
 						{
-							m_Warning = true;
+							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.
+							GetDataChannelName(eChannel,m_szWarningChannel,NUMCHARS(m_szWarningChannel));
+							//	Build the failing channels string for output
+							swprintf(m_szYString,NUMCHARS(m_szYString),L"%s\n%s",m_szYString, m_szWarningChannel);
 						}
 						else
 						{
@@ -1318,12 +1812,18 @@ void UpdateDisplays()
 			static bool fWarnedOnce = false;
 			if(!fWarnedOnce)
 			{
+				//	Display a warning dialog box about an alarm being triggered.
 				fWarnedOnce = true;
-				MessageBox(NULL,L"One or more of the alarm limits has been triggered\n\nMove the cursor over to the Lap List area and \nhit the 'Enter' key to remove this dialog",L"***WARNING***",MB_OK);
+				WARNING_RESULT sfResult;
+				CWarningDlg dlgWarning(&sfResult, m_szYString);
+				ArtShowDialog<IDD_WARNING>(&dlgWarning);
 				fWarnedOnce = false;
 			}
 		}
     }
+  }
+void UpdateDisplays()
+  {
     m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
 

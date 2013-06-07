@@ -37,15 +37,18 @@ BEGIN
     LTEXT           "5: ", IDC_VALUE_CHANNEL5,328,48,190,12
 END
 
-IDD_DLGSPLASH DIALOG 100,100,200,200
+//	Dialog box showing the splash screen
+IDD_DLGSPLASH DIALOG 100,100,200,250
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 CAPTION "Welcome to Pitside"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "",IDC_SPLASHIMAGE,"Static",SS_BITMAP,0,0,200,200
-    PUSHBUTTON      "OK", IDOK, 0,180,200,20
+	CTEXT			"https://sites.google.com/site/wifilapper",IDC_LBLMESSAGE6,0,200,200,20
+    PUSHBUTTON      "OK", IDOK, 0,220,200,30
 END
 
+//	Dialog box for sending messages to the car
 IDD_DLGMESSAGE DIALOG 280, 200, 200, 85
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Pit->Car Message"
@@ -58,8 +61,8 @@ BEGIN
     LTEXT           "Send attempt time, min (Max=3)",IDC_LBLATTEMPTTIME,5,33,100,12
     EDITTEXT        IDC_EDTATTEMPTTIME,105,33,100,12
     LTEXT           "Pitside may hang for up to 60s on next message send\nif previous attempt failed or was aborted",IDC_LBLMESSAGE2,5,47,195,24
-    PUSHBUTTON      "OK", IDOK, 5,67,95,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,12
+    PUSHBUTTON      "OK", IDOK, 5,67,95,18
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,18
 END
 
 // dialog for selecting which race in a DB we want to use
@@ -69,8 +72,8 @@ CAPTION "Select race to load"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "", IDC_RACE, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_ALIGNLEFT | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS, 0,0,200,180
-    PUSHBUTTON      "OK", IDOK, 5,180,95,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 100,180,95,12
+    PUSHBUTTON      "OK", IDOK, 5,180,95,20
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,180,95,20
 END
 
 // dialog for selecting which race in a DB we want to edit
@@ -82,8 +85,8 @@ BEGIN
     CONTROL         "", IDC_RACE, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_ALIGNLEFT | LVS_REPORT | LVS_SHOWSELALWAYS, 0,0,200,180
     PUSHBUTTON      "Rename", IDC_RACEEDIT_RENAME, 5,180,95,12
     PUSHBUTTON      "Merge", IDC_RACEEDIT_MERGE, 100,180,95,12
-    PUSHBUTTON      "OK", IDOK, 5,193,95,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 100,193,95,12
+    PUSHBUTTON      "OK", IDOK, 5,193,95,20
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,193,95,20
 END
 
 // confirm dialog for editing races in a DB
@@ -97,6 +100,17 @@ BEGIN
     PUSHBUTTON      "Cancel", IDCANCEL, 125,100,120,24
 END
 
+// About... dialog with hyperlink now
+IDD_ABOUT DIALOG 350, 200, 250, 125
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About Pitside Console"
+FONT 8, "MS Shell Dlg"
+BEGIN
+	CTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0018\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
+	CTEXT			"https://sites.google.com/site/wifilapper",IDC_LBLMESSAGE6,5,60,245,20
+    PUSHBUTTON      "OK", IDOK, 5,100,240,24
+END
+
 // name input dialog for renaming races in a DB
 IDD_RACENAMECHANGE DIALOG 350, 200, 200, 85
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
@@ -105,8 +119,8 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "Race Session(s) name?",IDC_LBLMESSAGE4,5,5,100,12
     EDITTEXT        IDC_EDTMESSAGE2,5,25,190,12
-    PUSHBUTTON      "Rename", IDOK, 5,67,95,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,12
+    PUSHBUTTON      "Rename", IDOK, 5,67,95,18
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,18
 END
 
 // dialog for selecting plotting preferences
@@ -217,28 +231,39 @@ BEGIN
     EDITTEXT        IDC_PLOTTYPE_LOWLIMIT20,270,260,45,12
 	EDITTEXT        IDC_PLOTTYPE_HIGHLIMIT20,315,260,45,12
     PUSHBUTTON      "Rescan/Reset", IDC_PLOTTYPE_RESCAN, 90,275,180,12
-    PUSHBUTTON      "OK", IDOK, 5,290,175,12
-    PUSHBUTTON      "Cancel", IDCANCEL, 180,290,180,12
+    PUSHBUTTON      "OK", IDOK, 5,290,175,22
+    PUSHBUTTON      "Cancel", IDCANCEL, 180,290,180,22
 END
 
 
-IDD_PROGRESS DIALOG 100, 100, 200, 30
+IDD_PROGRESS DIALOG 250, 150, 200, 50
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
 CAPTION "Working..."
 FONT 8, "MS Shell Dlg"
 BEGIN
 END
 
+IDD_WARNING DIALOG 300, 250, 250, 150
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "*****WARNING*****"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CTEXT           "",IDC_WARNING1,5,5,245,100
+    PUSHBUTTON      "OK", IDOK, 5,100,240,50
+END
+
+//hMenu MENU DISCARDABLE
 IDM_OPTIONS MENU
 BEGIN
 POPUP "&File"
     BEGIN
-        MENUITEM "Print...", ID_FILE_PRINT
+		MENUITEM "Save Image",  IDM_SAVE_BM
+		MENUITEM "Print...", IDM_PRINT_BM
         MENUITEM "Exit", ID_FILE_EXIT
     END
 POPUP "&Edit"
     BEGIN
-        MENUITEM "Copy", ID_EDIT_COPY
+        MENUITEM "Copy", IDD_EDIT_COPY
     END
 POPUP "&Options"
     BEGIN
