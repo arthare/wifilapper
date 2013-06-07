@@ -161,9 +161,11 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		  return TRUE;
         }
         case IDCANCEL:
+		{
           m_pResults->fCancelled = true;
           EndDialog(hWnd,0);
           return TRUE;
+		}
       }
       break;
     } // end WM_COMMAND

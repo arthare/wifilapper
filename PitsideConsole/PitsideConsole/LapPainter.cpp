@@ -207,7 +207,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         const DATA_CHANNEL eType = lstDataY[y];
 
 		//	Determine if this Data Channel is one that we only want to display the values for
-			for (int u=0;u<49;u++)
+			for (int u = 0; u < sizeof lstDataY; u++)
 			{
 				if (eType == m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iDataChannel && m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iPlotView == false)
 				{	//	We have found a display only channel. Let's prevent the graph from displaying
@@ -322,7 +322,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 //			dCenterOvalX = (dMaxX - dMinX) / 2.0f + dMinX;
 //			dCenterOvalY = (mapMaxY[*i] - mapMinY[*i]) / 2.0f + mapMinY[*i];
 			//		If this is for drawing the Traction Circle, let's draw a circle as well (Oval really)
-			if (eX == DATA_CHANNEL_X_ACCEL)
+			if (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL)
 			{
 				float w, h;
 				w = 3.0f;
