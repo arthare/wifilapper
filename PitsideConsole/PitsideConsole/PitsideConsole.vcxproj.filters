@@ -87,6 +87,9 @@
     <ClInclude Include="DlgAbout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DlgWarning.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -144,6 +147,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DlgAbout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgWarning.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

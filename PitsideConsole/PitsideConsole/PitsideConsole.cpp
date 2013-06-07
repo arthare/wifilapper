@@ -39,6 +39,7 @@
 #include "atlstr.h"
 #include "atlimage.h"
 #include "DlgProgress.h"
+#include "DlgWarning.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -1712,6 +1713,8 @@ void UpdateValues()
     {
       const int cLabels = 5;	//	The maximum number of Value Data channels to display, gated by display area
 	  bool m_Warning = false;	//	Flag for showing dialog of Value display to indicate statistics are outside of bounds
+	  TCHAR m_szYString[512] = L"";
+	  TCHAR m_szWarningChannel[MAX_PATH]  = L"";
 	  int w=0;	//	String variable counter for Vaue display
       TCHAR szLabel[cLabels][MAX_PATH];
 	  for (int z = 0; z < cLabels; z++)
@@ -1752,11 +1755,18 @@ void UpdateValues()
 						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
 						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
 						{
-							m_Warning = true;	//	An alarm has been triggered!
+							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.
+							GetDataChannelName(eChannel,m_szWarningChannel,NUMCHARS(m_szWarningChannel));
+							//	Build the failing channels string for output
+							swprintf(m_szYString,NUMCHARS(m_szYString),L"%s\n%s",m_szYString, m_szWarningChannel);
+
 						}
 						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
 						{
-							m_Warning = true;
+							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.
+							GetDataChannelName(eChannel,m_szWarningChannel,NUMCHARS(m_szWarningChannel));
+							//	Build the failing channels string for output
+							swprintf(m_szYString,NUMCHARS(m_szYString),L"%s\n%s",m_szYString, m_szWarningChannel);
 						}
 						else
 						{
@@ -1802,8 +1812,11 @@ void UpdateValues()
 			static bool fWarnedOnce = false;
 			if(!fWarnedOnce)
 			{
+				//	Display a warning dialog box about an alarm being triggered.
 				fWarnedOnce = true;
-				MessageBox(NULL,L"One or more of the alarm limits has been triggered\n\nCheck your Data Value parameters!!",L"***WARNING***",MB_OK);
+				WARNING_RESULT sfResult;
+				CWarningDlg dlgWarning(&sfResult, m_szYString);
+				ArtShowDialog<IDD_WARNING>(&dlgWarning);
 				fWarnedOnce = false;
 			}
 		}
