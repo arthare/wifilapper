@@ -1709,18 +1709,14 @@ void UpdateValues()
 	//	Update the data channels that are being displayed as values
 	//	List of highlighted laps
 	set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
-    if(setSelectedData.size() > 0) // && setSelectedData.size() < 5)
+    if(setSelectedData.size() > 0)
     {
       const int cLabels = 5;	//	The maximum number of Value Data channels to display, gated by display area
 	  bool m_Warning = false;	//	Flag for showing dialog of Value display to indicate statistics are outside of bounds
-	  TCHAR m_szYString[512] = L"";
-	  TCHAR m_szWarningChannel[MAX_PATH]  = L"";
+	  TCHAR m_szYString[512] = {NULL};
+	  TCHAR m_szWarningChannel[MAX_PATH] = {NULL};
 	  int w=0;	//	String variable counter for Vaue display
-      TCHAR szLabel[cLabels][MAX_PATH];
-	  for (int z = 0; z < cLabels; z++)
-	  {
-		  wcscpy(szLabel[z],(TCHAR*) L"");	//	Initialize the strings for Data Value Channels
-	  }
+      TCHAR szLabel[cLabels][MAX_PATH] = {NULL};
       //   Loop through the selected Y-axis data channels for this lap
 	  for(int x = 0; x < this->m_lstYChannels.size() && x < 49; x++)
 	  {
