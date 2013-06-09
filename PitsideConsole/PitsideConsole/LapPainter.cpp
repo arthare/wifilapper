@@ -627,13 +627,13 @@ void CLapPainter::MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, 
 	  }
 }
 */
-
+/*
 struct MAPHIGHLIGHT
 {
   const CExtendedLap* pLap;
   POINT pt;
 };
-
+*/
 //  Draws an oval centered at (x_center, y_center) and is is bound inside a rectangle whose width is w and height is h.
 void CLapPainter::drawOval (float x_center, float y_center, float w, float h)
 {

@@ -40,6 +40,7 @@
 #include "atlimage.h"
 #include "DlgProgress.h"
 #include "DlgWarning.h"
+#include "DlgSetSplits.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -267,6 +268,7 @@ enum SUPPLIERID
 {
   SUPPLIERID_MAINDISPLAY,
   SUPPLIERID_SUBDISPLAY,
+  SUPPLIERID_SECTORDISPLAY,
 };
 
 class CMainUI : public IUI,public ILapSupplier
@@ -275,6 +277,7 @@ public:
   CMainUI() 
     : m_sfLapPainter(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_MAINDISPLAY), 
       m_sfSubDisplay(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_SUBDISPLAY), 
+      m_sfRefLapPainter(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_SECTORDISPLAY), 
       m_eLapDisplayStyle(LAPDISPLAYSTYLE_PLOT),		//	Make data plot the default initial view
       m_fShowBests(false), 
       m_fShowDriverBests(false),
@@ -517,6 +520,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         }
         m_sfLapPainter.Init(GetDlgItem(hWnd,IDC_DISPLAY));
         m_sfSubDisplay.Init(GetDlgItem(hWnd,IDC_SUBDISPLAY));
+        m_sfRefLapPainter.Init(GetDlgItem(hWnd,IDC_LBLSPLITMAP));
 
         set<DATA_CHANNEL> setAvailable;
         InitAxes(setAvailable);
@@ -801,6 +805,18 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 			UpdateUI(UPDATE_ALL | UPDATE_VALUES);
 					
 			return TRUE;
+		  }		
+		  case ID_OPTIONS_SETSPLITS:
+		  {
+			SETSPLITSDLG_RESULT sfResult;
+			CSetSplitsDlg dlgSetSplits(g_pLapDB, m_pReferenceLap,  &sfResult, m_iRaceId, &m_sfLapOpts, &m_sfRefLapPainter);
+			ArtShowDialog<IDD_SETSPLITPOINTS>(&dlgSetSplits);
+
+			if(!sfResult.fCancelled)
+            {
+			  UpdateUI(UPDATE_ALL | UPDATE_VALUES);
+            }
+            return TRUE;
 		  }		
           case ID_HELP_SHOWHELP:
           {
@@ -1801,6 +1817,15 @@ void UpdateValues()
 	  for (int z = 0; z < cLabels; z++)
 	  {
 			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
+			hdc = GetDC(hWndLabel);
+			
+			SetBkMode(hdc,TRANSPARENT);
+			SetTextColor(hdc,RGB(255,0,0));
+			//GetSysColorBrush(GetSysColor(COLOR_WINDOW));
+			CreateSolidBrush(RGB(255,255,255));
+
+			//SetTextColor( hdc, RGB(255, 0, 0) );
+			//SetBkColor(hdc, RGB(222,231,249));
 			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
 	  }
 		if (m_Warning)	//	Pop up dialog saying the alarm has been triggered
@@ -2374,6 +2399,7 @@ private:
 
   CLapPainter m_sfLapPainter;
   CLapPainter m_sfSubDisplay;
+  CLapPainter m_sfRefLapPainter;
 
   // lap display style data
   map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls
@@ -2470,6 +2496,10 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 		p_sfLapOpts.m_PlotPrefs[i].iPlotView = true;  //  Default to dsplay as a graph
 		p_sfLapOpts.m_PlotPrefs[i].fMinValue = -3.0;    //  Set all lower limits to -3.0
 		p_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+		p_sfLapOpts.m_SplitPoints[i].m_sfXPoint = 0.0f;	//	Initialize all split points
+		p_sfLapOpts.m_SplitPoints[i].m_sfYPoint = 0.0f;	//	Initialize all split points
+		p_sfLapOpts.m_SplitPoints[i].m_sfSector = 0.0f;	//	Initialize all sector times
+		p_sfLapOpts.fDrawSplitPoints = false;	//	Default to not show split points
 	}
   }
 

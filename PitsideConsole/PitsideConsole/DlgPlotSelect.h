@@ -20,6 +20,13 @@ struct PlotPrefs
 	double fMaxValue;
 };
 
+struct SplitPoints
+{
+	double m_sfXPoint;
+	double m_sfYPoint;
+	double m_sfSector;
+};
+
 struct PITSIDE_SETTINGS
 {
   void Default()
@@ -47,7 +54,7 @@ enum LAPSORTSTYLE
 struct LAPSUPPLIEROPTIONS
 {
 public:
-  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(true),fDrawGuides(true),fDrawLines(true),fColorScheme(false),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)
+  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(false),fDrawGuides(true),fDrawLines(true),fColorScheme(false),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)
   {
   }
   UNIT_PREFERENCE eUnitPreference;
@@ -61,6 +68,7 @@ public:
   float flWindowShiftY;
   int iZoomLevels;
   PlotPrefs m_PlotPrefs[50];	// Pull in PlotPrefs data
+  SplitPoints m_SplitPoints[50];	//	Pull in all Split points data
   LAPSORTSTYLE eSortPreference;
 };
 

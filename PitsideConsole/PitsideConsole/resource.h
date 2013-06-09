@@ -203,6 +203,11 @@
 
 #define IDD_WARNING 315
 #define IDC_WARNING1 316
+#define IDC_LBLSPLIT1 317
+#define IDC_LBLSPLITMAP 318
+#define ID_OPTIONS_SETSPLITS 319
+#define IDD_SETSPLITPOINTS 320
+#define IDRESET 321
 #define IDM_PRINT_BM   322
 #define IDM_SAVE_BM    323
 // don't put anything below this
