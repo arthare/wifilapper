@@ -348,6 +348,7 @@ bool CSQLiteLapDB::Init(LPCTSTR lpszPath)
 //////////////////////////////////////////////////////////////
 bool CSQLiteLapDB::InitRaceSession(int* piRaceId, LPCTSTR lpszRaceName)
 {
+  AutoLeaveCS _cs(&m_cs);
   bool fSuccess = true;
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   if(sfQuery.Init(L"insert into races (name,date) values (?,?)"))
@@ -367,6 +368,7 @@ bool CSQLiteLapDB::InitRaceSession(int* piRaceId, LPCTSTR lpszRaceName)
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::DeInit()
 {
+  AutoLeaveCS _cs(&m_cs);
   m_sfDB.Close();
 }
 //////////////////////////////////////////////////////////////
@@ -384,29 +386,34 @@ ILap* CSQLiteLapDB::AllocateLap(bool fMemory)
 //////////////////////////////////////////////////////////////
 IDataChannel* CSQLiteLapDB::AllocateDataChannel() const
 {
+  AutoLeaveCS _cs(&m_cs);
   cChannels++;
   return new CDataChannel();
 }
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::FreeDataChannel(IDataChannel* pChannel) const
 {
+  AutoLeaveCS _cs(&m_cs);
   cChannels--;
   delete pChannel;
 }
 //////////////////////////////////////////////////////////////
 int CSQLiteLapDB::GetLastReceivedRaceId() const
 {
+  AutoLeaveCS _cs(&m_cs);
   DASSERT(m_iLastRaceId >= 0); // you shouldn't be calling this unless there's evidence we've received a lap!
   return m_iLastRaceId;
 }
 //////////////////////////////////////////////////////////////
 bool CSQLiteLapDB::IsActivelyReceiving(int iRaceId) const
 {
+  AutoLeaveCS _cs(&m_cs);
   return this->m_setReceivingIds.find(iRaceId) != m_setReceivingIds.end();
 }
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::GetLastLapTimeStamp(const vector<int>& lstCarNumbers, vector<unsigned int>& lstTimeStamps) const
 {
+  AutoLeaveCS _cs(&m_cs);
   for(int x = 0;x < lstCarNumbers.size(); x++)
   {
     const int iCar = lstCarNumbers[x];
@@ -436,6 +443,7 @@ void CSQLiteLapDB::GetLastLapTimeStamp(const vector<int>& lstCarNumbers, vector<
 //////////////////////////////////////////////////////////////
 int CSQLiteLapDB::GetLapCount(int iRaceId) const
 {
+  AutoLeaveCS _cs(&m_cs);
   vector<RACEDATA> lstRaces;
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   TCHAR szQuery[MAX_PATH];
@@ -457,6 +465,7 @@ int CSQLiteLapDB::GetLapCount(int iRaceId) const
 //////////////////////////////////////////////////////////////
 vector<RACEDATA> CSQLiteLapDB::GetRaces()
 {
+  AutoLeaveCS _cs(&m_cs);
   vector<RACEDATA> lstRaces;
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   TCHAR szQuery[MAX_PATH];
@@ -527,6 +536,7 @@ bool CSQLiteLapDB::RenameLaps(TCHAR szName[MAX_PATH], int m_iRaceId1)
 //////////////////////////////////////////////////////////////
 vector<const ILap*> CSQLiteLapDB::GetLaps(int iRaceId)
 {
+  AutoLeaveCS _cs(&m_cs);
   vector<const ILap*> lstLaps;
   // gotta load all the laps that are in the DB, but we don't want to fully load them, just their laptimes and other directly lap-related data
   CSfArtSQLiteQuery sfQuery(m_sfDB);
@@ -549,6 +559,7 @@ vector<const ILap*> CSQLiteLapDB::GetLaps(int iRaceId)
 //////////////////////////////////////////////////////////////
 const ILap* CSQLiteLapDB::GetLap(int iLapId)
 {
+  AutoLeaveCS _cs(&m_cs);
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   TCHAR szQuery[MAX_PATH];
   _snwprintf(szQuery, NUMCHARS(szQuery), L"Select laps._id,laps.laptime, laps.unixtime from laps where laps._id = %d", iLapId);
@@ -567,6 +578,7 @@ const ILap* CSQLiteLapDB::GetLap(int iLapId)
 //////////////////////////////////////////////////////////////
 const IDataChannel* CSQLiteLapDB::GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const
 {
+  AutoLeaveCS _cs(&m_cs);
   if(eChannel == DATA_CHANNEL_VELOCITY)
   {
     // since velocity is stored as part of the points table, it is a bit different than the normal data channels
@@ -611,6 +623,7 @@ const IDataChannel* CSQLiteLapDB::GetDataChannel(int iLapId, DATA_CHANNEL eChann
 //////////////////////////////////////////////////////////////
 set<DATA_CHANNEL> CSQLiteLapDB::GetAvailableChannels(int iLapId) const
 {
+  AutoLeaveCS _cs(&m_cs);
   set<DATA_CHANNEL> setRet;
 
   CSfArtSQLiteQuery sfQuery(m_sfDB);
@@ -632,6 +645,7 @@ set<DATA_CHANNEL> CSQLiteLapDB::GetAvailableChannels(int iLapId) const
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::GetComments(int iLapId, vector<wstring>& lstComments) const
 {
+  AutoLeaveCS _cs(&m_cs);
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   TCHAR szQuery[MAX_PATH];
   _snwprintf(szQuery, NUMCHARS(szQuery), L"select extras.comment from extras where extras.lapid = %d", iLapId);
@@ -650,6 +664,7 @@ void CSQLiteLapDB::GetComments(int iLapId, vector<wstring>& lstComments) const
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::AddLap(const ILap* pLap, int _iRaceId)
 {
+  AutoLeaveCS _cs(&m_cs);
   CARNUMBERCOMBO sfCarNumber = pLap->GetCarNumbers();
   int iSaveRaceId = -1;
   if(mapCarNumberRaceIds.find(sfCarNumber) == mapCarNumberRaceIds.end())
@@ -735,6 +750,7 @@ void CSQLiteLapDB::AddLap(const ILap* pLap, int _iRaceId)
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::AddDataChannel(const IDataChannel* pChannel)
 {
+  AutoLeaveCS _cs(&m_cs);
   m_sfDB.StartTransaction();
 
   bool fSuccess = true;
@@ -800,12 +816,14 @@ void CSQLiteLapDB::AddComment(int iLapId, LPCTSTR strComment)
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::SetNetStatus(NETSTATUSSTRING eString, LPCTSTR sz)
 {
+  AutoLeaveCS _cs(&m_cs);
   wcscpy(szLastNetStatus[eString], sz);
   m_pUI->NotifyChange(NOTIFY_NEWNETSTATUS,(LPARAM)this);
 }
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::NotifyDBArrival(LPCTSTR szPath)
 {
+  AutoLeaveCS _cs(&m_cs);
   wcscpy(szLastNetStatus[NETSTATUS_DB],szPath);
   m_pUI->NotifyChange(NOTIFY_NEWDATABASE,(LPARAM)szLastNetStatus[NETSTATUS_DB]);
 }

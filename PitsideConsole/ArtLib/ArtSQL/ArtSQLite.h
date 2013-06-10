@@ -13,7 +13,7 @@ public:
   CSfArtSQLiteDB() : m_sqlite3(NULL) {};
   virtual ~CSfArtSQLiteDB() {Close();};
 
-  HRESULT Open(LPCTSTR filename, vector<wstring>& lstTableSQL);
+  HRESULT Open(LPCTSTR filename, vector<wstring>& lstTableSQL, bool fReadOnly=false);
   void Close();
 
   sqlite3* GetSQLite() {return m_sqlite3;};

@@ -4,11 +4,22 @@
 #include "../ArtTools.h"
 #include <stdio.h>
 
-HRESULT CSfArtSQLiteDB::Open(LPCTSTR filename, vector<wstring>& lstTables)
+HRESULT CSfArtSQLiteDB::Open(LPCTSTR filename, vector<wstring>& lstTables, bool fReadOnly)
 {
   HRESULT hr = S_OK;
 
-  int iRet = sqlite3_open16((void*)filename, &m_sqlite3);
+  int iRet = 0;
+  if(fReadOnly)
+  {
+    std::wstring wstr(filename);
+    std::string str(wstr.begin(),wstr.end());
+
+    iRet = sqlite3_open_v2(str.c_str(),&m_sqlite3,SQLITE_OPEN_READONLY,NULL);
+  }
+  else
+  {
+    iRet = sqlite3_open16((void*)filename, &m_sqlite3);
+  }
   if(iRet == SQLITE_OK)
   {
     // hooray!.  Let's get the table list

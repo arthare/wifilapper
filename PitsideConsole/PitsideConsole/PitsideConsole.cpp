@@ -2477,6 +2477,56 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 	}
   }
 
+DWORD HTMLThreadProc(LPVOID pv)
+{
+  LPCTSTR lpszPath = (LPCTSTR)pv;
+  CSfArtSQLiteDB sfDB;
+  vector<wstring> lstTables;
+  if(SUCCEEDED(sfDB.Open(lpszPath,lstTables,true)))
+  {
+    while(true)
+    {
+      Sleep(5000);
+
+      ofstream out;
+      out.open("toplaps.html");
+
+      out<<"<html><head><script type=\"text/JavaScript\"> function timedRefresh(timeoutPeriod) {	setTimeout(\"location.reload(true);\",timeoutPeriod);} </script></head>"<<endl;
+      CSfArtSQLiteQuery sfQuery(sfDB);
+      //if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and races.name like '%Received laps%' order by laptime asc limit 40"))
+      if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id order by laptime asc limit 40"))
+      {
+        SYSTEMTIME st;
+        GetSystemTime(&st);
+
+        out<<"<body onload=\"JavaScript:timedRefresh(5000);\">"<<endl;
+        out<<"Last Updated "<<st.wHour<<":"<<st.wMinute<<":"<<st.wSecond<<endl;
+        out<<"<table><th>Car #<th>Laptime"<<endl;
+        while(sfQuery.Next())
+        {
+          TCHAR szRaceName[300];
+          TCHAR szLap[300];
+          float flLapTime = 0;
+          sfQuery.GetCol(0,szRaceName,NUMCHARS(szRaceName));
+          sfQuery.GetCol(1,&flLapTime);
+
+          ::FormatTimeMinutesSecondsMs(flLapTime,szLap,NUMCHARS(szLap));
+          std::wstring strw(szRaceName);
+          std::string strRaceName(strw.begin(),strw.end());
+          strw = szLap;
+          std::string strLapTime(strw.begin(),strw.end());
+          out<<"<tr><Td>"<<strRaceName<<"<td>"<<strLapTime<<"</tr>"<<endl;
+        }
+        out<<"</table></body>";
+      }
+      out.close();
+
+    }
+  }
+  return 0;
+}
+
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
 {
@@ -2557,6 +2607,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if(sfLaps.Init(szTempPath))
     {
       // success!
+      wcscpy(szDBPath,szTempPath);
     }
   }
   if(!fDBOpened)
@@ -2663,6 +2714,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   {
     g_pHTTPServer = NULL;
   }
+
+  //HANDLE hHTMLThread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)&HTMLThreadProc,(LPVOID)&szDBPath[0],0,NULL);
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 
