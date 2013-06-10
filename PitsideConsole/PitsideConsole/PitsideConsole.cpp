@@ -1847,6 +1847,7 @@ void UpdateDisplays()
   {
     m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
+	m_sfRefLapPainter.Refresh();
 
   }
   void CheckMenuHelper(HMENU hMainMenu, int id, bool fChecked)
@@ -1951,6 +1952,8 @@ void UpdateDisplays()
       return true; // main display is always the driver of highlight data
     case SUPPLIERID_SUBDISPLAY:
       return false;
+	case SUPPLIERID_SECTORDISPLAY:
+		return true;	//	Allow the Set Split Sectors to be highlight source
     default:
       DASSERT(FALSE);
       return false;
@@ -2062,7 +2065,11 @@ void UpdateDisplays()
       case LAPDISPLAYSTYLE_MAP: return LAPDISPLAYSTYLE_PLOT;
       default: return LAPDISPLAYSTYLE_MAP;
       }
-    default:
+	case SUPPLIERID_SECTORDISPLAY:
+	  {
+		return LAPDISPLAYSTYLE_MAP;
+	  }
+	default:
       DASSERT(FALSE);
       break;
     }

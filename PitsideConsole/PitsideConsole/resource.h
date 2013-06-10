@@ -207,7 +207,10 @@
 #define IDC_LBLSPLITMAP 318
 #define ID_OPTIONS_SETSPLITS 319
 #define IDD_SETSPLITPOINTS 320
-#define IDRESET 321
-#define IDM_PRINT_BM   322
-#define IDM_SAVE_BM    323
+#define IDC_SETSPLIT1 321
+#define IDC_SETSPLIT2 322
+#define IDC_SETSPLIT3 323
+#define IDRESET 330
+#define IDM_PRINT_BM   331
+#define IDM_SAVE_BM    332
 // don't put anything below this
