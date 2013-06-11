@@ -291,16 +291,16 @@ void CMemoryLap::Load(V2InputLapRaw* pLap)
 
 	for(int x = 0;x < pLap->cCount; x++)
 	{
-    TimePoint2D newPt(&pLap->rgPoints[x]);
-    if(newPt.IsValid())
-    {
+		TimePoint2D newPt(&pLap->rgPoints[x]);
+		if(newPt.IsValid())
+		{
 			lstPoints.push_back(newPt);
-    }
-    else
-    {
-      newPt.flX++;
-      newPt.flX--;
-    }
+		}
+		else
+		{
+			newPt.flX++;
+			newPt.flX--;
+		}
 	}
   for(int x = 0;x < NUMITEMS(pLap->rgSF); x++)
   {

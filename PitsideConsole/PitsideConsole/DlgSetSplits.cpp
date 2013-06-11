@@ -6,18 +6,6 @@
 #include "ArtTools.h" // for FLOATRECT
 #include "ArtUI.h" // for ArtOpenGLWindow
 
-POINT m_ptMouse;
-bool m_fMouseValid;
-bool GetMouse(POINT* ppt)
-  {
-    if(m_fMouseValid)
-    {
-      *ppt = m_ptMouse;
-      return true;
-    }
-    return false;
-  }
-
   HWND hWnd_OGL = NULL;
 
 LRESULT CSetSplitsDlg::DlgProc
@@ -80,24 +68,39 @@ LRESULT CSetSplitsDlg::DlgProc
 		for(int x = 0; x< lstPoints.size(); x++)
 		{
 			const TimePoint2D& p = lstPoints[x];
-
+//			int iTime = ILapSupplier::GetLapHighlightTime((const CExtendedLap *)m_pLap);
+			POINT ptMouse;
+			Vector2D vHighlight;
+			//		Set up the non-zoomed/panned view for the map
+			GLdouble rgModelviewMatrix[16];
+			GLdouble rgProjMatrix[16];
+			GLint rgViewport[4];
+			glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+			glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+			glGetIntegerv(GL_VIEWPORT, rgViewport);
+//			if(GetMouse(&ptMouse))
+			{
+				// the mouse is in our window... we make our own highlighter
+				GLdouble dX,dY,dZ;
+				ptMouse.x = 0; ptMouse.y=0;
+				gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+				vHighlight = V2D((float)dX,(float)dY);
+			}
 			// for each lap, draw an indicator of the closest thing to the mouse
 			
 			//	Need ILapSupplier here to do this right.
 
-//			int iTime = m_sfSectorDisplay->GetLapHighlightTime(m_pLap);
-//			if(abs(p.iTime - iTime) < dBestLength || dBestLength < 0)
-			{
-//				dBestLength = abs(p.iTime - iTime);
-				ptBest = p;
-//				dTimeToHighlight = iTime;
+				Vector2D vPt = V2D(p.flX,p.flY);
+				Vector2D vDiff = vPt - vHighlight;
+				if(vDiff.Length() < dBestLength || dBestLength < 0)
+				{
+				  dBestLength = vDiff.Length();
+				  dTimeToHighlight = p.iTime;
+				  ptBest = p;
+//				m_sfLapOpts->m_SplitPoints->m_sfSectorTime = ptBest.iTime;
+				m_sfLapOpts->m_SplitPoints->m_sfSectorTime = x;
+				}
 
-				//	Now let's show the point
-				glPointSize(10.0f);
-				glBegin(GL_POINTS);
-				glVertex2f(p.flX,p.flY);
-				glEnd();
-			}
 		}	
         return TRUE;
 	}
@@ -151,13 +154,15 @@ LRESULT CSetSplitsDlg::DlgProc
 				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
 				//	Fill in the S/F vectors for this lap
 				{
-				  int x=0;
-				  const TimePoint2D& p = lstPoints[x*20];
-				  const TimePoint2D& q = lstPoints[x*lstPoints.size()/3];
-				  pSF[x].m_pt1.m_v[0] = p.flX;
-				  pSF[x].m_pt1.m_v[1] = p.flY;
-				  pSF[x].m_pt2.m_v[0] = q.flX;
-				  pSF[x].m_pt2.m_v[1] = q.flY;
+				  int x = 0;
+				  int iTime = m_sfLapOpts->m_SplitPoints->m_sfSectorTime;
+				  const TimePoint2D& p = lstPoints[iTime];
+				  const TimePoint2D& q = lstPoints[iTime+1];
+				  Vector2D v_Vector, v_Ortho;
+				  v_Vector.m_v[0] = q.flX-p.flX, q.flY-p.flY;
+				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
+				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
+				  v_Ortho = FLIP(pSF[x].m_pt1);
 				}
 				m_sfLapOpts->fDrawSplitPoints = true;
 

@@ -786,13 +786,19 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
                 {
                   float dTimeSlip = dEstimatedElapsedTime - (double)iElapsedTime;
                   pTimeSlip->AddPoint(m_lstPoints[x].iTime, dTimeSlip);
+
+
+
 				  //	dEstimatedElapseTime is the time to get to this distance from the start, based upon the Reference Lap
 				  //	Need to add here the Sector Times coding, once that information is available - KDJ
 /*				  if (dDistance <= pReferenceDistanceChannel->GetValue(lstReference[m_SplitPoints[1]].iTime))
 				  {
 					  m_SplitPoints[1] = dEstimatedElapsedTime;
 				  }	*/
-                }
+
+				
+				
+				}
               }
             }
             break;

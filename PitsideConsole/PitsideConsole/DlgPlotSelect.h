@@ -24,7 +24,7 @@ struct SplitPoints
 {
 	double m_sfXPoint;
 	double m_sfYPoint;
-	double m_sfSector;
+	int m_sfSectorTime;
 };
 
 struct PITSIDE_SETTINGS

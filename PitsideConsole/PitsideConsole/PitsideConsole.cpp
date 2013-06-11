@@ -2505,7 +2505,7 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 		p_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
 		p_sfLapOpts.m_SplitPoints[i].m_sfXPoint = 0.0f;	//	Initialize all split points
 		p_sfLapOpts.m_SplitPoints[i].m_sfYPoint = 0.0f;	//	Initialize all split points
-		p_sfLapOpts.m_SplitPoints[i].m_sfSector = 0.0f;	//	Initialize all sector times
+		p_sfLapOpts.m_SplitPoints[i].m_sfSectorTime = 0.0f;	//	Initialize all sector times
 		p_sfLapOpts.fDrawSplitPoints = false;	//	Default to not show split points
 	}
   }
