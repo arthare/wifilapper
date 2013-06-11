@@ -291,16 +291,16 @@ void CMemoryLap::Load(V2InputLapRaw* pLap)
 
 	for(int x = 0;x < pLap->cCount; x++)
 	{
-		TimePoint2D newPt(&pLap->rgPoints[x]);
-		if(newPt.IsValid())
-		{
+    TimePoint2D newPt(&pLap->rgPoints[x]);
+    if(newPt.IsValid())
+    {
 			lstPoints.push_back(newPt);
-		}
-		else
-		{
-			newPt.flX++;
-			newPt.flX--;
-		}
+    }
+    else
+    {
+      newPt.flX++;
+      newPt.flX--;
+    }
 	}
   for(int x = 0;x < NUMITEMS(pLap->rgSF); x++)
   {
@@ -460,6 +460,221 @@ int TimeoutRead(SOCKET s, char* buf, int cbBuf, int flags, int timeout, bool* pf
   return 0;
 }
 
+DWORD LapRecvThd(LPVOID pv);
+
+class LapSocketReceiver
+{
+public:
+  LapSocketReceiver(ILapReceiver* pLaps, SOCKET sData) : sData(sData), pLaps(pLaps)
+  {
+    DWORD dwThdId = 0;
+    CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)LapRecvThd,this,0,&dwThdId);
+  }
+
+  void ThdProc()
+  {
+    vector<char> lstLapBuf; // for incoming lap-data stuff
+    vector<char> lstDataBuf; // for incoming data-channel stuff
+    vector<char> lstDBBuf;
+    TextMatcher<8> aV1Start("jndadere");
+    TextMatcher<8> aV1End("donelap_");
+    TextMatcher<8> aV2Start("slmr4eva");
+    TextMatcher<8> aV2End("emilsnud");
+    TextMatcher<4> aHTBT("htbt");
+    TextMatcher<8> aDataStart("datachan");
+    TextMatcher<8> aDataEnd("donedata");
+    TextMatcher<16> aDBIncoming("racingdbincoming");
+    TextMatcher<16> aDBDone("racingdbcomplete");
+
+    enum CURRENTRECV {RECV_NONE,RECV_V1_LAP, RECV_V2_LAP,RECV_DATA,RECV_DB}; // keeps track of which type of data we're currently receiving so we can report progress about it.
+    CURRENTRECV eRecv = RECV_NONE;
+
+    while(true)
+    {
+      bool fConsuming = false;
+	    char buf[1024];
+      bool fConnectionLost = false;
+	    int cbRead = TimeoutRead(sData,buf,sizeof(buf),0,10000, &fConnectionLost);
+	    if(cbRead <= 0 || fConnectionLost)
+	    {
+		    pLaps->SetNetStatus(NETSTATUS_STATUS, L"Probably lost connection");
+        pLaps->SetNetStatus(NETSTATUS_REMOTEIP, L"");
+		    break;
+	    }
+	    else
+	    {
+		    for(int x = 0;x < cbRead; x++)
+		    {
+          lstLapBuf.push_back(buf[x]);
+			    if(aV1Start.Process(buf[x]))
+			    {
+            eRecv = RECV_V1_LAP;
+				    aV1Start.Reset();
+				    // we have detected the start of a new lap
+				    lstLapBuf.clear();
+			    }
+			    if(aV1End.Process(buf[x]))
+			    {
+            eRecv = RECV_NONE;
+				    aV1End.Reset();
+				    // we have found the end of a lap
+				    int iLapId = 0;
+				    ILap* pLap = pLaps->AllocateLap(true);
+				    if(ProcessV1LapData(lstLapBuf, &iLapId, pLap))
+				    {
+					    pLaps->AddLap(pLap, 0xffffffff);
+				    }
+				    else
+				    {
+              pLap->Free();
+				    }
+            lstLapBuf.clear();
+			    }
+          if(aV2Start.Process(buf[x]))
+          {
+            eRecv = RECV_V2_LAP;
+            aV2Start.Reset();
+            lstLapBuf.clear();
+          }
+          if(aV2End.Process(buf[x]))
+          {
+            eRecv = RECV_NONE;
+            aV2End.Reset();
+            int iLapId = 0;
+            ILap* pLap = pLaps->AllocateLap(true);
+            if(ProcessV2LapData(lstLapBuf, &iLapId, pLap))
+            {
+              pLaps->AddLap(pLap, 0xffffffff);
+            }
+          }
+
+          lstDataBuf.push_back(buf[x]);
+          if(aDataStart.Process(buf[x]))
+          {
+            eRecv = RECV_DATA;
+            aDataStart.Reset();
+            lstDataBuf.clear();
+          }
+          if(aDataEnd.Process(buf[x]))
+          {
+            eRecv = RECV_NONE;
+            int iLapId = 0;
+            aDataEnd.Reset();
+            IDataChannel* pDataChannel = pLaps->AllocateDataChannel();
+            if(ProcessDataChannel(lstDataBuf,&iLapId, pDataChannel))
+            {
+              pLaps->AddDataChannel(pDataChannel);
+            }
+            lstDataBuf.clear();
+          }
+        
+			    if(aHTBT.Process(buf[x]))
+			    {
+            eRecv = RECV_NONE;
+				    aHTBT.Reset();
+				    const char* pbResponse = "HTBT";
+				    send(sData, pbResponse, 4, 0);
+
+            lstLapBuf.clear();
+            lstDataBuf.clear();
+			    }
+          lstDBBuf.push_back(buf[x]);
+
+          if(aDBIncoming.Process(buf[x]))
+          {
+            eRecv = RECV_DB;
+            lstDBBuf.clear();
+          }
+          if(aDBDone.Process(buf[x]))
+          {
+            eRecv = RECV_NONE;
+            // we have received a raw database.  Save it to a temp folder, then send the path to the pitside UI so it can decide what to do
+            TCHAR szTemp[MAX_PATH];
+            if(GetTempPath(MAX_PATH, szTemp))
+            {
+              wcscat(szTemp,L"TempPitsideDB.wflp");
+              if(SaveBufferToFile(szTemp, &lstDBBuf[0], lstDBBuf.size()-aDBDone.GetSize()))
+              {
+                pLaps->NotifyDBArrival(szTemp);
+              }
+            }
+          
+          }
+        
+		    } // end processing loop
+      
+        bool fSendUpdate = true;
+        int cbRecved = 0;
+        TCHAR szStatus[MAX_PATH];
+        switch(eRecv)
+        {
+        case RECV_V1_LAP:   
+          cbRecved = lstLapBuf.size(); 
+          swprintf(szStatus,L"Receiving lap: %dkb",cbRecved/1024);
+          break;
+        case RECV_V2_LAP:   
+          cbRecved = lstLapBuf.size(); 
+          swprintf(szStatus,L"Receiving lap: %dkb",cbRecved/1024);
+          break;
+        case RECV_DATA:  
+          cbRecved = lstDataBuf.size(); 
+          swprintf(szStatus,L"Receiving data: %dkb",cbRecved/1024);
+          break;
+        case RECV_DB:    
+        {
+          static int cUpdates = 0;
+          cUpdates++;
+          if(cUpdates % 100 == 0)
+          {
+            cbRecved = lstDBBuf.size(); 
+            swprintf(szStatus,L"Receiving db: %dkb",cbRecved/1024);
+          }
+          else
+          {
+            fSendUpdate = false;
+          }
+          break;
+        }
+        default:
+        case RECV_NONE:  
+          cbRecved = 0;
+          swprintf(szStatus,L"Connected");
+          break;
+        }
+        if(fSendUpdate)
+        {
+          pLaps->SetNetStatus(NETSTATUS_STATUS, szStatus);
+        }
+
+        if(cbRead < sizeof(buf))
+        {
+          Sleep(1); // let's let the buffer fill up
+        }
+	    }
+    }
+
+    if(sData != INVALID_SOCKET)
+    {
+	    closesocket(sData);
+	    sData = INVALID_SOCKET;
+    }
+
+    delete this; // we're all done here
+  }
+
+private:
+  SOCKET sData;
+  ILapReceiver* pLaps;
+};
+
+DWORD LapRecvThd(LPVOID pv)
+{
+  LapSocketReceiver* pRecv = (LapSocketReceiver*)pv;
+  pRecv->ThdProc();
+
+  return 0;
+}
+
 bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 {
   WSADATA wsaData;
@@ -485,238 +700,58 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
       err = bind(aSocket, (SOCKADDR*)&ReceiverAddr, sizeof(ReceiverAddr));
       if(err == 0)
       {
-        // socket is ready to listen
-		    err = listen(aSocket, SOMAXCONN);
-		    if(err == SOCKET_ERROR)
-		    {
-			    closesocket(aSocket);
-			    aSocket = INVALID_SOCKET;
-		    }
-		    else
-		    {
-			    sockaddr sfAddr = {0};
-			    int cbAddr = sizeof(sfAddr);
-				TCHAR szIPString[512] = {0};
-			    pLaps->SetNetStatus(NETSTATUS_STATUS, L"Waiting for incoming connection to accept");
-			    sDataSocket = accept(aSocket, &sfAddr, &cbAddr);
-			    if(sDataSocket != INVALID_SOCKET)
-			    {
-					sockaddr_in* pIn = (sockaddr_in*)&sfAddr;
-							pLaps->SetNetStatus(NETSTATUS_STATUS, L"Connected");
+        while(true) // we've made our listening socket.  Let's just keep listening for incoming connections
+        {
+          // socket is ready to listen
+		      err = listen(aSocket, SOMAXCONN);
+		      if(err == SOCKET_ERROR)
+		      {
+			      closesocket(aSocket);
+			      aSocket = INVALID_SOCKET;
+		      }
+          else
+          {
+            sockaddr sfAddr = {0};
+            int cbAddr = sizeof(sfAddr);
+            TCHAR szIPString[512] = {0};
+            pLaps->SetNetStatus(NETSTATUS_STATUS, L"Waiting for incoming connection to accept");
+            sDataSocket = accept(aSocket, &sfAddr, &cbAddr);
+            if(sDataSocket != INVALID_SOCKET)
+            {
+              sockaddr_in* pIn = (sockaddr_in*)&sfAddr;
+              pLaps->SetNetStatus(NETSTATUS_STATUS, L"Connected");
 
-					TCHAR szIPString[512] = L"";
-					GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
-					pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
+              TCHAR szIPString[512] = L"";
+              GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
+              pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
 
             
-					{
-					  sockaddr sfName = {0};
-					  int cbName = sizeof(sfName);
-					  getsockname(sDataSocket, &sfName, &cbName);
+              new LapSocketReceiver(pLaps, sDataSocket); // creates the guy that will actually receive this data (and close the socket when he's done)
+
+              {
+                sockaddr sfName = {0};
+                int cbName = sizeof(sfName);
+                getsockname(sDataSocket, &sfName, &cbName);
               
-					  pIn = (sockaddr_in*)&sfName;
-					  GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
-					  pLaps->SetNetStatus(NETSTATUS_THISIP, szIPString);
-		            }
-			    }
-				else
-				{
-					sockaddr sfName = {0};
-					TCHAR szIPString[512] = {0};
-					sockaddr_in* pIn = (sockaddr_in*)&sfName;
-					GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
-					pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
-				}	
+                pIn = (sockaddr_in*)&sfName;
+                GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
+                pLaps->SetNetStatus(NETSTATUS_THISIP, szIPString);
+              }
+            }
+            else
+            {
+              sockaddr sfName = {0};
+              TCHAR szIPString[512] = {0};
+              sockaddr_in* pIn = (sockaddr_in*)&sfName;
+              GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
+              pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
+            }
+		      }
 		    }
-		}
+      }
     }
   }
 
-  vector<char> lstLapBuf; // for incoming lap-data stuff
-  vector<char> lstDataBuf; // for incoming data-channel stuff
-  vector<char> lstDBBuf;
-  TextMatcher<8> aV1Start("jndadere");
-  TextMatcher<8> aV1End("donelap_");
-  TextMatcher<8> aV2Start("slmr4eva");
-  TextMatcher<8> aV2End("emilsnud");
-  TextMatcher<4> aHTBT("htbt");
-  TextMatcher<8> aDataStart("datachan");
-  TextMatcher<8> aDataEnd("donedata");
-  TextMatcher<16> aDBIncoming("racingdbincoming");
-  TextMatcher<16> aDBDone("racingdbcomplete");
-
-  enum CURRENTRECV {RECV_NONE,RECV_V1_LAP, RECV_V2_LAP,RECV_DATA,RECV_DB}; // keeps track of which type of data we're currently receiving so we can report progress about it.
-  CURRENTRECV eRecv = RECV_NONE;
-
-  while(true)
-  {
-    bool fConsuming = false;
-	  char buf[1024];
-    bool fConnectionLost = false;
-	  int cbRead = TimeoutRead(sDataSocket,buf,sizeof(buf),0,10000, &fConnectionLost);
-	  if(cbRead <= 0 || fConnectionLost)
-	  {
-		  pLaps->SetNetStatus(NETSTATUS_STATUS, L"Probably lost connection");
-      pLaps->SetNetStatus(NETSTATUS_REMOTEIP, L"");
-		  break;
-	  }
-	  else
-	  {
-		  for(int x = 0;x < cbRead; x++)
-		  {
-        lstLapBuf.push_back(buf[x]);
-			  if(aV1Start.Process(buf[x]))
-			  {
-          eRecv = RECV_V1_LAP;
-				  aV1Start.Reset();
-				  // we have detected the start of a new lap
-				  lstLapBuf.clear();
-			  }
-			  if(aV1End.Process(buf[x]))
-			  {
-          eRecv = RECV_NONE;
-				  aV1End.Reset();
-				  // we have found the end of a lap
-				  int iLapId = 0;
-				  ILap* pLap = pLaps->AllocateLap(true);
-				  if(ProcessV1LapData(lstLapBuf, &iLapId, pLap))
-				  {
-					  pLaps->AddLap(pLap, 0xffffffff);
-				  }
-				  else
-				  {
-            pLap->Free();
-				  }
-          lstLapBuf.clear();
-			  }
-        if(aV2Start.Process(buf[x]))
-        {
-          eRecv = RECV_V2_LAP;
-          aV2Start.Reset();
-          lstLapBuf.clear();
-        }
-        if(aV2End.Process(buf[x]))
-        {
-          eRecv = RECV_NONE;
-          aV2End.Reset();
-          int iLapId = 0;
-          ILap* pLap = pLaps->AllocateLap(true);
-          if(ProcessV2LapData(lstLapBuf, &iLapId, pLap))
-          {
-            pLaps->AddLap(pLap, 0xffffffff);
-          }
-        }
-
-        lstDataBuf.push_back(buf[x]);
-        if(aDataStart.Process(buf[x]))
-        {
-          eRecv = RECV_DATA;
-          aDataStart.Reset();
-          lstDataBuf.clear();
-        }
-        if(aDataEnd.Process(buf[x]))
-        {
-          eRecv = RECV_NONE;
-          int iLapId = 0;
-          aDataEnd.Reset();
-          IDataChannel* pDataChannel = pLaps->AllocateDataChannel();
-          if(ProcessDataChannel(lstDataBuf,&iLapId, pDataChannel))
-          {
-            pLaps->AddDataChannel(pDataChannel);
-          }
-          lstDataBuf.clear();
-        }
-        
-			  if(aHTBT.Process(buf[x]))
-			  {
-          eRecv = RECV_NONE;
-				  aHTBT.Reset();
-				  const char* pbResponse = "HTBT";
-				  send(sDataSocket, pbResponse, 4, 0);
-
-          lstLapBuf.clear();
-          lstDataBuf.clear();
-			  }
-        lstDBBuf.push_back(buf[x]);
-
-        if(aDBIncoming.Process(buf[x]))
-        {
-          eRecv = RECV_DB;
-          lstDBBuf.clear();
-        }
-        if(aDBDone.Process(buf[x]))
-        {
-          eRecv = RECV_NONE;
-          // we have received a raw database.  Save it to a temp folder, then send the path to the pitside UI so it can decide what to do
-          TCHAR szTemp[MAX_PATH];
-          if(GetTempPath(MAX_PATH, szTemp))
-          {
-            wcscat(szTemp,L"TempPitsideDB.wflp");
-            if(SaveBufferToFile(szTemp, &lstDBBuf[0], lstDBBuf.size()-aDBDone.GetSize()))
-            {
-              pLaps->NotifyDBArrival(szTemp);
-            }
-          }
-          
-        }
-        
-		  } // end processing loop
-      
-      bool fSendUpdate = true;
-      int cbRecved = 0;
-      TCHAR szStatus[MAX_PATH];
-      switch(eRecv)
-      {
-      case RECV_V1_LAP:   
-        cbRecved = lstLapBuf.size(); 
-        swprintf(szStatus,L"Receiving lap: %dkb",cbRecved/1024);
-        break;
-      case RECV_V2_LAP:   
-        cbRecved = lstLapBuf.size(); 
-        swprintf(szStatus,L"Receiving lap: %dkb",cbRecved/1024);
-        break;
-      case RECV_DATA:  
-        cbRecved = lstDataBuf.size(); 
-        swprintf(szStatus,L"Receiving data: %dkb",cbRecved/1024);
-        break;
-      case RECV_DB:    
-      {
-        static int cUpdates = 0;
-        cUpdates++;
-        if(cUpdates % 100 == 0)
-        {
-          cbRecved = lstDBBuf.size(); 
-          swprintf(szStatus,L"Receiving db: %dkb",cbRecved/1024);
-        }
-        else
-        {
-          fSendUpdate = false;
-        }
-        break;
-      }
-      default:
-      case RECV_NONE:  
-        cbRecved = 0;
-        swprintf(szStatus,L"Connected");
-        break;
-      }
-      if(fSendUpdate)
-      {
-        pLaps->SetNetStatus(NETSTATUS_STATUS, szStatus);
-      }
-
-      if(cbRead < sizeof(buf))
-      {
-        Sleep(1); // let's let the buffer fill up
-      }
-	  }
-  }
-
-  if(sDataSocket != INVALID_SOCKET)
-  {
-	  closesocket(sDataSocket);
-	  sDataSocket = INVALID_SOCKET;
-  }
   if(aSocket != INVALID_SOCKET)
   {
 	  closesocket(aSocket);
