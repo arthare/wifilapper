@@ -1,5 +1,6 @@
 #include "LapReceiver.h"
 #include "ArtUI.h"
+#include "AutoCS.h"
 
 class CSQLiteLapDB : public ILapReceiver
 {
@@ -44,6 +45,8 @@ public:
 private:
   virtual bool InitRaceSession(int* piRaceId, LPCTSTR lpszRaceName) override;
 private:
+  mutable ManagedCS m_cs;
+
   mutable CSfArtSQLiteDB m_sfDB;
   StartFinish m_rgSF[3];
 

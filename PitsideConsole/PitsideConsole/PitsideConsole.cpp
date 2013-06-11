@@ -41,6 +41,7 @@
 #include "DlgProgress.h"
 #include "DlgWarning.h"
 #include "DlgSetSplits.h"
+#include "jpge.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -992,12 +993,6 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 							// Create a temporary BMP file, this is where we will save the screen capture.
 							swprintf(szTempName, NUMCHARS(szTempName), L"%s.bmp", szFileName);
 					}
-					HANDLE hFile = CreateFile(szTempName,
-						GENERIC_WRITE,
-						0,
-						NULL,
-						CREATE_ALWAYS,
-						FILE_ATTRIBUTE_NORMAL, NULL);   
     
 					// Add the size of the headers to the size of the bitmap to get the total file size
 					DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
@@ -1010,32 +1005,54 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
     
 					//bfType must always be BM for Bitmaps
 					bmfHeader.bfType = 0x4D42; //BM   
- 
+
+					//	Open a handle to the TEMP BMP file and write the DIB to it
+					HANDLE hFile = CreateFile(szTempName,
+						GENERIC_WRITE,
+						0,
+						NULL,
+						CREATE_ALWAYS,
+						FILE_ATTRIBUTE_NORMAL, NULL);   
+
 					DWORD dwBytesWritten = 0;
 					WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
 					WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
 					WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
     
-					//Unlock and Free the DIB from the heap
-					GlobalUnlock(hDIB);    
-					GlobalFree(hDIB);
-
 					//Close the handle for the file that was created
 					CloseHandle(hFile);
+
+					//Unlock and Free the DIB from the heap
+//					GlobalUnlock(hDIB);    
+//					GlobalFree(hDIB);
 
 					//	Now let's convert this Bitmap into a JPEG file, if the user wants to save it.
 					if (SaveFlag)
 					{
 						//	Load the BMP from a temporary file on the disk, and convert it
-/*						CString path = szTempName;
-						CImage *image = new CImage;
-						HRESULT hResult = image->Load(path);
-						hResult = image->Save(szFileName);
-						//	Now let's delete the temporaray BMP file
-						DeleteFile(szTempName);	*/
+						  jpge::params params;
+						  params.m_no_chroma_discrim_flag = 0;
+						  params.m_quality = 95;
+						  params.m_subsampling = jpge::subsampling_t::H2V2;
+						  params.m_two_pass_flag = 0;
+
+						  wstring strW(szFileName); // unicode -> const char* conversion
+						  string strA(strW.begin(),strW.end()); // unicode -> const char* conversion
+
+						  jpge::compress_image_to_jpeg_file(strA.c_str(),bi.biWidth,-bi.biHeight,4,(const jpge::uint8*)lpbitmap,params);
+
+						  DeleteFile(szTempName);	//	Remove the TEMP file
+						  //Unlock and Free the DIB from the heap
+						  GlobalUnlock(hDIB);    
+						  GlobalFree(hDIB);
+
 					}
 					else if (PrintFlag)
 					{
+						//Unlock and Free the DIB from the heap
+						GlobalUnlock(hDIB);    
+						GlobalFree(hDIB);
+
 						////////////////////////////////////////////////////////////////////////////////
 						cxsize=0, cxpage=0;
 						cysize=0, cypage=0;
@@ -1111,6 +1128,10 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 				else
 				{
 					//	User wants to copy image to Clipboard.
+
+					//Unlock and Free the DIB from the heap
+					GlobalUnlock(hDIB);    
+					GlobalFree(hDIB);
 
 					// Add the size of the headers to the size of the bitmap to get the total DIB size
 					DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
@@ -2510,6 +2531,56 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 	}
   }
 
+DWORD HTMLThreadProc(LPVOID pv)
+{
+  LPCTSTR lpszPath = (LPCTSTR)pv;
+  CSfArtSQLiteDB sfDB;
+  vector<wstring> lstTables;
+  if(SUCCEEDED(sfDB.Open(lpszPath,lstTables,true)))
+  {
+    while(true)
+    {
+      Sleep(5000);
+
+      ofstream out;
+      out.open("toplaps.html");
+
+      out<<"<html><head><script type=\"text/JavaScript\"> function timedRefresh(timeoutPeriod) {	setTimeout(\"location.reload(true);\",timeoutPeriod);} </script></head>"<<endl;
+      CSfArtSQLiteQuery sfQuery(sfDB);
+      //if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and races.name like '%Received laps%' order by laptime asc limit 40"))
+      if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id order by laptime asc limit 40"))
+      {
+        SYSTEMTIME st;
+        GetSystemTime(&st);
+
+        out<<"<body onload=\"JavaScript:timedRefresh(5000);\">"<<endl;
+        out<<"Last Updated "<<st.wHour<<":"<<st.wMinute<<":"<<st.wSecond<<endl;
+        out<<"<table><th>Car #<th>Laptime"<<endl;
+        while(sfQuery.Next())
+        {
+          TCHAR szRaceName[300];
+          TCHAR szLap[300];
+          float flLapTime = 0;
+          sfQuery.GetCol(0,szRaceName,NUMCHARS(szRaceName));
+          sfQuery.GetCol(1,&flLapTime);
+
+          ::FormatTimeMinutesSecondsMs(flLapTime,szLap,NUMCHARS(szLap));
+          std::wstring strw(szRaceName);
+          std::string strRaceName(strw.begin(),strw.end());
+          strw = szLap;
+          std::string strLapTime(strw.begin(),strw.end());
+          out<<"<tr><Td>"<<strRaceName<<"<td>"<<strLapTime<<"</tr>"<<endl;
+        }
+        out<<"</table></body>";
+      }
+      out.close();
+
+    }
+  }
+  return 0;
+}
+
+
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
 {
@@ -2590,6 +2661,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if(sfLaps.Init(szTempPath))
     {
       // success!
+      wcscpy(szDBPath,szTempPath);
     }
   }
   if(!fDBOpened)
@@ -2696,6 +2768,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   {
     g_pHTTPServer = NULL;
   }
+
+  //HANDLE hHTMLThread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)&HTMLThreadProc,(LPVOID)&szDBPath[0],0,NULL);
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 
