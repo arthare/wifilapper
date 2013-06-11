@@ -121,6 +121,7 @@ copyjs_rel.bat</Command>
     <ClInclude Include="DlgSplash.h" />
     <ClInclude Include="DlgWarning.h" />
     <ClInclude Include="Hyperlinks.h" />
+    <ClInclude Include="jpge.h" />
     <ClInclude Include="LapData.h" />
     <ClInclude Include="LapPainter.h" />
     <ClInclude Include="LapReceiver.h" />
@@ -145,6 +146,7 @@ copyjs_rel.bat</Command>
     <ClCompile Include="DlgSplash.cpp" />
     <ClCompile Include="DlgWarning.cpp" />
     <ClCompile Include="Hyperlinks.cpp" />
+    <ClCompile Include="jpge.cpp" />
     <ClCompile Include="LapData.cpp" />
     <ClCompile Include="LapPainter.cpp" />
     <ClCompile Include="LapReceiver.cpp" />

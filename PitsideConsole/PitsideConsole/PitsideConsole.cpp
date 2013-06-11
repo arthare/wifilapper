@@ -36,10 +36,12 @@
 #include "Hyperlinks.h"
 #include "DlgAbout.h"
 #include <Winspool.h>
-#include "atlstr.h"
-#include "atlimage.h"
+//#include "atlstr.h"
+//#include "atlimage.h"
 #include "DlgProgress.h"
 #include "DlgWarning.h"
+#include "jpge.h"
+
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -973,52 +975,26 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 						{
 							break;
 						}
-							// Create a temporary BMP file, this is where we will save the screen capture.
-							swprintf(szTempName, NUMCHARS(szTempName), L"%s.bmp", szFileName);
-					}
-					HANDLE hFile = CreateFile(szTempName,
-						GENERIC_WRITE,
-						0,
-						NULL,
-						CREATE_ALWAYS,
-						FILE_ATTRIBUTE_NORMAL, NULL);   
-    
-					// Add the size of the headers to the size of the bitmap to get the total file size
-					DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
- 
-					//Offset to where the actual bitmap bits start.
-					bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER); 
-    
-					//Size of the file
-					bmfHeader.bfSize = dwSizeofDIB; 
-    
-					//bfType must always be BM for Bitmaps
-					bmfHeader.bfType = 0x4D42; //BM   
- 
+          }
+
+          jpge::params params;
+          params.m_no_chroma_discrim_flag = 0;
+          params.m_quality = 95;
+          params.m_subsampling = jpge::subsampling_t::H2V2;
+          params.m_two_pass_flag = 0;
+
+          wstring strW(szFileName); // unicode -> const char* conversion
+          string strA(strW.begin(),strW.end()); // unicode -> const char* conversion
+
+          jpge::compress_image_to_jpeg_file(strA.c_str(),bi.biWidth,-bi.biHeight,4,(const jpge::uint8*)lpbitmap,params);
+
 					DWORD dwBytesWritten = 0;
-					WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
-					WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
-					WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
     
 					//Unlock and Free the DIB from the heap
 					GlobalUnlock(hDIB);    
 					GlobalFree(hDIB);
 
-					//Close the handle for the file that was created
-					CloseHandle(hFile);
-
-					//	Now let's convert this Bitmap into a JPEG file, if the user wants to save it.
-					if (SaveFlag)
-					{
-						//	Load the BMP from a temporary file on the disk, and convert it
-						CString path = szTempName;
-						CImage *image = new CImage;
-						HRESULT hResult = image->Load(path);
-						hResult = image->Save(szFileName);
-						//	Now let's delete the temporaray BMP file
-						DeleteFile(szTempName);
-					}
-					else if (PrintFlag)
+          if (PrintFlag)
 					{
 						////////////////////////////////////////////////////////////////////////////////
 						cxsize=0, cxpage=0;
