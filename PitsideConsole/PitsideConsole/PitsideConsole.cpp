@@ -36,8 +36,8 @@
 #include "Hyperlinks.h"
 #include "DlgAbout.h"
 #include <Winspool.h>
-#include "atlstr.h"
-#include "atlimage.h"
+//#include "atlstr.h"
+//#include "atlimage.h"
 #include "DlgProgress.h"
 #include "DlgWarning.h"
 #include "DlgSetSplits.h"
@@ -1027,12 +1027,12 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 					if (SaveFlag)
 					{
 						//	Load the BMP from a temporary file on the disk, and convert it
-						CString path = szTempName;
+/*						CString path = szTempName;
 						CImage *image = new CImage;
 						HRESULT hResult = image->Load(path);
 						hResult = image->Save(szFileName);
 						//	Now let's delete the temporaray BMP file
-						DeleteFile(szTempName);
+						DeleteFile(szTempName);	*/
 					}
 					else if (PrintFlag)
 					{

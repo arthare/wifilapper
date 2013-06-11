@@ -870,7 +870,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 //  if (pLap == m_pReferenceLap)	// If this lap is the reference lap, draw the segment lines
 //  {
 	  // draw the start-finish and segment lines
-	  if(lstLaps.size() > 0)
+	  if(lstLaps.size() > 0 && sfLapOpts.fDrawSplitPoints)
 	  {
 		const CExtendedLap* pReferenceLap = lstLaps[lstLaps.size()-1];
 		const StartFinish* pSF = pReferenceLap->GetLap()->GetSF();
@@ -887,11 +887,11 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
 		  glColor3d(1.0,0.0,0.0);
 		  LPCSTR lpszText = "";
-		  if(x == 0) lpszText = "S1";	// Segment 1
-		  if(x == 1) lpszText = "S2";	// Segment 2
-		  if(x == 2) lpszText = "S/F";	// Segment 3, Start/Finish Line
-		  DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
-		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
+		  if(x == 0) lpszText = "S/F";	// Start/Finish Line
+		  if(x == 1) lpszText = "S1";	// Segment 1
+		  if(x == 2) lpszText = "S2";	// Segment 2
+		  DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	
+//		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	
 		}
 	  }
 //  }

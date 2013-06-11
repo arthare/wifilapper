@@ -214,7 +214,9 @@ public:
   }
   const Vector2D& GetPt1() const {return m_pt1;}
   const Vector2D& GetPt2() const {return m_pt2;}
-private:
+//  Vector2D& GetPt1() const {return m_pt1;}
+//  Vector2D& GetPt2() const {return m_pt2;}
+//private:		//		Made public by KDJ
   Vector2D m_pt1;
   Vector2D m_pt2;
 };

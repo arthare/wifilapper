@@ -41,11 +41,4 @@ private:
 
 //	ILapSupplier* m_pLapSupplier;
     int m_iSupplierId;
-  HDC OGL_GetDC() {return m_hdc;}
-  HGLRC OGL_GetRC() {return m_hRC;}
-  HWND OGL_GetHWnd() const {return m_hWnd;}
-  HDC m_hdc;
-  HWND m_hWnd;
-  HGLRC m_hRC;
-
 };
