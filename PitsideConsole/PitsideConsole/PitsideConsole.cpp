@@ -1045,7 +1045,6 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 						  //Unlock and Free the DIB from the heap
 						  GlobalUnlock(hDIB);    
 						  GlobalFree(hDIB);
-
 					}
 					else if (PrintFlag)
 					{
@@ -1122,8 +1121,6 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 							////////////////////////////////////////////////////////////////////////////////
 						  }
 					}
-					UpdateUI(UPDATE_DASHBOARD | UPDATE_MENU | UPDATE_ALL);
-					return TRUE;
 				}
 				else
 				{
@@ -1167,7 +1164,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 				DeleteObject(hdcMemDC);
 				ReleaseDC(NULL,hdcSource);
 				ReleaseDC(hWnd,hdcWindow);
-				UpdateUI(UPDATE_DASHBOARD | UPDATE_MENU | UPDATE_ALL);
+				UpdateUI(UPDATE_DASHBOARD | UPDATE_LIST | UPDATE_MENU | UPDATE_ALL);
 				return TRUE;
           }
 		  case ID_FILE_EXIT:
