@@ -316,6 +316,7 @@ public:
 protected:
   int GetWindowFontSize() const {return m_iFontSize*4/3;}
   void DrawText(float flX, float flY, const char* text) const;
+public:
   bool GetMouse(POINT* ppt)
   {
     if(m_fMouseValid)

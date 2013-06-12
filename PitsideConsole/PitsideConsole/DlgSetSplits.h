@@ -1,7 +1,10 @@
 #pragma once
 
-#include "ArtUI.h"
-#include "ArtTools.h"
+#include <vector>
+#include "ArtTools.h" // for FLOATRECT
+#include "LapReceiver.h" // for TimePoint2D
+#include "ArtUI.h" // for ArtOpenGLWindow
+#include "LapData.h" // for CExtendedPoint
 #include "resource.h"
 #include "LapPainter.h"
 #include "PitsideConsole.h"
@@ -16,7 +19,7 @@ public:
   bool fCancelled;
 };
 
-class CSetSplitsDlg : public IUI, public ILapSupplier
+class CSetSplitsDlg : public IUI, public ILapSupplier//, public ArtOpenGLWindow
 {
 public:
   CSetSplitsDlg(ILapReceiver* pLapDB, CExtendedLap* pLap, SETSPLITSDLG_RESULT* pResults, int iRaceId, LAPSUPPLIEROPTIONS* i_sfLapOpts, CLapPainter* sfRefLapPainter) : m_pLap(pLap), m_pResults(pResults), m_iRaceId(iRaceId), m_sfLapOpts(i_sfLapOpts), m_sfRefLapPainter(sfRefLapPainter)
@@ -29,6 +32,16 @@ public:
   virtual void NotifyChange(WPARAM wParam, LPARAM lParam) {DASSERT(FALSE);};
   virtual LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
   virtual DWORD GetDlgId() const {return IDD_SETSPLITPOINTS;}
+//  virtual void OGL_Paint() override;
+/*  bool GetMouse(POINT* ppt)
+  {
+    if(m_fMouseValid)
+    {
+      *ppt = m_ptMouse;
+      return true;
+    }
+    return false;
+  }	*/
 private:
 	SETSPLITSDLG_RESULT* m_pResults;
 	int m_iRaceId;
@@ -39,9 +52,13 @@ private:
 	ILapSupplier* m_sfSectorDisplay;
 	vector<DATA_CHANNEL> m_lstYChannels;
 	map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls
-
+/*	// semi-separate stuff about mouse position
+	POINT m_ptMouse;
+	bool m_fMouseValid;
+*/
     int m_iSupplierId;
-  // <-- returns which laps you want painted
+
+	// <-- returns which laps you want painted
   virtual vector<CExtendedLap*> GetLapsToShow() const
   {
     vector<CExtendedLap*> lstLaps;
@@ -135,15 +152,15 @@ private:
 
   // highlighting functions
   //  <-- only call if you are a HighlightSource. Sets the time in milliseconds that should be highlighted.
-  virtual void SetLapHighlightTime(const CExtendedLap* pLap, int iTimeMs)
+  virtual void SetLapHighlightTime(const CExtendedLap* m_pLap, int iTimeMs)
   {
-    m_mapLapHighlightTimes[pLap] = iTimeMs;
+    m_mapLapHighlightTimes[m_pLap] = iTimeMs;
   }
   // <-- gets the time in milliseconds that should be highlighted.
-  virtual int GetLapHighlightTime(const CExtendedLap* pLap) const
+  virtual int GetLapHighlightTime(const CExtendedLap* m_pLap) const
   {
-    DASSERT(m_mapLapHighlightTimes.find(pLap) != m_mapLapHighlightTimes.end()); // this should have always ended up set from the "master" highlighter.  This function is only called by "slave" highlight-users
-    return m_mapLapHighlightTimes.find(pLap)->second;
+    DASSERT(m_mapLapHighlightTimes.find(m_pLap) != m_mapLapHighlightTimes.end()); // this should have always ended up set from the "master" highlighter.  This function is only called by "slave" highlight-users
+    return m_mapLapHighlightTimes.find(m_pLap)->second;
   }
   // returns whether the caller should be a lap highlighter (calling SetLapHighlightTime) or a lap highlight-receiver (calling GetLapHighlightTime)
   virtual bool IsHighlightSource(int iSupplierId) const

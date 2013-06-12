@@ -6,7 +6,7 @@
 #include "ArtTools.h" // for FLOATRECT
 #include "ArtUI.h" // for ArtOpenGLWindow
 
-  HWND hWnd_OGL = NULL;
+//  HWND hWnd_OGL = NULL;
 
 LRESULT CSetSplitsDlg::DlgProc
 (
@@ -16,16 +16,24 @@ LRESULT CSetSplitsDlg::DlgProc
   LPARAM lParam
 )
 {
+  HWND hWnd_OGL = GetDlgItem(hWnd,IDC_LBLSPLITMAP);
   float dBestLength = -1;
   static float dTimeToHighlight = -1;
   static TimePoint2D ptBest;
   static MAPHIGHLIGHT mapPt;
 
-//  if(m_sfRefLapPainter->HandleMessage(hWnd_OGL,uMsg,wParam,lParam))
-  if(m_sfRefLapPainter->HandleMessage(hWnd,uMsg,wParam,lParam))
+  GLdouble rgModelviewMatrix[16];
+  GLdouble rgProjMatrix[16];
+  GLint rgViewport[4];
+
+  if(m_sfRefLapPainter->HandleMessage(hWnd_OGL,uMsg,wParam,lParam))
+//  if(m_sfRefLapPainter->HandleMessage(hWnd,uMsg,wParam,lParam))
   {
 	return 0;
   }
+  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+  glGetIntegerv(GL_VIEWPORT, rgViewport);
   
   switch(uMsg)
   {
@@ -40,18 +48,10 @@ LRESULT CSetSplitsDlg::DlgProc
 //		SendMessage(hWndMsg, WM_GETTEXT, NUMCHARS(m_pResults->szMessage), (LPARAM)m_pResults->szMessage);
 //		if(wcslen(m_pResults->szMessage) > 0)
 
-		hWnd_OGL = GetDlgItem(hWnd,IDC_LBLSPLITMAP);
 		m_sfRefLapPainter->Init(hWnd_OGL);
 
 		m_sfRefLapPainter->DrawLapLines(*m_sfLapOpts); // draws laps as a map
 
-//		m_sfRefLapPainter->Refresh();
-
-//		FLOATRECT rcAllLaps = m_sfSectorDisplay->GetAllLapsBounds();
-		RECT rcClient;
-		GetClientRect(hWnd_OGL, &rcClient);
-		double dClientAspect = ((double)RECT_WIDTH(&rcClient)) / ((double)RECT_HEIGHT(&rcClient));
-//		double dMapAspect = abs(RECT_WIDTH(&rcAllLaps)) / abs(RECT_HEIGHT(&rcAllLaps));
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -62,69 +62,108 @@ LRESULT CSetSplitsDlg::DlgProc
 		
         return TRUE;
 	}
+/*    case WM_MOUSEMOVE:
+    {
+      POINT ptLastMouse = m_ptMouse;
+      RECT rcParent,rcThis;
+      GetWindowRect(GetParent(hWnd_OGL),&rcParent);
+      GetWindowRect(hWnd_OGL,&rcThis);
+      m_ptMouse.x = LOWORD(wParam);
+      m_ptMouse.y = HIWORD(wParam);
+
+      m_ptMouse.x -= (rcThis.left - rcParent.left);
+      m_ptMouse.y -= (rcThis.top - rcParent.top);
+
+      RECT rcClient;
+      GetClientRect(hWnd_OGL, &rcClient);
+
+      RECT rcParentClient;
+      GetClientRect(GetParent(hWnd_OGL), &rcParentClient);
+      // the difference between rcParent and rcParentClient's height will be the height of the title bar
+      m_ptMouse.y += (RECT_HEIGHT(&rcParent) - RECT_HEIGHT(&rcParentClient));
+      m_ptMouse.y = RECT_HEIGHT(&rcClient) - m_ptMouse.y;
+      bool fLastMouseValid = m_fMouseValid;
+      m_fMouseValid = m_ptMouse.x >= 0 && m_ptMouse.y >= 0 && m_ptMouse.x < RECT_WIDTH(&rcClient) && m_ptMouse.y < RECT_HEIGHT(&rcClient);
+      return FALSE;
+    }	*/
 	case WM_LBUTTONDOWN:
 	{
+
+		int iTime;
+		POINT ptMouse;
+		Vector2D vHighlight;
 		const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
-		for(int x = 0; x< lstPoints.size(); x++)
+
+		if (m_sfRefLapPainter->GetMouse(&ptMouse))
 		{
+			// We need to convert from Mouse space to Map space and find closest point
+			iTime = GetLapHighlightTime((const CExtendedLap *)m_pLap);
+		}
+		GLdouble dX,dY,dZ;
+
+		gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+		vHighlight = V2D((float)dX,(float)dY);
+		for(int x = 0; x< lstPoints.size()/3; x++)
+		{
+			SplitPoints sz_SplitTemp;
 			const TimePoint2D& p = lstPoints[x];
-//			int iTime = ILapSupplier::GetLapHighlightTime((const CExtendedLap *)m_pLap);
-			POINT ptMouse;
-			Vector2D vHighlight;
-			//		Set up the non-zoomed/panned view for the map
-			GLdouble rgModelviewMatrix[16];
-			GLdouble rgProjMatrix[16];
-			GLint rgViewport[4];
-			glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
-			glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
-			glGetIntegerv(GL_VIEWPORT, rgViewport);
-//			if(GetMouse(&ptMouse))
+			if (p.iTime == iTime)
 			{
-				// the mouse is in our window... we make our own highlighter
-				GLdouble dX,dY,dZ;
-				ptMouse.x = 0; ptMouse.y=0;
-				gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
-				vHighlight = V2D((float)dX,(float)dY);
+				ptBest = p;
+				sz_SplitTemp.m_sfSectorTime = ptBest.iTime;
+				sz_SplitTemp.m_sfXPoint = ptBest.flX;
+				sz_SplitTemp.m_sfYPoint = ptBest.flY;
+				m_sfLapOpts->m_SplitPoints[49] = sz_SplitTemp;
 			}
-			// for each lap, draw an indicator of the closest thing to the mouse
-			
-			//	Need ILapSupplier here to do this right.
-
-				Vector2D vPt = V2D(p.flX,p.flY);
-				Vector2D vDiff = vPt - vHighlight;
-				if(vDiff.Length() < dBestLength || dBestLength < 0)
-				{
-				  dBestLength = vDiff.Length();
-				  dTimeToHighlight = p.iTime;
-				  ptBest = p;
-//				m_sfLapOpts->m_SplitPoints->m_sfSectorTime = ptBest.iTime;
-				m_sfLapOpts->m_SplitPoints->m_sfSectorTime = x;
-				}
-
+			else
+			{
+				ptBest = p;
+				sz_SplitTemp.m_sfSectorTime = ptBest.iTime;
+				sz_SplitTemp.m_sfXPoint = ptBest.flX;
+				sz_SplitTemp.m_sfYPoint = ptBest.flY;
+				m_sfLapOpts->m_SplitPoints[49] = sz_SplitTemp;
+			}
 		}	
         return TRUE;
 	}
 	case WM_LBUTTONDBLCLK:
 	{
 /////////////////////////////////////////////////////////////////////
+		int iTime;
+		POINT ptMouse;
+		Vector2D vHighlight;
+		const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
 
-		// project from unit-space (the map) to window-space so we know where we need to draw our highlight-box
+		if (m_sfRefLapPainter->GetMouse(&ptMouse))
 		{
-			POINT ptMouse;
-//			if(GetMouse(&ptMouse))
-			{
-				GLdouble winx=-119.539,winy=35.486,winz=0;
-//				  gluProject(ptBest.flX, ptBest.flY, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &winx, &winy, &winz);
-//				MAPHIGHLIGHT mapPt;
-				mapPt.pt.x = (int)winx;
-				mapPt.pt.y = (int)winy;
-				mapPt.pLap = m_pLap;
-			}
-
-//				  lstMousePointsToDraw.push_back(mapPt);
+			// We need to convert from Mouse space to Map space and find closest point
+			iTime = GetLapHighlightTime((const CExtendedLap *)m_pLap);
 		}
-		glEnd();	
+		GLdouble dX,dY,dZ;
 
+		gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+		vHighlight = V2D((float)dX,(float)dY);
+		for(int x = 0; x< lstPoints.size()*2/3; x++)
+		{
+			SplitPoints sz_SplitTemp;
+			const TimePoint2D& p = lstPoints[x];
+			if (p.iTime == iTime)
+			{
+				ptBest = p;
+				sz_SplitTemp.m_sfSectorTime = ptBest.iTime;
+				sz_SplitTemp.m_sfXPoint = ptBest.flX;
+				sz_SplitTemp.m_sfYPoint = ptBest.flY;
+				m_sfLapOpts->m_SplitPoints[49] = sz_SplitTemp;
+			}
+			else
+			{
+				ptBest = p;
+				sz_SplitTemp.m_sfSectorTime = ptBest.iTime;
+				sz_SplitTemp.m_sfXPoint = ptBest.flX;
+				sz_SplitTemp.m_sfYPoint = ptBest.flY;
+				m_sfLapOpts->m_SplitPoints[49] = sz_SplitTemp;
+			}
+		}	
 //////////////////////////////////////////////////////////////////////////
         return TRUE;
 	}
@@ -148,40 +187,40 @@ LRESULT CSetSplitsDlg::DlgProc
     {
 		switch(LOWORD(wParam))
 		{
-			case IDC_SETSPLIT1:
-			{
-				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
-				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
-				//	Fill in the S/F vectors for this lap
-				{
-				  int x = 0;
-				  int iTime = m_sfLapOpts->m_SplitPoints->m_sfSectorTime;
-				  const TimePoint2D& p = lstPoints[iTime];
-				  const TimePoint2D& q = lstPoints[iTime+1];
-				  Vector2D v_Vector, v_Ortho;
-				  v_Vector.m_v[0] = q.flX-p.flX, q.flY-p.flY;
-				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
-				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
-				  v_Ortho = FLIP(pSF[x].m_pt1);
-				}
-				m_sfLapOpts->fDrawSplitPoints = true;
-
-				return TRUE;
-			}
 			case IDC_SETSPLIT2:
 			{
 				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
 				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
 				//	Fill in the S/F vectors for this lap
 				{
-				  int x=1;
-				  const TimePoint2D& p = lstPoints[x*20];
-				  const TimePoint2D& q = lstPoints[x*lstPoints.size()/3];
-				  pSF[x].m_pt1.m_v[0] = p.flX;
-				  pSF[x].m_pt1.m_v[1] = p.flY;
-				  pSF[x].m_pt2.m_v[0] = q.flX;
-				  pSF[x].m_pt2.m_v[1] = q.flY;
+				  int x = 1;
+				  int iTime = m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime;
+				  m_sfLapOpts->m_SplitPoints[x] = m_sfLapOpts->m_SplitPoints[49];
+/*				  const TimePoint2D& p = lstPoints[iTime];
+				  const TimePoint2D& q = lstPoints[iTime+1];
+				  Vector2D v_Vector, v_Ortho;
+				  v_Vector.m_v[0] = q.flX-p.flX, q.flY-p.flY;
+				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
+				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
+				  v_Ortho = FLIP(pSF[x].m_pt1);		*/
+				  pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				  pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 				}
+				m_sfLapOpts->fDrawSplitPoints = true;
+
+				return TRUE;
+			}
+			case IDC_SETSPLIT1:
+			{
+				int x=0;
+				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
+				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
+				const TimePoint2D& p = lstPoints[x];
+				m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = p.iTime;
+				m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = p.flX;
+				m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = p.flY;
+				pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 				m_sfLapOpts->fDrawSplitPoints = true;
 
 				return TRUE;
@@ -192,13 +231,18 @@ LRESULT CSetSplitsDlg::DlgProc
 				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
 				//	Fill in the S/F vectors for this lap
 				{
-				  int x=2;
-				  const TimePoint2D& p = lstPoints[x*20];
-				  const TimePoint2D& q = lstPoints[x*lstPoints.size()/3];
-				  pSF[x].m_pt1.m_v[0] = p.flX;
-				  pSF[x].m_pt1.m_v[1] = p.flY;
-				  pSF[x].m_pt2.m_v[0] = q.flX;
-				  pSF[x].m_pt2.m_v[1] = q.flY;
+				  int x = 2;
+				  int iTime = m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime;
+				  m_sfLapOpts->m_SplitPoints[x] = m_sfLapOpts->m_SplitPoints[49];
+/*				  const TimePoint2D& p = lstPoints[iTime];
+				  const TimePoint2D& q = lstPoints[iTime+1];
+				  Vector2D v_Vector, v_Ortho;
+				  v_Vector.m_v[0] = q.flX-p.flX, q.flY-p.flY;
+				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
+				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
+				  v_Ortho = FLIP(pSF[x].m_pt1);		*/
+				  pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				  pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 				}
 				m_sfLapOpts->fDrawSplitPoints = true;
 
@@ -207,7 +251,7 @@ LRESULT CSetSplitsDlg::DlgProc
 			case IDOK:
 			{
 
-				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
+/*				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
 				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
 				//	Fill in the S/F vectors for this lap
 				for(int x = 0;x < 3; x++)
@@ -219,8 +263,7 @@ LRESULT CSetSplitsDlg::DlgProc
 				  pSF[x].m_pt2.m_v[0] = q.flX;
 				  pSF[x].m_pt2.m_v[1] = q.flY;
 				}
-
-				m_sfLapOpts->fDrawSplitPoints = true;
+*/
 				m_pResults->fCancelled = false;
 				EndDialog(hWnd,0);
 				return TRUE;
