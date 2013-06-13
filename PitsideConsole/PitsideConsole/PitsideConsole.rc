@@ -73,9 +73,9 @@ FONT 10, "MS Shell Dlg"
 BEGIN
     CTEXT           "Pick your split points (Clear All to end sector displaying)",IDC_LBLSPLIT1,5,5,390,12
 //    LTEXT           "",IDC_DISPLAY,155,63,590,282
-    PUSHBUTTON      "Set Start/Finish", IDC_SETSPLIT1, 5,25,50,20
-	PUSHBUTTON      "Set Split 1", IDC_SETSPLIT2, 5,50,50,20
-    PUSHBUTTON      "Set Split 2", IDC_SETSPLIT3, 5,75,50,20
+//    PUSHBUTTON      "Set Start/Finish", IDC_SETSPLIT0, 5,25,50,20
+	PUSHBUTTON      "Set Split 1", IDC_SETSPLIT1, 5,50,50,20
+    PUSHBUTTON      "Set Split 2", IDC_SETSPLIT2, 5,75,50,20
     PUSHBUTTON      "Clear All", IDRESET, 5,125,50,20
    LTEXT           "",IDC_LBLSPLITMAP,60,22,335,173
     PUSHBUTTON      "OK", IDOK, 5,200,195,20

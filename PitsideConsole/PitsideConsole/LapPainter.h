@@ -21,6 +21,15 @@ enum CHANNELDISPLAYSTYLE
   CHANNELDISPLAYSTYLE_VALUE,
   CHANNELDISPLAYSTYLE_GRAPH,
 };
+
+// supplier IDs - each lap painter is given a supplier ID, which it uses to identify itself when asking for more data
+enum SUPPLIERID
+{
+  SUPPLIERID_MAINDISPLAY,
+  SUPPLIERID_SUBDISPLAY,
+  SUPPLIERID_SECTORDISPLAY,
+};
+
 enum LAPDISPLAYSTYLE
 {
   LAPDISPLAYSTYLE_MAP,

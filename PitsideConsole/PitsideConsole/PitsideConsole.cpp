@@ -264,13 +264,6 @@ bool CExtendedLap_SortByLapTime(const CExtendedLap* p1, const CExtendedLap* p2)
 {
   return p1->GetLap()->GetTime() < p2->GetLap()->GetTime(); // GetTime() or whatever the function is that gets lap time
 }
-// supplier IDs - each lap painter is given a supplier ID, which it uses to identify itself when asking for more data
-enum SUPPLIERID
-{
-  SUPPLIERID_MAINDISPLAY,
-  SUPPLIERID_SUBDISPLAY,
-  SUPPLIERID_SECTORDISPLAY,
-};
 
 class CMainUI : public IUI,public ILapSupplier
 {
@@ -278,7 +271,6 @@ public:
   CMainUI() 
     : m_sfLapPainter(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_MAINDISPLAY), 
       m_sfSubDisplay(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_SUBDISPLAY), 
-      m_sfRefLapPainter(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_SECTORDISPLAY), 
       m_eLapDisplayStyle(LAPDISPLAYSTYLE_PLOT),		//	Make data plot the default initial view
       m_fShowBests(false), 
       m_fShowDriverBests(false),
@@ -521,7 +513,6 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         }
         m_sfLapPainter.Init(GetDlgItem(hWnd,IDC_DISPLAY));
         m_sfSubDisplay.Init(GetDlgItem(hWnd,IDC_SUBDISPLAY));
-        m_sfRefLapPainter.Init(GetDlgItem(hWnd,IDC_LBLSPLITMAP));
 
         set<DATA_CHANNEL> setAvailable;
         InitAxes(setAvailable);
@@ -810,7 +801,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 		  case ID_OPTIONS_SETSPLITS:
 		  {
 			SETSPLITSDLG_RESULT sfResult;
-			CSetSplitsDlg dlgSetSplits(g_pLapDB, m_pReferenceLap,  &sfResult, m_iRaceId, &m_sfLapOpts, &m_sfRefLapPainter);
+			CSetSplitsDlg dlgSetSplits(g_pLapDB, m_pReferenceLap,  &sfResult, m_iRaceId, &m_sfLapOpts);
 			ArtShowDialog<IDD_SETSPLITPOINTS>(&dlgSetSplits);
 
 			if(!sfResult.fCancelled)
@@ -1165,6 +1156,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 				ReleaseDC(NULL,hdcSource);
 				ReleaseDC(hWnd,hdcWindow);
 				UpdateUI(UPDATE_DASHBOARD | UPDATE_LIST | UPDATE_MENU | UPDATE_ALL);
+//			    InitAxes(setSelectedChannels);
 				return TRUE;
           }
 		  case ID_FILE_EXIT:
@@ -1865,7 +1857,6 @@ void UpdateDisplays()
   {
     m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
-	m_sfRefLapPainter.Refresh();
 
   }
   void CheckMenuHelper(HMENU hMainMenu, int id, bool fChecked)
@@ -2424,7 +2415,6 @@ private:
 
   CLapPainter m_sfLapPainter;
   CLapPainter m_sfSubDisplay;
-  CLapPainter m_sfRefLapPainter;
 
   // lap display style data
   map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls

@@ -19,11 +19,10 @@ public:
   bool fCancelled;
 };
 
-class CSetSplitsDlg : public IUI, public ILapSupplier//, public ArtOpenGLWindow
+class CSetSplitsDlg : public IUI, public ILapSupplier
 {
 public:
-  CSetSplitsDlg(ILapReceiver* pLapDB, CExtendedLap* pLap, SETSPLITSDLG_RESULT* pResults, int iRaceId, LAPSUPPLIEROPTIONS* i_sfLapOpts, CLapPainter* sfRefLapPainter) : m_pLap(pLap), m_pResults(pResults), m_iRaceId(iRaceId), m_sfLapOpts(i_sfLapOpts), m_sfRefLapPainter(sfRefLapPainter)
-//  CSetSplitsDlg(ILapReceiver* pLapDB, SETSPLITSDLG_RESULT* pResults, int iRaceId, LAPSUPPLIEROPTIONS* i_sfLapOpts) : m_pResults(pResults), m_iRaceId(iRaceId), m_sfLapOpts(i_sfLapOpts)
+  CSetSplitsDlg(ILapReceiver* pLapDB, CExtendedLap* pLap, SETSPLITSDLG_RESULT* pResults, int iRaceId, LAPSUPPLIEROPTIONS* i_sfLapOpts) : m_pLap(pLap), m_pResults(pResults), m_iRaceId(iRaceId), m_sfLapOpts(i_sfLapOpts), p_sfRefLapPainter(this,SUPPLIERID_SECTORDISPLAY)
   {
 		m_pLapDB = pLapDB;
 		m_pLap = pLap;
@@ -32,31 +31,6 @@ public:
   virtual void NotifyChange(WPARAM wParam, LPARAM lParam) {DASSERT(FALSE);};
   virtual LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
   virtual DWORD GetDlgId() const {return IDD_SETSPLITPOINTS;}
-//  virtual void OGL_Paint() override;
-/*  bool GetMouse(POINT* ppt)
-  {
-    if(m_fMouseValid)
-    {
-      *ppt = m_ptMouse;
-      return true;
-    }
-    return false;
-  }	*/
-private:
-	SETSPLITSDLG_RESULT* m_pResults;
-	int m_iRaceId;
-	ILapReceiver* m_pLapDB;
-	LAPSUPPLIEROPTIONS* m_sfLapOpts;
-	CExtendedLap* m_pLap;
-	CLapPainter* m_sfRefLapPainter;
-	ILapSupplier* m_sfSectorDisplay;
-	vector<DATA_CHANNEL> m_lstYChannels;
-	map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls
-/*	// semi-separate stuff about mouse position
-	POINT m_ptMouse;
-	bool m_fMouseValid;
-*/
-    int m_iSupplierId;
 
 	// <-- returns which laps you want painted
   virtual vector<CExtendedLap*> GetLapsToShow() const
@@ -172,5 +146,16 @@ private:
   {
     return *m_sfLapOpts;
   }
+private:
+	SETSPLITSDLG_RESULT* m_pResults;
+	int m_iRaceId;
+	ILapReceiver* m_pLapDB;
+	LAPSUPPLIEROPTIONS* m_sfLapOpts;
+	CExtendedLap* m_pLap;
+	ILapSupplier* m_sfSectorDisplay;
+	vector<DATA_CHANNEL> m_lstYChannels;
+	map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls
+    int m_iSupplierId;
+	CLapPainter p_sfRefLapPainter;
 
 };

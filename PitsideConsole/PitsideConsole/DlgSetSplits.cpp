@@ -6,7 +6,6 @@
 #include "ArtTools.h" // for FLOATRECT
 #include "ArtUI.h" // for ArtOpenGLWindow
 
-//  HWND hWnd_OGL = NULL;
 
 LRESULT CSetSplitsDlg::DlgProc
 (
@@ -26,8 +25,7 @@ LRESULT CSetSplitsDlg::DlgProc
   GLdouble rgProjMatrix[16];
   GLint rgViewport[4];
 
-  if(m_sfRefLapPainter->HandleMessage(hWnd_OGL,uMsg,wParam,lParam))
-//  if(m_sfRefLapPainter->HandleMessage(hWnd,uMsg,wParam,lParam))
+  if(p_sfRefLapPainter.HandleMessage(hWnd_OGL,uMsg,wParam,lParam))
   {
 	return 0;
   }
@@ -47,10 +45,20 @@ LRESULT CSetSplitsDlg::DlgProc
 //		HWND hWndMsg = GetDlgItem(hWnd,IDC_EDTMESSAGE);
 //		SendMessage(hWndMsg, WM_GETTEXT, NUMCHARS(m_pResults->szMessage), (LPARAM)m_pResults->szMessage);
 //		if(wcslen(m_pResults->szMessage) > 0)
+		int x=0;
+		StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
+		const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
+		const TimePoint2D& p = lstPoints[x];
+		m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = p.iTime;
+		m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = p.flX;
+		m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = p.flY;
+		pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+		pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+		m_sfLapOpts->fDrawSplitPoints = true;
 
-		m_sfRefLapPainter->Init(hWnd_OGL);
+		p_sfRefLapPainter.Init(hWnd_OGL);
 
-		m_sfRefLapPainter->DrawLapLines(*m_sfLapOpts); // draws laps as a map
+		p_sfRefLapPainter.DrawLapLines(*m_sfLapOpts); // draws laps as a map
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +102,7 @@ LRESULT CSetSplitsDlg::DlgProc
 		Vector2D vHighlight;
 		const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
 
-		if (m_sfRefLapPainter->GetMouse(&ptMouse))
+		if (p_sfRefLapPainter.GetMouse(&ptMouse))
 		{
 			// We need to convert from Mouse space to Map space and find closest point
 			iTime = GetLapHighlightTime((const CExtendedLap *)m_pLap);
@@ -105,23 +113,23 @@ LRESULT CSetSplitsDlg::DlgProc
 		vHighlight = V2D((float)dX,(float)dY);
 		for(int x = 0; x< lstPoints.size()/3; x++)
 		{
-			SplitPoints sz_SplitTemp;
 			const TimePoint2D& p = lstPoints[x];
 			if (p.iTime == iTime)
 			{
 				ptBest = p;
-				sz_SplitTemp.m_sfSectorTime = ptBest.iTime;
-				sz_SplitTemp.m_sfXPoint = ptBest.flX;
-				sz_SplitTemp.m_sfYPoint = ptBest.flY;
-				m_sfLapOpts->m_SplitPoints[49] = sz_SplitTemp;
+//				m_sfLapOpts->m_SplitPoints[sizeof m_sfLapOpts->m_SplitPoints-2].m_sfSectorTime = ptBest.iTime;
+//				m_sfLapOpts->m_SplitPoints[sizeof m_sfLapOpts->m_SplitPoints-2].m_sfXPoint = ptBest.flX;
+//				m_sfLapOpts->m_SplitPoints[sizeof m_sfLapOpts->m_SplitPoints-2].m_sfYPoint = ptBest.flY;
+				m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime = ptBest.iTime;
+				m_sfLapOpts->m_SplitPoints[49].m_sfXPoint = ptBest.flX;
+				m_sfLapOpts->m_SplitPoints[49].m_sfYPoint = ptBest.flY;
 			}
 			else
 			{
 				ptBest = p;
-				sz_SplitTemp.m_sfSectorTime = ptBest.iTime;
-				sz_SplitTemp.m_sfXPoint = ptBest.flX;
-				sz_SplitTemp.m_sfYPoint = ptBest.flY;
-				m_sfLapOpts->m_SplitPoints[49] = sz_SplitTemp;
+				m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime = ptBest.iTime;
+				m_sfLapOpts->m_SplitPoints[49].m_sfXPoint = ptBest.flX;
+				m_sfLapOpts->m_SplitPoints[49].m_sfYPoint = ptBest.flY;
 			}
 		}	
         return TRUE;
@@ -134,43 +142,47 @@ LRESULT CSetSplitsDlg::DlgProc
 		Vector2D vHighlight;
 		const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
 
-		if (m_sfRefLapPainter->GetMouse(&ptMouse))
+		if (p_sfRefLapPainter.GetMouse(&ptMouse))
 		{
 			// We need to convert from Mouse space to Map space and find closest point
 			iTime = GetLapHighlightTime((const CExtendedLap *)m_pLap);
 		}
+		RECT rcClient;
+		GetClientRect(hWnd_OGL,&rcClient);
+
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(0, RECT_WIDTH(&rcClient),0, RECT_HEIGHT(&rcClient),-1.0,1.0);
 		GLdouble dX,dY,dZ;
 
 		gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
 		vHighlight = V2D((float)dX,(float)dY);
 		for(int x = 0; x< lstPoints.size()*2/3; x++)
 		{
-			SplitPoints sz_SplitTemp;
 			const TimePoint2D& p = lstPoints[x];
 			if (p.iTime == iTime)
 			{
 				ptBest = p;
-				sz_SplitTemp.m_sfSectorTime = ptBest.iTime;
-				sz_SplitTemp.m_sfXPoint = ptBest.flX;
-				sz_SplitTemp.m_sfYPoint = ptBest.flY;
-				m_sfLapOpts->m_SplitPoints[49] = sz_SplitTemp;
+				m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime = ptBest.iTime;
+				m_sfLapOpts->m_SplitPoints[49].m_sfXPoint = ptBest.flX;
+				m_sfLapOpts->m_SplitPoints[49].m_sfYPoint = ptBest.flY;
 			}
 			else
 			{
 				ptBest = p;
-				sz_SplitTemp.m_sfSectorTime = ptBest.iTime;
-				sz_SplitTemp.m_sfXPoint = ptBest.flX;
-				sz_SplitTemp.m_sfYPoint = ptBest.flY;
-				m_sfLapOpts->m_SplitPoints[49] = sz_SplitTemp;
+				m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime = ptBest.iTime;
+				m_sfLapOpts->m_SplitPoints[49].m_sfXPoint = ptBest.flX;
+				m_sfLapOpts->m_SplitPoints[49].m_sfYPoint = ptBest.flY;
 			}
 		}	
+	    glPopMatrix(); // pop us from window space back to the identity
 //////////////////////////////////////////////////////////////////////////
         return TRUE;
 	}
 	case WM_NOTIFY:
 	{
 
-		m_sfRefLapPainter->DrawLapLines(*m_sfLapOpts); // draws laps as a map
+		p_sfRefLapPainter.DrawLapLines(*m_sfLapOpts); // draws laps as a map
 
 		NMHDR* notifyHeader = (NMHDR*)lParam;
 		switch(wParam)
@@ -187,7 +199,12 @@ LRESULT CSetSplitsDlg::DlgProc
     {
 		switch(LOWORD(wParam))
 		{
-			case IDC_SETSPLIT2:
+			case IDC_SETSPLIT0:
+			{
+
+				return TRUE;
+			}
+			case IDC_SETSPLIT1:
 			{
 				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
 				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
@@ -210,22 +227,7 @@ LRESULT CSetSplitsDlg::DlgProc
 
 				return TRUE;
 			}
-			case IDC_SETSPLIT1:
-			{
-				int x=0;
-				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
-				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
-				const TimePoint2D& p = lstPoints[x];
-				m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = p.iTime;
-				m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = p.flX;
-				m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = p.flY;
-				pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
-				pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
-				m_sfLapOpts->fDrawSplitPoints = true;
-
-				return TRUE;
-			}
-			case IDC_SETSPLIT3:
+			case IDC_SETSPLIT2:
 			{
 				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
 				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
@@ -234,13 +236,6 @@ LRESULT CSetSplitsDlg::DlgProc
 				  int x = 2;
 				  int iTime = m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime;
 				  m_sfLapOpts->m_SplitPoints[x] = m_sfLapOpts->m_SplitPoints[49];
-/*				  const TimePoint2D& p = lstPoints[iTime];
-				  const TimePoint2D& q = lstPoints[iTime+1];
-				  Vector2D v_Vector, v_Ortho;
-				  v_Vector.m_v[0] = q.flX-p.flX, q.flY-p.flY;
-				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
-				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
-				  v_Ortho = FLIP(pSF[x].m_pt1);		*/
 				  pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 				  pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 				}
@@ -250,29 +245,26 @@ LRESULT CSetSplitsDlg::DlgProc
 			}
 			case IDOK:
 			{
-
-/*				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
-				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
-				//	Fill in the S/F vectors for this lap
-				for(int x = 0;x < 3; x++)
-				{
-				  const TimePoint2D& p = lstPoints[x*20];
-				  const TimePoint2D& q = lstPoints[x*lstPoints.size()/3];
-				  pSF[x].m_pt1.m_v[0] = p.flX;
-				  pSF[x].m_pt1.m_v[1] = p.flY;
-				  pSF[x].m_pt2.m_v[0] = q.flX;
-				  pSF[x].m_pt2.m_v[1] = q.flY;
-				}
-*/
 				m_pResults->fCancelled = false;
 				EndDialog(hWnd,0);
 				return TRUE;
 			}
 			case IDRESET:
 			{
+				for (int x=1; x < 50; x++)
+				{
+					m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = 0.0f;
+					m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = 0.0f;
+					m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = 0;
+				}
+				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
+				for (int x=0; x < 3; x++)
+				{
+				  pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				  pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				}
+
 				m_sfLapOpts->fDrawSplitPoints = false;
-//				m_pResults->fCancelled = false;
-//				EndDialog(hWnd,0);
 				return TRUE;
 			}
 			case IDCANCEL:
@@ -289,6 +281,6 @@ LRESULT CSetSplitsDlg::DlgProc
       break;
     }
   }
-  m_sfRefLapPainter->Refresh();	//	Allow the Set Split Point window its own highlighter
+  p_sfRefLapPainter.Refresh();	//	Allow the Set Split Point window its own highlighter
   return FALSE;
 }

@@ -885,6 +885,16 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		  glVertex2f(pt2.m_v[0],pt2.m_v[1]);
 		  glEnd();
 
+		  // we also want to draw a highlighted square
+//		  DrawGLFilledSquare(pt1.m_v[0], pt1.m_v[1], 3);
+		  glPointSize(10.0f);
+		  glBegin(GL_POINT);
+
+		  glVertex2d(pt1.m_v[0], pt1.m_v[1]);
+
+		  glEnd();
+
+
 		  glColor3d(1.0,0.0,0.0);
 		  LPCSTR lpszText = "";
 		  if(x == 0) lpszText = "S/F";	// Start/Finish Line
