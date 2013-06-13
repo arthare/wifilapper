@@ -8,6 +8,7 @@
 #include "resource.h"
 #include "LapPainter.h"
 #include "PitsideConsole.h"
+#include "LapData.h"
 
 struct SHOWSPLITSDLG_RESULT
 {

@@ -147,7 +147,7 @@ public:
     return *m_sfLapOpts;
   }
 private:
-	void GetSplitPoint(int x, HWND hWnd);
+	void GetSplitPoint(int x, SplitPoints szTempSplit, HWND hWnd);
 	SETSPLITSDLG_RESULT* m_pResults;
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;

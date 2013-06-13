@@ -22,6 +22,7 @@ LRESULT CSetSplitsDlg::DlgProc
   static MAPHIGHLIGHT mapPt;
   POINT m_ptMouse = {0};
   bool m_fMouseValid = false;
+  static SplitPoints szTempSplit = {0};
 
   enum SPLITS
   {
@@ -59,12 +60,14 @@ LRESULT CSetSplitsDlg::DlgProc
 		}
 
 		x = FINISH;
-		const TimePoint2D& p = lstPoints[lstPoints.size()-1];
-		m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = p.iTime;
-		m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = p.flX;
-		m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = p.flY;
-		pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
-		pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+		{
+			const TimePoint2D& p = lstPoints[lstPoints.size()-1];
+			m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = p.iTime;
+			m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = p.flX;
+			m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = p.flY;
+			pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+			pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+		}
 
 		//	Show the split points
 		m_sfLapOpts->fDrawSplitPoints = true;
@@ -103,7 +106,7 @@ LRESULT CSetSplitsDlg::DlgProc
 	case WM_LBUTTONDOWN:
 	{
 
-		int iTime;
+		int iTime = -1;
 		POINT ptMouse;
 		Vector2D vHighlight;
 		const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
@@ -113,21 +116,28 @@ LRESULT CSetSplitsDlg::DlgProc
 			// We need to convert from Window space to Map space and find closest point
 			iTime = GetLapHighlightTime((const CExtendedLap *)m_pLap);
 		}
-		GLdouble dX=0,dY=0,dZ=0;
-		for(int x = 0; x< lstPoints.size(); x++)
+		if (iTime > 0)
 		{
-			const TimePoint2D& p = lstPoints[x];
-			if (p.iTime == iTime)
+			GLdouble dX=0,dY=0,dZ=0;
+			for(int x = 0; x< lstPoints.size(); x++)
 			{
-				dX = lstPoints[x].flX;
-				dY = lstPoints[x].flY;
-				ptBest = p;
-				vHighlight = V2D((float)dX,(float)dY);
-				m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime = ptBest.iTime;
-				m_sfLapOpts->m_SplitPoints[49].m_sfXPoint = ptBest.flX;
-				m_sfLapOpts->m_SplitPoints[49].m_sfYPoint = ptBest.flY;
-			}
-		}	
+				const TimePoint2D& p = lstPoints[x];
+				if (p.iTime >= iTime)
+				{
+					dX = lstPoints[x].flX;
+					dY = lstPoints[x].flY;
+					ptBest = p;
+					vHighlight = V2D((float)dX,(float)dY);
+//					m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime = ptBest.iTime;
+//					m_sfLapOpts->m_SplitPoints[49].m_sfXPoint = ptBest.flX;
+//					m_sfLapOpts->m_SplitPoints[49].m_sfYPoint = ptBest.flY;
+					szTempSplit.m_sfSectorTime = ptBest.iTime;
+					szTempSplit.m_sfXPoint = ptBest.flX;
+					szTempSplit.m_sfYPoint = ptBest.flY;
+					break;
+				}
+			}	
+		}
         return TRUE;
 	}
 	case WM_NOTIFY:
@@ -161,7 +171,7 @@ LRESULT CSetSplitsDlg::DlgProc
 				  v_Ortho = FLIP(pSF[x].m_pt1);		*/
 
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT1, hWnd);
+				GetSplitPoint(SPLIT1, szTempSplit, hWnd);
 				  
 				m_sfLapOpts->fDrawSplitPoints = true;
 
@@ -170,7 +180,7 @@ LRESULT CSetSplitsDlg::DlgProc
 			case IDC_SETSPLIT2:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT2, hWnd);
+				GetSplitPoint(SPLIT2, szTempSplit, hWnd);
 
 				m_sfLapOpts->fDrawSplitPoints = true;
 
@@ -179,7 +189,7 @@ LRESULT CSetSplitsDlg::DlgProc
 			case IDC_SETSPLIT3:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT3, hWnd);
+				GetSplitPoint(SPLIT3, szTempSplit, hWnd);
 
 				m_sfLapOpts->fDrawSplitPoints = true;
 
@@ -188,7 +198,7 @@ LRESULT CSetSplitsDlg::DlgProc
 			case IDC_SETSPLIT4:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT4, hWnd);
+				GetSplitPoint(SPLIT4, szTempSplit, hWnd);
 
 				m_sfLapOpts->fDrawSplitPoints = true;
 
@@ -197,7 +207,7 @@ LRESULT CSetSplitsDlg::DlgProc
 			case IDC_SETSPLIT5:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT5, hWnd);
+				GetSplitPoint(SPLIT5, szTempSplit, hWnd);
 
 				m_sfLapOpts->fDrawSplitPoints = true;
 
@@ -206,7 +216,7 @@ LRESULT CSetSplitsDlg::DlgProc
 			case IDC_SETSPLIT6:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT6, hWnd);
+				GetSplitPoint(SPLIT6, szTempSplit, hWnd);
 
 				m_sfLapOpts->fDrawSplitPoints = true;
 
@@ -254,13 +264,13 @@ LRESULT CSetSplitsDlg::DlgProc
   return FALSE;
 }
 
-void CSetSplitsDlg::GetSplitPoint(int x, HWND hWnd)
+void CSetSplitsDlg::GetSplitPoint(int x, SplitPoints szTempSplit, HWND hWnd)
 {
 	//	Fill in the S/F vectors for this lap
 	StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
-	if (m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime >= m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime && m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime)
+	if (szTempSplit.m_sfSectorTime >= m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime && m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime)
 	{
-		m_sfLapOpts->m_SplitPoints[x] = m_sfLapOpts->m_SplitPoints[49];		//	[49] Always contains the latest SF data
+		m_sfLapOpts->m_SplitPoints[x] = szTempSplit;		//	[49] Always contains the latest SF data
 		pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 		pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 	}

@@ -96,7 +96,8 @@ private:
   int m_iLapId;
   float m_flLapTime;
   mutable wstring m_strComment;
-  StartFinish m_rgSF[3];
+//  StartFinish m_rgSF[3];
+  StartFinish m_rgSF[50];	//		Increased by KDJ
 };
 
 //////////////////////////////////////////////////////////////

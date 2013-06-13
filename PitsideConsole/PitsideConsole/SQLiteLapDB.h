@@ -48,7 +48,8 @@ private:
   mutable ManagedCS m_cs;
 
   mutable CSfArtSQLiteDB m_sfDB;
-  StartFinish m_rgSF[3];
+//  StartFinish m_rgSF[3];
+  StartFinish m_rgSF[50];	//	Increased by KDJ
 
   set<int> m_setReceivingIds; // which race IDs have actually received laps from afar this session?
   int m_iLastRaceId; // what was the last race ID to receive a lap?
