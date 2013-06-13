@@ -121,6 +121,7 @@ copyjs_rel.bat</Command>
     <ClInclude Include="DlgRaceSelect.h" />
     <ClInclude Include="DlgRaceSelectEdit.h" />
     <ClInclude Include="DlgSetSplits.h" />
+    <ClInclude Include="DlgShowSplits.h" />
     <ClInclude Include="DlgSplash.h" />
     <ClInclude Include="DlgWarning.h" />
     <ClInclude Include="Hyperlinks.h" />
@@ -147,6 +148,7 @@ copyjs_rel.bat</Command>
     <ClCompile Include="DlgRaceSelect.cpp" />
     <ClCompile Include="DlgRaceSelectEdit.cpp" />
     <ClCompile Include="DlgSetSplits.cpp" />
+    <ClCompile Include="DlgShowSplits.cpp" />
     <ClCompile Include="DlgSplash.cpp" />
     <ClCompile Include="DlgWarning.cpp" />
     <ClCompile Include="Hyperlinks.cpp" />

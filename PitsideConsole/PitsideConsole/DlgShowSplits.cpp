@@ -1,5 +1,5 @@
 #include "Stdafx.h"
-#include "DlgSetSplits.h"
+#include "DlgShowSplits.h"
 #include "resource.h"
 #include "pitsideconsole.h"
 #include "LapPainter.h"
@@ -7,7 +7,7 @@
 #include "ArtUI.h" // for ArtOpenGLWindow
 
 
-LRESULT CSetSplitsDlg::DlgProc
+LRESULT CShowSplitsDlg::DlgProc
 (
   HWND hWnd, 
   UINT uMsg, 
@@ -23,18 +23,6 @@ LRESULT CSetSplitsDlg::DlgProc
   POINT m_ptMouse = {0};
   bool m_fMouseValid = false;
 
-  enum SPLITS
-  {
-	  START,
-	  SPLIT1,
-	  SPLIT2,
-	  SPLIT3,
-	  SPLIT4,
-	  SPLIT5,
-	  SPLIT6,
-	  FINISH=10
-  };
-
   if(p_sfRefLapPainter.HandleMessage(hWnd_OGL,uMsg,wParam,lParam))
   {
 	return 0;
@@ -45,35 +33,34 @@ LRESULT CSetSplitsDlg::DlgProc
 
     case WM_INITDIALOG:
     {
-		//	Get the Start time for the lap and store it
-		int x = START;
+        //  Initialize the send message parameters.
+//		SendMessage(hWndTime, WM_SETTEXT, NUMCHARS(szTime), (LPARAM)szTime);
+//		HWND hWndMsg = GetDlgItem(hWnd,IDC_EDTMESSAGE);
+//		SendMessage(hWndMsg, WM_GETTEXT, NUMCHARS(m_pResults->szMessage), (LPARAM)m_pResults->szMessage);
+//		if(wcslen(m_pResults->szMessage) > 0)
+		int x=0;
 		StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
 		const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
-		{
-			const TimePoint2D& p = lstPoints[x];
-			m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = p.iTime;
-			m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = p.flX;
-			m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = p.flY;
-			pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
-			pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
-		}
-
-		x = FINISH;
-		const TimePoint2D& p = lstPoints[lstPoints.size()-1];
+		const TimePoint2D& p = lstPoints[x];
 		m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = p.iTime;
 		m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = p.flX;
 		m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = p.flY;
 		pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 		pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
-
-		//	Show the split points
 		m_sfLapOpts->fDrawSplitPoints = true;
 
-		//	The the OGL handle
 		p_sfRefLapPainter.Init(hWnd_OGL);
 
 		p_sfRefLapPainter.DrawLapLines(*m_sfLapOpts); // draws laps as a map
 
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////
+
+		
+		
         return TRUE;
 	}
 /*    case WM_MOUSEMOVE:
@@ -152,6 +139,13 @@ LRESULT CSetSplitsDlg::DlgProc
 		{
 			case IDC_SETSPLIT1:
 			{
+				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
+				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
+				//	Fill in the S/F vectors for this lap
+				{
+				  int x = 1;
+				  int iTime = m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime;
+				  m_sfLapOpts->m_SplitPoints[x] = m_sfLapOpts->m_SplitPoints[49];
 /*				  const TimePoint2D& p = lstPoints[iTime];
 				  const TimePoint2D& q = lstPoints[iTime+1];
 				  Vector2D v_Vector, v_Ortho;
@@ -159,55 +153,41 @@ LRESULT CSetSplitsDlg::DlgProc
 				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
 				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
 				  v_Ortho = FLIP(pSF[x].m_pt1);		*/
-
-				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT1, hWnd);
-				  
+				  pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				  pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				}
 				m_sfLapOpts->fDrawSplitPoints = true;
 
 				return TRUE;
 			}
 			case IDC_SETSPLIT2:
 			{
-				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT2, hWnd);
-
+				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
+				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
+				//	Fill in the S/F vectors for this lap
+				{
+				  int x = 2;
+				  int iTime = m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime;
+				  m_sfLapOpts->m_SplitPoints[x] = m_sfLapOpts->m_SplitPoints[49];
+				  pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				  pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				}
 				m_sfLapOpts->fDrawSplitPoints = true;
 
 				return TRUE;
 			}
 			case IDC_SETSPLIT3:
 			{
-				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT3, hWnd);
-
-				m_sfLapOpts->fDrawSplitPoints = true;
-
-				return TRUE;
-			}
-			case IDC_SETSPLIT4:
-			{
-				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT4, hWnd);
-
-				m_sfLapOpts->fDrawSplitPoints = true;
-
-				return TRUE;
-			}
-			case IDC_SETSPLIT5:
-			{
-				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT5, hWnd);
-
-				m_sfLapOpts->fDrawSplitPoints = true;
-
-				return TRUE;
-			}
-			case IDC_SETSPLIT6:
-			{
-				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
-				GetSplitPoint(SPLIT6, hWnd);
-
+				const vector<TimePoint2D>& lstPoints = m_pLap->GetPoints();
+				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
+				//	Fill in the S/F vectors for this lap
+				{
+				  int x = 3;
+				  int iTime = m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime;
+				  m_sfLapOpts->m_SplitPoints[x] = m_sfLapOpts->m_SplitPoints[49];
+				  pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				  pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
+				}
 				m_sfLapOpts->fDrawSplitPoints = true;
 
 				return TRUE;
@@ -252,21 +232,4 @@ LRESULT CSetSplitsDlg::DlgProc
   }
   p_sfRefLapPainter.Refresh();	//	Allow the Set Split Point window its own highlighter
   return FALSE;
-}
-
-void CSetSplitsDlg::GetSplitPoint(int x, HWND hWnd)
-{
-	//	Fill in the S/F vectors for this lap
-	StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
-	if (m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime >= m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime && m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime)
-	{
-		m_sfLapOpts->m_SplitPoints[x] = m_sfLapOpts->m_SplitPoints[49];		//	[49] Always contains the latest SF data
-		pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
-		pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
-	}
-	else
-	{
-		MessageBox(hWnd, L"Sector point is earlier than previous.\nPlease Re-pick or re-assign",L"ERROR",MB_OK);
-	}
-		
 }

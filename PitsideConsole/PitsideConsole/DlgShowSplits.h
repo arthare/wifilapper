@@ -9,20 +9,20 @@
 #include "LapPainter.h"
 #include "PitsideConsole.h"
 
-struct SETSPLITSDLG_RESULT
+struct SHOWSPLITSDLG_RESULT
 {
 public:
-  SETSPLITSDLG_RESULT()
+  SHOWSPLITSDLG_RESULT()
   {
     fCancelled = true;
   }
   bool fCancelled;
 };
 
-class CSetSplitsDlg : public IUI, public ILapSupplier
+class CShowSplitsDlg : public IUI, public ILapSupplier
 {
 public:
-  CSetSplitsDlg(ILapReceiver* pLapDB, CExtendedLap* pLap, SETSPLITSDLG_RESULT* pResults, int iRaceId, LAPSUPPLIEROPTIONS* i_sfLapOpts) : m_pLap(pLap), m_pResults(pResults), m_iRaceId(iRaceId), m_sfLapOpts(i_sfLapOpts), p_sfRefLapPainter(this,SUPPLIERID_SECTORDISPLAY)
+  CShowSplitsDlg(ILapReceiver* pLapDB, CExtendedLap* pLap, SHOWSPLITSDLG_RESULT* pResults, int iRaceId, LAPSUPPLIEROPTIONS* i_sfLapOpts) : m_pLap(pLap), m_pResults(pResults), m_iRaceId(iRaceId), m_sfLapOpts(i_sfLapOpts), p_sfRefLapPainter(this,SUPPLIERID_SECTORDISPLAY)
   {
 		m_pLapDB = pLapDB;
 		m_pLap = pLap;
@@ -147,8 +147,7 @@ public:
     return *m_sfLapOpts;
   }
 private:
-	void GetSplitPoint(int x, HWND hWnd);
-	SETSPLITSDLG_RESULT* m_pResults;
+	SHOWSPLITSDLG_RESULT* m_pResults;
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
 	LAPSUPPLIEROPTIONS* m_sfLapOpts;

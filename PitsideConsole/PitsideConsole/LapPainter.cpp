@@ -874,7 +874,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 	  {
 		const CExtendedLap* pReferenceLap = lstLaps[lstLaps.size()-1];
 		const StartFinish* pSF = pReferenceLap->GetLap()->GetSF();
-		for(int x = 0;x < 3; x++)
+		for(int x = 0;x < 7; x++)
 		{
 		  Vector2D pt1 = pSF[x].GetPt1();
 		  Vector2D pt2 = pSF[x].GetPt2();
@@ -900,6 +900,10 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		  if(x == 0) lpszText = "S/F";	// Start/Finish Line
 		  if(x == 1) lpszText = "S1";	// Segment 1
 		  if(x == 2) lpszText = "S2";	// Segment 2
+		  if(x == 3) lpszText = "S3";	// Segment 2
+		  if(x == 4) lpszText = "S4";	// Segment 1
+		  if(x == 5) lpszText = "S5";	// Segment 2
+		  if(x == 6) lpszText = "S6";	// Segment 2
 		  DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	
 //		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	
 		}

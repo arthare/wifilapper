@@ -36,11 +36,10 @@
 #include "Hyperlinks.h"
 #include "DlgAbout.h"
 #include <Winspool.h>
-//#include "atlstr.h"
-//#include "atlimage.h"
 #include "DlgProgress.h"
 #include "DlgWarning.h"
 #include "DlgSetSplits.h"
+#include "DlgShowSplits.h"
 #include "jpge.h"
 
 //#pragma comment(lib,"sdl.lib")
