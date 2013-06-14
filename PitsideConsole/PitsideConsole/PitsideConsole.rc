@@ -85,6 +85,22 @@ BEGIN
     PUSHBUTTON      "Cancel", IDCANCEL, 200,230,195,20
 END
 
+//	Dialog box for displaying sector split times
+IDD_SHOWSECTORS DIALOG 350, 75, 400, 92
+STYLE DS_MODALFRAME | WS_EX_TOPMOST | WS_POPUP | WS_CAPTION
+CAPTION "Sector Times"
+FONT 9, "MS Shell Dlg"
+BEGIN
+    LTEXT           "", IDC_SHOW_SECTORS,0,0,400,50
+    LTEXT      "Ref Lap", IDC_REF_LAP, 5,3,390,12
+	LTEXT      "Lap 1", IDC_SHOW_SECTOR1, 5,15,390,12
+    LTEXT      "Lap 2", IDC_SHOW_SECTOR2, 5,27,390,12
+    LTEXT      "Lap 3", IDC_SHOW_SECTOR3, 5,39,390,12
+	LTEXT      "Lap 4", IDC_SHOW_SECTOR4, 5,51,390,12
+    LTEXT      "Lap 5", IDC_SHOW_SECTOR5, 5,63,390,12
+    LTEXT      "Lap 6", IDC_SHOW_SECTOR6, 5,75,390,12
+END
+
 // dialog for selecting which race in a DB we want to use
 IDD_SELECTRACE DIALOG 150, 200, 200, 200
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU

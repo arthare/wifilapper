@@ -216,4 +216,13 @@
 #define IDRESET 330
 #define IDM_PRINT_BM   331
 #define IDM_SAVE_BM    332
+#define IDD_SHOWSECTORS 340
+#define IDC_REF_LAP 341
+#define IDC_SHOW_SECTORS 342
+#define IDC_SHOW_SECTOR1 343
+#define IDC_SHOW_SECTOR2 344
+#define IDC_SHOW_SECTOR3 345
+#define IDC_SHOW_SECTOR4 346
+#define IDC_SHOW_SECTOR5 347
+#define IDC_SHOW_SECTOR6 348
 // don't put anything below this

@@ -2,6 +2,7 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
+//#include "DlgShowSplits.h"
 
 struct HIGHLIGHTDATA
 {
@@ -905,60 +906,19 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		  if(x == 5) lpszText = "S5";	// Segment 2
 		  if(x == 6) lpszText = "S6";	// Segment 2
 		  DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	
-//		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	
+//		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Only draw text at one end of the line
 		}
+
+		//	Now, let's compute the Sector times and display them in a separate window
+
+//            SHOWSPLIT_RESULT sfResult;
+//            CShowSplitsDlg dlgShowSplit(&sfResult); //m_sfRefLapPainter);
+//            ArtShowDialog<IDD_SHOWSECTORS>(&dlgShowSplit);
+
 	  }
 //  }
 
 	glPopMatrix(); // popping us out of map-coords space.
-
-/*
-	//	The idea here is to get the mouse location and find the closest reference lap point to set the sector location
-	POINT ptMouse;
-	Vector2D vHighlight;
-	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
-	{
-		// the mouse is in our window... we make our own highlighter
-		GLdouble dX,dY,dZ;
-
-		gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
-		vHighlight = V2D((float)dX,(float)dY);
-	}
-
-    float dBestLength = -1;
-    float dTimeToHighlight = -1;
-    TimePoint2D ptBest;
-
-	const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
-    for(int x = 0; x< lstPoints.size(); x++)
-    {
-		const TimePoint2D& p = lstPoints[x];
-		glVertex2f(p.flX,p.flY);
-
-		// if we're a highlight source, try to figure out the closest point for this lap
-		if(m_pLapSupplier->IsHighlightSource(m_iSupplierId))
-		{
-			Vector2D vPt = V2D(p.flX,p.flY);
-			Vector2D vDiff = vPt - vHighlight;
-			if(vDiff.Length() < dBestLength || dBestLength < 0)
-			{
-				dBestLength = vDiff.Length();
-				dTimeToHighlight = p.iTime;
-				ptBest = p;
-			}
-		}
-		else
-		{
-			int iTime = m_pLapSupplier->GetLapHighlightTime(pLap);
-			if(abs(p.iTime - iTime) < dBestLength || dBestLength < 0)
-			{
-				dBestLength = abs(p.iTime - iTime);
-				ptBest = p;
-				dTimeToHighlight = iTime;
-			}
-		}
-	}
-*/
 
   if(lstMousePointsToDraw.size() > 0)
   {

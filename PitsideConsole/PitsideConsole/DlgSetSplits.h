@@ -148,6 +148,7 @@ public:
   }
 private:
 	void GetSplitPoint(int x, SplitPoints szTempSplit, HWND hWnd);
+	void ComputeSectors();
 	SETSPLITSDLG_RESULT* m_pResults;
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;

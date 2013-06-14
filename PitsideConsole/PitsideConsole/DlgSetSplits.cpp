@@ -33,7 +33,7 @@ LRESULT CSetSplitsDlg::DlgProc
 	  SPLIT4,
 	  SPLIT5,
 	  SPLIT6,
-	  FINISH=10
+	  FINISH
   };
 
   if(p_sfRefLapPainter.HandleMessage(hWnd_OGL,uMsg,wParam,lParam))
@@ -128,9 +128,6 @@ LRESULT CSetSplitsDlg::DlgProc
 					dY = lstPoints[x].flY;
 					ptBest = p;
 					vHighlight = V2D((float)dX,(float)dY);
-//					m_sfLapOpts->m_SplitPoints[49].m_sfSectorTime = ptBest.iTime;
-//					m_sfLapOpts->m_SplitPoints[49].m_sfXPoint = ptBest.flX;
-//					m_sfLapOpts->m_SplitPoints[49].m_sfYPoint = ptBest.flY;
 					szTempSplit.m_sfSectorTime = ptBest.iTime;
 					szTempSplit.m_sfXPoint = ptBest.flX;
 					szTempSplit.m_sfYPoint = ptBest.flY;
@@ -224,6 +221,7 @@ LRESULT CSetSplitsDlg::DlgProc
 			}
 			case IDOK:
 			{
+				ComputeSectors();	//	Load Sector times into sfLapOpts
 				m_pResults->fCancelled = false;
 				EndDialog(hWnd,0);
 				return TRUE;
@@ -235,6 +233,7 @@ LRESULT CSetSplitsDlg::DlgProc
 					m_sfLapOpts->m_SplitPoints[x].m_sfXPoint = 0.0f;
 					m_sfLapOpts->m_SplitPoints[x].m_sfYPoint = 0.0f;
 					m_sfLapOpts->m_SplitPoints[x].m_sfSectorTime = 0;
+					m_sfLapOpts->m_SplitPoints[x].m_sfSplitTime = 0.0f;
 				}
 				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
 				for (int x=0; x < 3; x++)
@@ -270,13 +269,34 @@ void CSetSplitsDlg::GetSplitPoint(int x, SplitPoints szTempSplit, HWND hWnd)
 	StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
 	if (szTempSplit.m_sfSectorTime >= m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime && m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime)
 	{
-		m_sfLapOpts->m_SplitPoints[x] = szTempSplit;		//	[49] Always contains the latest SF data
+		m_sfLapOpts->m_SplitPoints[x] = szTempSplit;		//	Assignt the highlighted time into the latest SF data
+		m_sfLapOpts->m_SplitPoints[x].m_sfSplitTime = szTempSplit.m_sfSplitTime-m_sfLapOpts->m_SplitPoints[x-1].m_sfSplitTime;		//	Compute and load the Time Difference for this sector into the SF data
 		pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 		pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 	}
 	else
 	{
 		MessageBox(hWnd, L"Sector point is earlier than previous.\nPlease Re-pick or re-assign",L"ERROR",MB_OK);
+	}
+		
+}
+
+void CSetSplitsDlg::ComputeSectors()
+{
+	//	Now, let's compute the Sector times for this lap.
+	StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
+	for (int z=1; z < 50; z++)
+	{
+		if (m_sfLapOpts->m_SplitPoints[z].m_sfSectorTime > m_sfLapOpts->m_SplitPoints[z-1].m_sfSectorTime)
+		{
+			m_sfLapOpts->m_SplitPoints[z].m_sfSplitTime = m_sfLapOpts->m_SplitPoints[z].m_sfSectorTime - m_sfLapOpts->m_SplitPoints[z-1].m_sfSectorTime;		//	Assign the highlighted time into the latest SF data
+		}
+		else
+		{
+			m_sfLapOpts->m_SplitPoints[z].m_sfSplitTime = 0.0f;
+			m_sfLapOpts->m_SplitPoints[z].m_sfSectorTime = m_sfLapOpts->m_SplitPoints[z-1].m_sfSectorTime;
+
+		}
 	}
 		
 }

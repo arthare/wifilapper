@@ -803,10 +803,32 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 			CSetSplitsDlg dlgSetSplits(g_pLapDB, m_pReferenceLap,  &sfResult, m_iRaceId, &m_sfLapOpts);
 			ArtShowDialog<IDD_SETSPLITPOINTS>(&dlgSetSplits);
 
+			static HWND ShowSplitsHandle;
+			if (!IsWindow(ShowSplitsHandle) && m_sfLapOpts.fDrawSplitPoints)
+			{
+//				if (m_sfLapOpts.fDrawSplitPoints)
+//				{
+					//	Create non-modal dialog to display the sector times window if DrawSplitPoints is TRUE
+					HWND hwndSplits = NULL;  // Window handle of non-modal dialog box  
+					DLGPROC ShowSplits = NULL;
+					if (!IsWindow(hwndSplits)) 
+					{ 
+						hwndSplits = CreateDialog(NULL, MAKEINTRESOURCE (IDD_SHOWSECTORS), hWnd, ShowSplits); 
+						ShowSplitsHandle = hwndSplits;  //	Tracker for handle address 
+						ShowWindow(hwndSplits, SW_SHOW); 
+					} 
+				}
+				else if (!m_sfLapOpts.fDrawSplitPoints)
+				{
+					EndDialog(ShowSplitsHandle, 0);
+					ShowSplitsHandle = NULL;
+				}
+//			}
 			if(!sfResult.fCancelled)
             {
 			  UpdateUI(UPDATE_ALL | UPDATE_VALUES);
-            }
+			  return TRUE;
+			}
             return TRUE;
 		  }		
           case ID_HELP_SHOWHELP:
@@ -2512,7 +2534,8 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 		p_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
 		p_sfLapOpts.m_SplitPoints[i].m_sfXPoint = 0.0f;	//	Initialize all split points
 		p_sfLapOpts.m_SplitPoints[i].m_sfYPoint = 0.0f;	//	Initialize all split points
-		p_sfLapOpts.m_SplitPoints[i].m_sfSectorTime = 0.0f;	//	Initialize all sector times
+		p_sfLapOpts.m_SplitPoints[i].m_sfSectorTime = 0;	//	Initialize all sector times
+		p_sfLapOpts.m_SplitPoints[i].m_sfSplitTime = 0.0f;
 		p_sfLapOpts.fDrawSplitPoints = false;	//	Default to not show split points
 	}
   }
