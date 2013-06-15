@@ -743,7 +743,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     }
 
     if(fComputeTimeSlip && m_lstPoints.size() > 0)
-//	if((fComputeTimeSlip || x_sfLapOpts.fDrawSplitPoints) && m_lstPoints.size() > 0)
     {
       IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
       pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
@@ -763,9 +762,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 		start near the point that is most likely to be near the current m_lstPoints point */
         int ixCheck = iRefCheckStart;
         const int cReferenceSize = lstReference.size();
-//		Needs to be the Sector Start Time - KDJ
-//		m_pLapSupplier->GetDisplayOptions().m_SplitPoints[0] = pReferenceDistanceChannel->GetValue(lstReference[0].iTime);
-        while(true)
+
+		while(true)
         {
           const double dRefDist = pReferenceDistanceChannel->GetValue(lstReference[ixCheck].iTime);
           if(dRefDist >= dDistance && dLastRefDist <= dDistance)
@@ -787,16 +785,16 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
                   float dTimeSlip = dEstimatedElapsedTime - (double)iElapsedTime;
                   pTimeSlip->AddPoint(m_lstPoints[x].iTime, dTimeSlip);
 
-
+/*
 
 				  //	dEstimatedElapseTime is the time to get to this distance from the start, based upon the Reference Lap
 				  //	Need to add here the Sector Times coding, once that information is available - KDJ
-/*				  if (dDistance <= pReferenceDistanceChannel->GetValue(lstReference[m_SplitPoints[1]].iTime))
+				  if (dDistance <= pReferenceDistanceChannel->GetValue(lstReference[1].iTime))
 				  {
-					  m_SplitPoints[1] = dEstimatedElapsedTime;
-				  }	*/
+//					 CPlotSelectDlg::m_sfLapOpts->m_SplitPoints[1] = dEstimatedElapsedTime;
+				  }	
 
-				
+*/			
 				
 				}
               }

@@ -70,6 +70,7 @@ public:
   int iZoomLevels;
   PlotPrefs m_PlotPrefs[50];	// Pull in PlotPrefs data
   SplitPoints m_SplitPoints[50];	//	Pull in all Split points data
+  HWND hWndLap[50];
   LAPSORTSTYLE eSortPreference;
 };
 
@@ -100,10 +101,11 @@ public:
   virtual void NotifyChange(WPARAM wParam, LPARAM lParam) {DASSERT(FALSE);};
   virtual LRESULT DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
   virtual DWORD GetDlgId() const {return IDD_PLOTPREFS;}
+  LAPSUPPLIEROPTIONS* m_sfLapOpts;
 private:
 	PLOTSELECT_RESULT* m_pPlotResults;
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
 	ArtListBox m_sfYAxis;
-	LAPSUPPLIEROPTIONS* m_sfLapOpts;
+//	LAPSUPPLIEROPTIONS* m_sfLapOpts;
 };

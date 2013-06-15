@@ -806,24 +806,26 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 			static HWND ShowSplitsHandle;
 			if (!IsWindow(ShowSplitsHandle) && m_sfLapOpts.fDrawSplitPoints)
 			{
-//				if (m_sfLapOpts.fDrawSplitPoints)
-//				{
-					//	Create non-modal dialog to display the sector times window if DrawSplitPoints is TRUE
-					HWND hwndSplits = NULL;  // Window handle of non-modal dialog box  
-					DLGPROC ShowSplits = NULL;
-					if (!IsWindow(hwndSplits)) 
-					{ 
-						hwndSplits = CreateDialog(NULL, MAKEINTRESOURCE (IDD_SHOWSECTORS), hWnd, ShowSplits); 
-						ShowSplitsHandle = hwndSplits;  //	Tracker for handle address 
-						ShowWindow(hwndSplits, SW_SHOW); 
-					} 
-				}
-				else if (!m_sfLapOpts.fDrawSplitPoints)
-				{
-					EndDialog(ShowSplitsHandle, 0);
-					ShowSplitsHandle = NULL;
-				}
-//			}
+				//	Create non-modal dialog to display the sector times window if DrawSplitPoints is TRUE
+				HWND hwndSplits = NULL;  // Window handle of non-modal dialog box 
+				DLGPROC ShowSplits = NULL;
+				if (!IsWindow(hwndSplits)) 
+				{ 
+					hwndSplits = CreateDialog(NULL, MAKEINTRESOURCE (IDD_SHOWSECTORS), hWnd, ShowSplits); 
+					//	Let's get the handles for all display controls in this window
+					for (int y = 0; y < 7; y++)
+					{
+						m_sfLapOpts.hWndLap[y] = GetDlgItem(hwndSplits, IDC_SHOW_LAP0 + y);
+					}
+					ShowSplitsHandle = hwndSplits;  //	Tracker for handle address 
+					ShowWindow(hwndSplits, SW_SHOW); 
+				} 
+			}
+			else if (!m_sfLapOpts.fDrawSplitPoints)
+			{
+				EndDialog(ShowSplitsHandle, 0);
+				ShowSplitsHandle = NULL;
+			}
 			if(!sfResult.fCancelled)
             {
 			  UpdateUI(UPDATE_ALL | UPDATE_VALUES);
@@ -1303,6 +1305,8 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
                 }
               }
               m_pReferenceLap = pNewRefLap;
+			  //	Tell it to close Sector Display and release all Split Points
+			  //	Blah blah blah
             }
             else
             {
@@ -1528,6 +1532,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_VALUES))
     {
       UpdateValues();
+	  UpdateSectors();
     }
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_MAP))
     {
@@ -1751,6 +1756,144 @@ private:
 			return sum;
 		}
 	}
+void UpdateSectors()
+  {
+	//	Update the Sector Times display
+	//	The idea here is to get the sector positions and iTime from sfLapOpts, then for each highlighted
+	//  Lap run through the Ref Lap Time/Distance array and interpolate the iTime at the equivalent distance
+	//  Coding is similar to TimeSlip
+
+	const int cSectors = 7;	//	The maximum number of Sectors to display, gated by display area
+	const int MaxLaps = 7;	//	Maximum number of laps (including Ref Lap) to display
+	int w=0;	//	String variable counter for Sector display
+
+	//	Get the list of highlighted lap time ID's
+    set<LPARAM> setSelected = m_sfLapList.GetSelectedItemsData();
+
+	//	Load the CExtendedLap data for the lap list
+    vector<CExtendedLap*> lstLaps = GetLapsToShow();
+
+	//	Get the points from the Ref Lap for computation
+	const vector<TimePoint2D>& lstRefPoints = m_pReferenceLap->GetPoints();	// For iTime
+	const IDataChannel* pReferenceDistance = m_pReferenceLap->GetChannel(DATA_CHANNEL_DISTANCE);
+
+	//	Strings for building the Sector Times output for each lap
+	TCHAR szLapString[512][50] = {NULL};
+	TCHAR szString[512][50] = {NULL};
+
+//	Lap Loop
+	//	Now loop through the lap list, compute the sector times and store them in SplitPoints[]
+	for(set<LPARAM>::iterator i = setSelected.begin(); i != setSelected.end(); i++)
+    {
+		//	Get the data points for this lap, and compare the sector times to the Reference Lap (m_pReferenceLap)
+        CExtendedLap* pLap = (CExtendedLap*)*i;
+		
+		//	Get the points from the Selected Lap for computation
+		const vector<TimePoint2D>& lstLapPoints = pLap->GetPoints();
+
+		const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
+
+		int iLapStartTime = lstLapPoints[0].iTime;
+
+//	Sector Loop
+		//	Now loop through the split points and determine lap times for each sector
+		for(int s = 1; s <= cSectors; s++)
+		{
+			//	Get the Split Point iTime and it's distance value
+			const int SectorStartTime =  m_sfLapOpts.m_SplitPoints[s].m_sfSectorTime;
+			const double dSectorDistance = pReferenceDistance->GetValue((int)SectorStartTime);
+
+			//	First iTime for the lap array
+			bool b_SectorFlag = false;
+			double dLastLapDist = 0;
+//	Interpolation Loop
+			//	Now go through the lap array and find the 2 points that span the dSectorDistance distance
+			for (int x = 1; x < lstLapPoints.size(); x++)
+			{
+				const int iElapsedTime = lstLapPoints[x].iTime - iLapStartTime;
+				const double dDistance = pDistance->GetValue(lstLapPoints[x].iTime);
+				dLastLapDist = pDistance->GetValue(lstLapPoints[x-1].iTime);
+
+				TimePoint2D pLapPoint = lstLapPoints[x];
+				// this lap's time at {dDistance} was {iElapsedTime}.
+				// we now need to estimate what the lap time at {dDistance} was, and then we can get our sector time
+
+				int iLapCheckStart = 1; 
+				/* what index should we start at?  this gets changed each loop so that we always 
+				start near the point that is most likely to be near the current m_lstPoints point */
+				const int cLapSize = lstLapPoints.size();
+
+				if(dDistance >= dSectorDistance && dLastLapDist <= dSectorDistance)
+				{
+					// we have found two points straddling the distance we're curious about, dSectorDistance
+					const double dOffset = dSectorDistance - dLastLapDist; // how far into the {dLastRefDist,dRefDist} x axis we are
+					const double dWidth = dDistance - dLastLapDist; // how far apart {dLastRefDist,dRefDist} are
+					double dFraction = 0;
+					if(dWidth != 0)
+					{
+						dFraction = dOffset / dWidth; // the fraction that dDistance is between dLastLapDist and dDistance
+						if(dFraction >= 0.0 && dFraction <= 1.0)
+						{
+							const int iLastTime = lstLapPoints[x-1].iTime;
+							const int iThisTime = lstLapPoints[x].iTime;
+							const double dEstimatedElapsedTime = dFraction * (iThisTime - iLastTime) + (double)iLastTime; 
+							// this is the estimated time for the previous lap at this position
+							if(dEstimatedElapsedTime >= 0)
+							{
+								float dSectorTime = dEstimatedElapsedTime - (double)iLapStartTime;
+								//	Now that we have computed the Sector Time, let's build the Sector times string
+								swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
+								iLapStartTime = dEstimatedElapsedTime;
+								dLastLapDist = dSectorDistance;
+								b_SectorFlag = true;
+								break;
+							}
+						}
+					}
+					else
+					{
+						const int iLastTime = lstLapPoints[x-1].iTime;
+						float dSectorTime = iLastTime - (double)iLapStartTime;
+						//	Now that we have computed the Sector Time, let's build the Sector times string
+						swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
+						iLapStartTime = iLastTime;
+						dLastLapDist = dSectorDistance;
+						b_SectorFlag = true;
+						break;
+					}
+				}
+				if (x == lstLapPoints.size()-1)
+				{
+					//	We've reached the end of the loop. Dump the last point as the last sector time, if other conditions failed
+					const int iLastTime = lstLapPoints[lstLapPoints.size()-1].iTime;
+					float dSectorTime = iLastTime - (double)iLapStartTime;
+					//	Now that we have computed the Sector Time, let's build the Sector times string
+					swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
+					iLapStartTime = iLastTime;
+					dLastLapDist = dSectorDistance;
+					b_SectorFlag = true;
+					break;
+				}
+			}
+//	End Interpolation Loop
+		}
+//	End Sector Loop
+
+		//	Now that we have computed the Sector Time, let's Display them
+		swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"Lap %i:\t%s", w + 1, szString[w]);
+		SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
+		//	Increment "w" counter and do the next lap
+		w++;
+	}
+	//	Clean up any old lap sector times if user chose fewer laps to display
+	for (int x = w; x < MaxLaps; x++)
+	{
+		swprintf(szLapString[x], NUMCHARS(szLapString[x]), L"Lap %i:", x + 1);
+		SendMessage(m_sfLapOpts.hWndLap[x], WM_SETTEXT, 0, (LPARAM)szLapString[x]);
+	}
+
+//	End Lap Loop
+  }
 void UpdateValues()
   {
 	//	Update the data channels that are being displayed as values

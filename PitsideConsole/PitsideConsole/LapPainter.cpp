@@ -865,11 +865,9 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
       lstMousePointsToDraw.push_back(mapPt);
     }
-		glEnd();
+	glEnd();
 
   }
-//  if (pLap == m_pReferenceLap)	// If this lap is the reference lap, draw the segment lines
-//  {
 	  // draw the start-finish and segment lines
 	  if(lstLaps.size() > 0 && sfLapOpts.fDrawSplitPoints)
 	  {
@@ -885,6 +883,15 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		  glVertex2f(pt1.m_v[0],pt1.m_v[1]);
 		  glVertex2f(pt2.m_v[0],pt2.m_v[1]);
 		  glEnd();
+
+/*				  const TimePoint2D& p = lstPoints[iTime];
+				  const TimePoint2D& q = lstPoints[iTime+1];
+				  Vector2D v_Vector, v_Ortho;
+				  v_Vector.m_v[0] = q.flX-p.flX, q.flY-p.flY;
+				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
+				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
+				  v_Ortho = FLIP(pSF[x].m_pt1);		
+*/
 
 		  // we also want to draw a highlighted square
 //		  DrawGLFilledSquare(pt1.m_v[0], pt1.m_v[1], 3);
@@ -908,15 +915,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		  DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	
 //		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Only draw text at one end of the line
 		}
-
-		//	Now, let's compute the Sector times and display them in a separate window
-
-//            SHOWSPLIT_RESULT sfResult;
-//            CShowSplitsDlg dlgShowSplit(&sfResult); //m_sfRefLapPainter);
-//            ArtShowDialog<IDD_SHOWSECTORS>(&dlgShowSplit);
-
 	  }
-//  }
 
 	glPopMatrix(); // popping us out of map-coords space.
 

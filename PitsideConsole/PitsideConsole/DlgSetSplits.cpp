@@ -159,14 +159,6 @@ LRESULT CSetSplitsDlg::DlgProc
 		{
 			case IDC_SETSPLIT1:
 			{
-/*				  const TimePoint2D& p = lstPoints[iTime];
-				  const TimePoint2D& q = lstPoints[iTime+1];
-				  Vector2D v_Vector, v_Ortho;
-				  v_Vector.m_v[0] = q.flX-p.flX, q.flY-p.flY;
-				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
-				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
-				  v_Ortho = FLIP(pSF[x].m_pt1);		*/
-
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT1, szTempSplit, hWnd);
 				  
@@ -236,7 +228,7 @@ LRESULT CSetSplitsDlg::DlgProc
 					m_sfLapOpts->m_SplitPoints[x].m_sfSplitTime = 0.0f;
 				}
 				StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
-				for (int x=0; x < 3; x++)
+				for (int x=0; x < 50; x++)
 				{
 				  pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 				  pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
@@ -269,8 +261,10 @@ void CSetSplitsDlg::GetSplitPoint(int x, SplitPoints szTempSplit, HWND hWnd)
 	StartFinish* pSF = (StartFinish*)m_pLap->GetLap()->GetSF();
 	if (szTempSplit.m_sfSectorTime >= m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime && m_sfLapOpts->m_SplitPoints[x-1].m_sfSectorTime)
 	{
-		m_sfLapOpts->m_SplitPoints[x] = szTempSplit;		//	Assignt the highlighted time into the latest SF data
-		m_sfLapOpts->m_SplitPoints[x].m_sfSplitTime = szTempSplit.m_sfSplitTime-m_sfLapOpts->m_SplitPoints[x-1].m_sfSplitTime;		//	Compute and load the Time Difference for this sector into the SF data
+		//	Assign the highlighted time into the latest SF data
+		m_sfLapOpts->m_SplitPoints[x] = szTempSplit;
+		//	Compute and load the Time Difference for this sector into the SF data
+		m_sfLapOpts->m_SplitPoints[x].m_sfSplitTime = szTempSplit.m_sfSplitTime - m_sfLapOpts->m_SplitPoints[x-1].m_sfSplitTime;
 		pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 		pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 	}
