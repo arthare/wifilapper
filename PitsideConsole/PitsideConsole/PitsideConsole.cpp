@@ -1777,8 +1777,8 @@ void UpdateSectors()
 	const IDataChannel* pReferenceDistance = m_pReferenceLap->GetChannel(DATA_CHANNEL_DISTANCE);
 
 	//	Strings for building the Sector Times output for each lap
-	TCHAR szLapString[512][50] = {NULL};
-	TCHAR szString[512][50] = {NULL};
+	TCHAR szLapString[50][512] = {NULL};
+	TCHAR szString[50][512] = {NULL};
 
 //	Lap Loop
 	//	Now loop through the lap list, compute the sector times and store them in SplitPoints[]
@@ -1789,6 +1789,9 @@ void UpdateSectors()
 		
 		//	Get the points from the Selected Lap for computation
 		const vector<TimePoint2D>& lstLapPoints = pLap->GetPoints();
+
+		pLap->GetString(szLapString[w], NUMCHARS(szLapString)); //   Timestamp of this lap, to used to name it
+		swprintf(szLapString[w], 9, szLapString[w]);	//	Truncate the Timestamp string to only the time
 
 		const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
 
@@ -1876,7 +1879,7 @@ void UpdateSectors()
 //	End Sector Loop
 
 		//	Now that we have computed the Sector Time, let's Display them
-		swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"Lap %i:\t%s", w + 1, szString[w]);
+		swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"%s %s", szLapString[w], szString[w]);
 		SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
 		//	Increment "w" counter and do the next lap
 		w++;
