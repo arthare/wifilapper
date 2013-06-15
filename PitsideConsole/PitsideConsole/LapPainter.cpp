@@ -2,7 +2,6 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
-//#include "DlgShowSplits.h"
 
 struct HIGHLIGHTDATA
 {
@@ -320,8 +319,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			glLineWidth(1);      
 			dCenterOvalX = 0.0f;	//	Center oval at the origin
 			dCenterOvalY = 0.0f;
-//			dCenterOvalX = (dMaxX - dMinX) / 2.0f + dMinX;
-//			dCenterOvalY = (mapMaxY[*i] - mapMinY[*i]) / 2.0f + mapMinY[*i];
 			//		If this is for drawing the Traction Circle, let's draw a circle as well (Oval really)
 			if (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL)
 			{
@@ -431,7 +428,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         float dTimeToHighlight = -1;
         const vector<DataPoint>& lstPointsX = pDataX->GetData();
         const vector<DataPoint>& lstPointsY = pDataY->GetData();
-//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
 		float r;
 		float g;
 		float b;
@@ -628,13 +624,7 @@ void CLapPainter::MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, 
 	  }
 }
 */
-/*
-struct MAPHIGHLIGHT
-{
-  const CExtendedLap* pLap;
-  POINT pt;
-};
-*/
+
 //  Draws an oval centered at (x_center, y_center) and is is bound inside a rectangle whose width is w and height is h.
 void CLapPainter::drawOval (float x_center, float y_center, float w, float h)
 {
@@ -894,8 +884,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 */
 
 		  // we also want to draw a highlighted square
-//		  DrawGLFilledSquare(pt1.m_v[0], pt1.m_v[1], 3);
-		  glPointSize(10.0f);
+		  glPointSize(5.0f);
 		  glBegin(GL_POINT);
 
 		  glVertex2d(pt1.m_v[0], pt1.m_v[1]);

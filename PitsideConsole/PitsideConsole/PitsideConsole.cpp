@@ -39,7 +39,6 @@
 #include "DlgProgress.h"
 #include "DlgWarning.h"
 #include "DlgSetSplits.h"
-#include "DlgShowSplits.h"
 #include "jpge.h"
 
 //#pragma comment(lib,"sdl.lib")
@@ -1845,7 +1844,6 @@ void UpdateSectors()
 								swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
 								iLapStartTime = dEstimatedElapsedTime;
 								dLastLapDist = dSectorDistance;
-								b_SectorFlag = true;
 								break;
 							}
 						}
@@ -1858,7 +1856,6 @@ void UpdateSectors()
 						swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
 						iLapStartTime = iLastTime;
 						dLastLapDist = dSectorDistance;
-						b_SectorFlag = true;
 						break;
 					}
 				}
@@ -1871,7 +1868,6 @@ void UpdateSectors()
 					swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
 					iLapStartTime = iLastTime;
 					dLastLapDist = dSectorDistance;
-					b_SectorFlag = true;
 					break;
 				}
 			}

@@ -96,9 +96,6 @@
     <ClInclude Include="jpge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DlgShowSplits.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -165,9 +162,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="jpge.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DlgShowSplits.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
