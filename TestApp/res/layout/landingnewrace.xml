@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView  xmlns:android="http://schemas.android.com/apk/res/android">
+
+<!-- 
+<LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout01" android:layout_width="fill_parent" android:layout_height="wrap_content">
+</LinearLayout>
+
+<LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout02" android:layout_width="fill_parent" android:layout_height="wrap_content">
+</LinearLayout>
+<LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout03" android:layout_width="fill_parent" android:layout_height="wrap_content">
+	</LinearLayout>
+
+
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="wrap_content">
+	<TableLayout
+	    android:id="@+id/tableLayout1"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content" >
+	
+	    <TableRow android:id="@+id/rowSSID" android:layout_width="wrap_content" android:layout_height="wrap_content" >
+			<TextView android:text="Wifi SSID" android:id="@+id/lblSSID" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+			<Spinner android:id="@+id/spnSSID" android:layout_width="0dip" android:layout_height="wrap_content" android:layout_weight="1"></Spinner>
+	    </TableRow>
+	    
+		<TableRow android:id="@+id/tableRow2" android:layout_width="wrap_content" android:layout_height="wrap_content" >
+
+			<TextView android:id="@+id/lblPitsideIP" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_vertical" android:text="Pitside IP Address" />
+			
+			<LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout01" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_weight="1" >
+		    	<EditText android:text="192.168.1.100" android:id="@+id/txtIP" android:layout_width="0dip" android:layout_height="wrap_content" android:layout_weight="1" android:inputType="text" android:hint="input IP address here"></EditText>
+				<Button android:id="@+id/btnAutoIP" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Auto find IPs"></Button>
+			</LinearLayout>
+		</TableRow>
+	    
+		<TableRow android:id="@+id/tableRow3" android:layout_width="wrap_content" android:layout_height="wrap_content" >
+			<TextView android:text="Race Name" android:id="@+id/lblRaceName" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+	    	<EditText android:text="race" android:id="@+id/txtRaceName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:inputType="text" android:layout_weight="1">
+			    <requestFocus />
+			</EditText>
+	    </TableRow>
+		<TableRow android:id="@+id/tableRow3" android:layout_width="wrap_content" android:layout_height="wrap_content" >
+			<TextView android:text="Race Mode" android:id="@+id/lblRaceMode" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+
+			<RadioGroup
+			    android:id="@+id/rgRaceMode"
+			    android:layout_width="wrap_content"
+			    android:layout_height="wrap_content"
+			    android:orientation="horizontal" >
+
+			    <RadioButton
+			        android:id="@+id/rbLapping"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:checked="true"
+			        android:text="Lapping" />
+
+			    <RadioButton
+			        android:id="@+id/rbPointToPoint"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:text="Point-to-Point" />
+			</RadioGroup>
+
+	    </TableRow>
+		<TableRow android:visibility="gone" android:id="@+id/rowFinishCount" android:layout_width="wrap_content" android:layout_height="wrap_content" >
+			<TextView android:text="Finish Count" android:id="@+id/lblRaceMode" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+
+			<EditText
+			    android:id="@+id/edtFinishCount"
+			    android:layout_width="wrap_content"
+			    android:layout_height="wrap_content"
+			    android:inputType="number"
+			    android:layout_weight="1" >
+			</EditText>
+
+			<Button
+			    android:id="@+id/btnFinishHelp"
+			    android:layout_width="wrap_content"
+			    android:layout_height="wrap_content"
+			    android:text="Help" />
+
+	    </TableRow>
+	</TableLayout>
+	<Button android:text="Start Race" android:id="@+id/btnApply" android:layout_width="fill_parent" android:layout_height="wrap_content"></Button>
+</LinearLayout>
+</ScrollView>

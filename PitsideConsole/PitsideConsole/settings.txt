@@ -1,0 +1,11 @@
+1
+80
+1
+1
+0
+order of settings:
+-whether to run the http server (0 = don't.  1 = do)
+-http server port (port 80 makes for easiest use.  big port numbers like 63938 are less likely to be blocked)
+-Velocity Units (0 = KMH, 1 = MPH, 2 = M/S)
+-Draw graph points or lines (0 = points, 1 = lines)
+-Graph plot color scheme (0 = grey background, 1 = black background)

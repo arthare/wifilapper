@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">Hello World, ApiDemos!</string>
+    <string name="app_name">WifiLapper Full</string>
+    <string name="app_name_lite">WifiLapper Lite</string>
+    <string name="app_name_tablet">WifiLapper Tablet</string>
+    <string name="quit">Exiting</string>
+    <string name="really_quit">Do you really want to exit?  Your lapping session will end</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string-array name="ioiopins">
+        <item>31</item>
+        <item>32</item>
+        <item>33</item>
+        <item>34</item>
+        <item>35</item>
+        <item>36</item>
+        <item>37</item>
+        <item>38</item>
+        <item>39</item>
+    </string-array>
+    
+    <string-array name="ioiocustomnames">
+        <item>Use Pin #</item>
+        <item>Fuel Level</item>
+        <item>RPM</item>
+        <item>Throttle Position</item>
+        <item>Brake Position</item>
+        <item>Clutch Position</item>
+        <item>LF Wheelspeed</item>
+        <item>RF Wheelspeed</item>
+        <item>LR Wheelspeed</item>
+        <item>RR Wheelspeed</item>
+        <item>Exhaust Temperature</item>
+        <item>LF Tire Temperature</item>
+        <item>RF Tire Temperature</item>
+        <item>LR Tire Temperature</item>
+        <item>RR Tire Temperature</item>
+        <item>LF Brake Temperature</item>
+        <item>RF Brake Temperature</item>
+        <item>LR Brake Temperature</item>
+        <item>RR Brake Temperature</item>
+        <item>Oil Pressure</item>
+        <item>Oil Temperature</item>
+        <item>Coolant Temperature</item>
+        <item>Alternator Voltage</item>
+    </string-array>
+</resources>

@@ -1,0 +1,14 @@
+As of July 9th, 2012...
+
+-Using eclipse 3.7.2. (M20120208-0800) (others may work, but that's what I use)
+-Android SDK version 16.0.1.v201112150204-238534 (others may work, but that's what I use)
+-File->switch workspace->(gitroot)\wifilapper\
+	Eclipse will restart
+-Right-click in the project explorer eclipse window->import...->general->"existing projects" into workspace
+	select "root directory", set it to (gitroot)\wifilapper\
+	this should allow you to import IOIOLib, TestApp (the core WifiLapper code), WifiLapperFull, WifiLapperTablet, and WifiLapperLite
+-Go to each project, right-click->properties->java compiler, and set "compiler compliance" to 1.6.
+-Go to project->clean to make sure everything rebuilds
+-Everything should now build.  If not, fight with it, then email an updated copy of this doc to art.hare@gmail.com (or put it in the git branch, if I [Art] ever learn how...)
+-To change stuff in WifiLapper, make changes in TestApp
+-To run the app, right-click on WifiLapperLite/Full/Tablet, then choose "debug as"->"android application" and it should run on your phone or in the virtual device

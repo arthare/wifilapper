@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.artsoft.wifilapperlite"
+      android:versionCode="34"
+      android:versionName="1.34">
+    <supports-screens  android:smallScreens="true"/>
+	<supports-screens  android:normalScreens="true"/>
+	<supports-screens android:largeScreens="true"/>
+	<supports-screens android:anyDensity="true"/>
+	<supports-screens android:resizeable="true" android:anyDensity="true" />
+    <uses-sdk android:minSdkVersion="8" 
+          android:targetSdkVersion="8"/>
+    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.SEND_SMS"/>
+    <application android:icon="@drawable/icon" android:label="@string/app_name_lite" android:debuggable="true">
+        <activity android:name="com.artsoft.wifilapper.LandingScreen"
+            	  android:launchMode="singleTask"
+                  android:label="@string/app_name_lite"
+                  android:screenOrientation="landscape"
+                  android:configChanges="orientation|keyboard|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="com.artsoft.wifilapper.ConfigureGPSActivity" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape" 
+          />
+        <activity android:name="com.artsoft.wifilapper.ConfigurePointToPoint" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape" 
+          />
+        <activity android:name="com.artsoft.wifilapper.ConfigureIOIOFilter" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape" 
+          />
+        <activity android:name="com.artsoft.wifilapper.ConfigureOBD2Activity" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape" 
+          />
+        <activity android:name="com.artsoft.wifilapper.ConfigureCommunications" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape" 
+          />
+        <activity android:name="com.artsoft.wifilapper.ConfigureIOIOActivity" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape" 
+          />
+        <activity android:name="com.artsoft.wifilapper.ConfigureAccelerometerActivity" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape" 
+          />
+		<activity android:name="com.artsoft.wifilapper.ComputerChooserActivity" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"
+          android:screenOrientation="landscape"
+          android:configChanges="orientation|keyboard|keyboardHidden"  />
+		<activity android:name="com.artsoft.wifilapper.LandingNewRace" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name="com.artsoft.wifilapper.LandingLoadRace" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name="com.artsoft.wifilapper.LandingSetSplits" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name="com.artsoft.wifilapper.LandingDBManage" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar"   />
+		<activity android:name="com.artsoft.wifilapper.LandingOptions" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name="com.artsoft.wifilapper.SummaryActivity" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name="com.artsoft.wifilapper.ApiDemos" android:label="@string/app_name"
+          android:theme="@android:style/Theme.NoTitleBar" 
+          android:launchMode="singleTask"
+          android:configChanges="orientation|keyboard|keyboardHidden" >
+            
+        </activity>
+		
+		<receiver android:name="com.artsoft.wifilapper.SMSReceiver"> 
+            <intent-filter> 
+                <action android:name=
+                    "android.provider.Telephony.SMS_RECEIVED" /> 
+            </intent-filter> 
+        </receiver>
+    </application>
+
+
+
+
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"></uses-permission>
+<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+<uses-permission android:name="android.permission.CHANGE_WIFI_STATE"></uses-permission>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
+<uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"></uses-permission>
+<uses-permission android:name="android.permission.CHANGE_COMPONENT_ENABLED_STATE"></uses-permission>
+
+<uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION"></uses-permission>
+<uses-permission android:name="android.permission.BLUETOOTH"></uses-permission>
+</manifest> 

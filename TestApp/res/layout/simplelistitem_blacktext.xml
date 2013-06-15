@@ -1,0 +1,8 @@
+<TextView 	android:text="@+id/TextView01" 
+ 			android:id="@+id/label" 
+ 			android:layout_width="fill_parent" 
+ 			android:layout_height="wrap_content" 
+ 			android:textSize="20sp"
+ 			android:textColor="#000000"
+ 			xmlns:android="http://schemas.android.com/apk/res/android">
+ </TextView>

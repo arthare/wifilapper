@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+	<TableLayout
+	    android:id="@+id/tableLayout1"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content" >
+	
+	    <TableRow
+	        android:id="@+id/rowSSID"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center_vertical" >
+
+			<TextView
+			    android:id="@+id/lblSSID"
+			    android:layout_width="wrap_content"
+			    android:layout_height="wrap_content"
+			    android:layout_gravity="center_vertical"
+			    android:text="Wifi SSID" >
+</TextView>
+			<Spinner android:id="@+id/spnSSID" android:layout_width="0dip" android:layout_height="wrap_content" android:layout_weight="1"></Spinner>
+	    </TableRow>
+	    
+		<TableRow android:id="@+id/tableRow2" android:layout_width="wrap_content" android:layout_height="wrap_content" >
+
+			<TextView android:id="@+id/lblPitsideIP" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_vertical" android:text="Pitside IP Address" />
+			
+			<LinearLayout android:orientation="horizontal" android:id="@+id/LinearLayout01" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_weight="1" >
+		    	<EditText android:text="192.168.1.100" android:id="@+id/txtIP" android:layout_width="0dip" android:layout_height="wrap_content" android:layout_weight="1" android:inputType="text" android:hint="input IP address here"></EditText>
+				<Button android:id="@+id/btnAutoIP" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Auto find IPs"></Button>
+			</LinearLayout>
+		</TableRow>
+	</TableLayout>
+	
+	<ListView
+	    android:id="@android:id/list"
+	    android:layout_width="fill_parent"
+	    android:layout_height="match_parent"
+	    android:layout_weight="1" >
+
+	</ListView>
+</LinearLayout>
+		

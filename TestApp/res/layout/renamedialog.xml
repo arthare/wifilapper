@@ -1,0 +1,22 @@
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/linearLayout1"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical" >
+
+        <EditText android:id="@+id/edtRename"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" >
+
+            <requestFocus />
+        </EditText>
+
+        <Button
+            android:id="@+id/btnApply"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Apply" />
+
+    </LinearLayout>

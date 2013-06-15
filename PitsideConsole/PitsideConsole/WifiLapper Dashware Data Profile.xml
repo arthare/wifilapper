@@ -1,0 +1,73 @@
+<DataProfile version="2" readOnly="False" startFinishDistanceThreshold="40" showDistanceThreshold="True" ignoreFirstLap="True" ignoreLastLap="True" lapTimeHoldSecs="5" isChaseCamData="False" isAimData="False" isDriftBoxData="False" sortByTime="False" autoSync="False" autoSyncOffset="0">
+  <HeaderLines>
+    <HeaderLineIndex>0</HeaderLineIndex>
+  </HeaderLines>
+  <DataStartLineIndex>3</DataStartLineIndex>
+  <DataValueSeparators>,;	</DataValueSeparators>
+  <UseEuroDecimalFormat>False</UseEuroDecimalFormat>
+  <FileLineMatchers />
+  <Calculators>
+    <SpeedConverter inputUnit="m/s" outputUnit="MPH">
+      <InputColumns>
+        <InputColumn>Velocity</InputColumn>
+      </InputColumns>
+      <OutputColumns>
+        <OutputColumn>Velocity-MPH</OutputColumn>
+      </OutputColumns>
+    </SpeedConverter>
+    <SpeedConverter inputUnit="m/s" outputUnit="KPH">
+      <InputColumns>
+        <InputColumn>Velocity</InputColumn>
+      </InputColumns>
+      <OutputColumns>
+        <OutputColumn>Velocity-KPH</OutputColumn>
+      </OutputColumns>
+    </SpeedConverter>
+    <SpeedConverter inputUnit="m/s" outputUnit="Knots">
+      <InputColumns>
+        <InputColumn>Velocity</InputColumn>
+      </InputColumns>
+      <OutputColumns>
+        <OutputColumn>Velociy-Kn</OutputColumn>
+      </OutputColumns>
+    </SpeedConverter>
+    <DegreesToCartesianConverter inputUnit="Degrees" outputUnit="Meters" algorithm="SphericalMercator">
+      <InputColumns>
+        <InputColumn>x</InputColumn>
+        <InputColumn>y</InputColumn>
+      </InputColumns>
+      <OutputColumns>
+        <OutputColumn>x-cart-m</OutputColumn>
+        <OutputColumn>y-cart-m</OutputColumn>
+      </OutputColumns>
+    </DegreesToCartesianConverter>
+    <DegreesToCartesianConverter inputUnit="Degrees" outputUnit="Feet" algorithm="SphericalMercator">
+      <InputColumns>
+        <InputColumn>x</InputColumn>
+        <InputColumn>y</InputColumn>
+      </InputColumns>
+      <OutputColumns>
+        <OutputColumn>x-cart-ft</OutputColumn>
+        <OutputColumn>y-cart-ft</OutputColumn>
+      </OutputColumns>
+    </DegreesToCartesianConverter>
+  </Calculators>
+  <ColumnMappings>
+    <ColumnMapping inputColumnText="Time" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="&lt;Required&gt;" dataType="Data Running Time, Seconds" />
+    <ColumnMapping inputColumnText="Velocity" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Velocity" dataType="Speed (m/s)" />
+    <ColumnMapping inputColumnText="X accel" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="G-Forces" dataType="Lateral Gs" />
+    <ColumnMapping inputColumnText="Y accel" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="G-Forces" dataType="Acceleration Gs" />
+    <ColumnMapping inputColumnText="Calculated engine load value" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Engine, Transmission" dataType="Engine Load" />
+    <ColumnMapping inputColumnText="Engine coolant temperature" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Engine, Transmission" dataType="Water Temperature (C)" />
+    <ColumnMapping inputColumnText="Throttle position" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Steering, Throttle, Brakes" dataType="Throttle Position" />
+    <ColumnMapping inputColumnText="x" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Positional" dataType="Longitude / X Position (Degrees)" />
+    <ColumnMapping inputColumnText="y" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Positional" dataType="Latitude / Y Position (Degrees)" />
+    <ColumnMapping inputColumnText="Velocity-MPH" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Velocity" dataType="Speed (MPH)" />
+    <ColumnMapping inputColumnText="Velociy-Kn" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Velocity" dataType="Speed (Knots)" />
+    <ColumnMapping inputColumnText="x-cart-m" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Positional" dataType="Longitude / X Position (Meters)" />
+    <ColumnMapping inputColumnText="y-cart-m" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Positional" dataType="Latitude / Y Position (Meters)" />
+    <ColumnMapping inputColumnText="x-cart-ft" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Positional" dataType="Longitude / X Position (Feet)" />
+    <ColumnMapping inputColumnText="y-cart-ft" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Positional" dataType="Latitude / Y Position (Feet)" />
+    <ColumnMapping inputColumnText="Velocity-KPH" inputColumnMatchMode="ExactMatch" inputColumnIgnoreCase="False" dataCategory="Velocity" dataType="Speed (KPH)" />
+  </ColumnMappings>
+</DataProfile>

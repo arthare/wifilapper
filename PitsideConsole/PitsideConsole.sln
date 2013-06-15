@@ -1,0 +1,63 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PitsideConsole", "PitsideConsole\PitsideConsole.vcxproj", "{5091EEA3-E98B-4748-BF4D-6B9D281B7931}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B} = {D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArtLib", "ArtLib\ArtLib.vcxproj", "{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}"
+EndProject
+Project("{911E67C6-3D85-4FCE-B560-20A9C3E3FF48}") = "PitsideConsole_", "Release\PitsideConsole_.exe", "{F69D9218-3460-4995-99F5-393C45152E4F}"
+	ProjectSection(DebuggerProjectSystem) = preProject
+		PortSupplier = 00000000-0000-0000-0000-000000000000
+		Executable = E:\gitroot\wifilapper\PitsideConsole\Release\PitsideConsole_.exe
+		RemoteMachine = ARTNEW
+		StartingDirectory = E:\gitroot\wifilapper\PitsideConsole\Release
+		Environment = Default
+		LaunchingEngine = 00000000-0000-0000-0000-000000000000
+		LaunchSQLEngine = No
+		AttachLaunchAction = No
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Debug|x86 = Debug|x86
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Debug|Win32.Build.0 = Debug|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Debug|x86.ActiveCfg = Debug|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Release|Win32.ActiveCfg = Release|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Release|Win32.Build.0 = Release|Win32
+		{5091EEA3-E98B-4748-BF4D-6B9D281B7931}.Release|x86.ActiveCfg = Release|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Debug|Win32.Build.0 = Debug|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Debug|x86.ActiveCfg = Debug|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Release|Win32.ActiveCfg = Release|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Release|Win32.Build.0 = Release|Win32
+		{D18EBEAA-1DDF-4898-8BC1-286BFB5BFA7B}.Release|x86.ActiveCfg = Release|Win32
+		{F69D9218-3460-4995-99F5-393C45152E4F}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{F69D9218-3460-4995-99F5-393C45152E4F}.Debug|Win32.ActiveCfg = Debug|x86
+		{F69D9218-3460-4995-99F5-393C45152E4F}.Debug|x86.ActiveCfg = Debug|x86
+		{F69D9218-3460-4995-99F5-393C45152E4F}.Release|Mixed Platforms.ActiveCfg = Debug|x86
+		{F69D9218-3460-4995-99F5-393C45152E4F}.Release|Win32.ActiveCfg = Debug|x86
+		{F69D9218-3460-4995-99F5-393C45152E4F}.Release|x86.ActiveCfg = Debug|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
