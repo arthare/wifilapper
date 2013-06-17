@@ -1766,7 +1766,7 @@ void UpdateSectors()
 	if (m_pReferenceLap != NULL)
 		{
 		const int cSectors = 7;	//	The maximum number of Sectors to display, gated by display area
-		const int MaxLaps = 7;	//	Maximum number of laps (including Ref Lap) to display
+		const int MaxLaps = 7;	//	Maximum number of laps (not including Ref Lap) to display
 		int w=0;	//	String variable counter for Sector display
 
 		//	Get the list of highlighted lap time ID's
@@ -1785,16 +1785,18 @@ void UpdateSectors()
 
 	//	Lap Loop
 		//	Now loop through the lap list, compute the sector times and store them in SplitPoints[]
-		for(set<LPARAM>::iterator i = setSelected.begin(); i != setSelected.end(); i++)
+//		for(set<LPARAM>::iterator i = setSelected.begin(); i != setSelected.end(); i++)
+		for(vector<CExtendedLap*>::iterator i = lstLaps.begin(); i != lstLaps.end(); i++)
 		{
 			//	Get the data points for this lap, and compare the sector times to the Reference Lap (m_pReferenceLap)
-			CExtendedLap* pLap = (CExtendedLap*)*i;
+//			CExtendedLap* pLap = (CExtendedLap*)*i;
+			CExtendedLap* pLap = *i;
 		
 			//	Get the points from the Selected Lap for computation
 			const vector<TimePoint2D>& lstLapPoints = pLap->GetPoints();
 
 			pLap->GetString(szLapString[w], NUMCHARS(szLapString)); //   Timestamp of this lap, to used to name it
-			swprintf(szLapString[w], 9, szLapString[w]);	//	Truncate the Timestamp string to only the time
+//			swprintf(szLapString[w], 9, szLapString[w]);	//	Truncate the Timestamp string to only the time
 
 			const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
 
@@ -1882,8 +1884,16 @@ void UpdateSectors()
 	//	End Sector Loop
 
 			//	Now that we have computed the Sector Time, let's Display them
-			swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"%s %s", szLapString[w], szString[w]);
-			SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
+			if (w == lstLaps.size() - 1)
+			{
+				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"\t\tRef Lap: \t%s", szString[w]);
+				SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
+			}
+			else
+			{
+				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"%s %s", szLapString[w], szString[w]);
+				SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
+			}
 			//	Increment "w" counter and do the next lap
 			w++;
 		}
