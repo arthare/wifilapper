@@ -868,29 +868,11 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		  Vector2D pt1 = pSF[x].GetPt1();
 		  Vector2D pt2 = pSF[x].GetPt2();
 		  glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
-		  glBegin(GL_LINE_STRIP);
 		  glColor3d(1.0,0.0,0.0);	// Red for S/F line color
-		  glVertex2f(pt1.m_v[0],pt1.m_v[1]);
-		  glVertex2f(pt2.m_v[0],pt2.m_v[1]);
-		  glEnd();
-
-/*				  const TimePoint2D& p = lstPoints[iTime];
-				  const TimePoint2D& q = lstPoints[iTime+1];
-				  Vector2D v_Vector, v_Ortho;
-				  v_Vector.m_v[0] = q.flX-p.flX, q.flY-p.flY;
-				  pSF[x].m_pt1 = V2D(p.flX,p.flX);
-				  pSF[x].m_pt2 = V2D(q.flX,q.flX);
-				  v_Ortho = FLIP(pSF[x].m_pt1);		
-*/
-
-		  // we also want to draw a highlighted square
-		  glPointSize(5.0f);
-		  glBegin(GL_POINT);
-
-		  glVertex2d(pt1.m_v[0], pt1.m_v[1]);
-
-		  glEnd();
-
+		  float w, h;
+		  w = 0.00012f;
+		  h = 0.00012f;
+		  drawOval (pt1.m_v[0], pt1.m_v[1], w, h);	//	Draw circle marker at each Split Point
 
 		  glColor3d(1.0,0.0,0.0);
 		  LPCSTR lpszText = "";

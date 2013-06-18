@@ -1796,7 +1796,14 @@ void UpdateSectors()
 			const vector<TimePoint2D>& lstLapPoints = pLap->GetPoints();
 
 			pLap->GetString(szLapString[w], NUMCHARS(szLapString)); //   Timestamp of this lap, to used to name it
-//			swprintf(szLapString[w], 9, szLapString[w]);	//	Truncate the Timestamp string to only the time
+			if (_tcslen(szLapString[w]) <= 30)
+			{
+				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"%s\t", szLapString[w]);	//	Add a TAB mark for formatting
+			}
+			else
+			{
+				swprintf(szLapString[w], 39, szLapString[w]);	//	Truncate the Timestamp string for formatting
+			}
 
 			const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
 
@@ -1884,7 +1891,7 @@ void UpdateSectors()
 	//	End Sector Loop
 
 			//	Now that we have computed the Sector Time, let's Display them
-			if (w == lstLaps.size() - 1)
+			if (w == lstLaps.size() - 1 && m_fShowReferenceLap)
 			{
 				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"\t\tRef Lap: \t%s", szString[w]);
 				SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
