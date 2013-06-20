@@ -364,8 +364,30 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			char szText[256];
 			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		
-			DrawText(flLine, mapMinY[*i]-12, szText);
+//			DrawText(flLine, mapMinY[*i]-12, szText);
+			DrawText(flLine, mapMinY[*i], szText);
 		}
+		// now draw the Split Point lines
+		for(int z = 0; z < 7; z++ && sfLapOpts.fDrawSplitPoints)
+		{
+			CExtendedLap* pLap = lstLaps[lstLaps.size() - 1];	//	Last lap is the Reference Lap
+			const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
+			const double dDistance = pDistance->GetValue(sfLapOpts.m_SplitPoints[z].m_sfSectorTime) - pDistance->GetValue(sfLapOpts.m_SplitPoints[0].m_sfSectorTime);
+			double flLine = dDistance;
+			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
+			glLineWidth(1);      
+			glBegin(GL_LINE_STRIP);
+			glVertex3f(flLine,mapMinY[*i],0);
+			glVertex3f(flLine,mapMaxY[*i],0);
+			glEnd();
+
+			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
+			char szText[256] = {NULL};
+			sprintf(szText, "S%i",z);
+		
+			DrawText(flLine, mapMinY[*i], szText);
+		}
+
 
 	}
 
@@ -869,10 +891,26 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		  Vector2D pt2 = pSF[x].GetPt2();
 		  glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
 		  glColor3d(1.0,0.0,0.0);	// Red for S/F line color
-		  float w, h;
-		  w = 0.00012f;
-		  h = 0.00012f;
-		  drawOval (pt1.m_v[0], pt1.m_v[1], w, h);	//	Draw circle marker at each Split Point
+		  Vector2D vD;
+
+		  for(int z = 0; z < pReferenceLap->m_lstPoints.size(); z++)
+		  {
+			  //	Find the point in the lap where the Split Point is and get the vector			
+			  if (pt1.m_v[0] == pReferenceLap->m_lstPoints[z].flX && pt1.m_v[1] == pReferenceLap->m_lstPoints[z].flY)
+			  {
+				vD = V2D(pReferenceLap->m_lstPoints[z].flX, pReferenceLap->m_lstPoints[z].flY) - V2D(pReferenceLap->m_lstPoints[z+1].flX, pReferenceLap->m_lstPoints[z+1].flY);
+				break;
+			  }
+		  }
+		  //	We found our point and have the difference vector. Now let's rotate it 90 degrees.
+		  Vector2D vPerp = vD.RotateAboutOrigin(PI/2);
+		  //	Now let's create the vertices for plotting the split point line
+		  pt2 = pt2 + vPerp;
+		  pt1 = pt1 - vPerp;
+		  glBegin(GL_LINE_STRIP);
+		  glVertex2f(pt1.m_v[0], pt1.m_v[1]);
+		  glVertex2f(pt2.m_v[0], pt2.m_v[1]);
+		  glEnd();
 
 		  glColor3d(1.0,0.0,0.0);
 		  LPCSTR lpszText = "";
@@ -883,8 +921,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		  if(x == 4) lpszText = "S4";	// Segment 1
 		  if(x == 5) lpszText = "S5";	// Segment 2
 		  if(x == 6) lpszText = "S6";	// Segment 2
-		  DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	
-//		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Only draw text at one end of the line
+		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Only draw text at one end of the line
 		}
 	  }
 
