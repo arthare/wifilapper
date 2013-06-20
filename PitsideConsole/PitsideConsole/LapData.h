@@ -192,8 +192,9 @@ private:
   const ILap* m_pLap;
   SYSTEMTIME m_tmRecv; // when was this thing constructed?
   SYSTEMTIME m_tmStart; // when was this thing started on-track?
-  vector<TimePoint2D> m_lstPoints;
-  
+public:
+  vector<TimePoint2D> m_lstPoints;	//	Made public by KDJ
+private:  
   bool m_fComputeTimeSlip; // time-slip is the most expensive data channel, so let's allow the caller to choose not to compute it
 
   mutable map<DATA_CHANNEL,const IDataChannel*> m_mapChannels; // we own these pointers.  We get them allocated in ComputeLapData, and it is our responsibility to get them de-allocated

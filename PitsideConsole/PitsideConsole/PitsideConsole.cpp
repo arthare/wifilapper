@@ -1785,11 +1785,9 @@ void UpdateSectors()
 
 	//	Lap Loop
 		//	Now loop through the lap list, compute the sector times and store them in SplitPoints[]
-//		for(set<LPARAM>::iterator i = setSelected.begin(); i != setSelected.end(); i++)
 		for(vector<CExtendedLap*>::iterator i = lstLaps.begin(); i != lstLaps.end(); i++)
 		{
 			//	Get the data points for this lap, and compare the sector times to the Reference Lap (m_pReferenceLap)
-//			CExtendedLap* pLap = (CExtendedLap*)*i;
 			CExtendedLap* pLap = *i;
 		
 			//	Get the points from the Selected Lap for computation
@@ -1831,12 +1829,7 @@ void UpdateSectors()
 					TimePoint2D pLapPoint = lstLapPoints[x];
 					// this lap's time at {dDistance} was {iElapsedTime}.
 					// we now need to estimate what the lap time at {dDistance} was, and then we can get our sector time
-
-					int iLapCheckStart = 1; 
-					/* what index should we start at?  this gets changed each loop so that we always 
-					start near the point that is most likely to be near the current m_lstPoints point */
 					const int cLapSize = lstLapPoints.size();
-
 					if(dDistance >= dSectorDistance && dLastLapDist <= dSectorDistance)
 					{
 						// we have found two points straddling the distance we're curious about, dSectorDistance
@@ -1959,23 +1952,12 @@ void UpdateValues()
 						// 951turbo: do more math here like averages, median, etc.
 						flAvg = fAverage(eChannel, pChannel, flVal);
 						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
-						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
+						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue || flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
 						{
 							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.
 							GetDataChannelName(eChannel,m_szWarningChannel,NUMCHARS(m_szWarningChannel));
 							//	Build the failing channels string for output
 							swprintf(m_szYString,NUMCHARS(m_szYString),L"%s\n%s",m_szYString, m_szWarningChannel);
-
-						}
-						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
-						{
-							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.
-							GetDataChannelName(eChannel,m_szWarningChannel,NUMCHARS(m_szWarningChannel));
-							//	Build the failing channels string for output
-							swprintf(m_szYString,NUMCHARS(m_szYString),L"%s\n%s",m_szYString, m_szWarningChannel);
-						}
-						else
-						{
 						}
 					  }
 					  else
@@ -1997,7 +1979,7 @@ void UpdateValues()
 					//	Now assemble the string to display (max of 5)
 					if (w < cLabels)
 					{
-						swprintf(szLabel[w],NUMCHARS(szLabel[w]),L"%s: Min: %S, Max: %S, Mean: %3.1f",szChannelName,szMin,szMax,flAvg);
+						swprintf(szLabel[w],NUMCHARS(szLabel[w]),L"%s: Min: %S, Max: %S, Avg: %3.1f",szChannelName,szMin,szMax,flAvg);
 						w++;	//	Increment Value string counter
 					}
 					break;
