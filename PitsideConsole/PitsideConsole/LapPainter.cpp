@@ -310,6 +310,29 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	if (sfLapOpts.iZoomLevels != 0)
 	{
 	}
+	else if (sfLapOpts.fDrawSplitPoints)
+	{
+		// now draw the Split Point lines
+		for(int z = 0; z < 7; z++)
+		{
+			CExtendedLap* pLap = lstLaps[lstLaps.size() - 1];	//	Last lap is the Reference Lap
+			const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
+			const double dDistance = pDistance->GetValue(sfLapOpts.m_SplitPoints[z].m_sfSectorTime) - pDistance->GetValue(sfLapOpts.m_SplitPoints[0].m_sfSectorTime);
+			double flLine = dDistance;
+			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
+			glLineWidth(1);      
+			glBegin(GL_LINE_STRIP);
+			glVertex3f(flLine,mapMinY[*i],0);
+			glVertex3f(flLine,mapMaxY[*i],0);
+			glEnd();
+
+			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
+			char szText[256] = {NULL};
+			sprintf(szText, "S%i",z);
+		
+			DrawText(flLine, mapMinY[*i], szText);
+		}
+	}
 	else
 	{
 		// first draw the starting guideline
@@ -364,31 +387,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			char szText[256];
 			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
 		
-//			DrawText(flLine, mapMinY[*i]-12, szText);
 			DrawText(flLine, mapMinY[*i], szText);
 		}
-		// now draw the Split Point lines
-		for(int z = 0; z < 7; z++ && sfLapOpts.fDrawSplitPoints)
-		{
-			CExtendedLap* pLap = lstLaps[lstLaps.size() - 1];	//	Last lap is the Reference Lap
-			const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
-			const double dDistance = pDistance->GetValue(sfLapOpts.m_SplitPoints[z].m_sfSectorTime) - pDistance->GetValue(sfLapOpts.m_SplitPoints[0].m_sfSectorTime);
-			double flLine = dDistance;
-			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
-			glLineWidth(1);      
-			glBegin(GL_LINE_STRIP);
-			glVertex3f(flLine,mapMinY[*i],0);
-			glVertex3f(flLine,mapMaxY[*i],0);
-			glEnd();
-
-			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
-			char szText[256] = {NULL};
-			sprintf(szText, "S%i",z);
-		
-			DrawText(flLine, mapMinY[*i], szText);
-		}
-
-
 	}
 
 //		Set up the non-zoomed/panned view for the map
