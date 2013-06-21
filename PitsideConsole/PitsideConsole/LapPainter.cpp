@@ -310,7 +310,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	if (sfLapOpts.iZoomLevels != 0)
 	{
 	}
-	else if (sfLapOpts.fDrawSplitPoints)
+	else if (sfLapOpts.fDrawSplitPoints)	//	Draw Split Points if they are selected
 	{
 		// now draw the Split Point lines
 		for(int z = 0; z < 7; z++)
@@ -329,11 +329,11 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
 			char szText[256] = {NULL};
 			sprintf(szText, "S%i",z);
-		
+
 			DrawText(flLine, mapMinY[*i], szText);
 		}
 	}
-	else
+	else	//	Draw the starndard markers by default
 	{
 		// first draw the starting guideline
 		{
@@ -371,7 +371,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			LineColor();	//	Pick guideline color, based upon chosen color scheme
 			char szText[256];
 			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-			DrawText(flLine, mapMinY[*i]-12, szText);
+			DrawText(flLine, mapMinY[*i], szText);
 		}
 		// now draw the rest of them
 		for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
@@ -574,7 +574,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			char szText[256];
 			sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
-			DrawText(100.0,(x+1)*GetWindowFontSize()+12,szText);	// <-- draws the text from the bottom of the window, working upwards
+			DrawText(100.0,(x+2)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
 
 			// we also want to draw a highlighted square
 			DrawGLFilledSquare(ptWindow.x, ptWindow.y, 3);	// <-- draws the stupid little box at ptWindow.x.
