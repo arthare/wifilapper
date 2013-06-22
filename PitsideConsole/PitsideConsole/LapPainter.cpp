@@ -310,7 +310,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	if (sfLapOpts.iZoomLevels != 0)
 	{
 	}
-	else if (sfLapOpts.fDrawSplitPoints)	//	Draw Split Points if they are selected
+	else if (sfLapOpts.fDrawSplitPoints && eX == DATA_CHANNEL_DISTANCE)	//	Draw Split Points if they are selected
 	{
 		// now draw the Split Point lines
 		for(int z = 0; z < 7; z++)
