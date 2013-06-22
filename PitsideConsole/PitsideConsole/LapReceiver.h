@@ -109,6 +109,13 @@ struct V2InputLapRaw
 	TimePoint2D rgPoints[1];
 };
 
+//	CDataChannelFilter is a functino to allow for data transformations inputed by the user - KDJ
+class CDataChannelFilter
+{
+public:
+  virtual float ApplyTo(float flValue) const = 0;
+};
+
 class IDataChannel
 {
 public:
@@ -137,6 +144,7 @@ public:
   // it also sorts the vector
   virtual void Lock() = 0;
   virtual bool IsLocked() const = 0;
+  virtual CDataChannelFilter* m_pFilter() = 0;	//	Added by KDJ
 };
 class CDataChannel : public IDataChannel
 {
@@ -160,6 +168,7 @@ public:
   float GetMax() const override;
   int GetEndTimeMs() const override;
   int GetStartTimeMs() const override;
+  CDataChannelFilter* m_pFilter() override;	//	Added by KDJ
 
   const vector<DataPoint>& GetData() const override {return lstData;}
 
@@ -399,3 +408,16 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps);
 
 // fills an ILapReceiver from an SQLite database
 void LoadFromSQLite(LPCTSTR lpszSQL, int iRaceId, ILapReceiver* pRecv);
+
+
+class PassThroughFilter : public CDataChannelFilter
+{
+public:
+  virtual float ApplyTo(float flValue) const override {return flValue;}
+};
+
+class DoublerFilter : public CDataChannelFilter // for example
+{
+public:
+  virtual float ApplyTo(float flValue) const override {return flValue*2;}
+};

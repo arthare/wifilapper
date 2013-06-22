@@ -315,22 +315,25 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		// now draw the Split Point lines
 		for(int z = 0; z < 7; z++)
 		{
-			CExtendedLap* pLap = lstLaps[lstLaps.size() - 1];	//	Last lap is the Reference Lap
-			const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
-			const double dDistance = pDistance->GetValue(sfLapOpts.m_SplitPoints[z].m_sfSectorTime) - pDistance->GetValue(sfLapOpts.m_SplitPoints[0].m_sfSectorTime);
-			double flLine = dDistance;
-			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
-			glLineWidth(1);      
-			glBegin(GL_LINE_STRIP);
-			glVertex3f(flLine,mapMinY[*i],0);
-			glVertex3f(flLine,mapMaxY[*i],0);
-			glEnd();
+			if (sfLapOpts.m_SplitPoints[z].m_sfXPoint != 0.0f)
+			{
+				CExtendedLap* pLap = lstLaps[lstLaps.size() - 1];	//	Last lap is the Reference Lap
+				const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
+				const double dDistance = pDistance->GetValue(sfLapOpts.m_SplitPoints[z].m_sfSectorTime) - pDistance->GetValue(sfLapOpts.m_SplitPoints[0].m_sfSectorTime);
+				double flLine = dDistance;
+				glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
+				glLineWidth(1);      
+				glBegin(GL_LINE_STRIP);
+				glVertex3f(flLine,mapMinY[*i],0);
+				glVertex3f(flLine,mapMaxY[*i],0);
+				glEnd();
 
-			glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
-			char szText[256] = {NULL};
-			sprintf(szText, "S%i",z);
+				glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
+				char szText[256] = {NULL};
+				sprintf(szText, "S%i",z);
 
-			DrawText(flLine, mapMinY[*i], szText);
+				DrawText(flLine, mapMinY[*i], szText);
+			}
 		}
 	}
 	else	//	Draw the starndard markers by default
@@ -887,41 +890,44 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		const StartFinish* pSF = pReferenceLap->GetLap()->GetSF();
 		for(int x = 0;x < 7; x++)
 		{
-		  Vector2D pt1 = pSF[x].GetPt1();
-		  Vector2D pt2 = pSF[x].GetPt2();
-		  glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
-		  glColor3d(1.0,0.0,0.0);	// Red for S/F line color
-		  Vector2D vD;
+			if (sfLapOpts.m_SplitPoints[x].m_sfXPoint != 0.0f)
+			{
+			  Vector2D pt1 = pSF[x].GetPt1();
+			  Vector2D pt2 = pSF[x].GetPt2();
+			  glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
+			  glColor3d(1.0,0.0,0.0);	// Red for S/F line color
+			  Vector2D vD;
 
-		  for(int z = 0; z < pReferenceLap->m_lstPoints.size(); z++)
-		  {
-			  //	Find the point in the lap where the Split Point is and get the vector			
-			  if (pt1.m_v[0] == pReferenceLap->m_lstPoints[z].flX && pt1.m_v[1] == pReferenceLap->m_lstPoints[z].flY)
+			  for(int z = 0; z < pReferenceLap->m_lstPoints.size(); z++)
 			  {
-				vD = V2D(pReferenceLap->m_lstPoints[z].flX, pReferenceLap->m_lstPoints[z].flY) - V2D(pReferenceLap->m_lstPoints[z+1].flX, pReferenceLap->m_lstPoints[z+1].flY);
-				break;
+				  //	Find the point in the lap where the Split Point is and get the vector			
+				  if (pt1.m_v[0] == pReferenceLap->m_lstPoints[z].flX && pt1.m_v[1] == pReferenceLap->m_lstPoints[z].flY)
+				  {
+					vD = V2D(pReferenceLap->m_lstPoints[z].flX, pReferenceLap->m_lstPoints[z].flY) - V2D(pReferenceLap->m_lstPoints[z+1].flX, pReferenceLap->m_lstPoints[z+1].flY);
+					break;
+				  }
 			  }
-		  }
-		  //	We found our point and have the difference vector. Now let's rotate it 90 degrees.
-		  Vector2D vPerp = vD.RotateAboutOrigin(PI/2);
-		  //	Now let's create the vertices for plotting the split point line
-		  pt2 = pt2 + vPerp;
-		  pt1 = pt1 - vPerp;
-		  glBegin(GL_LINE_STRIP);
-		  glVertex2f(pt1.m_v[0], pt1.m_v[1]);
-		  glVertex2f(pt2.m_v[0], pt2.m_v[1]);
-		  glEnd();
+			  //	We found our point and have the difference vector. Now let's rotate it 90 degrees.
+			  Vector2D vPerp = vD.RotateAboutOrigin(PI/2);
+			  //	Now let's create the vertices for plotting the split point line
+			  pt2 = pt2 + vPerp;
+			  pt1 = pt1 - vPerp;
+			  glBegin(GL_LINE_STRIP);
+			  glVertex2f(pt1.m_v[0], pt1.m_v[1]);
+			  glVertex2f(pt2.m_v[0], pt2.m_v[1]);
+			  glEnd();
 
-		  glColor3d(1.0,0.0,0.0);
-		  LPCSTR lpszText = "";
-		  if(x == 0) lpszText = "S/F";	// Start/Finish Line
-		  if(x == 1) lpszText = "S1";	// Segment 1
-		  if(x == 2) lpszText = "S2";	// Segment 2
-		  if(x == 3) lpszText = "S3";	// Segment 2
-		  if(x == 4) lpszText = "S4";	// Segment 1
-		  if(x == 5) lpszText = "S5";	// Segment 2
-		  if(x == 6) lpszText = "S6";	// Segment 2
-		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Only draw text at one end of the line
+			  glColor3d(1.0,0.0,0.0);
+			  LPCSTR lpszText = "";
+			  if(x == 0) lpszText = "S/F";	// Start/Finish Line
+			  if(x == 1) lpszText = "S1";	// Segment 1
+			  if(x == 2) lpszText = "S2";	// Segment 2
+			  if(x == 3) lpszText = "S3";	// Segment 2
+			  if(x == 4) lpszText = "S4";	// Segment 1
+			  if(x == 5) lpszText = "S5";	// Segment 2
+			  if(x == 6) lpszText = "S6";	// Segment 2
+			  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Only draw text at one end of the line
+			}
 		}
 	  }
 
