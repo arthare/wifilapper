@@ -2677,6 +2677,10 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 		p_sfLapOpts.m_PlotPrefs[i].iPlotView = true;  //  Default to dsplay as a graph
 		p_sfLapOpts.m_PlotPrefs[i].fMinValue = -3.0;    //  Set all lower limits to -3.0
 		p_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+		p_sfLapOpts.m_PlotPrefs[i].iTransformYesNo = false;  //  Default to display as a graph
+		p_sfLapOpts.m_PlotPrefs[i].fTransAValue = 0.0;  //  Set all A constants to 0.0
+		p_sfLapOpts.m_PlotPrefs[i].fTransBValue = 1.0;  //  Set all B constants to 1.0
+		p_sfLapOpts.m_PlotPrefs[i].fTransCValue = 0.0;  //  Set all C constants to 0.0
 		p_sfLapOpts.m_SplitPoints[i].m_sfXPoint = 0.0f;	//	Initialize all split points
 		p_sfLapOpts.m_SplitPoints[i].m_sfYPoint = 0.0f;	//	Initialize all split points
 		p_sfLapOpts.m_SplitPoints[i].m_sfSectorTime = 0;	//	Initialize all sector times

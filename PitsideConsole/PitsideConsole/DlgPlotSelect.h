@@ -18,6 +18,10 @@ struct PlotPrefs
 	bool iPlotView;
 	double fMinValue;
 	double fMaxValue;
+	bool iTransformYesNo;
+	double fTransAValue;  
+	double fTransBValue;
+	double fTransCValue;
 };
 
 struct SplitPoints
@@ -108,4 +112,5 @@ private:
 	ILapReceiver* m_pLapDB;
 	ArtListBox m_sfYAxis;
 //	LAPSUPPLIEROPTIONS* m_sfLapOpts;
+	void CPlotSelectDlg::Checkbox(HWND hWnd, UINT DLG_ITEM, UINT CHECKBOX_STATE);
 };
