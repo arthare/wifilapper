@@ -285,7 +285,8 @@ public:
     m_szMessageStatus[0] = '\0';
     SetupMulticast();
   }
-  
+  	DWORD tmNow, tmLast;	//	Variables for setting up receive time / live car position
+
 //////////////////////////////////////////////////////////////////////////////////
 	RECT rect;
 	HBITMAP hBitmap;
@@ -485,7 +486,17 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
     {
       return 0;
     }
-    switch(uMsg)
+
+    TCHAR szTemp[512], szLap[512];
+    HWND hWndIp = GetDlgItem(m_hWnd, IDC_LIVELAPTIME);
+	tmNow = timeGetTime();
+    ::FormatTimeMinutesSecondsMs((float)(tmNow - tmLast) / 1000, szLap, NUMCHARS(szLap) );
+	int len = _tcslen(szLap) - 2;
+	swprintf(szLap, len, L"%s", szLap);	//	Remove the fractional time
+    swprintf(szTemp, NUMCHARS(szTemp), L"Current Lap: %s", szLap);
+    SendMessage(hWndIp, WM_SETTEXT, 0, (LPARAM)szTemp);
+
+	switch(uMsg)
 	  {
 	    case WM_INITDIALOG:
       {
@@ -518,6 +529,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         UpdateUI(UPDATE_ALL);
         InitBaseWindowPos();
 
+		tmLast = timeGetTime();	//	Initialize time lap was received
 		return 0;
       }
       case WM_CLOSE:
@@ -1391,6 +1403,8 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
           {
             LoadLaps((ILapReceiver*)lParam);
             UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
+			//	Just loaded a new lap. Let's reset the timer
+			tmLast = timeGetTime();	//	Save last time lap was received
           }
           return TRUE;
         }
@@ -1427,9 +1441,9 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
           SendMessage(m_hWnd, WM_SETTEXT, 0, (LPARAM)pLaps->GetNetStatus(NETSTATUS_STATUS));
 
           TCHAR szTemp[512];
-          HWND hWndIp = GetDlgItem(m_hWnd, IDC_CURRENTIP);
-          swprintf(szTemp, NUMCHARS(szTemp), L"PC: %s", pLaps->GetNetStatus(NETSTATUS_THISIP));
-          SendMessage(hWndIp, WM_SETTEXT, 0, (LPARAM)szTemp);
+//          HWND hWndIp = GetDlgItem(m_hWnd, IDC_CURRENTIP);
+//          swprintf(szTemp, NUMCHARS(szTemp), L"PC: %s", pLaps->GetNetStatus(NETSTATUS_THISIP));
+//          SendMessage(hWndIp, WM_SETTEXT, 0, (LPARAM)szTemp);
 
           HWND hWndRemoteIp = GetDlgItem(m_hWnd, IDC_CURRENTREMOTEIP);
           swprintf(szTemp, NUMCHARS(szTemp), L"Phone: %s", pLaps->GetNetStatus(NETSTATUS_REMOTEIP));

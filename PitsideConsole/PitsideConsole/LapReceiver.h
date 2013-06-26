@@ -416,8 +416,9 @@ public:
   virtual float ApplyTo(float flValue) const override {return flValue;}
 };
 
-class DoublerFilter : public CDataChannelFilter // for example
+class PolynomialFilter : public CDataChannelFilter // for example
 {
 public:
-  virtual float ApplyTo(float flValue) const override {return flValue*2;}
+  virtual float ApplyTo(float flValue) const override {return flValue * 2;}
+//  virtual float ApplyTo(float flValue) const override {return m_sfLapOpts->PlotPrefs->fTransAValue + flValue * p_sfLapOpts->PlotPrefs->fTransBValue + flValue * flValue * p_sfLapOpts->PlotPrefs->fTransCValue;}
 };
