@@ -487,12 +487,11 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
       return 0;
     }
 
+	//	Update and show Current Lap Time
     TCHAR szTemp[512], szLap[512];
     HWND hWndIp = GetDlgItem(m_hWnd, IDC_LIVELAPTIME);
-	tmNow = timeGetTime();
-    ::FormatTimeMinutesSecondsMs((float)(tmNow - tmLast) / 1000, szLap, NUMCHARS(szLap) );
-	int len = _tcslen(szLap) - 2;
-	swprintf(szLap, len, L"%s", szLap);	//	Remove the fractional time
+    ::FormatTimeMinutesSecondsMs((float)(timeGetTime() - tmLast) / 1000, szLap, NUMCHARS(szLap) );
+	swprintf(szLap, _tcslen(szLap) - 2, L"%s", szLap);	//	Remove the fractional time
     swprintf(szTemp, NUMCHARS(szTemp), L"Current Lap: %s", szLap);
     SendMessage(hWndIp, WM_SETTEXT, 0, (LPARAM)szTemp);
 
