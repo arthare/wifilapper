@@ -188,6 +188,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   float dMinX = 1e30;
   float dCenterOvalX = 0;
   float dCenterOvalY = 0;
+  const int cSectors = 9;	//	The maximum number of Sectors to display, gated by display area
   { // figuring out bounds and getting matrices all set up
     //	First lets load up all of the data into an array and determine its size
     for(int x = 0;x < lstLaps.size(); x++)
@@ -313,7 +314,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	else if (sfLapOpts.fDrawSplitPoints && eX == DATA_CHANNEL_DISTANCE)	//	Draw Split Points if they are selected
 	{
 		// now draw the Split Point lines
-		for(int z = 0; z < 7; z++)
+		for(int z = 0; z < cSectors; z++)
 		{
 			if (sfLapOpts.m_SplitPoints[z].m_sfXPoint != 0.0f)
 			{
@@ -721,7 +722,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   GetClientRect(OGL_GetHWnd(), &rcClient);
   double dClientAspect = ((double)RECT_WIDTH(&rcClient)) / ((double)RECT_HEIGHT(&rcClient));
   double dMapAspect = abs(RECT_WIDTH(&rcAllLaps)) / abs(RECT_HEIGHT(&rcAllLaps));
-
+  const int cSectors = 9;	//	Max. number of Split Points
 
   if(dClientAspect > dMapAspect)
   {
@@ -888,7 +889,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 	  {
 		const CExtendedLap* pReferenceLap = lstLaps[lstLaps.size()-1];
 		const StartFinish* pSF = pReferenceLap->GetLap()->GetSF();
-		for(int x = 0;x < 7; x++)
+		for(int x = 0;x < cSectors; x++)
 		{
 			if (sfLapOpts.m_SplitPoints[x].m_sfXPoint != 0.0f)
 			{
@@ -922,10 +923,12 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 			  if(x == 0) lpszText = "S/F";	// Start/Finish Line
 			  if(x == 1) lpszText = "S1";	// Segment 1
 			  if(x == 2) lpszText = "S2";	// Segment 2
-			  if(x == 3) lpszText = "S3";	// Segment 2
-			  if(x == 4) lpszText = "S4";	// Segment 1
-			  if(x == 5) lpszText = "S5";	// Segment 2
-			  if(x == 6) lpszText = "S6";	// Segment 2
+			  if(x == 3) lpszText = "S3";	// Segment 3
+			  if(x == 4) lpszText = "S4";	// Segment 4
+			  if(x == 5) lpszText = "S5";	// Segment 5
+			  if(x == 6) lpszText = "S6";	// Segment 6
+			  if(x == 7) lpszText = "S7";	// Segment 7
+			  if(x == 8) lpszText = "S8";	// Segment 8
 			  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Only draw text at one end of the line
 			}
 		}

@@ -66,39 +66,42 @@ BEGIN
 END
 
 //	Dialog box for setting sector split points
-IDD_SETSPLITPOINTS DIALOG 50, 50, 400, 250
+IDD_SETSPLITPOINTS DIALOG 50, 50, 400, 300
 STYLE DS_MODALFRAME | DS_SETFOREGROUND | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_TABSTOP
 CAPTION "Set Sector Split Points"
 FONT 10, "MS Shell Dlg"
 BEGIN
     CTEXT           "Left-Click on the map, then choose your split point\n(Clear All to end sector displaying)",IDC_LBLSPLIT1,5,5,390,25
-//    LTEXT           "",IDC_DISPLAY,155,63,590,282
     PUSHBUTTON      "Set Split 1", IDC_SETSPLIT1, 5,30,50,20
 	PUSHBUTTON      "Set Split 2", IDC_SETSPLIT2, 5,55,50,20
     PUSHBUTTON      "Set Split 3", IDC_SETSPLIT3, 5,80,50,20
     PUSHBUTTON      "Set Split 4", IDC_SETSPLIT4, 5,105,50,20
 	PUSHBUTTON      "Set Split 5", IDC_SETSPLIT5, 5,130,50,20
     PUSHBUTTON      "Set Split 6", IDC_SETSPLIT6, 5,155,50,20
-    PUSHBUTTON      "Clear All", IDRESET, 5,200,50,20
-   LTEXT           "",IDC_LBLSPLITMAP,60,27,335,200
-    PUSHBUTTON      "OK", IDOK, 5,230,195,20
-    PUSHBUTTON      "Cancel", IDCANCEL, 200,230,195,20
+	PUSHBUTTON      "Set Split 7", IDC_SETSPLIT7, 5,180,50,20
+    PUSHBUTTON      "Set Split 8", IDC_SETSPLIT8, 5,205,50,20
+    PUSHBUTTON      "Clear All", IDRESET, 5,250,50,20
+    LTEXT           "",IDC_LBLSPLITMAP,60,27,335,250
+    PUSHBUTTON      "OK", IDOK, 5,280,195,20
+    PUSHBUTTON      "Cancel", IDCANCEL, 200,280,195,20
 END
 
 //	Dialog box for displaying sector split times
-IDD_SHOWSECTORS DIALOG 250, 75, 325, 104
+IDD_SHOWSECTORS DIALOG 250, 75, 375, 104
 STYLE DS_MODALFRAME | WS_EX_TOPMOST | WS_POPUP | WS_CAPTION
 CAPTION "Sector Times"
 FONT 9, "MS Shell Dlg"
 BEGIN
-    LTEXT      "\t\tLap ID\t\t\tSect 1\tSect 2\tSect 3\tSect 4\tSect 5\tSect 6\tSect 7", IDC_SHOW_SECTORS,5,0,315,12
-    LTEXT      "Lap 1", IDC_SHOW_LAP0, 5,15,355,12
-	LTEXT      "Lap 2", IDC_SHOW_LAP1, 5,27,355,12
-    LTEXT      "Lap 3", IDC_SHOW_LAP2, 5,39,355,12
-    LTEXT      "Lap 4", IDC_SHOW_LAP3, 5,51,355,12
-	LTEXT      "Lap 5", IDC_SHOW_LAP4, 5,63,355,12
-    LTEXT      "Lap 6", IDC_SHOW_LAP5, 5,75,355,12
-    LTEXT      "Lap 7", IDC_SHOW_LAP6, 5,87,355,12
+    LTEXT      "\t\tLap ID\t\t\tSect 1\tSect 2\tSect 3\tSect 4\tSect 5\tSect 6\tSect 7\tSect 8\tSect 9", IDC_SHOW_SECTORS,5,0,370,12
+    LTEXT      "Lap 1", IDC_SHOW_LAP0, 5,15,375,12
+	LTEXT      "Lap 2", IDC_SHOW_LAP1, 5,27,375,12
+    LTEXT      "Lap 3", IDC_SHOW_LAP2, 5,39,375,12
+    LTEXT      "Lap 4", IDC_SHOW_LAP3, 5,51,375,12
+	LTEXT      "Lap 5", IDC_SHOW_LAP4, 5,63,375,12
+    LTEXT      "Lap 6", IDC_SHOW_LAP5, 5,75,375,12
+    LTEXT      "Lap 7", IDC_SHOW_LAP6, 5,87,375,12
+    LTEXT      "Lap 8", IDC_SHOW_LAP7, 5,87,375,12
+    LTEXT      "Lap 9", IDC_SHOW_LAP8, 5,87,375,12
 END
 
 // dialog for selecting which race in a DB we want to use

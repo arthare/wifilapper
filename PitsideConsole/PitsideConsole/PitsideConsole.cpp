@@ -779,6 +779,8 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
               ClearUILaps();
               LoadLaps(g_pLapDB);
               UpdateUI(UPDATE_ALL);
+			  //	Just loaded a new session. Let's reset the timer
+			  tmLast = timeGetTime();	//	Save last time lap was received
             }
             return TRUE;
           }
@@ -814,6 +816,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 			ArtShowDialog<IDD_SETSPLITPOINTS>(&dlgSetSplits);
 
 			static HWND ShowSplitsHandle;
+			const int cSectors = 9;	//	Maximum numbers of Split Times
 			if (!IsWindow(ShowSplitsHandle) && m_sfLapOpts.fDrawSplitPoints)
 			{
 				//	Create non-modal dialog to display the sector times window if DrawSplitPoints is TRUE
@@ -823,7 +826,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 				{ 
 					hwndSplits = CreateDialog(NULL, MAKEINTRESOURCE (IDD_SHOWSECTORS), hWnd, ShowSplits); 
 					//	Let's get the handles for all display controls in this window
-					for (int y = 0; y < 7; y++)
+					for (int y = 0; y < cSectors; y++)
 					{
 						m_sfLapOpts.hWndLap[y] = GetDlgItem(hwndSplits, IDC_SHOW_LAP0 + y);
 					}
@@ -1214,6 +1217,8 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
                   ClearUILaps();
                   LoadLaps(g_pLapDB);
                   UpdateUI(UPDATE_ALL);
+				  //	Let's reset the timer
+				  tmLast = timeGetTime();	//	Save last time lap was received
                 }
               }
             }
@@ -1402,9 +1407,9 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
           {
             LoadLaps((ILapReceiver*)lParam);
             UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
-			//	Just loaded a new lap. Let's reset the timer
-			tmLast = timeGetTime();	//	Save last time lap was received
           }
+		  //	Just loaded a new lap. Let's reset the timer
+		  tmLast = timeGetTime();	//	Save last time lap was received
           return TRUE;
         }
         case NOTIFY_NEWDATABASE:
@@ -1430,6 +1435,8 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
                 UpdateUI(UPDATE_ALL);
               }
             }
+		  //	Let's reset the timer
+		  tmLast = timeGetTime();	//	Save last time lap was received
           }
           return TRUE;
           
@@ -1778,7 +1785,7 @@ void UpdateSectors()
 	//	First, let's make sure that we have a Reference Lap, or let's not perform this
 	if (m_pReferenceLap != NULL)
 		{
-		const int cSectors = 7;	//	The maximum number of Sectors to display, gated by display area
+		const int cSectors = 9;	//	The maximum number of Sectors to display, gated by display area
 		const int MaxLaps = 7;	//	Maximum number of laps (not including Ref Lap) to display
 		int w=0;	//	String variable counter for Sector display
 
@@ -1909,6 +1916,7 @@ void UpdateSectors()
 			}
 			//	Increment "w" counter and do the next lap
 			w++;
+			if (w >= MaxLaps) break;	//	Stop building these if we already have as many as we need.
 		}
 		//	Clean up any old lap sector times if user chose fewer laps to display
 		for (int x = w; x < MaxLaps; x++)

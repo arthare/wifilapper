@@ -33,6 +33,8 @@ LRESULT CSetSplitsDlg::DlgProc
 	  SPLIT4,
 	  SPLIT5,
 	  SPLIT6,
+	  SPLIT7,
+	  SPLIT8,
 	  FINISH
   };
 
@@ -206,6 +208,24 @@ LRESULT CSetSplitsDlg::DlgProc
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT6, szTempSplit, hWnd);
+
+				m_sfLapOpts->fDrawSplitPoints = true;
+
+				return TRUE;
+			}
+			case IDC_SETSPLIT7:
+			{
+				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
+				GetSplitPoint(SPLIT7, szTempSplit, hWnd);
+
+				m_sfLapOpts->fDrawSplitPoints = true;
+
+				return TRUE;
+			}
+			case IDC_SETSPLIT8:
+			{
+				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
+				GetSplitPoint(SPLIT8, szTempSplit, hWnd);
 
 				m_sfLapOpts->fDrawSplitPoints = true;
 
