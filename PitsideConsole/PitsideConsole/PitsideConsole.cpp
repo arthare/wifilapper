@@ -1751,7 +1751,7 @@ private:
   void HandleResize(SIZE sNewSize)
   {
     HandleCtlResize(sNewSize, IDC_DISPLAY, true, true); // main display window
-    HandleCtlResize(sNewSize, IDC_SUBDISPLAY, true, false); // sub display window
+    HandleCtlResize(sNewSize, IDC_SUBDISPLAY, false, false); // sub display window
     HandleCtlResize(sNewSize, IDC_LAPS, false, true); // lap list
   }
 	float fAverage(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal)
@@ -1787,7 +1787,7 @@ void UpdateSectors()
 		{
 		const int cSectors = 9;	//	The maximum number of Sectors to display, gated by display area
 		const int MaxLaps = 7;	//	Maximum number of laps (not including Ref Lap) to display
-		int w=0;	//	String variable counter for Sector display
+		int w = 0;	//	String variable counter for Sector display
 
 		//	Get the list of highlighted lap time ID's
 		set<LPARAM> setSelected = m_sfLapList.GetSelectedItemsData();
@@ -1946,7 +1946,7 @@ void UpdateValues()
 	  {
 			const DATA_CHANNEL eChannel = m_lstYChannels[x];
 			if(!eChannel /*|| !eChannel->IsValid()*/) continue;
-			float flMin, flMax, flAvg;
+			float flMin, flMax, flAvg, flMinTemp, flMaxTemp;
 			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
 			for (int u = 0; u < sizeof m_lstYChannels; u++)
 			{
@@ -1973,6 +1973,26 @@ void UpdateValues()
 						// 951turbo: do more math here like averages, median, etc.
 						flAvg = fAverage(eChannel, pChannel, flVal);
 						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
+//////////////////////////////////////////
+						//		Adding transformation functions here for Y
+						if (m_sfLapOpts.m_PlotPrefs[u].iTransformYesNo == true)
+						{
+							if (m_sfLapOpts.m_PlotPrefs[u].fTransBValue < 0)
+							{
+								flAvg = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flAvg * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flAvg * flAvg *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+								flMaxTemp = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flMin * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flMin * flMin *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+								flMinTemp = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flMax * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flMax * flMax *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+							}
+							else
+							{
+								flAvg = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flAvg * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flAvg * flAvg *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+								flMinTemp = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flMin * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flMin * flMin *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+								flMaxTemp = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flMax * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flMax * flMax *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+							}
+							flMin = flMinTemp;
+							flMax = flMaxTemp;
+						}
+//////////////////////////////////////////
 						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue || flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
 						{
 							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.

@@ -675,6 +675,18 @@ vector<CExtendedLap*> GetAllLaps()
 			  {
 				  //  Initialize all data channels, if not already set by user.
 				  //  Assumes first data channel (LONG X) will always be a graph
+				  for (int i=0; i < 50; i++)
+				  {
+						swprintf(m_sfLapOpts->m_PlotPrefs[i].m_ChannelName, L"Velocity");
+						m_sfLapOpts->m_PlotPrefs[i].iDataChannel = DATA_CHANNEL_VELOCITY;
+						m_sfLapOpts->m_PlotPrefs[i].iPlotView = true;  //  Default to dsplay as a graph
+						m_sfLapOpts->m_PlotPrefs[i].fMinValue = -3.0;    //  Set all lower limits to -3.0
+						m_sfLapOpts->m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+						m_sfLapOpts->m_PlotPrefs[i].iTransformYesNo = false;  //  Default to display as a graph
+						m_sfLapOpts->m_PlotPrefs[i].fTransAValue = 0.0;  //  Set all A constants to 0.0
+						m_sfLapOpts->m_PlotPrefs[i].fTransBValue = 1.0;  //  Set all B constants to 1.0
+						m_sfLapOpts->m_PlotPrefs[i].fTransCValue = 0.0;  //  Set all C constants to 0.0
+				  }
 				  InitPlotPrefs(hWnd, lParam);
 				  return TRUE;
 			  }
