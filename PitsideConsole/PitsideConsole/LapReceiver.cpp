@@ -122,12 +122,6 @@ int CDataChannel::GetLapId() const
   return iLapId;
 }
 
-CDataChannelFilter* CDataChannel::m_pFilter()
-{
-	CDataChannelFilter* Temp = NULL;
-	return Temp;
-}
-
 float CDataChannel::GetValue(int iTime) const
 {
   CheckLazyLoad();
@@ -192,16 +186,8 @@ float CDataChannel::GetValue(int iTime) const
       const float flWidth = dataSecond->iTimeMs - dataFirst->iTimeMs;
       if(flWidth == 0) return flFirst;
       const float flPct = flOffset / flWidth;
-	  if (&CDataChannel::m_pFilter != NULL)
-	  {
-//		  return m_pFilter()->ApplyTo((1-flPct)*flFirst + (flPct)*flNext);
-		  return(1-flPct)*flFirst + (flPct)*flNext;
-	  }
-	  else
-	  {
-		  return(1-flPct)*flFirst + (flPct)*flNext;
-	  }
-	}
+      return (1-flPct)*flFirst + (flPct)*flNext;
+    }
     else
     {
       return pData[iCheck].flValue;

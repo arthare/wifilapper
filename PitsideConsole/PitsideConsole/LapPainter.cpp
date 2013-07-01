@@ -458,15 +458,16 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		float g;
 		float b;
 		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
-        if(sfLapOpts.fDrawLines)
-        {
-          glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
-		  glBegin(GL_LINE_STRIP);
+		//	Don't show lines for Traction Circle plots by default
+		if(sfLapOpts.fDrawLines == false || (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL) )
+		{
+          glPointSize(4.0f);
+          glBegin(GL_POINTS);
         }
         else
         {
-          glPointSize(4.0f);
-          glBegin(GL_POINTS);
+          glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
+		  glBegin(GL_LINE_STRIP);
         }
 
         vector<DataPoint>::const_iterator iX = lstPointsX.begin();
