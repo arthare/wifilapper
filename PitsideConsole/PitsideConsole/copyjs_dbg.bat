@@ -7,3 +7,4 @@ copy lapdistance.php ..\debug\lapdistance.php
 copy wifilapper.css ..\debug\wifilapper.css
 copy settings.txt ..\debug\settings.txt
 copy PitsideHelp.pdf ..\debug\PitsideHelp.pdf
+copy transformations.txt ..\debug\transformations.txt

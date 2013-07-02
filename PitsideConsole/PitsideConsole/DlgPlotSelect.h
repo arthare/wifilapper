@@ -7,7 +7,6 @@
 #include "LapReceiver.h"
 #include "PitsideConsole.h"
 #include "DlgRaceSelect.h"
-//#include "LapPainter.h"
 
 //	Create a data structure containing all of the Plotting preferences and make it available to entire program.
 //	Use it to create a 50 term array to store these values
@@ -50,6 +49,24 @@ struct PITSIDE_SETTINGS
   int iColorScheme;
 };
 
+struct TRANSFORMATION
+{
+  void Default()
+  {
+	c_Name[0] = (TCHAR)L"";
+	f_CoeffA = 0;
+	f_CoeffB = 1;
+	f_CoeffC = 0;
+	b_LoadTrans = false;
+  }
+
+  TCHAR c_Name[MAX_PATH];
+    float f_CoeffA;
+	float f_CoeffB;
+	float f_CoeffC;
+	bool b_LoadTrans;
+};
+
 enum LAPSORTSTYLE
 {
 	SORTSTYLE_BYTIMEOFRACE, // sort by the time the lap was done: 2:31pm comes before 4:45pm (well... on the same day)
@@ -74,6 +91,7 @@ public:
   int iZoomLevels;
   PlotPrefs m_PlotPrefs[50];	// Pull in PlotPrefs data
   SplitPoints m_SplitPoints[50];	//	Pull in all Split points data
+  TRANSFORMATION m_Tranformations[100];	//	Pull in all Transformations data
   HWND hWndLap[50];
   LAPSORTSTYLE eSortPreference;
 };
@@ -111,6 +129,7 @@ private:
 	int m_iRaceId;
 	ILapReceiver* m_pLapDB;
 	ArtListBox m_sfYAxis;
-//	LAPSUPPLIEROPTIONS* m_sfLapOpts;
 	void CPlotSelectDlg::Checkbox(HWND hWnd, UINT DLG_ITEM, UINT CHECKBOX_STATE);
+	void LoadTransformations(LAPSUPPLIEROPTIONS &p_sfLapOpts);
+	void LoadDropDown(HWND hWnd);
 };

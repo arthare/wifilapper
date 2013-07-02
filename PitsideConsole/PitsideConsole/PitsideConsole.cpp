@@ -2709,7 +2709,8 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
-  void InitPlotPrefs(LAPSUPPLIEROPTIONS &p_sfLapOpts)
+
+void InitPlotPrefs(LAPSUPPLIEROPTIONS &p_sfLapOpts)
   {
 	for (int i=0; i < 50; i++)
 	{
@@ -2727,6 +2728,11 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 		p_sfLapOpts.m_SplitPoints[i].m_sfSectorTime = 0;	//	Initialize all sector times
 		p_sfLapOpts.m_SplitPoints[i].m_sfSplitTime = 0.0f;
 		p_sfLapOpts.fDrawSplitPoints = false;	//	Default to not show split points
+		p_sfLapOpts.m_Tranformations[i].f_CoeffA= -1.0;
+		p_sfLapOpts.m_Tranformations[i].f_CoeffB= -1.0;
+		p_sfLapOpts.m_Tranformations[i].f_CoeffC= -1.0;
+		swprintf(p_sfLapOpts.m_Tranformations[i].c_Name, L"");
+		p_sfLapOpts.m_Tranformations[i].b_LoadTrans = false;
 	}
   }
 
