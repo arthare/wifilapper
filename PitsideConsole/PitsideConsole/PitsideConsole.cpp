@@ -817,6 +817,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 
 			static HWND ShowSplitsHandle;
 			const int cSectors = 9;	//	Maximum numbers of Split Times
+			const int MaxLaps = 7;	//	Maximum number of laps to display
 			if (!IsWindow(ShowSplitsHandle) && m_sfLapOpts.fDrawSplitPoints)
 			{
 				//	Create non-modal dialog to display the sector times window if DrawSplitPoints is TRUE
@@ -826,7 +827,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 				{ 
 					hwndSplits = CreateDialog(NULL, MAKEINTRESOURCE (IDD_SHOWSECTORS), hWnd, ShowSplits); 
 					//	Let's get the handles for all display controls in this window
-					for (int y = 0; y < cSectors; y++)
+					for (int y = 0; y < MaxLaps; y++)
 					{
 						m_sfLapOpts.hWndLap[y] = GetDlgItem(hwndSplits, IDC_SHOW_LAP0 + y);
 					}
@@ -1786,7 +1787,7 @@ void UpdateSectors()
 	if (m_pReferenceLap != NULL)
 		{
 		const int cSectors = 9;	//	The maximum number of Sectors to display, gated by display area
-		const int MaxLaps = 7;	//	Maximum number of laps (not including Ref Lap) to display
+		const int MaxLaps = 7;	//	Maximum number of laps to display
 		int w = 0;	//	String variable counter for Sector display
 
 		//	Get the list of highlighted lap time ID's

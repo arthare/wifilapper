@@ -87,7 +87,7 @@ BEGIN
 END
 
 //	Dialog box for displaying sector split times
-IDD_SHOWSECTORS DIALOG 250, 75, 375, 104
+IDD_SHOWSECTORS DIALOG 250, 75, 375, 99
 STYLE DS_MODALFRAME | WS_EX_TOPMOST | WS_POPUP | WS_CAPTION
 CAPTION "Sector Times"
 FONT 9, "MS Shell Dlg"
@@ -100,8 +100,6 @@ BEGIN
 	LTEXT      "Lap 5", IDC_SHOW_LAP4, 5,63,375,12
     LTEXT      "Lap 6", IDC_SHOW_LAP5, 5,75,375,12
     LTEXT      "Lap 7", IDC_SHOW_LAP6, 5,87,375,12
-    LTEXT      "Lap 8", IDC_SHOW_LAP7, 5,87,375,12
-    LTEXT      "Lap 9", IDC_SHOW_LAP8, 5,87,375,12
 END
 
 // dialog for selecting which race in a DB we want to use

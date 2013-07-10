@@ -44,6 +44,8 @@ P924: Alternator Voltage
 0.0
 0
 //
+This file contains quadratic coefficients for transforming raw voltages into meaningful units.
+You can put up to 100 different transformations into this file for your setup.
 Structure for this file is:
 Line 1:	Name of the transformation (Will show up in Pitside)
 Line 2: Coefficient A (the Constant)

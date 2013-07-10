@@ -325,7 +325,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     glScalef(1.0f, 0.90f, 1.0f);	// Let's scale it so that graphs don't touch each other.
     glOrtho(dMinX, dMaxX, mapMinY[*i], mapMaxY[*i], -1.0, 1.0);
 
-	//	Guideline graphing start
     // draw horizontal guide lines and text on the background.
     // first draw the starting guideline
 	{	
@@ -343,93 +342,104 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	  LineColor();	//	Pick guideline color, based upon chosen color scheme
 	  DrawHorizontalLine(flLine, dMinX, dMaxX, szText);
     }
+	//	End of Horizontal line drawing routine
 
-
-	// draw vertical guide lines and text on the background only if at 1.0X magnification
-	if (sfLapOpts.iZoomLevels != 0)
-	{
-	}
-	else if (sfLapOpts.fDrawSplitPoints && eX == DATA_CHANNEL_DISTANCE)	//	Draw Split Points if they are selected
-	{
-		// now draw the Split Point lines
-		for(int z = 0; z < cSectors; z++)
-		{
-			if (sfLapOpts.m_SplitPoints[z].m_sfXPoint != 0.0f)
-			{
-				CExtendedLap* pLap = lstLaps[lstLaps.size() - 1];	//	Last lap is the Reference Lap
-				const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
-				const double dDistance = pDistance->GetValue(sfLapOpts.m_SplitPoints[z].m_sfSectorTime) - pDistance->GetValue(sfLapOpts.m_SplitPoints[0].m_sfSectorTime);
-				double flLine = dDistance;
-				char szText[256] = {NULL};
-				sprintf(szText, "S%i",z);
-				glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
-				DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
-			}
-		}
-	}
-	//		If this is for drawing the Traction Circle, let's draw a circle as well (Oval really)
-	else if (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL)
-			{
-				drawOval (dCenterOvalX, dCenterOvalY, 3.0f, 3.0f);	//	Draw 1.5G circle
-				drawOval (dCenterOvalX, dCenterOvalY, 2.0f, 2.0f);	//	Draw 1.0G circle
-				drawOval (dCenterOvalX, dCenterOvalY, 1.0f, 1.0f);	//	Draw 0.5G circle
-				//	Now let's draw a vertical line at the origin
-				DrawVerticalLine(0.0f, mapMinY[*i], mapMaxY[*i], NULL);
-			}
-	else
-	{
-		//	Draw the standard markers by default
-		// first draw the starting guideline
-		float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
-		LineColor();	//	Pick guideline color, based upon chosen color scheme
-		char szText[256];
-		GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-		DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
-		// now draw the rest of them
-		for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
-		{
-			LineColor();	//	Pick guideline color, based upon chosen color scheme
-			char szText[256];
-			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-			DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
-		}
-	}	//	End of Guideline drawing loop
-
-//		Set up the non-zoomed/panned view for the map
+	//		Set up the non-zoomed/panned view for the map
     GLdouble rgModelviewMatrix[16];
     GLdouble rgProjMatrix[16];
     GLint rgViewport[4];
     
 	{
-//	Now that the matrices are correct, let's graph them.    
+		//	Now that the matrices are correct, let's graph them.    
 		glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
 		glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
 		glGetIntegerv(GL_VIEWPORT, rgViewport);
-
+		static int OldiZoomLevels;
 		POINT ptMouse;
+		double dScaleAmt = pow(1.08, sfLapOpts.iZoomLevels);
+		static GLdouble dXShift, dYShift, dZShift;
 		if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
 		{
-		//		The mouse is in our window, so panning and zooming are active!
-			const double dCenterX = (dMinX + dMaxX)/2;		//	Center of X for scaling transformation
-			double dScaleAmt = pow(1.08,sfLapOpts.iZoomLevels);
-			GLdouble dXShift,dYShift,dZShift;
-		//		Project the window shift stuff so we know how far to translate the view
+			//		The mouse is in our window, so panning and zooming are active!
+			//		Project the window shift stuff so we know how far to translate the view
 			dYShift = 0;	// No Y shift or zoom for Map Plot.
-			gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,0,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZShift);
-		//		Set up to perform the ZOOM function for DATA PLOT.   
-		double dTranslateShiftX;
-		dTranslateShiftX= dCenterX;
-			glTranslated(dTranslateShiftX,0,0);	// Translate the map to origin on x-axis only
-			glScaled(dScaleAmt,1.0,1.0);	//	No scaling of Y-axis on Data Plot.
-			glTranslated(-dTranslateShiftX,0,0);	// Now put the map back in its place
-		//	Panning functionality
-			glTranslated(dXShift-dMinX,0,0);	//	Offset for this is still slight wrong, but the best for now.
+			gluUnProject(sfLapOpts.flWindowShiftX / dScaleAmt, 0, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dXShift, &dYShift, &dZShift);
+			//		Set up to perform the ZOOM function for DATA PLOT.   
+			static double dTranslateShiftX;
+			static GLdouble dX,dY,dZ;
+			if (sfLapOpts.iZoomLevels != OldiZoomLevels)
+			{
+				//		The mouse is in our window, let's determine the closest X point to the mouse
+				Vector2D ptHighlight;
+				gluUnProject(ptMouse.x, ptMouse.y, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dX, &dY, &dZ);
+				ptHighlight = V2D(dX,0);
+				dTranslateShiftX = dX - dXShift;
+			}
+			else
+			{
+				dTranslateShiftX = dX - dXShift;
+			}
+			OldiZoomLevels = sfLapOpts.iZoomLevels;
+				
+			glTranslated(dTranslateShiftX, 0, 0);	// Translate the map to origin on x-axis only
+			glScaled(dScaleAmt, 1.0, 1.0);	//	No scaling of Y-axis on Data Plot.
+			glTranslated(-dTranslateShiftX, 0, 0);	// Now put the map back in its place
+			//	Panning functionality
+			glTranslated(dXShift - dMinX, 0, 0);	//	Offset for this is still slight wrong, but the best for now.
 
-		//		Now having shifted, let's get our new model matrices
-		  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
-		  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
-		  glGetIntegerv(GL_VIEWPORT, rgViewport);
+			//		Now having shifted, let's get our new model matrices
+			glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+			glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+			glGetIntegerv(GL_VIEWPORT, rgViewport);
 		}
+
+		//	Draw Vertical guidelines for the graph
+		if (sfLapOpts.fDrawSplitPoints && eX == DATA_CHANNEL_DISTANCE)
+		{
+			//	Draw Split Points if they are selected
+			for(int z = 0; z < cSectors; z++)
+			{
+				if (sfLapOpts.m_SplitPoints[z].m_sfXPoint != 0.0f)
+				{
+					CExtendedLap* pLap = lstLaps[lstLaps.size() - 1];	//	Last lap is the Reference Lap
+					const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
+					const double dDistance = pDistance->GetValue(sfLapOpts.m_SplitPoints[z].m_sfSectorTime) - pDistance->GetValue(sfLapOpts.m_SplitPoints[0].m_sfSectorTime);
+					double flLine = dDistance;
+					char szText[256] = {NULL};
+					sprintf(szText, "S%i",z);
+					glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
+					DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
+				}
+			}
+		}
+		//		If this is for drawing the Traction Circle, let's draw a bunch of circles (Ovals really)
+		else if (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL)
+		{
+			drawOval (dCenterOvalX, dCenterOvalY, 3.0f, 3.0f);	//	Draw 1.5G circle
+			drawOval (dCenterOvalX, dCenterOvalY, 2.0f, 2.0f);	//	Draw 1.0G circle
+			drawOval (dCenterOvalX, dCenterOvalY, 1.0f, 1.0f);	//	Draw 0.5G circle
+			//	Now let's draw a vertical line at the origin
+			DrawVerticalLine(0.0f, mapMinY[*i], mapMaxY[*i], NULL);
+		}
+		//	Default is to draw the standard distance markers
+		else
+		{
+			// first draw the starting guideline
+			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
+			LineColor();	//	Pick guideline color, based upon chosen color scheme
+			char szText[256];
+			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+			DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
+			// now draw the rest of them
+			for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
+			{
+				LineColor();	//	Pick guideline color, based upon chosen color scheme
+				char szText[256];
+				GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+				DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
+			}
+		}	//	End of Guideline drawing loop
+
 	}
 
     Vector2D ptHighlight; // the (x,y) coords in unit-space that we want to highlight.  Example: for a speed-distance graph, x would be in distance units, y in velocities.
@@ -438,7 +448,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     {
       //		The mouse is in our window... we make our own highlighter, ignoring anything that got sent to us
       GLdouble dX,dY,dZ;
-      gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+      gluUnProject(ptMouse.x, ptMouse.y, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dX, &dY, &dZ);
       ptHighlight = V2D(dX,0);
     }
     for(int x = 0; x < lstLaps.size(); x++)
@@ -586,7 +596,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			if (sfLapOpts.m_PlotPrefs[y].iTransformYesNo == true)
 			{
 				TempY = PolynomialFilter(pDataY->GetValue(dTimeToHighlight), sfLapOpts.m_PlotPrefs[y].fTransAValue, sfLapOpts.m_PlotPrefs[y].fTransBValue, sfLapOpts.m_PlotPrefs[y].fTransCValue);
-//				(LONG) ptWindow.y = PolynomialFilter(ptWindow.y, sfLapOpts.m_PlotPrefs[y].fTransAValue, sfLapOpts.m_PlotPrefs[y].fTransBValue, sfLapOpts.m_PlotPrefs[y].fTransCValue);
 			}
 			else
 			{
@@ -818,7 +827,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   
     const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
     const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-    double dScaleAmt = pow(1.06,sfLapOpts.iZoomLevels);
+    double dScaleAmt = pow(1.08,sfLapOpts.iZoomLevels);
 
 	POINT ptMouse;
 	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
@@ -826,7 +835,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		// the mouse is in our window, so let's enable panning and zooming!
 		const double dTranslateShiftX = (rcAllLaps.left + rcAllLaps.right)/2;
 		const double dTranslateShiftY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-		double dScaleAmt = pow(1.06,sfLapOpts.iZoomLevels);
+		double dScaleAmt = pow(1.08,sfLapOpts.iZoomLevels);
 		GLdouble dXShift,dYShift,dZ;
 
 		//		Project the window shift stuff so we know how far to translate the view
