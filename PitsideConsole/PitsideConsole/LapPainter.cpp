@@ -326,16 +326,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     glOrtho(dMinX, dMaxX, mapMinY[*i], mapMaxY[*i], -1.0, 1.0);
 
     // draw horizontal guide lines and text on the background.
-    // first draw the starting guideline
-	{	
-		float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]);
-		char szText[256];
-		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-		LineColor();	//	Pick guideline color, based upon chosen color scheme
-		DrawHorizontalLine(flLine, dMinX, dMaxX, szText);
-	}
-	// now draw the rest of them
-	for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
+	for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
       char szText[256];
       GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
@@ -344,7 +335,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     }
 	//	End of Horizontal line drawing routine
 
-	//		Set up the non-zoomed/panned view for the map
+	//	Set up the non-zoomed/panned view for the map
     GLdouble rgModelviewMatrix[16];
     GLdouble rgProjMatrix[16];
     GLint rgViewport[4];
@@ -356,7 +347,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		glGetIntegerv(GL_VIEWPORT, rgViewport);
 		static int OldiZoomLevels;
 		POINT ptMouse;
-		double dScaleAmt = pow(1.08, sfLapOpts.iZoomLevels);
+		double dScaleAmt = pow(1.1, sfLapOpts.iZoomLevels);
 		static GLdouble dXShift, dYShift, dZShift;
 		if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
 		{
@@ -370,9 +361,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			if (sfLapOpts.iZoomLevels != OldiZoomLevels)
 			{
 				//		The mouse is in our window, let's determine the closest X point to the mouse
-				Vector2D ptHighlight;
-				gluUnProject(ptMouse.x, ptMouse.y, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dX, &dY, &dZ);
-				ptHighlight = V2D(dX,0);
+				gluUnProject(ptMouse.x, 0, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dX, &dY, &dZ);
 				dTranslateShiftX = dX - dXShift;
 			}
 			else
@@ -424,14 +413,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		//	Default is to draw the standard distance markers
 		else
 		{
-			// first draw the starting guideline
-			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
-			LineColor();	//	Pick guideline color, based upon chosen color scheme
-			char szText[256];
-			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-			DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
-			// now draw the rest of them
-			for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
+			for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
 			{
 				LineColor();	//	Pick guideline color, based upon chosen color scheme
 				char szText[256];
@@ -537,7 +519,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
             }
           }
         }
-		    glEnd();
+	    glEnd();
         // for each lap, draw an indicator of the closest thing to the mouse
         if(!m_pLapSupplier->IsHighlightSource(m_iSupplierId))
         {
@@ -827,7 +809,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   
     const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
     const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-    double dScaleAmt = pow(1.08,sfLapOpts.iZoomLevels);
+    double dScaleAmt = pow(1.1,sfLapOpts.iZoomLevels);
 
 	POINT ptMouse;
 	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
@@ -835,7 +817,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		// the mouse is in our window, so let's enable panning and zooming!
 		const double dTranslateShiftX = (rcAllLaps.left + rcAllLaps.right)/2;
 		const double dTranslateShiftY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-		double dScaleAmt = pow(1.08,sfLapOpts.iZoomLevels);
+		double dScaleAmt = pow(1.1,sfLapOpts.iZoomLevels);
 		GLdouble dXShift,dYShift,dZ;
 
 		//		Project the window shift stuff so we know how far to translate the view
