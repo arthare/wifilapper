@@ -433,11 +433,27 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       gluUnProject(ptMouse.x, ptMouse.y, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dX, &dY, &dZ);
       ptHighlight = V2D(dX,0);
     }
+	GLushort pattern;	//	Stippling pattern
+	GLint factor = 1;	// Stippling factor
     for(int x = 0; x < lstLaps.size(); x++)
     {
       CExtendedLap* pLap = lstLaps[x];
       const IDataChannel* pDataX = pLap->GetChannel(m_pLapSupplier->GetXChannel());
       const IDataChannel* pDataY = pLap->GetChannel(*i);
+
+	  float r;
+	  float g;
+	  float b;
+	  if (x == lstLaps.size() - 1)	//	Means that this lap is the Reference Lap, so let's color it special
+	  {
+		pattern = 0xFFFF;  // Stipple pattern is a line for Reference Lap
+		MakeColor ( pLap, true, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+	  }
+	  else
+	  {
+		pattern = 0xDBB6;  // Stipple pattern
+		MakeColor ( pLap, false, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+	  }
 
 	  if(pDataX && pDataY)
 	  {
@@ -446,10 +462,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         float dTimeToHighlight = -1;
         const vector<DataPoint>& lstPointsX = pDataX->GetData();
         const vector<DataPoint>& lstPointsY = pDataY->GetData();
-		float r;
-		float g;
-		float b;
-		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+		glEnable(GL_LINE_STIPPLE);
+		glLineStipple(factor, pattern);	//	Set the line dash/dot characteristics
 		//	Don't show lines for Traction Circle plots by default
 		if(sfLapOpts.fDrawLines == false || (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL) )
 		{
@@ -519,7 +533,9 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
             }
           }
         }
-	    glEnd();
+	    factor++;	//	Increment the line patterning
+		glEnd();
+		glDisable(GL_LINE_STIPPLE);
         // for each lap, draw an indicator of the closest thing to the mouse
         if(!m_pLapSupplier->IsHighlightSource(m_iSupplierId))
         {
@@ -553,7 +569,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		float r;
 		float g;
 		float b;
-		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+		MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
 		//	For TIME displayed on X-axis, remove all data channel text so that user can see the trends more clearly.
 		if (pDataX->GetChannelType() != DATA_CHANNEL_TIME)
@@ -630,7 +646,7 @@ void CLapPainter::MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, 
 		float r;
 		float g;
 		float b;
-		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+		MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
 		// if we're the main screen, we want to draw some text data for each point
         TCHAR szLapName[256];
@@ -693,7 +709,7 @@ void CLapPainter::drawOval (float x_center, float y_center, float w, float h)
     glEnd ();
 }
 // Function for setting highlighting color, making sure that there is enough contrast to a black background
-void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float* pB) 
+void CLapPainter::MakeColor(const CExtendedLap* pLap, bool RefLapFlag, float* pR, float* pG, float* pB) 
 { 
 	srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw... 
 	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)	//	Background color is black, make sure there is enough contrast with the lines
@@ -718,6 +734,16 @@ void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, floa
 		while(*pR + *pG + *pB > 2.5); 
 		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 	}
+	//	Check if this the is the Reference Lap. If so, change the color to full White/Black
+	if (RefLapFlag && m_pLapSupplier->GetDisplayOptions().fColorScheme)	//	Background color is black, make Reference Lap white
+	{
+		*pR = 0.95; *pG = 0.95; *pB = 0.95;
+	}
+	else if (RefLapFlag)	//	Background color is black, make Reference Lap white
+	{
+		*pR = 0.0; *pG = 0.0; *pB = 0.0;
+	}
+	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 }
 // Function converts the Y-value for a data channel to a transformed polynomial value
 double CLapPainter::PolynomialFilter(double flValue, double fTransAValue, double fTransBValue, double fTransCValue)
@@ -870,7 +896,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 	float r;
 	float g;
 	float b;
-	MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+	MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
 	const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
     for(int x = 0; x< lstPoints.size(); x++)
@@ -995,7 +1021,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 	  float r;
 	  float g;
 	  float b;
-	  MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+	  MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
       
       // we also want to draw a highlighted square
       DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);

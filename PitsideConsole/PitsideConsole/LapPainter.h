@@ -84,7 +84,7 @@ private:
 //  void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map	Made public by KDJ
   void DrawSelectLapsPrompt() const;
   void DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const;
-  void MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float*pB); 
+  void MakeColor(const CExtendedLap* pLap,  bool RefLapFlag, float* pR, float* pG, float*pB); 
   void LineColor();
   void drawOval (float x_center, float y_center, float w, float h);
   void DrawHorizontalLine(float flLine, float dMinX, float dMaxX, char szText[256]);

@@ -1905,13 +1905,13 @@ void UpdateSectors()
 	//	End Sector Loop
 
 			//	Now that we have computed the Sector Time, let's Display them
-			if (w == lstLaps.size() - 1 && m_fShowReferenceLap)
+/*			if (w == lstLaps.size() - 1 && m_fShowReferenceLap)
 			{
 				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"\t\tRef Lap: \t%s", szString[w]);
 				SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
 			}
 			else
-			{
+*/			{
 				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"%s %s", szLapString[w], szString[w]);
 				SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
 			}
