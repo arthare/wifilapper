@@ -435,7 +435,8 @@ POPUP "&Options"
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "Show Help File", ID_HELP_SHOWHELP
+        MENUITEM "Show Pitside Help File", ID_HELP_SHOWHELP
+        MENUITEM "Show Wifilapper Help File", ID_HELP_SHOWWFLHELP
         MENUITEM "Show IPs", ID_HELP_IPS
         MENUITEM "About", ID_HELP_ABOUT
     END

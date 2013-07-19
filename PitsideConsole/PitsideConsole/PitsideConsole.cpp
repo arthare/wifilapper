@@ -852,6 +852,11 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
             ShowHelp(hWnd);
             return TRUE;
           }
+          case ID_HELP_SHOWWFLHELP:
+          {
+            ShowWFLHelp(hWnd);
+            return TRUE;
+          }
           case ID_HELP_IPS:
           {
             ShowNetInfo();
@@ -1634,6 +1639,30 @@ private:
 		TCHAR lpOpen[MAX_PATH] = L"open";
 		
 		TCHAR lpFile[MAX_PATH] = L"PitsideHelp.pdf";
+		TCHAR lpDir[MAX_PATH];
+		if(GetAppFolder(lpDir,NUMCHARS(lpDir)))
+		{
+			//	Set up the Filename string for the Help PDF file.
+			wcsncat(lpDir,L"", NUMCHARS(lpDir)-1);
+		}
+		else
+		{
+			// trouble.  just bail.
+			return false;
+		}
+		int nShowCmd = SW_RESTORE;	//	Restore the Help document, if it is minimized or whatever.
+
+		//	Shell to the Help PDF file
+		HINSTANCE Check = ShellExecuteW(hWnd, lpOpen, lpFile, NULL, lpDir, nShowCmd);
+		if ((int)Check <= 32)
+          MessageBox(NULL, L"The Help file requires Acrobat Reader\n\nPlease install Reader and try again", L"Acrobat Reader Not Found", MB_OK);
+		return true;
+	}
+   bool ShowWFLHelp(HWND hWnd)
+	{
+		TCHAR lpOpen[MAX_PATH] = L"open";
+		
+		TCHAR lpFile[MAX_PATH] = L"WifilapperHelp.pdf";
 		TCHAR lpDir[MAX_PATH];
 		if(GetAppFolder(lpDir,NUMCHARS(lpDir)))
 		{
