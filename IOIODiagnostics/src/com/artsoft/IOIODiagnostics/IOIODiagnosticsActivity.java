@@ -90,7 +90,7 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		{
 			try
 			{
-				for(int x = 31; x <= 46; x++)
+				for(int x = 31; x <= 45; x++)
 				{
 					if(m_pins[x] != null)
 					{
@@ -134,7 +134,6 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 				R.id.lblPin43,
 				R.id.lblPin44,
 				R.id.lblPin45,
-				R.id.lblPin46,
 		};
 		final int rgSeeks[] = {R.id.seek31,
 				R.id.seek32,
@@ -151,7 +150,6 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 				R.id.seek43,
 				R.id.seek44,
 				R.id.seek45,
-				R.id.seek46,
 				};
 		
 		final int rgLabels[] = {R.id.label31,
@@ -169,13 +167,12 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 				R.id.label43,
 				R.id.label44,
 				R.id.label45,
-				R.id.label46,
 				};
 		
 		if(msg.what == MSG_CONNECTATTEMPTDONE)
 		{
 			// they've finished attempting to connect to the IOIO, so let's populate all our pins
-			for(int x = 31; x <= 46; x++)
+			for(int x = 31; x <= 45; x++)
 			{
 				try{
 					m_pins[x] = new PinWrapper(m_ioio,x,false);
@@ -337,7 +334,6 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		case R.id.lblPin43: ix = 43; break;
 		case R.id.lblPin44: ix = 44; break;
 		case R.id.lblPin45: ix = 45; break;
-		case R.id.lblPin46: ix = 46; break;
 		}
 		if(ix >= 31 && m_pins[ix] != null)
 		{
