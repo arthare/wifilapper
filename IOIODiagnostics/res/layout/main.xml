@@ -246,5 +246,194 @@
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
     </LinearLayout>
+    
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
 
+        <TextView
+            android:id="@+id/lblPin40"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Analog 40"
+            android:textAppearance="?android:attr/textAppearanceMedium"  />
+
+        <SeekBar
+            android:id="@+id/seek40"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/label40"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </LinearLayout>
+    
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/lblPin41"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Analog 41"
+            android:textAppearance="?android:attr/textAppearanceMedium"  />
+
+        <SeekBar
+            android:id="@+id/seek41"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/label41"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </LinearLayout>
+        
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/lblPin42"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Analog 42"
+            android:textAppearance="?android:attr/textAppearanceMedium"  />
+
+        <SeekBar
+            android:id="@+id/seek42"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/label42"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </LinearLayout>
+        
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/lblPin43"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Analog 43"
+            android:textAppearance="?android:attr/textAppearanceMedium"  />
+
+        <SeekBar
+            android:id="@+id/seek43"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/label43"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </LinearLayout>
+        
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/lblPin44"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Analog 44"
+            android:textAppearance="?android:attr/textAppearanceMedium"  />
+
+        <SeekBar
+            android:id="@+id/seek44"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/label44"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </LinearLayout>
+        
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/lblPin45"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Analog 45"
+            android:textAppearance="?android:attr/textAppearanceMedium"  />
+
+        <SeekBar
+            android:id="@+id/seek45"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/label45"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </LinearLayout>
+        
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/lblPin46"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Analog 46"
+            android:textAppearance="?android:attr/textAppearanceMedium"  />
+
+        <SeekBar
+            android:id="@+id/seek46"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/label46"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </LinearLayout>
+    
 </LinearLayout>
