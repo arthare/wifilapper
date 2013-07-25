@@ -2418,15 +2418,17 @@ void UpdateDisplays()
         return (float)(iMin);
       }
       case DATA_CHANNEL_TEMP: return 0;
-      case (DATA_CHANNEL_PID_START+0x5): return -40;
-      case (DATA_CHANNEL_PID_START+0xc): return 0;
-      case (DATA_CHANNEL_PID_START+0xA): return 0;
-      case (DATA_CHANNEL_PID_START+0x5c): return -40;
-      default: 
+
+	  default: 
         if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
             eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
         {
           return m_sfLapOpts.fIOIOHardcoded ? 0 : 1e30;
+        }
+        else if(eChannel >= DATA_CHANNEL_PID_START && eChannel < DATA_CHANNEL_PID_END)
+        {
+			int iMin = (int)(flMin);
+			return (float)(iMin);
         }
         return 1e30;
     }
@@ -2459,7 +2461,7 @@ void UpdateDisplays()
 		  if(flSpread < 0.050) return 0.0050f;		
 		  if(flSpread < 1.000) return 0.1000f;
 		  if(flSpread < 10.00) return 1.0000f;
-		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 1000) return 50.0f;
 		  if(flSpread < 5000) return 100.0f;
 		  if(flSpread < 10000) return 500.0f;
 		  if(flSpread < 50000) return 2500.0f;
@@ -2472,7 +2474,7 @@ void UpdateDisplays()
     case DATA_CHANNEL_TIME:					
     case DATA_CHANNEL_ELAPSEDTIME:					
 		{
-		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 1000) return 50.0f;
 		  if(flSpread < 5000) return 100.0f;
 		  if(flSpread < 10000) return 500.0f;
 		  if(flSpread < 50000) return 2500.0f;
@@ -2484,7 +2486,7 @@ void UpdateDisplays()
 		}
     case DATA_CHANNEL_LAPTIME_SUMMARY:					
 		{
-		  if(flSpread < 1) return 0.50f;		//	Added by KDJ to improve Laptime display
+		  if(flSpread < 1) return 0.50f;
 		  if(flSpread < 5) return 1.0f;
 		  if(flSpread < 10) return 5.0f;
 		  if(flSpread < 50) return 25.0f;
@@ -2509,90 +2511,100 @@ void UpdateDisplays()
     const float flSpread = flMax - flMin;
     switch(eChannel)
     {
-    case DATA_CHANNEL_X: return 1e30;
-    case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
-    case DATA_CHANNEL_VELOCITY: 
-    {
-      switch(m_sfLapOpts.eUnitPreference)
-      {
-      case UNIT_PREFERENCE_KMH: return KMH_TO_MS(25.0);
-	  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Adjusted by KDJ
-      case UNIT_PREFERENCE_MS: return 5;
-      }
-      return 10.0;
-    }
-    case DATA_CHANNEL_DISTANCE: 
-    {
-	  if(flSpread < 0.001) return 0.0001f;		
-	  if(flSpread < 0.005) return 0.0005f;		
-	  if(flSpread < 0.010) return 0.0010f;		
-      if(flSpread < 0.050) return 0.0050f;		
-      if(flSpread < 1.000) return 0.1000f;
-      if(flSpread < 10.00) return 1.0000f;
-	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 5000) return 500.0f;
-	  if(flSpread < 10000) return 1000.0f;
-      if(flSpread < 50000) return 5000.0f;
-	  if(flSpread < 110000) return 10000.0f;
-      if(flSpread < 1100000) return 100000.0f;
-      if(flSpread < 10000000) return 1000000.0f;
-	  return 10000000;
-	}
+		case DATA_CHANNEL_X: return 1e30;
+		case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
+		case DATA_CHANNEL_VELOCITY: 
+		{
+		  switch(m_sfLapOpts.eUnitPreference)
+		  {
+			  case UNIT_PREFERENCE_KMH: return KMH_TO_MS(25.0);
+			  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Adjusted by KDJ
+			  case UNIT_PREFERENCE_MS: return 5;
+		  }
+		  return 10.0;
+		}
+		case DATA_CHANNEL_DISTANCE: 
+		{
+		  if(flSpread < 0.001) return 0.0001f;		
+		  if(flSpread < 0.005) return 0.0005f;		
+		  if(flSpread < 0.010) return 0.0010f;		
+		  if(flSpread < 0.050) return 0.0050f;		
+		  if(flSpread < 1.000) return 0.1000f;
+		  if(flSpread < 10.00) return 1.0000f;
+		  if(flSpread < 1000) return 100.0f;
+		  if(flSpread < 5000) return 500.0f;
+		  if(flSpread < 10000) return 1000.0f;
+		  if(flSpread < 50000) return 5000.0f;
+		  if(flSpread < 110000) return 10000.0f;
+		  if(flSpread < 1100000) return 100000.0f;
+		  if(flSpread < 10000000) return 1000000.0f;
+		  return 10000000;
+		}
 
-    case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
-    case DATA_CHANNEL_TIMESLIP:
-	case DATA_CHANNEL_ELAPSEDTIME:
-    {
-	  if(flSpread < 10) return 1.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 100) return 10.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 5000) return 500.0f;
-	  if(flSpread < 10000) return 1000.0f;
-      if(flSpread < 50000) return 5000.0f;
-	  if(flSpread < 110000) return 10000.0f;
-      if(flSpread < 1100000) return 100000.0f;
-      if(flSpread < 10000000) return 1000000.0f;
-	  return 10000000.0f;
-    }
-	case DATA_CHANNEL_LAPTIME_SUMMARY:
-    {
-	  if(flSpread < 5) return 0.5f;
-	  if(flSpread < 10) return 1.0f;
-      if(flSpread < 50) return 5.0f;
-	  if(flSpread < 100) return 10.0f;
-      if(flSpread < 1100) return 100.0f;
-      if(flSpread < 10000) return 1000.0f;
-      if(flSpread < 50000) return 5000.0f;
-	  if(flSpread < 110000) return 10000.0f;
-      if(flSpread < 1100000) return 100000.0f;
-      if(flSpread < 10000000) return 1000000.0f;
-	  return 10000000.0f;
-    }
-    case DATA_CHANNEL_X_ACCEL: return 0.5f;
-    case DATA_CHANNEL_Y_ACCEL: return 0.5f;
-    case DATA_CHANNEL_Z_ACCEL: return 0.5f;
-    case DATA_CHANNEL_TEMP: return 10.0f;
-    case (DATA_CHANNEL_PID_START+0x5): return 25;
-    case (DATA_CHANNEL_PID_START+0xA): return 100;
-    case (DATA_CHANNEL_PID_START+0xc): return 1000; // rpms
-    case (DATA_CHANNEL_PID_START+0x5c): return 25;
-    default: 
-      if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
-          eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
-      {
-        if(flSpread < 1) return m_sfLapOpts.fIOIOHardcoded ? 0.1f : 1e30;	//	Added by KDJ
-		if(flSpread < 10) return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 25) return m_sfLapOpts.fIOIOHardcoded ? 2.5f : 1e30;	//	Added by KDJ
-		if(flSpread < 50) return m_sfLapOpts.fIOIOHardcoded ? 5.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 150) return m_sfLapOpts.fIOIOHardcoded ? 20.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 500) return m_sfLapOpts.fIOIOHardcoded ? 50.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 10000) return m_sfLapOpts.fIOIOHardcoded ? 1000.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 100000) return m_sfLapOpts.fIOIOHardcoded ? 5000.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 1000000) return m_sfLapOpts.fIOIOHardcoded ? 50000.0f : 1e30;	//	Added by KDJ
-        return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;		// Original code, and default for non-transformed IOIO data
-      }
-      return 1e30;
-    }
+		case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
+		case DATA_CHANNEL_TIMESLIP:
+		case DATA_CHANNEL_ELAPSEDTIME:
+		{
+		  if(flSpread < 10) return 1.0f;
+		  if(flSpread < 100) return 10.0f;
+		  if(flSpread < 1000) return 100.0f;
+		  if(flSpread < 5000) return 500.0f;
+		  if(flSpread < 10000) return 1000.0f;
+		  if(flSpread < 50000) return 5000.0f;
+		  if(flSpread < 110000) return 10000.0f;
+		  if(flSpread < 1100000) return 100000.0f;
+		  if(flSpread < 10000000) return 1000000.0f;
+		  return 10000000.0f;
+		}
+		case DATA_CHANNEL_LAPTIME_SUMMARY:
+		{
+		  if(flSpread < 5) return 0.5f;
+		  if(flSpread < 10) return 1.0f;
+		  if(flSpread < 50) return 5.0f;
+		  if(flSpread < 100) return 10.0f;
+		  if(flSpread < 1100) return 100.0f;
+		  if(flSpread < 10000) return 1000.0f;
+		  if(flSpread < 50000) return 5000.0f;
+		  if(flSpread < 110000) return 10000.0f;
+		  if(flSpread < 1100000) return 100000.0f;
+		  if(flSpread < 10000000) return 1000000.0f;
+		  return 10000000.0f;
+		}
+		case DATA_CHANNEL_X_ACCEL: return 0.5f;
+		case DATA_CHANNEL_Y_ACCEL: return 0.5f;
+		case DATA_CHANNEL_Z_ACCEL: return 0.5f;
+		case DATA_CHANNEL_TEMP: return 10.0f;
+
+		default: 
+		  if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
+			  eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
+		  {
+			if(flSpread < 1) return m_sfLapOpts.fIOIOHardcoded ? 0.1f : 1e30;
+			if(flSpread < 10) return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;
+			if(flSpread < 25) return m_sfLapOpts.fIOIOHardcoded ? 2.5f : 1e30;
+			if(flSpread < 50) return m_sfLapOpts.fIOIOHardcoded ? 5.0f : 1e30;
+			if(flSpread < 150) return m_sfLapOpts.fIOIOHardcoded ? 20.0f : 1e30;
+			if(flSpread < 500) return m_sfLapOpts.fIOIOHardcoded ? 50.0f : 1e30;
+			if(flSpread < 10000) return m_sfLapOpts.fIOIOHardcoded ? 1000.0f : 1e30;
+			if(flSpread < 100000) return m_sfLapOpts.fIOIOHardcoded ? 5000.0f : 1e30;
+			if(flSpread < 1000000) return m_sfLapOpts.fIOIOHardcoded ? 50000.0f : 1e30;
+			return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;		// Original code, and default for non-transformed IOIO data
+		  }
+		  else if(eChannel >= DATA_CHANNEL_PID_START && eChannel < DATA_CHANNEL_PID_END)
+		  {
+			if(flSpread < 1) return 0.1f;
+			if(flSpread < 10) return 1.0f;
+			if(flSpread < 25) return 2.5f;
+			if(flSpread < 50) return 5.0f;
+			if(flSpread < 150) return 20.0f;
+			if(flSpread < 500) return 50.0f;
+			if(flSpread < 10000) return 1000.0f;
+			if(flSpread < 100000) return 5000.0f;
+			if(flSpread < 1000000) return 50000.0f;
+			return 1e30;
+		  }
+		  return 1e30;
+		}
   }
   virtual const LAPSUPPLIEROPTIONS& GetDisplayOptions() const override
   {

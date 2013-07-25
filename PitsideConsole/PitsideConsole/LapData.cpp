@@ -43,7 +43,7 @@ PIDDATA g_rgPIDData[] =
 	{L"O2 sens present",""},
 	{L"Aux input status",""},
 	{L"Run time since engine start,s","%5.0f"},
-	{L"PIDs supported [21 - 40]",""},
+  {L"PIDs supported [21 - 40]",""},
 	{L"Dist traveled w/MIL on,km","%5.1f"},
 	{L"Fuel Rail Press (rel mani vacuum)","%5.1f"},
 	{L"Fuel Rail Press (direct inject)kPa","%6.1f"},
@@ -75,7 +75,7 @@ PIDDATA g_rgPIDData[] =
 	{L"Cat Temp Bank 2, Sens 1",""},
 	{L"Cat Temp Bank 1, Sens 2",""},
 	{L"Cat Temp Bank 2, Sens 2",""},
-	{L"PIDs supported [41 - 60]",""},
+  {L"PIDs supported [41 - 60]",""},
 	{L"Mon status this drive cycle",""},
 	{L"Ctrl module voltage",""},
 	{L"Abs load value",""},
@@ -107,7 +107,7 @@ PIDDATA g_rgPIDData[] =
 	{L"Fuel inject timing",""},
 	{L"Eng fuel rate",""},
 	{L"Emission reqts",""},
-	{L"PIDs supported [61 - 80]",""},
+  {L"PIDs supported [61 - 80]",""},
 	{L"Drvr dmnd eng pct torque",""},
 	{L"Act eng pct torque",""},
 	{L"Eng ref torque",""},
@@ -139,7 +139,7 @@ PIDDATA g_rgPIDData[] =
 	{L"NOx NTE control status",""},
 	{L"PM NTE control status",""},
 	{L"Engine run time",""},
-	{L"PIDs supported [81 - A0]",""},
+  {L"PIDs supported [81 - A0]",""},
 	{L"Eng run time AECD",""},
 	{L"Eng run time AECD",""},
 	{L"NOx sensor",""},
@@ -181,7 +181,7 @@ PIDDATA g_rgPIDData[] =
 	{L"",""},
 	{L"",""},
 	{L"",""},
-  {L"",""},
+	{L"",""},
 	{L"",""},
 	{L"",""},
 	{L"",""},
@@ -784,18 +784,6 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
                 {
                   float dTimeSlip = dEstimatedElapsedTime - (double)iElapsedTime;
                   pTimeSlip->AddPoint(m_lstPoints[x].iTime, dTimeSlip);
-
-/*
-
-				  //	dEstimatedElapseTime is the time to get to this distance from the start, based upon the Reference Lap
-				  //	Need to add here the Sector Times coding, once that information is available - KDJ
-				  if (dDistance <= pReferenceDistanceChannel->GetValue(lstReference[1].iTime))
-				  {
-//					 CPlotSelectDlg::m_sfLapOpts->m_SplitPoints[1] = dEstimatedElapsedTime;
-				  }	
-
-*/			
-				
 				}
               }
             }
