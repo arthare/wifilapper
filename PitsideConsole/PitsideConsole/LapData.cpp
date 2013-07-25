@@ -549,7 +549,7 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
     const double dPct = (double)ixCheck / (double)cSize;
     const double dPctDiff = abs(dPct - dInputPercentage);
 
-    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.15)		// If you are within 15% of reference lap in data string
+    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.25)		// If you are within 25% of reference lap in data string
     {
       dClosest = dAvg;
       ixBestIndex = ixCheck;
