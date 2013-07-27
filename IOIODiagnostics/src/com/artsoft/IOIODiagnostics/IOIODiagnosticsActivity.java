@@ -90,7 +90,7 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		{
 			try
 			{
-				for(int x = 31; x <= 45; x++)
+				for(int x = 31; x <= 39; x++)
 				{
 					if(m_pins[x] != null)
 					{
@@ -127,13 +127,7 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 				R.id.lblPin36,
 				R.id.lblPin37,
 				R.id.lblPin38,
-				R.id.lblPin39,
-				R.id.lblPin40,
-				R.id.lblPin41,
-				R.id.lblPin42,
-				R.id.lblPin43,
-				R.id.lblPin44,
-				R.id.lblPin45,
+				R.id.lblPin39
 		};
 		final int rgSeeks[] = {R.id.seek31,
 				R.id.seek32,
@@ -143,14 +137,7 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 				R.id.seek36,
 				R.id.seek37,
 				R.id.seek38,
-				R.id.seek39,
-				R.id.seek40,
-				R.id.seek41,
-				R.id.seek42,
-				R.id.seek43,
-				R.id.seek44,
-				R.id.seek45,
-				};
+				R.id.seek39};
 		
 		final int rgLabels[] = {R.id.label31,
 				R.id.label32,
@@ -160,19 +147,12 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 				R.id.label36,
 				R.id.label37,
 				R.id.label38,
-				R.id.label39,
-				R.id.label40,
-				R.id.label41,
-				R.id.label42,
-				R.id.label43,
-				R.id.label44,
-				R.id.label45,
-				};
+				R.id.label39};
 		
 		if(msg.what == MSG_CONNECTATTEMPTDONE)
 		{
 			// they've finished attempting to connect to the IOIO, so let's populate all our pins
-			for(int x = 31; x <= 45; x++)
+			for(int x = 31; x <= 39; x++)
 			{
 				try{
 					m_pins[x] = new PinWrapper(m_ioio,x,false);
@@ -328,12 +308,6 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		case R.id.lblPin37: ix = 37; break;
 		case R.id.lblPin38: ix = 38; break;
 		case R.id.lblPin39: ix = 39; break;
-		case R.id.lblPin40: ix = 40; break;
-		case R.id.lblPin41: ix = 41; break;
-		case R.id.lblPin42: ix = 42; break;
-		case R.id.lblPin43: ix = 43; break;
-		case R.id.lblPin44: ix = 44; break;
-		case R.id.lblPin45: ix = 45; break;
 		}
 		if(ix >= 31 && m_pins[ix] != null)
 		{
