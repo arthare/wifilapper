@@ -40,6 +40,7 @@
 #include "DlgWarning.h"
 #include "DlgSetSplits.h"
 #include "jpge.h"
+#include <CommCtrl.h>	//	For Listview sorting routines
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -625,14 +626,31 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         case IDC_LAPS:
             switch(notifyHeader->code)
             {
-            case LVN_ITEMCHANGED:
-              NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
-              if(pDetails->iItem >= 0)
-              {
-                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
-              }
-              return TRUE;
-            }
+				case LVN_ITEMCHANGED:
+				{
+				  NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
+				  if(pDetails->iItem >= 0)
+				  {
+					UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
+				  }
+				  return TRUE;
+				}
+				case  LVN_COLUMNCLICK:
+				{
+					LPNMLISTVIEW pLVInfo = (LPNMLISTVIEW)lParam;	
+					//	User clicked the column header, let's re-sort the list
+					if (pLVInfo->iSubItem == SORTSTYLE_BYTIMEOFRACE && m_sfLapOpts.eSortPreference != SORTSTYLE_BYTIMEOFRACE)
+					{
+						m_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;
+						UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
+					}
+					else if (pLVInfo->iSubItem == SORTSTYLE_BYLAPTIME && m_sfLapOpts.eSortPreference != SORTSTYLE_BYLAPTIME)
+					{
+						m_sfLapOpts.eSortPreference = SORTSTYLE_BYLAPTIME;
+						UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
+					}
+				}
+			}
             break;
           case IDC_XAXIS:
             switch(notifyHeader->code)
@@ -717,18 +735,6 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
           {
             m_sfLapOpts.eUnitPreference = UNIT_PREFERENCE_MS;
             UpdateUI(UPDATE_MAP | UPDATE_MENU);
-            return TRUE;
-          }
-          case ID_OPTIONS_SORTTIME:
-          {
-            m_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;
-            UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
-            return TRUE;
-          }
-          case ID_OPTIONS_SORTLAP:
-          {
-            m_sfLapOpts.eSortPreference = SORTSTYLE_BYLAPTIME;
-            UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
             return TRUE;
           }
           case ID_OPTIONS_SHOWBESTS:
@@ -2110,8 +2116,6 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_KMH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_KMH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MPH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MPH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MS, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MS);
-    CheckMenuHelper(hSubMenu, ID_OPTIONS_SORTTIME, m_sfLapOpts.eSortPreference == SORTSTYLE_BYTIMEOFRACE);
-    CheckMenuHelper(hSubMenu, ID_OPTIONS_SORTLAP, m_sfLapOpts.eSortPreference == SORTSTYLE_BYLAPTIME);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
 	CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWREFERENCELAP, m_fShowReferenceLap);
@@ -2136,7 +2140,6 @@ void UpdateDisplays()
     case SORTSTYLE_BYLAPTIME:
       sort(lstLaps.begin(),lstLaps.end(), CExtendedLap_SortByLapTime);
       break;
-     
     }
     return lstLaps;
   }
@@ -2777,7 +2780,7 @@ void InitPlotPrefs(LAPSUPPLIEROPTIONS &p_sfLapOpts)
 		p_sfLapOpts.m_Tranformations[i].b_LoadTrans = false;
 	}
   }
-
+/*
 DWORD HTMLThreadProc(LPVOID pv)
 {
   LPCTSTR lpszPath = (LPCTSTR)pv;
@@ -2787,7 +2790,7 @@ DWORD HTMLThreadProc(LPVOID pv)
   {
     while(true)
     {
-      Sleep(5000);
+      Sleep(10000);
 
       ofstream out;
       out.open("toplaps.html");
@@ -2826,7 +2829,50 @@ DWORD HTMLThreadProc(LPVOID pv)
   }
   return 0;
 }
+*/
 
+//	Function updates the T&S screen for HPDE's and track days, based upon user choices for Race Sessions selected
+DWORD TimingScoringProc(LPVOID pv)
+{
+  LPCTSTR lpszPath = (LPCTSTR)pv;
+  CSfArtSQLiteDB sfDB;
+  vector<wstring> lstTables;
+  Sleep(30000);	//	Refresh the data every 30 seconds
+  if(SUCCEEDED(sfDB.Open(lpszPath, lstTables, true)))
+  {
+    while(true)
+    {
+
+      CSfArtSQLiteQuery sfQuery(sfDB);
+      //if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and races.name like '%Received laps%' order by laptime asc limit 40"))
+      if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id order by laptime asc limit 40"))
+      {
+        SYSTEMTIME st;
+        GetSystemTime(&st);
+
+//        out<<"Last Updated "<<st.wHour<<":"<<st.wMinute<<":"<<st.wSecond<<endl;
+//        out<<"<table><th>Car #<th>Laptime"<<endl;
+        while(sfQuery.Next())
+        {
+          TCHAR szRaceName[300];
+          TCHAR szLap[300];
+          float flLapTime = 0;
+          sfQuery.GetCol(0,szRaceName,NUMCHARS(szRaceName));
+          sfQuery.GetCol(1,&flLapTime);
+
+          ::FormatTimeMinutesSecondsMs(flLapTime,szLap,NUMCHARS(szLap));
+          std::wstring strw(szRaceName);
+          std::string strRaceName(strw.begin(),strw.end());
+          strw = szLap;
+          std::string strLapTime(strw.begin(),strw.end());
+ //         out<<"<tr><Td>"<<strRaceName<<"<td>"<<strLapTime<<"</tr>"<<endl;
+        }
+      }
+
+    }
+  }
+  return 0;
+}
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
@@ -3016,7 +3062,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_pHTTPServer = NULL;
   }
 
+  //	Art's original thread for T&S using external web page to view times. Replaced with hTimingScoring thread
   //HANDLE hHTMLThread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)&HTMLThreadProc,(LPVOID)&szDBPath[0],0,NULL);
+
+  //	Create the thread to handle T&S duties for track days and HPDE's
+  HANDLE hTimingScoring = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)&TimingScoringProc,(LPVOID)&szDBPath[0],0,NULL);
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 
