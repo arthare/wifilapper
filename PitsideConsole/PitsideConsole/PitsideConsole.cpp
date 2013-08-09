@@ -41,6 +41,8 @@
 #include "DlgSetSplits.h"
 #include "jpge.h"
 #include <CommCtrl.h>	//	For Listview sorting routines
+#include "DlgSelectSessions.h"
+#include "DlgTimingScoring.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -326,6 +328,7 @@ void SetRaceId(int iRaceId)
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
   LAPSUPPLIEROPTIONS m_sfLapOpts;
+  TCHAR m_szPath[MAX_PATH];
 
 /////////////////////////////////////////////////////////////////////////////////
   //	Functions for enabling Printing of OpenGL graphs
@@ -1212,6 +1215,24 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 				DestroyWindow(hWnd);
 				break;
 		  }
+		  case ID_TIMINGSCORING:
+          {
+				//	Let's set up for displaying the T&S page
+				int m_RaceId[50] = {NULL};
+				// Show the race-selection dialog and let the User pick which ones to use on T&S page
+				SELECTSESSIONS_RESULT sfResult;
+				CDlgSelectSessions dlgRace(g_pLapDB, &sfResult);
+				ArtShowDialog<IDD_SELECTSESSIONS>(&dlgRace);
+
+				if(!sfResult.fCancelled && sfResult.m_RaceId[0] != -1)
+				{
+					// Now display the T&S page and pass these RaceID's to this class
+					TS_RESULT ts_sfResult;
+					CDlgTimingScoring dlgTS(g_pLapDB, &ts_sfResult, m_szPath, &sfResult);
+					ArtShowDialog<IDD_TIMINGSCORING>(&dlgTS);
+				}
+				return TRUE;
+		  }
 		  case ID_DATA_OPENDB:
           {
             TCHAR szFilename[MAX_PATH];
@@ -1219,7 +1240,8 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
             {
               if(g_pLapDB->Init(szFilename))
               {
-                RACESELECT_RESULT sfResult;
+                _snwprintf(m_szPath, NUMCHARS(m_szPath), szFilename);
+				RACESELECT_RESULT sfResult;
                 CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
                 ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
 
@@ -1517,6 +1539,10 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
   void SetDisplayOptions(const LAPSUPPLIEROPTIONS& lapOpts)
   {
     m_sfLapOpts = lapOpts;
+  }
+  void SetDBPath(const TCHAR szPath[MAX_PATH])
+  {
+	  _snwprintf(m_szPath, NUMCHARS(m_szPath), szPath);
   }
 
   void UpdateUI(DWORD fdwUpdateFlags)
@@ -2780,99 +2806,6 @@ void InitPlotPrefs(LAPSUPPLIEROPTIONS &p_sfLapOpts)
 		p_sfLapOpts.m_Tranformations[i].b_LoadTrans = false;
 	}
   }
-/*
-DWORD HTMLThreadProc(LPVOID pv)
-{
-  LPCTSTR lpszPath = (LPCTSTR)pv;
-  CSfArtSQLiteDB sfDB;
-  vector<wstring> lstTables;
-  if(SUCCEEDED(sfDB.Open(lpszPath,lstTables,true)))
-  {
-    while(true)
-    {
-      Sleep(10000);
-
-      ofstream out;
-      out.open("toplaps.html");
-
-      out<<"<html><head><script type=\"text/JavaScript\"> function timedRefresh(timeoutPeriod) {	setTimeout(\"location.reload(true);\",timeoutPeriod);} </script></head>"<<endl;
-      CSfArtSQLiteQuery sfQuery(sfDB);
-      //if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and races.name like '%Received laps%' order by laptime asc limit 40"))
-      if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id order by laptime asc limit 40"))
-      {
-        SYSTEMTIME st;
-        GetSystemTime(&st);
-
-        out<<"<body onload=\"JavaScript:timedRefresh(5000);\">"<<endl;
-        out<<"Last Updated "<<st.wHour<<":"<<st.wMinute<<":"<<st.wSecond<<endl;
-        out<<"<table><th>Car #<th>Laptime"<<endl;
-        while(sfQuery.Next())
-        {
-          TCHAR szRaceName[300];
-          TCHAR szLap[300];
-          float flLapTime = 0;
-          sfQuery.GetCol(0,szRaceName,NUMCHARS(szRaceName));
-          sfQuery.GetCol(1,&flLapTime);
-
-          ::FormatTimeMinutesSecondsMs(flLapTime,szLap,NUMCHARS(szLap));
-          std::wstring strw(szRaceName);
-          std::string strRaceName(strw.begin(),strw.end());
-          strw = szLap;
-          std::string strLapTime(strw.begin(),strw.end());
-          out<<"<tr><Td>"<<strRaceName<<"<td>"<<strLapTime<<"</tr>"<<endl;
-        }
-        out<<"</table></body>";
-      }
-      out.close();
-
-    }
-  }
-  return 0;
-}
-*/
-
-//	Function updates the T&S screen for HPDE's and track days, based upon user choices for Race Sessions selected
-DWORD TimingScoringProc(LPVOID pv)
-{
-  LPCTSTR lpszPath = (LPCTSTR)pv;
-  CSfArtSQLiteDB sfDB;
-  vector<wstring> lstTables;
-  Sleep(30000);	//	Refresh the data every 30 seconds
-  if(SUCCEEDED(sfDB.Open(lpszPath, lstTables, true)))
-  {
-    while(true)
-    {
-
-      CSfArtSQLiteQuery sfQuery(sfDB);
-      //if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and races.name like '%Received laps%' order by laptime asc limit 40"))
-      if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id order by laptime asc limit 40"))
-      {
-        SYSTEMTIME st;
-        GetSystemTime(&st);
-
-//        out<<"Last Updated "<<st.wHour<<":"<<st.wMinute<<":"<<st.wSecond<<endl;
-//        out<<"<table><th>Car #<th>Laptime"<<endl;
-        while(sfQuery.Next())
-        {
-          TCHAR szRaceName[300];
-          TCHAR szLap[300];
-          float flLapTime = 0;
-          sfQuery.GetCol(0,szRaceName,NUMCHARS(szRaceName));
-          sfQuery.GetCol(1,&flLapTime);
-
-          ::FormatTimeMinutesSecondsMs(flLapTime,szLap,NUMCHARS(szLap));
-          std::wstring strw(szRaceName);
-          std::string strRaceName(strw.begin(),strw.end());
-          strw = szLap;
-          std::string strLapTime(strw.begin(),strw.end());
- //         out<<"<tr><Td>"<<strRaceName<<"<td>"<<strLapTime<<"</tr>"<<endl;
-        }
-      }
-
-    }
-  }
-  return 0;
-}
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
@@ -2971,7 +2904,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   
   LAPSUPPLIEROPTIONS x_sfLapOpts; //sfLapOpts contains all lap display options
   InitPlotPrefs(x_sfLapOpts);	//	Initialize all PlotPrefs variables before displaying anything
-//  sfUI.SetDisplayOptions(x_sfLapOpts);
 
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
@@ -3026,6 +2958,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
   x_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;		//	Default sort Lap List by time of lap
   sfUI.SetDisplayOptions(x_sfLapOpts);
+  sfUI.SetDBPath(szDBPath);
 
   PitsideHTTP aResponder(g_pLapDB,&sfUI);
   if(sfSettings.fRunHTTP && sfSettings.iHTTPPort > 0 && sfSettings.iHTTPPort < 65536)
@@ -3061,12 +2994,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   {
     g_pHTTPServer = NULL;
   }
-
-  //	Art's original thread for T&S using external web page to view times. Replaced with hTimingScoring thread
-  //HANDLE hHTMLThread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)&HTMLThreadProc,(LPVOID)&szDBPath[0],0,NULL);
-
-  //	Create the thread to handle T&S duties for track days and HPDE's
-  HANDLE hTimingScoring = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)&TimingScoringProc,(LPVOID)&szDBPath[0],0,NULL);
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 

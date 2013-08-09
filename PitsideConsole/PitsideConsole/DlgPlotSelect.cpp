@@ -49,8 +49,6 @@ vector<CExtendedLap*> GetAllLaps()
     void CPlotSelectDlg::InitPlotPrefs(HWND hWnd, LPARAM lParam)
 	{
 		//  We need to get all of the Y-axis data channels being displayed
-		// First load all laps and get their channels
-		vector<RACEDATA> lstRaces = m_pLapDB->GetRaces();
 		//	Pull the data channels for each lap from this race instance m_iRaceId
 		m_pPlotResults->iPlotId = m_iRaceId;	//	Get the Selected Race ID.
 		m_LapList.Clear();	//  Clear list of laps in memory and reload them.

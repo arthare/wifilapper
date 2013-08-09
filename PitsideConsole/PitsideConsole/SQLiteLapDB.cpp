@@ -445,7 +445,6 @@ void CSQLiteLapDB::GetLastLapTimeStamp(const vector<int>& lstCarNumbers, vector<
 int CSQLiteLapDB::GetLapCount(int iRaceId) const
 {
   AutoLeaveCS _cs(&m_cs);
-  vector<RACEDATA> lstRaces;
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   TCHAR szQuery[MAX_PATH];
   _snwprintf(szQuery, NUMCHARS(szQuery), L"select count(laps._id) from races,laps where races._id = %d and laps.raceid=races._id group by races._id", iRaceId);

@@ -96,6 +96,12 @@
     <ClInclude Include="jpge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DlgSelectSessions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgTimingScoring.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -162,6 +168,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="jpge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgSelectSessions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgTimingScoring.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

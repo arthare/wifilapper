@@ -113,6 +113,28 @@ BEGIN
     PUSHBUTTON      "Cancel", IDCANCEL, 100,180,95,20
 END
 
+// dialog for selecting which race in a DB we want to use
+IDD_SELECTSESSIONS DIALOG 150, 200, 200, 200
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Select Race Sessions to load"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "", IDC_RACE, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_ALIGNLEFT | LVS_REPORT | LVS_SHOWSELALWAYS, 0,0,200,180
+    PUSHBUTTON      "OK", IDOK, 5,180,95,20
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,180,95,20
+END
+
+// dialog for displaying T&S data results
+IDD_TIMINGSCORING DIALOG 150, 200, 308, 390
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX
+CAPTION "Best Laps from Selected Sessions"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "", IDC_TIMINGSCORING, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_REPORT | LVS_SHOWSELALWAYS, 5,0,298,370
+    PUSHBUTTON      "Refresh", IDRESCAN, 5,370,149,20
+    PUSHBUTTON      "Close", IDCANCEL, 154,370,149,20
+END
+
 // dialog for selecting which race in a DB we want to edit
 IDD_SELECTRACEEDIT DIALOG 150, 200, 200, 213
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
@@ -143,7 +165,7 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Pitside Console"
 FONT 8, "MS Shell Dlg"
 BEGIN
-	CTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0024\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
+	CTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0025\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
 	CTEXT			"https://sites.google.com/site/wifilapper",IDC_LBLMESSAGE6,5,60,245,20
     PUSHBUTTON      "OK", IDOK, 5,100,240,24
 END
@@ -429,6 +451,10 @@ POPUP "&Options"
         MENUITEM "Open .wflp DB", ID_DATA_OPENDB
 		MENUITEM "Edit/Merge Race Sessions", ID_DATA_EDITSESSION
 		MENUITEM "Export selected laps to CSV format", ID_DATA_DASHWARE
+    END
+	POPUP "&Timing"
+    BEGIN
+        MENUITEM "Timing and Scoring", ID_TIMINGSCORING
     END
     POPUP "&Help"
     BEGIN
