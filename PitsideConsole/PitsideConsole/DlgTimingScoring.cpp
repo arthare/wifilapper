@@ -37,6 +37,10 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         }
         case IDCANCEL:
           m_pResults->fCancelled = true;
+		  for (int i=0;i<50;i++)
+		  {
+				m_sfResult->m_RaceId[i] = -1;
+		  }
           EndDialog(hWnd,0);
           return TRUE;
       }
@@ -45,7 +49,11 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
     case WM_CLOSE:
     {
       m_pResults->fCancelled = true;
-      EndDialog(hWnd,0);
+      for (int i=0;i<50;i++)
+	  {
+			m_sfResult->m_RaceId[i] = -1;
+	  }
+	  EndDialog(hWnd,0);
       break;
     }
   }
@@ -147,6 +155,9 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 				ListView_SetItem(Dlg_hWnd, &lvi);
 			}
 	  }
+	  lstPos.clear();
+	  lstRaceName.clear();
+	  lstLapTimes.clear();
   }
   return 0;
 }
