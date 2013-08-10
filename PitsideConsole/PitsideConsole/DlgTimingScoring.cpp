@@ -66,7 +66,7 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
   LPCTSTR lpszPath = (LPCTSTR)pv;
   CSfArtSQLiteDB sfDB;
   vector<wstring> lstTables;
-		HWND Dlg_hWnd = GetDlgItem(hWnd, IDC_TIMINGSCORING);
+  HWND Dlg_hWnd = GetDlgItem(hWnd, IDC_TIMINGSCORING);
   if(SUCCEEDED(sfDB.Open(lpszPath, lstTables, true)))
   {
 	  //	Race ID's are stored in the sfResult.m_RaceId structure
@@ -81,8 +81,8 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
       vector<wstring> lstRaceName;
 	  vector<wstring> lstLapTimes;
       CSfArtSQLiteQuery sfQuery(sfDB);
-	  TCHAR szTmp[512] = {NULL};
-	  TCHAR szTemp[512] = L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and (";
+	  TCHAR szTmp[1024] = {NULL};
+	  TCHAR szTemp[1024] = L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and (";
 	  //	Now cycle through all selected RaceId's and get their laptimes and sort them
 	  for (int y = 0; y < z; y++)
 	  {

@@ -113,10 +113,10 @@ BEGIN
     PUSHBUTTON      "Cancel", IDCANCEL, 100,180,95,20
 END
 
-// dialog for selecting which race in a DB we want to use
+// dialog for selecting which race sessions in DB we want to use for T&S
 IDD_SELECTSESSIONS DIALOG 150, 200, 200, 200
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Select Race Sessions to load"
+CAPTION "Select Race Sessions to load for T&S Summary (MAX = 50)"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "", IDC_RACE, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_ALIGNLEFT | LVS_REPORT | LVS_SHOWSELALWAYS, 0,0,200,180
