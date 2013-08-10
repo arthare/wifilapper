@@ -74,25 +74,20 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 	  vector<wstring> lstLapTimes;
       CSfArtSQLiteQuery sfQuery(sfDB);
 	  TCHAR szTmp[512] = {NULL};
-	  TCHAR szTemp[512] = L"select races.name,laps.laptime from laps,races where laps.raceid=(";
+	  TCHAR szTemp[512] = L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and (";
 	  //	Now cycle through all selected RaceId's and get their laptimes and sort them
 	  for (int y = 0; y < z; y++)
 	  {
 			int s_RaceId = z_RaceId[y];
 			if (s_RaceId != 0)
 			{
-				_snwprintf(szTemp, NUMCHARS(szTemp), L"%s%i or ", szTemp, s_RaceId);
+				_snwprintf(szTemp, NUMCHARS(szTemp), L"%sraces._id = %i or ", szTemp, s_RaceId);
 			}
 	  }
-	  _snwprintf(szTmp, NUMCHARS(szTemp) - 2, L"%s", szTemp);
+	  _snwprintf(szTmp, wcslen(szTemp) - 4, L"%s", szTemp);
 	  _snwprintf(szTemp, NUMCHARS(szTemp), L"%s) order by laptime asc limit 40", szTmp);
-	  //if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and races.name like '%Received laps%' order by laptime asc limit 40"))
-	  if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id order by laptime asc limit 40"))
-//	  if(sfQuery.Init(L"select races.name where races.name= ?,laps.laptime from laps,races where laps.raceid=races._id order by laptime asc limit 40"))
-//	  if(sfQuery.Init(szTemp))
+	  if(sfQuery.Init(szTemp))
 	  {
-//			sfQuery.BindValue(m_sfResult->m_RaceId[0]);
-//			sfQuery.BindValue(m_RaceId);
 			SYSTEMTIME st;
 			GetSystemTime(&st);
 			int z = 1;
