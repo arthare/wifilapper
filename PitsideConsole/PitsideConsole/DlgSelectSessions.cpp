@@ -52,29 +52,30 @@ LRESULT CDlgSelectSessions::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
           set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
           if(setSelected.size() > 0)
           {
-			  //   Need to find all Race Sessions selected
-			  int z = 0;
-			  for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
-				{
-				  m_pResults->m_RaceId[z] = *i;
-				  z++;
-				  if (z > 50) break;
-				}
-				m_pResults->fCancelled = false;
-				EndDialog(hWnd,0);
-		  
+			//   Need to find all Race Sessions selected
+			int z = 0;
+			for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
+			{
+				m_pResults->m_RaceId[z] = *i;
+				z++;
+				if (z >= 50) break;	//	Maximum of 50 race sessions to display
+			}
+			m_pResults->fCancelled = false;
+			EndDialog(hWnd,0);
 		  }
           else
           {
-				//	Do nothing, no race sessions chosen
-				MessageBox(NULL,L"No race sessions selected\n\nSelect some race sessions and try again",L"", MB_OK);
+			//	Do nothing, no race sessions chosen
+			MessageBox(NULL,L"No race sessions selected\n\nSelect some race sessions and try again",L"", MB_OK);
           }
           return TRUE;
         }
         case IDCANCEL:
+		{
           m_pResults->fCancelled = true;
           EndDialog(hWnd,0);
           return TRUE;
+		}
       }
       break;
     } // end WM_COMMAND
