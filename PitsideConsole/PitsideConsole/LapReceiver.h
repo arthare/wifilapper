@@ -375,6 +375,7 @@ public:
   virtual int GetLapCount(int iRaceId) const = 0; // gets the lap count for a given race
   virtual vector<RACEDATA> GetRaces() = 0;
   virtual vector<const ILap*> GetLaps(int iRaceId) = 0;
+  virtual vector<const ILap*> GetScoring(int iRaceId) = 0;
   virtual const ILap* GetLap(int iLapId) = 0;
   virtual const IDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
   virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const = 0;

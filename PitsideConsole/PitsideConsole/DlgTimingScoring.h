@@ -32,10 +32,13 @@ public:
 public:
   TS_RESULT* m_pResults;
   DWORD* TimingScoringProc(LPVOID pv, HWND hWnd);
+  DWORD* CRaceScoring(LPVOID pv, HWND hWnd);
 
 private:
   ILapReceiver* m_pLapDB;
   ArtListBox sfListBox;
   TCHAR m_szPath[MAX_PATH];
   SELECTSESSIONS_RESULT* m_sfResult;
+  DWORD tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
+
 };

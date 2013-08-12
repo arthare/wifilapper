@@ -2,6 +2,20 @@
 #include "ArtUI.h"
 #include "AutoCS.h"
 
+struct SCORINGDATA
+{
+	SCORINGDATA()
+	{
+		unixtime = 0;
+		laps = 0;
+		raceId = -1;
+	}
+	wstring strName;
+	int unixtime;
+	int laps;
+	int raceId;
+};
+
 class CSQLiteLapDB : public ILapReceiver
 {
 public:
@@ -26,6 +40,7 @@ public:
   virtual int GetLapCount(int iRaceId) const override; // gets the lap count for a given race
   virtual vector<RACEDATA> GetRaces() override;
   virtual vector<const ILap*> GetLaps(int iRaceId) override;
+  virtual vector<const ILap*> GetScoring(int iRaceId) override;
   virtual bool MergeLaps(int m_iRaceId1, int m_iRaceId2);
   virtual bool RenameLaps(TCHAR szName[260], int m_RaceId1);
   virtual const ILap* GetLap(int iLapId) override;
