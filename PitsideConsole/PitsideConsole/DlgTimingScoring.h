@@ -56,5 +56,5 @@ private:
   TCHAR m_szPath[MAX_PATH];
   SELECTSESSIONS_RESULT* m_sfResult;
   DWORD tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
-
+  int str_ends_with(const TCHAR * str, const TCHAR * suffix);
 };
