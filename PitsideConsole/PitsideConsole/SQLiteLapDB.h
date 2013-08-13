@@ -2,20 +2,6 @@
 #include "ArtUI.h"
 #include "AutoCS.h"
 
-struct SCORINGDATA
-{
-	SCORINGDATA()
-	{
-		unixtime = 0;
-		laps = 0;
-		raceId = -1;
-	}
-	wstring strName;
-	int unixtime;
-	int laps;
-	int raceId;
-};
-
 class CSQLiteLapDB : public ILapReceiver
 {
 public:

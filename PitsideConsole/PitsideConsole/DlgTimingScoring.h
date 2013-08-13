@@ -17,6 +17,22 @@ public:
   bool fCancelled;
 };
 
+struct SCORINGDATA
+{
+	SCORINGDATA()
+	{
+		db_iUnixFirstTime = 0;
+		db_iUnixLastTime = 0;
+		db_iTotLaps = 0;
+		db_iRaceId = -1;
+	}
+	TCHAR db_strRaceName[MAX_PATH];
+	int db_iUnixFirstTime;
+	int db_iUnixLastTime;
+	int db_iTotLaps;
+	int db_iRaceId;
+};
+
 class CDlgTimingScoring : public IUI
 {
 public:

@@ -71,15 +71,9 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		{
 			TCHAR szText[MAX_PATH] = {NULL};			
 			TCHAR szTemp[MAX_PATH] = {NULL};			
-			tmEndRace = NULL;
-			tmStartRace = timeGetTime();	//	Set the start time for this race session
-			//	Let's format the time into hr:min
-/*		    ::FormatTimeMinutesSecondsMs((tmStartRace - timeGetTime()) / 1000, szText, NUMCHARS(szText) );
-			swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
-			swprintf(szTemp, NUMCHARS(szTemp), szText);
-			_snwprintf(szText, NUMCHARS(szText), L"Race started!\n%s", szTemp);
-//			_snwprintf(szText, NUMCHARS(szText), L"Let the race begin!\n%12.0f", (float)tmStartRace);
-*/			MessageBox(hWnd, L"New race started!", MB_OK,NULL);
+			tmEndRace = NULL;	//	Remove any end of race marker when new race begins. DWORD format
+			tmStartRace = timeGetTime();	//	Set the start time for this race session. Unixtime in DWORD format
+			MessageBox(hWnd, L"New race started!", MB_OK,NULL);
 			CRaceScoring((LPVOID) &m_szPath, hWnd);	//	Update the scoring list view
 			m_pResults->fCancelled = false;
 			return TRUE;
@@ -88,17 +82,15 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		{
 			TCHAR szText[MAX_PATH] = {NULL};			
 			TCHAR szTemp[MAX_PATH] = {NULL};			
-			tmEndRace = timeGetTime();
+			tmEndRace = timeGetTime();		//	Set the end time for this race session. Unixtime in DWORD format
 		    ::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace) / 1000, szText, NUMCHARS(szText) );
 			swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
 			swprintf(szTemp, NUMCHARS(szTemp), szText);
 			_snwprintf(szText, NUMCHARS(szText), L"Race has ended\n\nRace duration: %s", szTemp);
-//			_snwprintf(szText, NUMCHARS(szText), L"Let the race end!\n%12.0f", (float)tmEndRace);
 			MessageBox(hWnd, szText, MB_OK,NULL);
 				m_pResults->fCancelled = false;
 				return TRUE;
 		}
-
       }
       break;
     } // end WM_COMMAND
@@ -121,16 +113,21 @@ DWORD* CDlgTimingScoring::CRaceScoring(LPVOID pv, HWND hWnd)
 {
   LPCTSTR lpszPath = (LPCTSTR)pv;
   CSfArtSQLiteDB sfDB;
+  SCORINGDATA m_ScoringData[50];	//	Save up to 50 racer's results in memory
+/*	TCHAR db_strRaceName[MAX_PATH];
+	int db_iUnixFirstTime;
+	int db_iUnixLastTime;
+	int db_iTotLaps;
+	int db_iRaceId;	*/
   vector<wstring> lstTables;
   HWND DlgScoring_hWnd = GetDlgItem(hWnd, IDC_RACESCORING);
   if(SUCCEEDED(sfDB.Open(lpszPath, lstTables, true)))
   {
 	  //	Race ID's are stored in the sfResult.m_RaceId structure
 	  int z = 0;
-	  int z_RaceId[50] = {-1};
 	  while (m_sfResult->m_RaceId[z] >= 0 && z < 50)
 	  {
-		z_RaceId[z] = m_sfResult->m_RaceId[z];
+		m_ScoringData[z].db_iRaceId = m_sfResult->m_RaceId[z];
 		z++;
 	  }
 
@@ -141,58 +138,58 @@ DWORD* CDlgTimingScoring::CRaceScoring(LPVOID pv, HWND hWnd)
 	  vector<wstring> lstLapTimes;
 	  TCHAR szTmStartRace[MAX_PATH] = {NULL};
 	  TCHAR szTmEndRace[MAX_PATH] = {NULL};
+
+	  //	First let's make the strings for Start and End times
+	  long long iTmStartRace = 0;
+	  long long iTmEndRace = 0;
+	  double fTmStartRace = 1376100527;	//	Used for the TestRaces database only
+	  //					double fTmStartRace = tmStartRace;
+	  iTmStartRace = (int)fTmStartRace;
+	  swprintf(szTmStartRace, NUMCHARS(szTmEndRace), L"%d", iTmStartRace); 
+	  double fTmEndRace = 1376100699;	//	Used for the TestRaces database only
+	  //					double fTmEndRace = tmEndRace;
+	  iTmEndRace = (int)fTmEndRace;
+	  if (iTmEndRace <= 0)
+	  {
+			swprintf(szTmEndRace, NUMCHARS(szTmEndRace), L"55555555555"); 
+	  }
+	  else
+	  {
+			swprintf(szTmEndRace, NUMCHARS(szTmEndRace), L"%d", iTmEndRace); 
+	  }
+
+	  //	Now cycle through all selected RaceId's and get the number of laps completed
       CSfArtSQLiteQuery sfQuery(sfDB);
 	  TCHAR szTmp[2080] = {NULL};
-	  //	Now cycle through all selected RaceId's and get the number of laptimes completed
 	  TCHAR szTemp[1080] = L"select count(laps._id) from laps,races where laps.raceid=races._id and races._id = "; //? and laps.unixtime > ? and laps.unixtime < ?";
 	  for (int y = 0; y < z; y++)
 	  {
-					long long iTmStartRace = 0;
-					long long iTmEndRace = 0;
-					double fTmStartRace = 1376100527;	//	Used for the TestRaces database only
-//					double fTmStartRace = tmStartRace;
-					iTmStartRace = (int)fTmStartRace;
-					swprintf(szTmStartRace, NUMCHARS(szTmEndRace), L"%d", iTmStartRace); 
-					double fTmEndRace = 1376100699;	//	Used for the TestRaces database only
-//					double fTmEndRace = tmEndRace;
-					iTmEndRace = (int)fTmEndRace;
-					if (iTmEndRace <= 0)
-					{
-						swprintf(szTmEndRace, NUMCHARS(szTmEndRace), L"55555555555"); 
-//						iTmEndRace = (long long)55555555555;
-					}
-					else
-					{
-						swprintf(szTmEndRace, NUMCHARS(szTmEndRace), L"%d", iTmEndRace); 
-//						iTmEndRace = (long long)fTmEndRace;
-					}
-		    _snwprintf(szTmp, NUMCHARS(szTmp), L"%s%i and laps.unixtime > %s and laps.unixtime < %s", szTemp, z_RaceId[y], szTmStartRace, szTmEndRace/*iTmEndRace*/);
+		    _snwprintf(szTmp, NUMCHARS(szTmp), L"%s%i and laps.unixtime > %s and laps.unixtime < %s", szTemp, m_ScoringData[y].db_iRaceId, szTmStartRace, szTmEndRace);
 			if(sfQuery.Init(szTmp))
 			{
 				while(sfQuery.Next())
 					{
-//					sfQuery.BindValue(z_RaceId[y]);
+//					sfQuery.BindValue(m_ScoringData[y].db_iRaceId);
 //					sfQuery.BindValue((int)iTmStartRace);
 //					sfQuery.BindValue((int)iTmEndRace);
 					int cLaps = 0;
 					if(sfQuery.GetCol(0,&cLaps))
 					{
-						lstLaps.push_back(cLaps);
+						m_ScoringData[y].db_iTotLaps = cLaps;	//	Store the lap count value in the data structure
+//						lstLaps.push_back(cLaps);
 					}
 				}
 			}
 	  }
 
-
-
 	  //	Now let's get their lap time information, so that we can figure out between-lap time differences
-
+	  //	Right now we are just getting the time difference between EndRace time and the last lap time
+	  //	Now cycle through all selected RaceId's and get all of their laptimes and sort them by race name and then by time collected in the given timespan
 	  _snwprintf(szTmp, NUMCHARS(szTmp), L"");
-	  //	Now cycle through all selected RaceId's and get their laptimes and sort them by time collected
 	  _snwprintf(szTemp, NUMCHARS(szTemp), L"select races.name,laps.unixtime,laps._id from laps,races where laps.raceid=races._id and (");
 	  for (int y = 0; y < z; y++)
 	  {
-			int s_RaceId = z_RaceId[y];
+			int s_RaceId = m_ScoringData[y].db_iRaceId;
 			if (s_RaceId != 0)
 			{
 				_snwprintf(szTemp, NUMCHARS(szTemp), L"%sraces._id = %i or ", szTemp, s_RaceId);
@@ -200,26 +197,57 @@ DWORD* CDlgTimingScoring::CRaceScoring(LPVOID pv, HWND hWnd)
 	  }
 	  swprintf(szTmp, wcslen(szTemp) - 3, L"%s", szTemp);
 	  _snwprintf(szTemp, NUMCHARS(szTemp), L"%s) and laps.unixtime > %s and laps.unixtime < %s order by name and unixtime", szTmp, szTmStartRace, szTmEndRace);
-	  int rec = 1;
+	  int rec = 0;
 	  if(sfQuery.Init(szTemp))
 	  {
+			int db_iUnixFirstTimeStart = -1;
+			int db_iUnixLastTimeStart = -1;
+			TCHAR szLapsIdStart[MAX_PATH] = {NULL};
+			TCHAR szRaceNameStart[300] = {NULL};
+			long long flStartLapTime = -1;
+			long long flFinishLapTime = -1;
 			TCHAR szPos[MAX_PATH] = {NULL};
 			TCHAR szRaceName[300] = {NULL};
 			TCHAR szLap[300] = {NULL};
 			while(sfQuery.Next())
 			{
-			  long long flLapTime = 0;
 			  if (sfQuery.GetCol(0,szRaceName,NUMCHARS(szRaceName)))
 			  {
-				  lstRaceName.push_back(szRaceName);
+//				  lstRaceName.push_back(szRaceName);
+				  swprintf(m_ScoringData[rec].db_strRaceName, NUMCHARS(m_ScoringData[rec].db_strRaceName), szRaceName);
+				  if (rec == 0) swprintf(szRaceNameStart, NUMCHARS(szRaceNameStart), szRaceName);
 			  }
-			  sfQuery.GetCol(1,&flLapTime);
-//			  flLapTime = flLapTime - (float)tmStartRace;
-//					flValue = _wtof(szText);
-			  int flTemp = _wtoi(szTmStartRace);
-			  flLapTime = flLapTime - (long long)flTemp;
+
+			  long long flLapTime = 0;
+			  if (sfQuery.GetCol(1,&flLapTime))
+			  {
+				  int flTemp = _wtoi(szTmStartRace);
+				  flLapTime = flLapTime - (long long)flTemp;
+				  if (rec == 0)
+				  {
+					  //	Initialize times for first data point
+					  flStartLapTime = flLapTime;
+					  flFinishLapTime = flLapTime;
+				  }
+				  else if (flLapTime > flFinishLapTime && szRaceNameStart == szRaceName)
+				  {
+					  flFinishLapTime = flLapTime;
+				  }
+				  else
+				  {
+					  //	We have gone past the last lap for this Race_Id
+					  //	Put the final time difference into the data structure
+					  flLapTime = iTmStartRace - flFinishLapTime;
+					  m_ScoringData[rec].db_iUnixLastTime = (int)flLapTime;
+				  }
+			  }
+
+			  //	Let's build the Scoring string for display
+			  int	TotTime = m_ScoringData[rec].db_iUnixFirstTime + m_ScoringData[rec].db_iUnixLastTime;
+			  TCHAR szText[MAX_PATH] = {NULL};
+			  ::FormatTimeMinutesSecondsMs((long long)TotTime,szText,NUMCHARS(szText));
+			  _snwprintf(szText, NUMCHARS(szText), L"%i + %i", m_ScoringData[rec].db_iTotLaps, TotTime);
 			  int iTemp = _wtoi(szTmEndRace) - _wtoi(szTmStartRace);
-			  ::FormatTimeMinutesSecondsMs(flLapTime,szLap,NUMCHARS(szLap));
 			  _snwprintf(szPos,NUMCHARS(szPos),L"%i",rec);
 			  lstPos.push_back(szPos);
 			  lstLapTimes.push_back(szLap);
