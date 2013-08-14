@@ -29,6 +29,7 @@ struct SCORINGDATA
 	TCHAR db_strRaceName[MAX_PATH];
 	int db_iUnixFirstTime;
 	int db_iUnixLastTime;
+	TCHAR db_szTotTime[MAX_PATH];
 	int db_iTotLaps;
 	int db_iRaceId;
 };
@@ -55,6 +56,7 @@ private:
   ArtListBox sfListBox;
   TCHAR m_szPath[MAX_PATH];
   SELECTSESSIONS_RESULT* m_sfResult;
-  DWORD tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
-  int str_ends_with(const TCHAR * str, const TCHAR * suffix);
+  int tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
+//  DWORD tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
+
 };
