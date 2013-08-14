@@ -8,6 +8,7 @@
 #include <fstream>
 
 static TCHAR szTitle[MAX_PATH];
+int iDuration = 0;
 
 LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -42,6 +43,8 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		HWND DlgScoring_hWnd = GetDlgItem(hWnd,IDC_RACESCORING);
 		sfListBox.Init(DlgScoring_hWnd,scoringLstCols,scoringLstWidths);
 		tmStartRace = NULL;	//	No races started at window initialization
+		HWND m_hWnd = GetDlgItem(hWnd,IDC_TIMINGSCORING);
+		SetDlgItemText(m_hWnd, IDC_RACE_COMMENT, szTitle);
 
 		TimingScoringProc((LPVOID)&m_szPath, hWnd);
 		break;
@@ -88,12 +91,13 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			TCHAR szTemp[MAX_PATH] = {NULL};			
 //			tmEndRace = timeGetTime();		//	Set the end time for this race session. Unixtime in DWORD format
 			tmEndRace = GetSecondsSince1970();
-		    ::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace), szText, NUMCHARS(szText) );
-			swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
-			swprintf(szTemp, NUMCHARS(szTemp), szText);
-			_snwprintf(szText, NUMCHARS(szText), L"Race has ended\n\nRace duration: %s", szTemp);
-			MessageBox(hWnd, szText, L"Ended", MB_OK);				m_pResults->fCancelled = false;
-				return TRUE;
+			iDuration = tmEndRace - tmStartRace;
+			::FormatTimeMinutesSecondsMs(iDuration, szText, NUMCHARS(szText) );
+//			swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
+//			swprintf(szTemp, NUMCHARS(szTemp), szText);
+			_snwprintf(szTemp, NUMCHARS(szTemp), L"Race has ended\n\nRace duration: %s", szText);			MessageBox(hWnd, szTemp, L"Ended", MB_OK);
+			m_pResults->fCancelled = false;
+			return TRUE;
 		}
         case IDC_RACE_SAVE:
 		{
@@ -116,29 +120,30 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 				//	First the race title information
 				HWND hWnd_Comment = GetDlgItem(hWnd, IDC_RACE_COMMENT);
-				int len;				len = GetWindowTextLength(hWnd_Comment);				GetDlgItemText(hWnd, IDC_RACE_COMMENT, szTitle, len+1);				out<<szTitle<<endl;
-
-				//	Now the race duration				::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace) / 1000, szText, NUMCHARS(szText) );				swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
-				swprintf(szTemp, NUMCHARS(szTemp), szText);
-				_snwprintf(szText, NUMCHARS(szText), L"Race duration: %s", szTemp);
-				out<<szText<<endl<<endl;
-				out<<L"ID\tName\t\tLap/Time Behind"<<endl;
+				int len;				len = GetWindowTextLength(hWnd_Comment);				GetDlgItemText(hWnd, IDC_RACE_COMMENT, szTitle, len+1);
+				out << szTitle << endl;
+				int TTT = 0;				//	Now the race duration				::FormatTimeMinutesSecondsMs(iDuration, szText, NUMCHARS(szText) );
+//				swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
+//				swprintf(szTemp, NUMCHARS(szTemp), szText);
+//				_snwprintf(szTemp, NUMCHARS(szTemp), L"Race duration: %s", szText);
+//				out<<szTemp<<endl<<endl;
+				out << endl << endl;				out<<L"ID\tName\t\tLap/Time Behind"<<endl;
 				out<<L"====================================================================="<<endl;
 
 				for(int i = 0; i < 50; i++)
 				{
-					if (m_ScoringData[i].db_iRaceId == -1) break;
+					if (m_ScoringData[i].db_iRaceId == -1) continue;
 					int Temp = m_ScoringData[i].db_iUnixFirstTime + m_ScoringData[i].db_iUnixLastTime;
 					::FormatTimeMinutesSecondsMs(Temp, szTemp, NUMCHARS(szTemp) );
-					out << m_ScoringData[i].db_iRaceId << L",";
-					out << m_ScoringData[i].db_strRaceName << L",";
+					out << m_ScoringData[i].db_iRaceId << L"\t";
+					out << m_ScoringData[i].db_strRaceName << L"\t\t";
 
-					out << L"1" << L"\t";
-					out << L"Car # 455" << L"\t";
-					out << szText << endl;
+//					out << L"1" << L"\t";
+//					out << L"Car # 455" << L"\t";
+					out << m_ScoringData[i].db_szTotTime << endl;
 				}
-				out<<endl;
 
+				out<<endl;
 				out.close();	//	Close the file
 				MessageBox(hWnd, L"Race Results Saved", L"Saved", MB_OK);			  }			}		}
       }
