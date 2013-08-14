@@ -58,5 +58,7 @@ private:
   SELECTSESSIONS_RESULT* m_sfResult;
   int tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
 //  DWORD tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
+  int str_ends_with(const TCHAR * str, const TCHAR * suffix);
+  SCORINGDATA m_ScoringData[50];	//	Save up to 50 racer's results in memory
 
 };
