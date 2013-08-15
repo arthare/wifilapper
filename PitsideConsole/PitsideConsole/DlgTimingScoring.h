@@ -25,6 +25,8 @@ struct SCORINGDATA
 		db_iUnixLastTime = 0;
 		db_iTotLaps = 0;
 		db_iRaceId = -1;
+//		swprintf(m_ScoringData[MAX_PATH].db_strRaceName, NUMCHARS(m_ScoringData[MAX_PATH].db_strRaceName),L"");
+//		swprintf(m_ScoringData[MAX_PATH].db_szTotTime, NUMCHARS(m_ScoringData[MAX_PATH].db_szTotTime),L"");
 	}
 	TCHAR db_strRaceName[MAX_PATH];
 	int db_iUnixFirstTime;

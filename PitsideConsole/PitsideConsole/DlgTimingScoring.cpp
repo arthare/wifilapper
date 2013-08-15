@@ -20,14 +20,10 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		//	Initialize the results array
 		for (int i=0;i<50;i++)
 		{
-			m_ScoringData[i].db_iRaceId = -1;
-			m_ScoringData[i].db_iUnixFirstTime = 0;
-			m_ScoringData[i].db_iUnixLastTime = 0;
-			m_ScoringData[i].db_iTotLaps = 0;
-			m_ScoringData[i].db_iRaceId = -1;
 			swprintf(m_ScoringData[i].db_strRaceName, NUMCHARS(m_ScoringData[i].db_strRaceName),L"");
 			swprintf(m_ScoringData[i].db_szTotTime, NUMCHARS(m_ScoringData[i].db_szTotTime),L"");
 		}
+		tmEndRace = NULL;	//	Set the initial End Race time to NULL
 		//	Set up the Hot Lap timing list box
 		vector<wstring> lstCols;
 		vector<int> lstWidths;
@@ -89,10 +85,11 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		{
 			TCHAR szText[MAX_PATH] = {NULL};			
 			TCHAR szTemp[MAX_PATH] = {NULL};			
-			tmEndRace = NULL;	//	Remove any end of race marker when new race begins. DWORD format
-			tmStartRace = timeGetTime();	//	Set the start time for this race session. Unixtime in DWORD format
-			MessageBox(hWnd, L"New race started!", L"Started", MB_OK);
-			CRaceScoring((LPVOID) &m_szPath, hWnd);	//	Update the scoring list view
+			tmEndRace = NULL;	//	Remove any end of race marker when new race begins. INT format
+			tmStartRace = GetSecondsSince1970();		//	Set the start time for this race session. Unixtime in INT format
+			tmStartRace = 1376100527;	// Used for the TestRaces database only
+			swprintf(szText, NUMCHARS(szText), L"Race Started\n\nTime = %i", tmStartRace);
+			MessageBox(hWnd, szText, L"Started", MB_OK);
 			m_pResults->fCancelled = false;
 			return TRUE;
 		}
@@ -100,9 +97,19 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		{
 			TCHAR szText[MAX_PATH] = {NULL};			
 			TCHAR szTemp[MAX_PATH] = {NULL};			
-			tmEndRace = timeGetTime();		//	Set the end time for this race session. Unixtime in DWORD format
-		    ::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace) / 1000, szText, NUMCHARS(szText) );
-			swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
+		    tmEndRace = GetSecondsSince1970();		//	Set the end time for this race session. Unixtime in INT format
+			tmEndRace = 1376100699;	// Used for the TestRaces database only
+			swprintf(szText, NUMCHARS(szText), L"Race End = %i", tmEndRace);
+			MessageBox(hWnd, szText, L"Ended", MB_OK);
+		    ::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace), szText, NUMCHARS(szText) );
+//			swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
+
+			TimingScoringProc((LPVOID)&m_szPath, hWnd);	//	Refresh the results one last time
+			if (tmStartRace)
+			{
+				CRaceScoring((LPVOID) &m_szPath, hWnd);
+			}
+
 			swprintf(szTemp, NUMCHARS(szTemp), szText);
 			_snwprintf(szText, NUMCHARS(szText), L"Race has ended\n\nRace duration: %s", szTemp);
 			MessageBox(hWnd, szText, L"Ended", MB_OK);
@@ -116,6 +123,8 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			//	Save the results into a text file
             if(tmEndRace > 0)
             {
+//			  swprintf(szText, NUMCHARS(szText), L"Race Start = %i\n\nRace End = %i", tmStartRace, tmEndRace);
+//			  MessageBox(hWnd, szText, L"Saving", MB_OK);
               TCHAR szFilename[MAX_PATH];
               if(ArtGetSaveFileName(hWnd, L"Choose Output file", szFilename, NUMCHARS(szFilename),L"TXT Files (*.txt)\0*.TXT\0\0"))
               {
@@ -134,13 +143,18 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				int len;
 				len = GetWindowTextLength(hWnd_Comment);
 				GetDlgItemText(hWnd, IDC_RACE_COMMENT, szTitle, len+1);
-				out<<szTitle<<endl;
+				out<<szTitle<<endl<<endl;
 
+				//	Let's save the start/end markers so the race can be recreated if needed
+				_snwprintf(szText, NUMCHARS(szText), L"Race start marker:\t%i", tmStartRace);
+				out<<szText<<endl;
+				_snwprintf(szText, NUMCHARS(szText), L"Race ending marker:\t%i", tmEndRace);
+				out<<szText<<endl;
 				//	Now the race duration
-				::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace) / 1000, szText, NUMCHARS(szText) );
-				swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
+				::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace), szText, NUMCHARS(szText) );
+//				swprintf(szText, _tcslen(szText) - 2, L"%s", szText);	//	Remove the fractional time
 				swprintf(szTemp, NUMCHARS(szTemp), szText);
-				_snwprintf(szText, NUMCHARS(szText), L"Race duration: %s", szTemp);
+				_snwprintf(szText, NUMCHARS(szText), L"Race duration:\t%s", szTemp);
 				out<<szText<<endl<<endl;
 
 //				flValue = _wtof(szText);
@@ -169,6 +183,11 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				m_pResults->fCancelled = false;
 				return TRUE;
 			  }
+			}
+			else
+			{
+				swprintf(szText, NUMCHARS(szText), L"Race Start = %i\n\nRace End = %i", tmStartRace, tmEndRace);
+				MessageBox(hWnd, szText, MB_OK, NULL);
 			}
 		}
       }
@@ -207,19 +226,18 @@ DWORD* CDlgTimingScoring::CRaceScoring(LPVOID pv, HWND hWnd)
 		}
 
 		// First query for the total number of laps for each car
+//		TCHAR szText[MAX_PATH] = {NULL};
 		TCHAR szTmStartRace[MAX_PATH] = {NULL};
 		TCHAR szTmEndRace[MAX_PATH] = {NULL};
 
 		// First let's make the strings for Start and End times
 		long long iTmStartRace = 0;
 		long long iTmEndRace = 0;
-		DWORD fTmStartRace = 1376100527;	// Used for the TestRaces database only
-		// DWORD fTmStartRace = tmStartRace;
-		iTmStartRace = (int)fTmStartRace;
+		iTmStartRace = tmStartRace;
+//		iTmStartRace = (int)fTmStartRace;
 		swprintf(szTmStartRace, NUMCHARS(szTmEndRace), L"%d", iTmStartRace);
-		DWORD fTmEndRace = 1376100699;	// Used for the TestRaces database only
-		// DWORD fTmEndRace = tmEndRace;
-		iTmEndRace = (int)fTmEndRace;
+		iTmEndRace = tmEndRace;
+//		iTmEndRace = (int)fTmEndRace;
 		if (iTmEndRace <= 0)
 		{
 			swprintf(szTmEndRace, NUMCHARS(szTmEndRace), L"5555555555");
@@ -381,9 +399,9 @@ DWORD* CDlgTimingScoring::CRaceScoring(LPVOID pv, HWND hWnd)
 		lvi.cchTextMax = wcslen(result);
 		ListView_SetItem(DlgScoring_hWnd, &lvi);
 	}
-//	lstPos.clear();
-//	lstRaceName.clear();
-//	lstLapTimes.clear();
+	lstPos.clear();
+	lstRaceName.clear();
+	lstLapTimes.clear();
   }
   return 0;
 }
@@ -496,10 +514,10 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 				ListView_SetItem(Dlg_hWnd, &lvi);
 			}
 	  }
-//	  lstPos.clear();
-//	  lstRaceName.clear();
-//	  lstComment.clear();
-//	  lstLapTimes.clear();
+	  lstPos.clear();
+	  lstRaceName.clear();
+	  lstComment.clear();
+	  lstLapTimes.clear();
   }
   return 0;
 }
