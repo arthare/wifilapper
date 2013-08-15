@@ -50,15 +50,14 @@ public:
   TS_RESULT* m_pResults;
   DWORD* TimingScoringProc(LPVOID pv, HWND hWnd);
   DWORD* CRaceScoring(LPVOID pv, HWND hWnd);
+//  SCORINGDATA* t_ScoringData;	//	Pointer to the data table
 
 private:
   ILapReceiver* m_pLapDB;
   ArtListBox sfListBox;
   TCHAR m_szPath[MAX_PATH];
   SELECTSESSIONS_RESULT* m_sfResult;
+  int str_ends_with(const TCHAR * str, const TCHAR * suffix);
   int tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
 //  DWORD tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
-  int str_ends_with(const TCHAR * str, const TCHAR * suffix);
-  SCORINGDATA m_ScoringData[50];	//	Save up to 50 racer's results in memory
-
 };
