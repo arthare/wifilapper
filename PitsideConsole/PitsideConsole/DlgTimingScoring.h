@@ -25,8 +25,6 @@ struct SCORINGDATA
 		db_iUnixLastTime = 0;
 		db_iTotLaps = 0;
 		db_iRaceId = -1;
-//		swprintf(m_ScoringData[MAX_PATH].db_strRaceName, NUMCHARS(m_ScoringData[MAX_PATH].db_strRaceName),L"");
-//		swprintf(m_ScoringData[MAX_PATH].db_szTotTime, NUMCHARS(m_ScoringData[MAX_PATH].db_szTotTime),L"");
 	}
 	TCHAR db_strRaceName[MAX_PATH];
 	int db_iUnixFirstTime;
@@ -52,7 +50,6 @@ public:
   TS_RESULT* m_pResults;
   DWORD* TimingScoringProc(LPVOID pv, HWND hWnd);
   DWORD* CRaceScoring(LPVOID pv, HWND hWnd);
-//  SCORINGDATA* t_ScoringData;	//	Pointer to the data table
 
 private:
   ILapReceiver* m_pLapDB;
@@ -61,5 +58,4 @@ private:
   SELECTSESSIONS_RESULT* m_sfResult;
   int str_ends_with(const TCHAR * str, const TCHAR * suffix);
   int tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
-//  DWORD tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
 };

@@ -133,13 +133,28 @@ BEGIN
     CONTROL         "", IDC_TIMINGSCORING, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_REPORT | LVS_SHOWSELALWAYS, 5,0,298,370
     CTEXT			"****RACE STANDINGS****", IDC_RACE_TITLE, 308,15,187,20
 	CONTROL         "", IDC_RACESCORING, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_REPORT | LVS_SHOWSELALWAYS, 308,35,187,240
-    PUSHBUTTON      "Save Results", IDC_RACE_SAVE, 313,280,177,15
+    PUSHBUTTON      "Save Results", IDC_RACE_SAVE, 313,280,85,15
+    PUSHBUTTON      "Re-Run Race Scenario", IDC_RACE_RERUN, 400,280,85,15
     CTEXT			"Enter race information below", IDC_RACE_INFO, 308,300,187,12
     EDITTEXT        IDC_RACE_COMMENT,308,313,187,12
     PUSHBUTTON      "Start Race", IDSTARTRACE, 313,330,177,20
     PUSHBUTTON      "End Race", IDENDRACE, 313,360,177,20
     PUSHBUTTON      "Refresh", IDRESCAN, 5,370,149,20
     PUSHBUTTON      "Close", IDCANCEL, 154,370,149,20
+END
+
+// dialog for choosing Start/End times for T&S
+IDD_RACE_RERUN DIALOG 250, 250, 200, 120
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Enter Time Markers"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CTEXT			"Enter START marker from .txt file", IDC_RACE_START_TEXT, 5,5,190,12
+    EDITTEXT        IDC_RACE_START,5,25,190,12
+    CTEXT			"Enter END marker from .txt file", IDC_RACE_END_TEXT, 5,60,190,12
+    EDITTEXT        IDC_RACE_END,5,80,190,12
+    PUSHBUTTON      "OK", IDOK, 5,100,95,20
+    PUSHBUTTON      "Cancel", IDCANCEL, 100,100,95,20
 END
 
 // dialog for selecting which race in a DB we want to edit
@@ -172,7 +187,7 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Pitside Console"
 FONT 8, "MS Shell Dlg"
 BEGIN
-	CTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0025\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
+	CTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0026\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
 	CTEXT			"https://sites.google.com/site/wifilapper",IDC_LBLMESSAGE6,5,60,245,20
     PUSHBUTTON      "OK", IDOK, 5,100,240,24
 END
