@@ -98,6 +98,10 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 //				swprintf(szText, NUMCHARS(szText), L"Race Started\n\nTime = %i", tmStartRace);
 //				MessageBox(hWnd, szText, L"Started", MB_OK);
 				MessageBox(hWnd, L"Race started", L"Started", MB_OK);
+
+				HWND prog_hWnd = GetDlgItem(hWnd, IDC_RACE_PROGRESS);
+				swprintf(szText, NUMCHARS(szText), L"<<<< Race In Progress >>>>");
+				SendMessage(prog_hWnd, WM_SETTEXT, 0, (LPARAM)szText);
 			}
 			m_pResults->fCancelled = false;
 			return TRUE;
@@ -112,8 +116,12 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 //				tmEndRace = 1376100699;	// Used for the TestRaces database only
 //				swprintf(szText, NUMCHARS(szText), L"Race End = %i", tmEndRace);
 //				MessageBox(hWnd, szText, L"Ended", MB_OK);
-				::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace), szText, NUMCHARS(szText) );
 
+				HWND prog_hWnd = GetDlgItem(hWnd, IDC_RACE_PROGRESS);
+				swprintf(szText, NUMCHARS(szText), L">>>> Race Ended <<<<");
+				SendMessage(prog_hWnd, WM_SETTEXT, 0, (LPARAM)szText);
+
+				::FormatTimeMinutesSecondsMs((tmEndRace - tmStartRace), szText, NUMCHARS(szText) );
 				TimingScoringProc((LPVOID)&m_szPath, hWnd);	//	Refresh the results one last time
 				if (tmStartRace)
 				{
@@ -177,7 +185,7 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				  TCHAR szFilename[MAX_PATH];
 				  if(ArtGetSaveFileName(hWnd, L"Choose Output file", szFilename, NUMCHARS(szFilename),L"TXT Files (*.txt)\0*.TXT\0\0"))
 				  {
-					// let's make sure there's a .csv suffix on that bugger.
+					// let's make sure there's a .txt suffix on that bugger.
 					if(!str_ends_with(szFilename,L".txt"))
 					{
 						wcsncat(szFilename,L".txt", NUMCHARS(szFilename));
@@ -211,11 +219,11 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 					for(int i = 0; i < 25; i++)
 					{
-						if (m_ScoringData[i].db_iRaceId == -1) continue;
+						if (m_ScoringData[i].db_iRaceId <= 0 || m_ScoringData[i].db_iUnixFirstTime == 0) break;
 						int Temp = m_ScoringData[i].db_iUnixFirstTime + m_ScoringData[i].db_iUnixLastTime;
 						::FormatTimeMinutesSecondsMs(Temp, szTemp, NUMCHARS(szTemp) );
 						out << m_ScoringData[i].db_iRaceId << L"\t";
-						out << m_ScoringData[i].db_strRaceName << L"\t\t";
+						out << m_ScoringData[i].db_strRaceName << L"\t";
 						out << m_ScoringData[i].db_szTotTime << endl;
 					}
 					out<<endl;
