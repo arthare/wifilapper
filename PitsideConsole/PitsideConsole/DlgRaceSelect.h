@@ -9,10 +9,10 @@ struct RACESELECT_RESULT
 public:
   RACESELECT_RESULT()
   {
-    iRaceId = -1;
+	  iRaceId[0] = -1;
     fCancelled = false;
   }
-  int iRaceId;
+  int iRaceId[50];
   bool fCancelled;
 };
 

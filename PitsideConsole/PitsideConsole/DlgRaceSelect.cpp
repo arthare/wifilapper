@@ -4,6 +4,7 @@
 #include "PitsideConsole.h"
 #include "LapReceiver.h"
 #include "ArtSQL/ArtSQLite.h"
+
 LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
@@ -49,13 +50,21 @@ LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
       {
         case IDOK:
         {
-          set<LPARAM> set = sfListBox.GetSelectedItemsData();
-          if(set.size() == 1)
+          set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+		  if (setSelected.size() > 0)
           {
-            m_pResults->iRaceId = *set.begin();
-            m_pResults->fCancelled = false;
-            EndDialog(hWnd,0);
-          }
+			//   Need to find all Race Sessions selected
+			int z = 0;
+			for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
+			{
+				m_pResults->iRaceId[z] = *i;
+				z++;
+				if (z >= 50) break;	//	Maximum of 50 race sessions to display
+			}
+			m_pResults->fCancelled = false;
+			EndDialog(hWnd,0);
+		  }
+		  
           else
           {
           }
