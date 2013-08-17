@@ -11,9 +11,7 @@
 static TCHAR szTitle[MAX_PATH];
 SCORINGDATA m_ScoringData[50];
 
-
-
-
+//	Routines for sorting list views by column headers
 int CALLBACK CompareListItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
     BOOL bSortAscending = (lParamSort > 0);
@@ -47,8 +45,6 @@ void OnColumnClick(LPNMLISTVIEW pLVInfo)
     // sort list
     ListView_SortItems(pLVInfo->hdr.hwndFrom, CompareListItems, lParamSort);
 }
-
-
 
 LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -99,7 +95,7 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
     }
 	case WM_NOTIFY:
 	{
-		// check for column click notification
+		// check for column click notification and sort the list view accordingly
 		if ((((LPNMHDR)lParam)->idFrom == IDC_RACESCORING) && (((LPNMHDR)lParam)->code == LVN_COLUMNCLICK))
 		{
 			OnColumnClick((LPNMLISTVIEW)lParam);
