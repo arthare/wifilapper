@@ -11,6 +11,45 @@
 static TCHAR szTitle[MAX_PATH];
 SCORINGDATA m_ScoringData[50];
 
+
+
+
+int CALLBACK CompareListItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+    BOOL bSortAscending = (lParamSort > 0);
+    int nColumn = abs(lParamSort) - 1;
+
+    // Just compare the values of lParam1 and lParam2 - in a real application 
+    // you'd do something more useful here, like get the text of the list items
+    // and compare that, but this is just an example!
+    return bSortAscending ? (lParam1 - lParam2) : (lParam2 - lParam1);
+}
+void OnColumnClick(LPNMLISTVIEW pLVInfo)
+{
+    static int nSortColumn = 0;
+    static BOOL bSortAscending = TRUE;
+    LPARAM lParamSort;
+
+    // get new sort parameters
+    if (pLVInfo->iSubItem == nSortColumn)
+        bSortAscending = !bSortAscending;
+    else
+    {
+        nSortColumn = pLVInfo->iSubItem;
+        bSortAscending = TRUE;
+    }
+
+    // combine sort info into a single value we can send to our sort function
+    lParamSort = 1 + nSortColumn;
+    if (!bSortAscending)
+        lParamSort = -lParamSort;
+
+    // sort list
+    ListView_SortItems(pLVInfo->hdr.hwndFrom, CompareListItems, lParamSort);
+}
+
+
+
 LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
@@ -58,6 +97,19 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		TimingScoringProc((LPVOID)&m_szPath, hWnd);
 		break;
     }
+	case WM_NOTIFY:
+	{
+		// check for column click notification
+		if ((((LPNMHDR)lParam)->idFrom == IDC_RACESCORING) && (((LPNMHDR)lParam)->code == LVN_COLUMNCLICK))
+		{
+			OnColumnClick((LPNMLISTVIEW)lParam);
+		}
+		else if ((((LPNMHDR)lParam)->idFrom == IDC_TIMINGSCORING) && (((LPNMHDR)lParam)->code == LVN_COLUMNCLICK))
+		{
+			OnColumnClick((LPNMLISTVIEW)lParam);
+		}
+		return TRUE;
+	}
     case WM_COMMAND:
     {
       switch(LOWORD(wParam))
