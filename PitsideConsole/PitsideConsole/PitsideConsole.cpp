@@ -280,9 +280,9 @@ public:
       m_eXChannel(DATA_CHANNEL_DISTANCE),
       m_fdwUpdateNeeded(0),
       m_flShiftX(0),
-      m_flShiftY(0),
-      m_iRaceId(0)
+      m_flShiftY(0)
   {
+	m_iRaceId[0] = 0;
     m_lstYChannels.push_back(DATA_CHANNEL_VELOCITY);
     m_szCommentText[0] = '\0';
     m_szMessageStatus[0] = '\0';
@@ -302,9 +302,12 @@ public:
 	int cysize, cypage;
 //////////////////////////////////////////////////////////////////////////////////
 
-void SetRaceId(int iRaceId)
+void SetRaceId(int iRaceId[50])
   {
-    m_iRaceId = iRaceId;
+    for (int z = 0; z < 50; z++)
+	{
+	  m_iRaceId[z] = iRaceId[z];	//	Load all of the race sessions chosen
+	}
   }
   void NotifyChange(WPARAM wParam, LPARAM lParam) override
   {
@@ -784,7 +787,10 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 
             if(!sfResult.fCancelled)
             {
-              m_iRaceId = sfResult.iRaceId;
+              for (int z = 0; z < 50; z++)
+			  {
+				m_iRaceId[z] = sfResult.iRaceId[z];	//	Load all of the race sessions chosen
+			  }
               ClearUILaps();
               LoadLaps(g_pLapDB);
               UpdateUI(UPDATE_ALL);
@@ -801,7 +807,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 
             if(!sfResult.fCancelled)
             {
-              m_iRaceId = sfResult.iRaceId;
+              m_iRaceId[0] = sfResult.iRaceId;
               ClearUILaps();
               LoadLaps(g_pLapDB);
               UpdateUI(UPDATE_ALL);
@@ -811,7 +817,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, &m_sfLapOpts);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId[0], &m_sfLapOpts);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			UpdateUI(UPDATE_ALL | UPDATE_VALUES);
@@ -821,7 +827,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 		  case ID_OPTIONS_SETSPLITS:
 		  {
 			SETSPLITSDLG_RESULT sfResult;
-			CSetSplitsDlg dlgSetSplits(g_pLapDB, m_pReferenceLap,  &sfResult, m_iRaceId, &m_sfLapOpts);
+			CSetSplitsDlg dlgSetSplits(g_pLapDB, m_pReferenceLap,  &sfResult, m_iRaceId[0], &m_sfLapOpts);
 			ArtShowDialog<IDD_SETSPLITPOINTS>(&dlgSetSplits);
 
 			static HWND ShowSplitsHandle;
@@ -1247,7 +1253,10 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 
                 if(!sfResult.fCancelled)
                 {
-                  m_iRaceId = sfResult.iRaceId;
+				  for (int z = 0; z < 50; z++)
+				  {
+					m_iRaceId[z] = sfResult.iRaceId[z];	//	Load all of the race sessions chosen
+				  }
                   ClearUILaps();
                   LoadLaps(g_pLapDB);
                   UpdateUI(UPDATE_ALL);
@@ -1429,10 +1438,10 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         {
           ILapReceiver* pLapDB = (ILapReceiver*)lParam;
           int iLastRaceId = pLapDB->GetLastReceivedRaceId();
-          if(m_iRaceId < 0 || pLapDB->GetLapCount(m_iRaceId) <= 0 || // if we don't have a race or our current race has no laps (aka sucks)
-            (pLapDB->IsActivelyReceiving(iLastRaceId) && !pLapDB->IsActivelyReceiving(m_iRaceId))) // or if the new race ID is receiving and the current race ID isn't...
+          if(m_iRaceId[0] < 0 || pLapDB->GetLapCount(m_iRaceId[0]) <= 0 || // if we don't have a race or our current race has no laps (aka sucks)
+            (pLapDB->IsActivelyReceiving(iLastRaceId) && !pLapDB->IsActivelyReceiving(m_iRaceId[0]))) // or if the new race ID is receiving and the current race ID isn't...
           {
-            m_iRaceId = pLapDB->GetLastReceivedRaceId(); // since we just got told there's a new lap, there must be a last-received-race
+            m_iRaceId[0] = pLapDB->GetLastReceivedRaceId(); // since we just got told there's a new lap, there must be a last-received-race
             ClearUILaps();
             LoadLaps(g_pLapDB);
             UpdateUI(UPDATE_ALL);
@@ -1462,7 +1471,10 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
               ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
               if(!sfResult.fCancelled)
               {
-                m_iRaceId = sfResult.iRaceId;
+				for (int z = 0; z < 50; z++)
+				{
+					m_iRaceId[z] = sfResult.iRaceId[z];	//	Load all of the race sessions chosen
+				}
                 
                 ClearUILaps();
                 LoadLaps(g_pLapDB);
@@ -2172,33 +2184,40 @@ void UpdateDisplays()
   
   void LoadLaps(ILapReceiver* pReceiver)
   {
-    vector<const ILap*> laps = pReceiver->GetLaps(m_iRaceId);
-    for(int x = 0;x < laps.size(); x++)
-    {
-      const ILap* pLap = laps[x];
-      // let's see if we already have this lap
-      if(m_mapLaps.count(pLap->GetLapId()) != 0)
-      {
-        // we've already got this lap.  THere is nothing to be added from this lap
-        ((ILap*)pLap)->Free();
-        laps[x] = NULL;
-      }
-      else
-      {
-        // we don't have this lap yet, so let's put it in
-        CExtendedLap* pNewLap = new CExtendedLap(pLap, m_pReferenceLap, pReceiver, true);
-        if(m_pReferenceLap == NULL)		// If there is no reference lap currently
-        {
-          m_pReferenceLap = pNewLap; // by default, make the first lap received the reference lap
-        }
-        if(pLap->GetComment().size() <= 0)
-        {
-          pLap->SetComment(m_szCommentText);
-        }
-        m_mapLaps[pLap->GetLapId()] = pNewLap;
-      }
-    }
+	  int z_iRaceId = 0;
+	  for (int z = 0; z < 50; z++)
+	  {
+			if (m_iRaceId[z] <= 0) break;	//	Only load the valid Race Id's
+			z_iRaceId = m_iRaceId[z];
+			vector<const ILap*> laps = pReceiver->GetLaps(z_iRaceId);
+			for(int x = 0;x < laps.size(); x++)
+			{
+				const ILap* pLap = laps[x];
+				// let's see if we already have this lap
+				if(m_mapLaps.count(pLap->GetLapId()) != 0)
+				{
+					// we've already got this lap.  THere is nothing to be added from this lap
+					((ILap*)pLap)->Free();
+					laps[x] = NULL;
+				}
+				else
+				{
+					// we don't have this lap yet, so let's put it in
+					CExtendedLap* pNewLap = new CExtendedLap(pLap, m_pReferenceLap, pReceiver, true);
+					if(m_pReferenceLap == NULL)		// If there is no reference lap currently
+					{
+						m_pReferenceLap = pNewLap; // by default, make the first lap received the reference lap
+					}
+					if(pLap->GetComment().size() <= 0)
+					{
+						pLap->SetComment(m_szCommentText);
+					}
+					m_mapLaps[pLap->GetLapId()] = pNewLap;
+				}
+			}
+	  }
   }
+
   void ApplyDriverNameToSelectedLaps(ILapReceiver* pLapDB)
   {
     set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
@@ -2725,7 +2744,7 @@ private:
   vector<MulticastListener*> m_lstMulticast;
   MCResponder m_sfResponder;
 
-  int m_iRaceId;
+  int m_iRaceId[50];
   ILapSupplier* z_ILapSupplier;
 };
 
@@ -2832,7 +2851,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   CSQLiteLapDB sfLaps(&sfUI);
   bool fDBOpened = false;
 
-  int iRaceId = 0;
+  int iRaceId[50] = {0};
   TCHAR szDBPath[MAX_PATH];
   if(ArtGetSaveFileName(NULL,L"Select .wflp to open or save to",szDBPath,NUMCHARS(szDBPath),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
   {
@@ -2856,18 +2875,21 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ::ArtShowDialog<IDD_SELECTRACE>(&sfRaceSelect);
         if(!sfRaceResult.fCancelled)
         {
-          iRaceId = sfRaceResult.iRaceId;
+			for (int z = 0; z < 50; z++)
+			{
+				iRaceId[z] = sfRaceResult.iRaceId[z];	//	Load the first selected race session
+			}
           fDBOpened = true;
         }
         else
         {
-          iRaceId = -1;
+          iRaceId[0] = -1;
           fDBOpened = true;
         }
       }
       else
       {
-        iRaceId = -1;
+        iRaceId[0] = -1;
         fDBOpened = true;
       }
     }
@@ -2896,7 +2918,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     MessageBox(NULL,L"Pitside was unable to create a database to save data to.  Is your hard drive full?",L"Failed to create DB",MB_ICONERROR);
     exit(0);
   }
-  sfUI.SetRaceId(iRaceId);
+  sfUI.SetRaceId(&iRaceId[0]);
 
 
   g_pLapDB = &sfLaps;
