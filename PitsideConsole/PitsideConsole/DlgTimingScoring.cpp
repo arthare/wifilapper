@@ -20,7 +20,8 @@ int CALLBACK CompareListItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
     // Just compare the values of lParam1 and lParam2 - in a real application 
     // you'd do something more useful here, like get the text of the list items
     // and compare that, but this is just an example!
-    return bSortAscending ? (lParam1 - lParam2) : (lParam2 - lParam1);
+//		wcscmp(szRaceNameStart, szRaceName);		//	String comparison function, not sure how to use it here
+	return bSortAscending ? (lParam1 - lParam2) : (lParam2 - lParam1);
 }
 void OnColumnClick(LPNMLISTVIEW pLVInfo)
 {
@@ -250,6 +251,7 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					GetDlgItemText(hWnd, IDC_RACE_COMMENT, szTitle, len+1);
 					out<<szTitle<<endl<<endl;
 
+					out<<L"File Name: "<<m_szPath<<endl;
 					//	Let's save the start/end markers so the race can be recreated if needed
 					_snwprintf(szText, NUMCHARS(szText), L"Race start marker:\t%i", tmStartRace);
 					out<<szText<<endl;
@@ -273,6 +275,22 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 						out << m_ScoringData[i].db_iRaceId << L"\t";
 						out << m_ScoringData[i].db_strRaceName << L"\t";
 						out << m_ScoringData[i].db_szTotTime << endl;
+					}
+					out<<endl;
+
+					//	Now let's push out all of the Top 40 Hot Laps to the file
+
+					out<<endl<<endl;
+					out<<L"\t\tTop 40 Hot Laps"<<endl;
+					out<<L"Pos\tName\t\t\t\t\tComment\tLap Time"<<endl;
+					out<<L"====================================================================="<<endl;
+					for(int i = 0; i < 40; i++)
+					{
+						if (_wtoi(m_ScoringData[i].lstPos) <= 0) break;
+						out << m_ScoringData[i].lstPos << L"\t";
+						out << m_ScoringData[i].lstRaceName << L"\t";
+						out << m_ScoringData[i].lstComment << L"\t\t";
+						out << m_ScoringData[i].lstLapTimes << endl;
 					}
 					out<<endl;
 
@@ -575,6 +593,7 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 			}
 			HWND Dlg_hWnd = GetDlgItem(hWnd, IDC_TIMINGSCORING);
 			ListView_DeleteAllItems(Dlg_hWnd);	//	Clear the list before displaying the update
+			ClearHotLaps();	//	Clear the Top 40 Hot Laps list before updating
 			TCHAR szText[MAX_PATH] = {NULL};
 
 			// set up list view items
@@ -619,6 +638,26 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 				lvi.cchTextMax = wcslen(result);
 				ListView_SetItem(Dlg_hWnd, &lvi);
 			}
+	  
+			//	Now load the RACERESULTS vectors with the Top 40 Hot Laps for saving to a text file
+			for (int y = 0; y < z -1; y++)
+			{
+				std::wstring strPos(lstPos[y]);
+				result = (LPWSTR)strPos.c_str();		  
+				_snwprintf(m_ScoringData[y].lstPos, NUMCHARS(m_ScoringData[y].lstPos), result);
+
+				std::wstring strRace(lstRaceName[y]);
+				result = (LPWSTR)strRace.c_str();		  
+				_snwprintf(m_ScoringData[y].lstRaceName, NUMCHARS(m_ScoringData[y].lstRaceName), result);
+
+				std::wstring strComment(lstComment[y]);
+				result = (LPWSTR)strComment.c_str();		  
+				_snwprintf(m_ScoringData[y].lstComment, NUMCHARS(m_ScoringData[y].lstComment), result);
+
+				std::wstring strLapTimes(lstLapTimes[y]);
+				result = (LPWSTR)strLapTimes.c_str();		  
+				_snwprintf(m_ScoringData[y].lstLapTimes, NUMCHARS(m_ScoringData[y].lstLapTimes), result);
+			}
 	  }
 	  lstPos.clear();
 	  lstRaceName.clear();
@@ -642,3 +681,13 @@ int CDlgTimingScoring::str_ends_with(const TCHAR * str, const TCHAR * suffix)
 	return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
 }
 
+void CDlgTimingScoring::ClearHotLaps()
+{
+	for (int x = 0; x < 50; x++)
+	{
+		swprintf(m_ScoringData[x].lstPos, NUMCHARS(m_ScoringData[x].lstPos), L"");
+		swprintf(m_ScoringData[x].lstRaceName, NUMCHARS(m_ScoringData[x].lstRaceName), L"");
+		swprintf(m_ScoringData[x].lstComment, NUMCHARS(m_ScoringData[x].lstComment), L"");
+		swprintf(m_ScoringData[x].lstLapTimes, NUMCHARS(m_ScoringData[x].lstLapTimes), L"");
+	}
+}

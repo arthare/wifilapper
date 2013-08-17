@@ -32,6 +32,10 @@ struct SCORINGDATA
 	TCHAR db_szTotTime[MAX_PATH];
 	int db_iTotLaps;
 	int db_iRaceId;
+	TCHAR lstPos[MAX_PATH];
+    TCHAR lstRaceName[MAX_PATH];
+    TCHAR lstComment[MAX_PATH];
+	TCHAR lstLapTimes[MAX_PATH];
 };
 
 class CDlgTimingScoring : public IUI
@@ -58,4 +62,5 @@ private:
   SELECTSESSIONS_RESULT* m_sfResult;
   int str_ends_with(const TCHAR * str, const TCHAR * suffix);
   int tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
+  void ClearHotLaps();
 };
