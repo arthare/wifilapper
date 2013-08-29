@@ -97,3 +97,5 @@ bool DoesFileExist(LPCTSTR lpsz);
 
 // compares two strings, ignoring spaces
 int nospacecompare(LPCTSTR lpsz1, LPCTSTR lpsz2);
+
+bool ArtGetOpenFileName(HWND hWndOwner, LPCTSTR lpszTitle, LPTSTR lpszPath, int cchPath, LPCTSTR lpszFilter);

@@ -6,6 +6,7 @@
 #include <stdio.h> // for swprintf
 #include <windows.h>
 #include "ArtUI.h"
+#include <commdlg.h>
 
 int GetCheckSum(LPVOID pvData, const int cbData)
 {
@@ -125,7 +126,7 @@ bool GetAppFolder(LPTSTR lpszBuf, const int cch)
 
 bool DoesFileExist(LPCTSTR lpsz)
 {
-  HANDLE hFile = CreateFile(lpsz,GENERIC_READ,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+  HANDLE hFile = CreateFile(lpsz,0,FILE_SHARE_READ | FILE_SHARE_WRITE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
   if(hFile != INVALID_HANDLE_VALUE)
   {
     CloseHandle(hFile);
