@@ -185,8 +185,7 @@ implements
     	}
     	
     	m_tmAppStartTime = 0;
-    	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-    	
+		
     	getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     	
     	m_pHandler = new Handler(this);
@@ -215,6 +214,11 @@ implements
     	if(m_strPrivacyPrefix == null) m_strPrivacyPrefix = Prefs.DEFAULT_PRIVACYPREFIX;
     	
     	if(m_strSpeedoStyle == null) m_strSpeedoStyle = LandingOptions.rgstrSpeedos[0];
+    	if(m_strSpeedoStyle.equals(LandingOptions.SPEEDO_LAPTIMER) ) 
+    		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+    	else
+    		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    	
     	String strUnitSystem = i.getStringExtra(Prefs.IT_UNITS_STRING);
     	int rgSelectedPIDs[] = i.getIntArrayExtra(Prefs.IT_SELECTEDPIDS_ARRAY);
     	
@@ -1879,9 +1883,17 @@ class MapPaintView extends View
 		}
 		else
 		{
-			final TimePoint2D ptCurrent = lap.GetLastPoint();
-			double flPercentage = ptCurrent.dDistance / lapBest.GetDistance();
+			Paint p = new Paint();
 			final double flThisTime = ((double)lap.GetAgeInMilliseconds())/1000.0;
+			if( flThisTime < 3 )
+			{
+				String strLap = "Lap";
+				p.setARGB(255, 255, 255, 255);
+				Utility.DrawFontInBox(canvas, strLap, p, rcOnScreen);
+				return;
+			}			
+			final TimePoint2D ptCurrent = lap.GetLastPoint();
+			final double flPercentage = ptCurrent.dDistance / lapBest.GetDistance();
 			final double flBestTime = (double)(lapBest.GetTimeAtPosition(ptCurrent,flPercentage)/1000.0);
 			num.setMaximumFractionDigits(1);
 			num.setMinimumFractionDigits(1);
@@ -1891,7 +1903,6 @@ class MapPaintView extends View
 			// on the best lap, it took us "flLastTime"
 			float flToPrint = (float)(flThisTime - flBestTime);
 			String strPrefix;
-			Paint p = new Paint();
 			if(flToPrint < 0)
 			{
 				// the current lap is ahead...
@@ -1944,6 +1955,95 @@ class MapPaintView extends View
 			Utility.DrawFontInBox(canvas, strSpeed, p, rcBottom);
 		}
 	}
+	private void DrawLapTimer(Canvas canvas, Rect rcOnScreen, LapAccumulator lap, LapAccumulator lapBest)
+	{
+		
+		// todo: move the paint declaration to the constructor, or reuse existing
+		Paint p = new Paint();
+		final Rect rcTimeDiff = new Rect();
+		final Rect rcLapSeconds = new Rect();
+		final Rect rcLapTenths = new Rect();
+		final Rect rcBestSeconds = new Rect();
+		final Rect rcBestTenths = new Rect();
+		final float myFontSize;
+		
+		if( rcOnScreen.width() < rcOnScreen.height() )
+		{
+			// Portrait mode
+			final int midSplit  = rcOnScreen.centerY();
+			final int lowSplit  = rcOnScreen.top  + rcOnScreen.height() * 3/4;
+			final int rightSplit= rcOnScreen.left + rcOnScreen.width() * 4/5;
+
+			rcTimeDiff.set(rcOnScreen.left, rcOnScreen.top, rcOnScreen.right, midSplit);
+			rcLapSeconds.set(rcOnScreen.left, midSplit, rightSplit, lowSplit);
+			rcLapTenths.set(rightSplit, midSplit, rcOnScreen.right, lowSplit);
+			rcBestSeconds.set(rcOnScreen.left, lowSplit, rightSplit, rcOnScreen.bottom);
+			rcBestTenths.set(rightSplit, lowSplit, rcOnScreen.right, rcOnScreen.bottom);
+			myFontSize = (float)0.9*Utility.GetNeededFontSize("0:00.0 ", p, rcLapSeconds);
+			}
+		else
+		{
+			// Landscape mode
+			final int midXSplit  = rcOnScreen.centerX();
+			final int midXSplit2 = (int)(midXSplit * 1.1);
+			final int midYSplit  = rcOnScreen.centerY();
+			final int labelSplit = rcOnScreen.height()/10;
+
+			rcTimeDiff.set(rcOnScreen.left, rcOnScreen.top, midXSplit, rcOnScreen.bottom);
+			rcLapTenths.set(midXSplit2, rcOnScreen.top, rcOnScreen.right, rcOnScreen.top+labelSplit);
+			rcLapSeconds.set(midXSplit2, rcOnScreen.top+labelSplit, rcOnScreen.right, midYSplit);
+			rcBestTenths.set(midXSplit2, midYSplit, rcOnScreen.right, midYSplit+labelSplit);
+			rcBestSeconds.set(midXSplit2, midYSplit+labelSplit, rcOnScreen.right, rcOnScreen.bottom);
+			myFontSize = (float)0.9*Utility.GetNeededFontSize("0:00.0 ", p, rcLapSeconds);
+			
+		}
+		
+		LapAccumulator lapLast = myApp.GetLastLap();
+
+		if(lapLast != null)
+		{
+			final double dBestLap = lapBest.GetLapTime();
+			final double dLastLap = lapLast.GetLapTime();
+
+			DrawPlusMinus(canvas, rcTimeDiff, lap, lapBest);
+			
+			if( dLastLap > dBestLap )
+				p.setARGB(255,255,128,128); // last lap worse, make red
+			else
+				p.setARGB(255,128,255,128); // last lap better/equal, make green
+
+			String strLast = buildLapTime(dLastLap);
+			Utility.DrawFontInBoxFinal(canvas, strLast, myFontSize, p, rcLapSeconds, true, false);
+			Utility.DrawFontInBox(canvas, "Last", p, rcLapTenths);
+		
+			p.setARGB(255,255,255,255); // Best lap in white
+			String strBest = buildLapTime(dBestLap);
+			Utility.DrawFontInBoxFinal(canvas, strBest, myFontSize, p, rcBestSeconds, true, false);
+			Utility.DrawFontInBox(canvas, "Best", p, rcBestTenths);
+		}
+		else
+		{
+			final double flThisTime = ((double)lap.GetAgeInMilliseconds())/1000.0;
+			String strLapTime = buildLapTime(flThisTime);
+
+			p.setARGB(255,255,255,255); // reset to white
+			Utility.DrawFontInBoxFinal(canvas, strLapTime, myFontSize, p, rcLapSeconds, true,false);
+			Utility.DrawFontInBox(canvas, "Lap", p, rcLapTenths);
+		}
+	}
+	
+	public String buildLapTime( double flLapTime)
+	{
+		final int minutes = (int)(flLapTime/60);
+		final int seconds = (int)(flLapTime - minutes*60);
+		final int tenths = (int)((10* (flLapTime - minutes*60 - seconds)));
+		String strLapTime = minutes + ":";
+		if (seconds <10 )
+			strLapTime = strLapTime + "0" + seconds + "." + tenths;
+		else
+			strLapTime = strLapTime + seconds + "." + tenths;
+		return strLapTime;
+	}
 	public void onDraw(Canvas canvas)
 	{
 		canvas.setMatrix(new Matrix());
@@ -1954,7 +2054,7 @@ class MapPaintView extends View
 		Rect rcAll = new Rect();
 		rcAll.set(getLeft(),getTop(),getRight(), getBottom());
 		
-		if(myApp.GetTimeSinceLastSplit() < 2.0)
+		if((myApp.GetTimeSinceLastSplit() < 3.0) && !(strSpeedoStyle.equals(LandingOptions.SPEEDO_LAPTIMER)))
 		{
 			// draw the last split
 			num.setMaximumFractionDigits(2);
@@ -1964,22 +2064,29 @@ class MapPaintView extends View
 			
 			final int cxLabels = getWidth()/10;
 			final int cxSplit = getRight() - cxLabels;
+			final int hSplit = getTop() + getHeight()/2;
 			
-			Rect rcLapTime = new Rect(getLeft(),getTop(),cxSplit,getBottom());
-			Rect rcLapLabel = new Rect(cxSplit, getTop(),getRight(),getBottom());
+			Rect rcLapTime = new Rect(getLeft(),getTop(),cxSplit,hSplit);
+			Rect rcLapLabel = new Rect(cxSplit, getTop(),getRight(),hSplit);
+			Rect rcBestTime = new Rect(getLeft(),hSplit,cxSplit,getBottom());
+			Rect rcBestLabel = new Rect(cxSplit, hSplit,getRight(),getBottom());
 			// curent lap has no splits, so we must have just finished a lap
 			LapAccumulator lapLast = myApp.GetLastLap();
+			LapAccumulator lapBest = myApp.GetBestLap(); 
 			if(lapLast != null)
 			{
 				final double dLastLap = lapLast.GetLapTime();
+				final double dBestLap = lapBest.GetLapTime();
 				String strLapText = Utility.FormatSeconds((float)dLastLap);
+				String strBestText = Utility.FormatSeconds((float)dBestLap);
 				Utility.DrawFontInBox(canvas, strLapText, paintBigText, rcLapTime);
 				Utility.DrawFontInBox(canvas, "Lap", paintBigText, rcLapLabel);
+				Utility.DrawFontInBox(canvas, strBestText, paintBigText, rcBestTime);
+				Utility.DrawFontInBox(canvas, "Best", paintBigText, rcBestLabel);
 			}
 		}
 		else if(strMsg != null)
 		{
-			Paint p = new Paint();
 			Utility.DrawFontInBox(canvas, strMsg, paintBigText, rcAll);
 		}
 		else
@@ -2013,6 +2120,11 @@ class MapPaintView extends View
 			{
 				DrawComparative(canvas, rcMain, lap, null);
 			}
+			else if(strSpeedoStyle.equals(LandingOptions.SPEEDO_LAPTIMER))
+			{
+				DrawLapTimer(canvas, rcAll, lap, lapBest);
+			}
 		}
 	}
 }
+

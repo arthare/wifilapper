@@ -56,8 +56,9 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 	public final static String SPEEDO_LIVEPLUSMINUS = "Live +/-";
 	public final static String SPEEDO_COMPARATIVE = "Speedometer - Comparative";
 	public final static String SPEEDO_SIMPLE = "Speedometer - Simple";
+	public final static String SPEEDO_LAPTIMER = "Lap Timer";
 	
-	public final static String[] rgstrSpeedos = {SPEEDO_SPEEDDISTANCE,SPEEDO_LIVEPLUSMINUS, SPEEDO_COMPARATIVE,SPEEDO_SIMPLE};
+	public final static String[] rgstrSpeedos = {SPEEDO_SPEEDDISTANCE,SPEEDO_LIVEPLUSMINUS, SPEEDO_COMPARATIVE,SPEEDO_SIMPLE,SPEEDO_LAPTIMER};
 	
 	private static final int ACTIVITYRESULT_BLUETOOTH_GPS = 51;
 	private static final int ACTIVITYRESULT_BLUETOOTH_OBD2 = 52;
