@@ -36,12 +36,13 @@
 #include "Hyperlinks.h"
 #include "DlgAbout.h"
 #include <Winspool.h>
-//#include "atlstr.h"
-//#include "atlimage.h"
 #include "DlgProgress.h"
 #include "DlgWarning.h"
+#include "DlgSetSplits.h"
 #include "jpge.h"
-
+#include <CommCtrl.h>	//	For Listview sorting routines
+#include "DlgSelectSessions.h"
+#include "DlgTimingScoring.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -264,12 +265,6 @@ bool CExtendedLap_SortByLapTime(const CExtendedLap* p1, const CExtendedLap* p2)
 {
   return p1->GetLap()->GetTime() < p2->GetLap()->GetTime(); // GetTime() or whatever the function is that gets lap time
 }
-// supplier IDs - each lap painter is given a supplier ID, which it uses to identify itself when asking for more data
-enum SUPPLIERID
-{
-  SUPPLIERID_MAINDISPLAY,
-  SUPPLIERID_SUBDISPLAY,
-};
 
 class CMainUI : public IUI,public ILapSupplier
 {
@@ -285,15 +280,16 @@ public:
       m_eXChannel(DATA_CHANNEL_DISTANCE),
       m_fdwUpdateNeeded(0),
       m_flShiftX(0),
-      m_flShiftY(0),
-      m_iRaceId(0)
+      m_flShiftY(0)
   {
+	m_iRaceId[0] = 0;
     m_lstYChannels.push_back(DATA_CHANNEL_VELOCITY);
     m_szCommentText[0] = '\0';
     m_szMessageStatus[0] = '\0';
     SetupMulticast();
   }
-  
+  	DWORD tmNow, tmLast;	//	Variables for setting up receive time / live car position
+
 //////////////////////////////////////////////////////////////////////////////////
 	RECT rect;
 	HBITMAP hBitmap;
@@ -306,9 +302,12 @@ public:
 	int cysize, cypage;
 //////////////////////////////////////////////////////////////////////////////////
 
-void SetRaceId(int iRaceId)
+void SetRaceId(int iRaceId[50])
   {
-    m_iRaceId = iRaceId;
+    for (int z = 0; z < 50; z++)
+	{
+	  m_iRaceId[z] = iRaceId[z];	//	Load all of the race sessions chosen
+	}
   }
   void NotifyChange(WPARAM wParam, LPARAM lParam) override
   {
@@ -332,6 +331,7 @@ void SetRaceId(int iRaceId)
     return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
   }
   LAPSUPPLIEROPTIONS m_sfLapOpts;
+  TCHAR m_szPath[MAX_PATH];
 
 /////////////////////////////////////////////////////////////////////////////////
   //	Functions for enabling Printing of OpenGL graphs
@@ -493,7 +493,16 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
     {
       return 0;
     }
-    switch(uMsg)
+
+	//	Update and show Current Lap Time
+    TCHAR szTemp[512], szLap[512];
+    HWND hWndIp = GetDlgItem(m_hWnd, IDC_LIVELAPTIME);
+    ::FormatTimeMinutesSecondsMs((float)(timeGetTime() - tmLast) / 1000, szLap, NUMCHARS(szLap) );
+	swprintf(szLap, _tcslen(szLap) - 2, L"%s", szLap);	//	Remove the fractional time
+    swprintf(szTemp, NUMCHARS(szTemp), L"Current Lap: %s", szLap);
+    SendMessage(hWndIp, WM_SETTEXT, 0, (LPARAM)szTemp);
+
+	switch(uMsg)
 	  {
 	    case WM_INITDIALOG:
       {
@@ -526,6 +535,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         UpdateUI(UPDATE_ALL);
         InitBaseWindowPos();
 
+		tmLast = timeGetTime();	//	Initialize time lap was received
 		return 0;
       }
       case WM_CLOSE:
@@ -622,14 +632,31 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         case IDC_LAPS:
             switch(notifyHeader->code)
             {
-            case LVN_ITEMCHANGED:
-              NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
-              if(pDetails->iItem >= 0)
-              {
-                UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
-              }
-              return TRUE;
-            }
+				case LVN_ITEMCHANGED:
+				{
+				  NMITEMACTIVATE* pDetails = (NMITEMACTIVATE*)notifyHeader;
+				  if(pDetails->iItem >= 0)
+				  {
+					UpdateUI(UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
+				  }
+				  return TRUE;
+				}
+				case  LVN_COLUMNCLICK:
+				{
+					LPNMLISTVIEW pLVInfo = (LPNMLISTVIEW)lParam;	
+					//	User clicked the column header, let's re-sort the list
+					if (pLVInfo->iSubItem == SORTSTYLE_BYTIMEOFRACE && m_sfLapOpts.eSortPreference != SORTSTYLE_BYTIMEOFRACE)
+					{
+						m_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;
+						UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
+					}
+					else if (pLVInfo->iSubItem == SORTSTYLE_BYLAPTIME && m_sfLapOpts.eSortPreference != SORTSTYLE_BYLAPTIME)
+					{
+						m_sfLapOpts.eSortPreference = SORTSTYLE_BYLAPTIME;
+						UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
+					}
+				}
+			}
             break;
           case IDC_XAXIS:
             switch(notifyHeader->code)
@@ -716,18 +743,6 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
             UpdateUI(UPDATE_MAP | UPDATE_MENU);
             return TRUE;
           }
-          case ID_OPTIONS_SORTTIME:
-          {
-            m_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;
-            UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
-            return TRUE;
-          }
-          case ID_OPTIONS_SORTLAP:
-          {
-            m_sfLapOpts.eSortPreference = SORTSTYLE_BYLAPTIME;
-            UpdateUI(UPDATE_MENU | UPDATE_DASHBOARD | UPDATE_LIST);
-            return TRUE;
-          }
           case ID_OPTIONS_SHOWBESTS:
           {
             m_fShowBests = !m_fShowBests;
@@ -772,10 +787,15 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 
             if(!sfResult.fCancelled)
             {
-              m_iRaceId = sfResult.iRaceId;
+              for (int z = 0; z < 50; z++)
+			  {
+				m_iRaceId[z] = sfResult.iRaceId[z];	//	Load all of the race sessions chosen
+			  }
               ClearUILaps();
               LoadLaps(g_pLapDB);
               UpdateUI(UPDATE_ALL);
+			  //	Just loaded a new session. Let's reset the timer
+			  tmLast = timeGetTime();	//	Save last time lap was received
             }
             return TRUE;
           }
@@ -787,7 +807,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 
             if(!sfResult.fCancelled)
             {
-              m_iRaceId = sfResult.iRaceId;
+              m_iRaceId[0] = sfResult.iRaceId;
               ClearUILaps();
               LoadLaps(g_pLapDB);
               UpdateUI(UPDATE_ALL);
@@ -797,16 +817,59 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 		  case ID_OPTIONS_PLOTPREFS:
 		  {
 			PLOTSELECT_RESULT sfResult;
-			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId, &m_sfLapOpts);
+			CPlotSelectDlg dlgPlot(g_pLapDB, &sfResult, m_iRaceId[0], &m_sfLapOpts);
 			ArtShowDialog<IDD_PLOTPREFS>(&dlgPlot);
 
 			UpdateUI(UPDATE_ALL | UPDATE_VALUES);
 					
 			return TRUE;
 		  }		
+		  case ID_OPTIONS_SETSPLITS:
+		  {
+			SETSPLITSDLG_RESULT sfResult;
+			CSetSplitsDlg dlgSetSplits(g_pLapDB, m_pReferenceLap,  &sfResult, m_iRaceId[0], &m_sfLapOpts);
+			ArtShowDialog<IDD_SETSPLITPOINTS>(&dlgSetSplits);
+
+			static HWND ShowSplitsHandle;
+			const int cSectors = 9;	//	Maximum numbers of Split Times
+			const int MaxLaps = 7;	//	Maximum number of laps to display
+			if (!IsWindow(ShowSplitsHandle) && m_sfLapOpts.fDrawSplitPoints)
+			{
+				//	Create non-modal dialog to display the sector times window if DrawSplitPoints is TRUE
+				HWND hwndSplits = NULL;  // Window handle of non-modal dialog box 
+				DLGPROC ShowSplits = NULL;
+				if (!IsWindow(hwndSplits)) 
+				{ 
+					hwndSplits = CreateDialog(NULL, MAKEINTRESOURCE (IDD_SHOWSECTORS), hWnd, ShowSplits); 
+					//	Let's get the handles for all display controls in this window
+					for (int y = 0; y < MaxLaps; y++)
+					{
+						m_sfLapOpts.hWndLap[y] = GetDlgItem(hwndSplits, IDC_SHOW_LAP0 + y);
+					}
+					ShowSplitsHandle = hwndSplits;  //	Tracker for handle address 
+					ShowWindow(hwndSplits, SW_SHOW); 
+				} 
+			}
+			else if (!m_sfLapOpts.fDrawSplitPoints)
+			{
+				EndDialog(ShowSplitsHandle, 0);
+				ShowSplitsHandle = NULL;
+			}
+			if(!sfResult.fCancelled)
+            {
+			  UpdateUI(UPDATE_ALL | UPDATE_VALUES);
+			  return TRUE;
+			}
+            return TRUE;
+		  }		
           case ID_HELP_SHOWHELP:
           {
             ShowHelp(hWnd);
+            return TRUE;
+          }
+          case ID_HELP_SHOWWFLHELP:
+          {
+            ShowWFLHelp(hWnd);
             return TRUE;
           }
           case ID_HELP_IPS:
@@ -975,27 +1038,68 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 						{
 							break;
 						}
-          }
+							// Create a temporary BMP file, this is where we will save the screen capture.
+							swprintf(szTempName, NUMCHARS(szTempName), L"%s.bmp", szFileName);
+					}
+    
+					// Add the size of the headers to the size of the bitmap to get the total file size
+					DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+ 
+					//Offset to where the actual bitmap bits start.
+					bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER); 
+    
+					//Size of the file
+					bmfHeader.bfSize = dwSizeofDIB; 
+    
+					//bfType must always be BM for Bitmaps
+					bmfHeader.bfType = 0x4D42; //BM   
 
-          jpge::params params;
-          params.m_no_chroma_discrim_flag = 0;
-          params.m_quality = 95;
-          params.m_subsampling = jpge::subsampling_t::H2V2;
-          params.m_two_pass_flag = 0;
-
-          wstring strW(szFileName); // unicode -> const char* conversion
-          string strA(strW.begin(),strW.end()); // unicode -> const char* conversion
-
-          jpge::compress_image_to_jpeg_file(strA.c_str(),bi.biWidth,-bi.biHeight,4,(const jpge::uint8*)lpbitmap,params);
+					//	Open a handle to the TEMP BMP file and write the DIB to it
+					HANDLE hFile = CreateFile(szTempName,
+						GENERIC_WRITE,
+						0,
+						NULL,
+						CREATE_ALWAYS,
+						FILE_ATTRIBUTE_NORMAL, NULL);   
 
 					DWORD dwBytesWritten = 0;
+					WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
+					WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
+					WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
     
-					//Unlock and Free the DIB from the heap
-					GlobalUnlock(hDIB);    
-					GlobalFree(hDIB);
+					//Close the handle for the file that was created
+					CloseHandle(hFile);
 
-          if (PrintFlag)
+					//Unlock and Free the DIB from the heap
+//					GlobalUnlock(hDIB);    
+//					GlobalFree(hDIB);
+
+					//	Now let's convert this Bitmap into a JPEG file, if the user wants to save it.
+					if (SaveFlag)
 					{
+						//	Load the BMP from a temporary file on the disk, and convert it
+						  jpge::params params;
+						  params.m_no_chroma_discrim_flag = 0;
+						  params.m_quality = 95;
+						  params.m_subsampling = jpge::subsampling_t::H2V2;
+						  params.m_two_pass_flag = 0;
+
+						  wstring strW(szFileName); // unicode -> const char* conversion
+						  string strA(strW.begin(),strW.end()); // unicode -> const char* conversion
+
+						  jpge::compress_image_to_jpeg_file(strA.c_str(),bi.biWidth,-bi.biHeight,4,(const jpge::uint8*)lpbitmap,params);
+
+						  DeleteFile(szTempName);	//	Remove the TEMP file
+						  //Unlock and Free the DIB from the heap
+						  GlobalUnlock(hDIB);    
+						  GlobalFree(hDIB);
+					}
+					else if (PrintFlag)
+					{
+						//Unlock and Free the DIB from the heap
+						GlobalUnlock(hDIB);    
+						GlobalFree(hDIB);
+
 						////////////////////////////////////////////////////////////////////////////////
 						cxsize=0, cxpage=0;
 						cysize=0, cypage=0;
@@ -1065,12 +1169,14 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 							////////////////////////////////////////////////////////////////////////////////
 						  }
 					}
-					UpdateUI(UPDATE_DASHBOARD | UPDATE_MENU | UPDATE_ALL);
-					return TRUE;
 				}
 				else
 				{
 					//	User wants to copy image to Clipboard.
+
+					//Unlock and Free the DIB from the heap
+					GlobalUnlock(hDIB);    
+					GlobalFree(hDIB);
 
 					// Add the size of the headers to the size of the bitmap to get the total DIB size
 					DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
@@ -1106,13 +1212,32 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 				DeleteObject(hdcMemDC);
 				ReleaseDC(NULL,hdcSource);
 				ReleaseDC(hWnd,hdcWindow);
-				UpdateUI(UPDATE_DASHBOARD | UPDATE_MENU | UPDATE_ALL);
+				UpdateUI(UPDATE_DASHBOARD | UPDATE_LIST | UPDATE_MENU | UPDATE_ALL);
+//			    InitAxes(setSelectedChannels);
 				return TRUE;
           }
 		  case ID_FILE_EXIT:
           {
 				DestroyWindow(hWnd);
 				break;
+		  }
+		  case ID_TIMINGSCORING:
+          {
+				//	Let's set up for displaying the T&S page
+				int m_RaceId[50] = {NULL};
+				// Show the race-selection dialog and let the User pick which ones to use on T&S page
+				SELECTSESSIONS_RESULT sfResult;
+				CDlgSelectSessions dlgRace(g_pLapDB, &sfResult);
+				ArtShowDialog<IDD_SELECTSESSIONS>(&dlgRace);
+
+				if(!sfResult.fCancelled && sfResult.m_RaceId[0] != -1)
+				{
+					// Now display the T&S page and pass these RaceID's to this class
+					TS_RESULT ts_sfResult;
+					CDlgTimingScoring dlgTS(g_pLapDB, &ts_sfResult, m_szPath, &sfResult);
+					ArtShowDialog<IDD_TIMINGSCORING>(&dlgTS);
+				}
+				return TRUE;
 		  }
 		  case ID_DATA_OPENDB:
           {
@@ -1121,16 +1246,22 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
             {
               if(g_pLapDB->Init(szFilename))
               {
-                RACESELECT_RESULT sfResult;
+                _snwprintf(m_szPath, NUMCHARS(m_szPath), szFilename);
+				RACESELECT_RESULT sfResult;
                 CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
                 ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
 
                 if(!sfResult.fCancelled)
                 {
-                  m_iRaceId = sfResult.iRaceId;
+				  for (int z = 0; z < 50; z++)
+				  {
+					m_iRaceId[z] = sfResult.iRaceId[z];	//	Load all of the race sessions chosen
+				  }
                   ClearUILaps();
                   LoadLaps(g_pLapDB);
                   UpdateUI(UPDATE_ALL);
+				  //	Let's reset the timer
+				  tmLast = timeGetTime();	//	Save last time lap was received
                 }
               }
             }
@@ -1232,6 +1363,8 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
                 }
               }
               m_pReferenceLap = pNewRefLap;
+			  //	Tell it to close Sector Display and release all Split Points
+			  //	Blah blah blah
             }
             else
             {
@@ -1305,10 +1438,10 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         {
           ILapReceiver* pLapDB = (ILapReceiver*)lParam;
           int iLastRaceId = pLapDB->GetLastReceivedRaceId();
-          if(m_iRaceId < 0 || pLapDB->GetLapCount(m_iRaceId) <= 0 || // if we don't have a race or our current race has no laps (aka sucks)
-            (pLapDB->IsActivelyReceiving(iLastRaceId) && !pLapDB->IsActivelyReceiving(m_iRaceId))) // or if the new race ID is receiving and the current race ID isn't...
+          if(m_iRaceId[0] < 0 || pLapDB->GetLapCount(m_iRaceId[0]) <= 0 || // if we don't have a race or our current race has no laps (aka sucks)
+            (pLapDB->IsActivelyReceiving(iLastRaceId) && !pLapDB->IsActivelyReceiving(m_iRaceId[0]))) // or if the new race ID is receiving and the current race ID isn't...
           {
-            m_iRaceId = pLapDB->GetLastReceivedRaceId(); // since we just got told there's a new lap, there must be a last-received-race
+            m_iRaceId[0] = pLapDB->GetLastReceivedRaceId(); // since we just got told there's a new lap, there must be a last-received-race
             ClearUILaps();
             LoadLaps(g_pLapDB);
             UpdateUI(UPDATE_ALL);
@@ -1318,6 +1451,8 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
             LoadLaps((ILapReceiver*)lParam);
             UpdateUI(UPDATE_LIST | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
           }
+		  //	Just loaded a new lap. Let's reset the timer
+		  tmLast = timeGetTime();	//	Save last time lap was received
           return TRUE;
         }
         case NOTIFY_NEWDATABASE:
@@ -1336,13 +1471,18 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
               ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
               if(!sfResult.fCancelled)
               {
-                m_iRaceId = sfResult.iRaceId;
+				for (int z = 0; z < 50; z++)
+				{
+					m_iRaceId[z] = sfResult.iRaceId[z];	//	Load all of the race sessions chosen
+				}
                 
                 ClearUILaps();
                 LoadLaps(g_pLapDB);
                 UpdateUI(UPDATE_ALL);
               }
             }
+		  //	Let's reset the timer
+		  tmLast = timeGetTime();	//	Save last time lap was received
           }
           return TRUE;
           
@@ -1353,9 +1493,9 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
           SendMessage(m_hWnd, WM_SETTEXT, 0, (LPARAM)pLaps->GetNetStatus(NETSTATUS_STATUS));
 
           TCHAR szTemp[512];
-          HWND hWndIp = GetDlgItem(m_hWnd, IDC_CURRENTIP);
-          swprintf(szTemp, NUMCHARS(szTemp), L"PC: %s", pLaps->GetNetStatus(NETSTATUS_THISIP));
-          SendMessage(hWndIp, WM_SETTEXT, 0, (LPARAM)szTemp);
+//          HWND hWndIp = GetDlgItem(m_hWnd, IDC_CURRENTIP);
+//          swprintf(szTemp, NUMCHARS(szTemp), L"PC: %s", pLaps->GetNetStatus(NETSTATUS_THISIP));
+//          SendMessage(hWndIp, WM_SETTEXT, 0, (LPARAM)szTemp);
 
           HWND hWndRemoteIp = GetDlgItem(m_hWnd, IDC_CURRENTREMOTEIP);
           swprintf(szTemp, NUMCHARS(szTemp), L"Phone: %s", pLaps->GetNetStatus(NETSTATUS_REMOTEIP));
@@ -1412,6 +1552,10 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
   {
     m_sfLapOpts = lapOpts;
   }
+  void SetDBPath(const TCHAR szPath[MAX_PATH])
+  {
+	  _snwprintf(m_szPath, NUMCHARS(m_szPath), szPath);
+  }
 
   void UpdateUI(DWORD fdwUpdateFlags)
   {
@@ -1457,6 +1601,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_VALUES))
     {
       UpdateValues();
+	  UpdateSectors();
     }
     if(IS_FLAG_SET(fdwUpdateFlags, UPDATE_MAP))
     {
@@ -1538,6 +1683,30 @@ private:
 		TCHAR lpOpen[MAX_PATH] = L"open";
 		
 		TCHAR lpFile[MAX_PATH] = L"PitsideHelp.pdf";
+		TCHAR lpDir[MAX_PATH];
+		if(GetAppFolder(lpDir,NUMCHARS(lpDir)))
+		{
+			//	Set up the Filename string for the Help PDF file.
+			wcsncat(lpDir,L"", NUMCHARS(lpDir)-1);
+		}
+		else
+		{
+			// trouble.  just bail.
+			return false;
+		}
+		int nShowCmd = SW_RESTORE;	//	Restore the Help document, if it is minimized or whatever.
+
+		//	Shell to the Help PDF file
+		HINSTANCE Check = ShellExecuteW(hWnd, lpOpen, lpFile, NULL, lpDir, nShowCmd);
+		if ((int)Check <= 32)
+          MessageBox(NULL, L"The Help file requires Acrobat Reader\n\nPlease install Reader and try again", L"Acrobat Reader Not Found", MB_OK);
+		return true;
+	}
+   bool ShowWFLHelp(HWND hWnd)
+	{
+		TCHAR lpOpen[MAX_PATH] = L"open";
+		
+		TCHAR lpFile[MAX_PATH] = L"WifilapperHelp.pdf";
 		TCHAR lpDir[MAX_PATH];
 		if(GetAppFolder(lpDir,NUMCHARS(lpDir)))
 		{
@@ -1656,7 +1825,7 @@ private:
   void HandleResize(SIZE sNewSize)
   {
     HandleCtlResize(sNewSize, IDC_DISPLAY, true, true); // main display window
-    HandleCtlResize(sNewSize, IDC_SUBDISPLAY, true, false); // sub display window
+    HandleCtlResize(sNewSize, IDC_SUBDISPLAY, false, false); // sub display window
     HandleCtlResize(sNewSize, IDC_LAPS, false, true); // lap list
   }
 	float fAverage(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal)
@@ -1680,29 +1849,178 @@ private:
 			return sum;
 		}
 	}
+void UpdateSectors()
+  {
+	//	Update the Sector Times display
+	//	The idea here is to get the sector positions and iTime from sfLapOpts, then for each highlighted
+	//  Lap run through the Ref Lap Time/Distance array and interpolate the iTime at the equivalent distance
+	//  Coding is similar to TimeSlip
+
+	//	First, let's make sure that we have a Reference Lap, or let's not perform this
+	if (m_pReferenceLap != NULL)
+		{
+		const int cSectors = 9;	//	The maximum number of Sectors to display, gated by display area
+		const int MaxLaps = 7;	//	Maximum number of laps to display
+		int w = 0;	//	String variable counter for Sector display
+
+		//	Get the list of highlighted lap time ID's
+		set<LPARAM> setSelected = m_sfLapList.GetSelectedItemsData();
+
+		//	Load the CExtendedLap data for the lap list
+		vector<CExtendedLap*> lstLaps = GetLapsToShow();
+
+		//	Get the points from the Ref Lap for computation
+		const vector<TimePoint2D>& lstRefPoints = m_pReferenceLap->GetPoints();	// For iTime
+		const IDataChannel* pReferenceDistance = m_pReferenceLap->GetChannel(DATA_CHANNEL_DISTANCE);
+
+		//	Strings for building the Sector Times output for each lap
+		TCHAR szLapString[50][512] = {NULL};
+		TCHAR szString[50][512] = {NULL};
+
+	//	Lap Loop
+		//	Now loop through the lap list, compute the sector times and store them in SplitPoints[]
+		for(vector<CExtendedLap*>::iterator i = lstLaps.begin(); i != lstLaps.end(); i++)
+		{
+			//	Get the data points for this lap, and compare the sector times to the Reference Lap (m_pReferenceLap)
+			CExtendedLap* pLap = *i;
+		
+			//	Get the points from the Selected Lap for computation
+			const vector<TimePoint2D>& lstLapPoints = pLap->GetPoints();
+
+			pLap->GetString(szLapString[w], NUMCHARS(szLapString)); //   Timestamp of this lap, to used to name it
+			if (_tcslen(szLapString[w]) <= 30)
+			{
+				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"%s\t", szLapString[w]);	//	Add a TAB mark for formatting
+			}
+			else
+			{
+				swprintf(szLapString[w], 39, szLapString[w]);	//	Truncate the Timestamp string for formatting
+			}
+
+			const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
+
+			int iLapStartTime = lstLapPoints[0].iTime;
+
+	//	Sector Loop
+			//	Now loop through the split points and determine lap times for each sector
+			for(int s = 1; s <= cSectors; s++)
+			{
+				//	Get the Split Point iTime and it's distance value
+				const int SectorStartTime =  m_sfLapOpts.m_SplitPoints[s].m_sfSectorTime;
+				const double dSectorDistance = pReferenceDistance->GetValue((int)SectorStartTime);
+
+				//	First iTime for the lap array
+				bool b_SectorFlag = false;
+				double dLastLapDist = 0;
+	//	Interpolation Loop
+				//	Now go through the lap array and find the 2 points that span the dSectorDistance distance
+				for (int x = 1; x < lstLapPoints.size(); x++)
+				{
+					const int iElapsedTime = lstLapPoints[x].iTime - iLapStartTime;
+					const double dDistance = pDistance->GetValue(lstLapPoints[x].iTime);
+					dLastLapDist = pDistance->GetValue(lstLapPoints[x-1].iTime);
+
+					TimePoint2D pLapPoint = lstLapPoints[x];
+					// this lap's time at {dDistance} was {iElapsedTime}.
+					// we now need to estimate what the lap time at {dDistance} was, and then we can get our sector time
+					const int cLapSize = lstLapPoints.size();
+					if(dDistance >= dSectorDistance && dLastLapDist <= dSectorDistance)
+					{
+						// we have found two points straddling the distance we're curious about, dSectorDistance
+						const double dOffset = dSectorDistance - dLastLapDist; // how far into the {dLastRefDist,dRefDist} x axis we are
+						const double dWidth = dDistance - dLastLapDist; // how far apart {dLastRefDist,dRefDist} are
+						double dFraction = 0;
+						if(dWidth != 0)
+						{
+							dFraction = dOffset / dWidth; // the fraction that dDistance is between dLastLapDist and dDistance
+							if(dFraction >= 0.0 && dFraction <= 1.0)
+							{
+								const int iLastTime = lstLapPoints[x-1].iTime;
+								const int iThisTime = lstLapPoints[x].iTime;
+								const double dEstimatedElapsedTime = dFraction * (iThisTime - iLastTime) + (double)iLastTime; 
+								// this is the estimated time for the previous lap at this position
+								if(dEstimatedElapsedTime >= 0)
+								{
+									float dSectorTime = dEstimatedElapsedTime - (double)iLapStartTime;
+									//	Now that we have computed the Sector Time, let's build the Sector times string
+									swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
+									iLapStartTime = dEstimatedElapsedTime;
+									dLastLapDist = dSectorDistance;
+									break;
+								}
+							}
+						}
+						else
+						{
+							const int iLastTime = lstLapPoints[x-1].iTime;
+							float dSectorTime = iLastTime - (double)iLapStartTime;
+							//	Now that we have computed the Sector Time, let's build the Sector times string
+							swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
+							iLapStartTime = iLastTime;
+							dLastLapDist = dSectorDistance;
+							break;
+						}
+					}
+					if (x == lstLapPoints.size()-1)
+					{
+						//	We've reached the end of the loop. Dump the last point as the last sector time, if other conditions failed
+						const int iLastTime = lstLapPoints[lstLapPoints.size()-1].iTime;
+						float dSectorTime = iLastTime - (double)iLapStartTime;
+						//	Now that we have computed the Sector Time, let's build the Sector times string
+						swprintf(szString[w], NUMCHARS(szString[w]), L"%s\t%4.2f", szString[w], dSectorTime/1000);
+						iLapStartTime = iLastTime;
+						dLastLapDist = dSectorDistance;
+						break;
+					}
+				}
+	//	End Interpolation Loop
+			}
+	//	End Sector Loop
+
+			//	Now that we have computed the Sector Time, let's Display them
+/*			if (w == lstLaps.size() - 1 && m_fShowReferenceLap)
+			{
+				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"\t\tRef Lap: \t%s", szString[w]);
+				SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
+			}
+			else
+*/			{
+				swprintf(szLapString[w], NUMCHARS(szLapString[w]), L"%s %s", szLapString[w], szString[w]);
+				SendMessage(m_sfLapOpts.hWndLap[w], WM_SETTEXT, 0, (LPARAM)szLapString[w]);
+			}
+			//	Increment "w" counter and do the next lap
+			w++;
+			if (w >= MaxLaps) break;	//	Stop building these if we already have as many as we need.
+		}
+		//	Clean up any old lap sector times if user chose fewer laps to display
+		for (int x = w; x < MaxLaps; x++)
+		{
+			swprintf(szLapString[x], NUMCHARS(szLapString[x]), L"Lap %i:", x + 1);
+			SendMessage(m_sfLapOpts.hWndLap[x], WM_SETTEXT, 0, (LPARAM)szLapString[x]);
+		}
+
+	//	End Lap Loop
+	  }
+  }
 void UpdateValues()
   {
 	//	Update the data channels that are being displayed as values
 	//	List of highlighted laps
 	set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
-    if(setSelectedData.size() > 0) // && setSelectedData.size() < 5)
+    if(setSelectedData.size() > 0)
     {
       const int cLabels = 5;	//	The maximum number of Value Data channels to display, gated by display area
 	  bool m_Warning = false;	//	Flag for showing dialog of Value display to indicate statistics are outside of bounds
-	  TCHAR m_szYString[512] = L"";
-	  TCHAR m_szWarningChannel[MAX_PATH]  = L"";
+	  TCHAR m_szYString[512] = {NULL};
+	  TCHAR m_szWarningChannel[MAX_PATH] = {NULL};
 	  int w=0;	//	String variable counter for Vaue display
-      TCHAR szLabel[cLabels][MAX_PATH];
-	  for (int z = 0; z < cLabels; z++)
-	  {
-		  wcscpy(szLabel[z],(TCHAR*) L"");	//	Initialize the strings for Data Value Channels
-	  }
+      TCHAR szLabel[cLabels][MAX_PATH] = {NULL};
       //   Loop through the selected Y-axis data channels for this lap
 	  for(int x = 0; x < this->m_lstYChannels.size() && x < 49; x++)
 	  {
 			const DATA_CHANNEL eChannel = m_lstYChannels[x];
 			if(!eChannel /*|| !eChannel->IsValid()*/) continue;
-			float flMin, flMax, flAvg;
+			float flMin, flMax, flAvg, flMinTemp, flMaxTemp;
 			//	First check if this data channel is one to be displayed as a Value (false) or Graph (true) 
 			for (int u = 0; u < sizeof m_lstYChannels; u++)
 			{
@@ -1729,23 +2047,32 @@ void UpdateValues()
 						// 951turbo: do more math here like averages, median, etc.
 						flAvg = fAverage(eChannel, pChannel, flVal);
 						//	See if the Minimum or Maximum are outside of the PlotPrefs setpoints
-						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue)
+//////////////////////////////////////////
+						//		Adding transformation functions here for Y
+						if (m_sfLapOpts.m_PlotPrefs[u].iTransformYesNo == true)
+						{
+							if (m_sfLapOpts.m_PlotPrefs[u].fTransBValue < 0)
+							{
+								flAvg = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flAvg * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flAvg * flAvg *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+								flMaxTemp = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flMin * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flMin * flMin *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+								flMinTemp = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flMax * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flMax * flMax *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+							}
+							else
+							{
+								flAvg = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flAvg * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flAvg * flAvg *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+								flMinTemp = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flMin * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flMin * flMin *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+								flMaxTemp = m_sfLapOpts.m_PlotPrefs[u].fTransAValue + flMax * m_sfLapOpts.m_PlotPrefs[u].fTransBValue + flMax * flMax *  m_sfLapOpts.m_PlotPrefs[u].fTransCValue;
+							}
+							flMin = flMinTemp;
+							flMax = flMaxTemp;
+						}
+//////////////////////////////////////////
+						if (flMax > m_sfLapOpts.m_PlotPrefs[u].fMaxValue || flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
 						{
 							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.
 							GetDataChannelName(eChannel,m_szWarningChannel,NUMCHARS(m_szWarningChannel));
 							//	Build the failing channels string for output
 							swprintf(m_szYString,NUMCHARS(m_szYString),L"%s\n%s",m_szYString, m_szWarningChannel);
-
-						}
-						else if (flMin < m_sfLapOpts.m_PlotPrefs[u].fMinValue)
-						{
-							m_Warning = true;	//	An alarm has been triggered! Save the channel name and post a warning dialog.
-							GetDataChannelName(eChannel,m_szWarningChannel,NUMCHARS(m_szWarningChannel));
-							//	Build the failing channels string for output
-							swprintf(m_szYString,NUMCHARS(m_szYString),L"%s\n%s",m_szYString, m_szWarningChannel);
-						}
-						else
-						{
 						}
 					  }
 					  else
@@ -1767,7 +2094,7 @@ void UpdateValues()
 					//	Now assemble the string to display (max of 5)
 					if (w < cLabels)
 					{
-						swprintf(szLabel[w],NUMCHARS(szLabel[w]),L"%s: Min: %S, Max: %S, Mean: %3.1f",szChannelName,szMin,szMax,flAvg);
+						swprintf(szLabel[w],NUMCHARS(szLabel[w]),L"%s: Min: %S, Max: %S, Avg: %3.1f",szChannelName,szMin,szMax,flAvg);
 						w++;	//	Increment Value string counter
 					}
 					break;
@@ -1781,6 +2108,15 @@ void UpdateValues()
 	  for (int z = 0; z < cLabels; z++)
 	  {
 			HWND hWndLabel = GetDlgItem(m_hWnd, IDC_VALUE_CHANNEL1 + z);
+			hdc = GetDC(hWndLabel);
+			
+			SetBkMode(hdc,TRANSPARENT);
+			SetTextColor(hdc,RGB(255,0,0));
+			//GetSysColorBrush(GetSysColor(COLOR_WINDOW));
+			CreateSolidBrush(RGB(255,255,255));
+
+			//SetTextColor( hdc, RGB(255, 0, 0) );
+			//SetBkColor(hdc, RGB(222,231,249));
 			SendMessage(hWndLabel, WM_SETTEXT, 0, (LPARAM)szLabel[z]);
 	  }
 		if (m_Warning)	//	Pop up dialog saying the alarm has been triggered
@@ -1818,8 +2154,6 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_KMH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_KMH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MPH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MPH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MS, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MS);
-    CheckMenuHelper(hSubMenu, ID_OPTIONS_SORTTIME, m_sfLapOpts.eSortPreference == SORTSTYLE_BYTIMEOFRACE);
-    CheckMenuHelper(hSubMenu, ID_OPTIONS_SORTLAP, m_sfLapOpts.eSortPreference == SORTSTYLE_BYLAPTIME);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
 	CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWREFERENCELAP, m_fShowReferenceLap);
@@ -1844,40 +2178,46 @@ void UpdateDisplays()
     case SORTSTYLE_BYLAPTIME:
       sort(lstLaps.begin(),lstLaps.end(), CExtendedLap_SortByLapTime);
       break;
-     
     }
     return lstLaps;
   }
   
   void LoadLaps(ILapReceiver* pReceiver)
   {
-    vector<const ILap*> laps = pReceiver->GetLaps(m_iRaceId);
-    for(int x = 0;x < laps.size(); x++)
-    {
-      const ILap* pLap = laps[x];
-      // let's see if we already have this lap
-      if(m_mapLaps.count(pLap->GetLapId()) != 0)
-      {
-        // we've already got this lap.  THere is nothing to be added from this lap
-        ((ILap*)pLap)->Free();
-        laps[x] = NULL;
-      }
-      else
-      {
-        // we don't have this lap yet, so let's put it in
-        CExtendedLap* pNewLap = new CExtendedLap(pLap, m_pReferenceLap, pReceiver, true);
-        if(m_pReferenceLap == NULL)		// If there is no reference lap currently
-        {
-          m_pReferenceLap = pNewLap; // by default, make the first lap received the reference lap
-        }
-        if(pLap->GetComment().size() <= 0)
-        {
-          pLap->SetComment(m_szCommentText);
-        }
-        m_mapLaps[pLap->GetLapId()] = pNewLap;
-      }
-    }
+	  int z_iRaceId = 0;
+	  for (int z = 0; z < 50; z++)
+	  {
+			if (m_iRaceId[z] <= 0) break;	//	Only load the valid Race Id's
+			z_iRaceId = m_iRaceId[z];
+			vector<const ILap*> laps = pReceiver->GetLaps(z_iRaceId);
+			for(int x = 0;x < laps.size(); x++)
+			{
+				const ILap* pLap = laps[x];
+				// let's see if we already have this lap
+				if(m_mapLaps.count(pLap->GetLapId()) != 0)
+				{
+					// we've already got this lap.  THere is nothing to be added from this lap
+					((ILap*)pLap)->Free();
+					laps[x] = NULL;
+				}
+				else
+				{
+					// we don't have this lap yet, so let's put it in
+					CExtendedLap* pNewLap = new CExtendedLap(pLap, m_pReferenceLap, pReceiver, true);
+					if(m_pReferenceLap == NULL)		// If there is no reference lap currently
+					{
+						m_pReferenceLap = pNewLap; // by default, make the first lap received the reference lap
+					}
+					if(pLap->GetComment().size() <= 0)
+					{
+						pLap->SetComment(m_szCommentText);
+					}
+					m_mapLaps[pLap->GetLapId()] = pNewLap;
+				}
+			}
+	  }
   }
+
   void ApplyDriverNameToSelectedLaps(ILapReceiver* pLapDB)
   {
     set<LPARAM> setSelectedData = m_sfLapList.GetSelectedItemsData();
@@ -1906,6 +2246,8 @@ void UpdateDisplays()
       return true; // main display is always the driver of highlight data
     case SUPPLIERID_SUBDISPLAY:
       return false;
+	case SUPPLIERID_SECTORDISPLAY:
+		return true;	//	Allow the Set Split Sectors to be highlight source
     default:
       DASSERT(FALSE);
       return false;
@@ -2017,7 +2359,11 @@ void UpdateDisplays()
       case LAPDISPLAYSTYLE_MAP: return LAPDISPLAYSTYLE_PLOT;
       default: return LAPDISPLAYSTYLE_MAP;
       }
-    default:
+	case SUPPLIERID_SECTORDISPLAY:
+	  {
+		return LAPDISPLAYSTYLE_MAP;
+	  }
+	default:
       DASSERT(FALSE);
       break;
     }
@@ -2120,15 +2466,17 @@ void UpdateDisplays()
         return (float)(iMin);
       }
       case DATA_CHANNEL_TEMP: return 0;
-      case (DATA_CHANNEL_PID_START+0x5): return -40;
-      case (DATA_CHANNEL_PID_START+0xc): return 0;
-      case (DATA_CHANNEL_PID_START+0xA): return 0;
-      case (DATA_CHANNEL_PID_START+0x5c): return -40;
-      default: 
+
+	  default: 
         if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
             eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
         {
           return m_sfLapOpts.fIOIOHardcoded ? 0 : 1e30;
+        }
+        else if(eChannel >= DATA_CHANNEL_PID_START && eChannel < DATA_CHANNEL_PID_END)
+        {
+			int iMin = (int)(flMin);
+			return (float)(iMin);
         }
         return 1e30;
     }
@@ -2161,7 +2509,7 @@ void UpdateDisplays()
 		  if(flSpread < 0.050) return 0.0050f;		
 		  if(flSpread < 1.000) return 0.1000f;
 		  if(flSpread < 10.00) return 1.0000f;
-		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 1000) return 50.0f;
 		  if(flSpread < 5000) return 100.0f;
 		  if(flSpread < 10000) return 500.0f;
 		  if(flSpread < 50000) return 2500.0f;
@@ -2174,7 +2522,7 @@ void UpdateDisplays()
     case DATA_CHANNEL_TIME:					
     case DATA_CHANNEL_ELAPSEDTIME:					
 		{
-		  if(flSpread < 1000) return 50.0f;		//	Added by KDJ to improve TS display
+		  if(flSpread < 1000) return 50.0f;
 		  if(flSpread < 5000) return 100.0f;
 		  if(flSpread < 10000) return 500.0f;
 		  if(flSpread < 50000) return 2500.0f;
@@ -2186,7 +2534,7 @@ void UpdateDisplays()
 		}
     case DATA_CHANNEL_LAPTIME_SUMMARY:					
 		{
-		  if(flSpread < 1) return 0.50f;		//	Added by KDJ to improve Laptime display
+		  if(flSpread < 1) return 0.50f;
 		  if(flSpread < 5) return 1.0f;
 		  if(flSpread < 10) return 5.0f;
 		  if(flSpread < 50) return 25.0f;
@@ -2211,90 +2559,100 @@ void UpdateDisplays()
     const float flSpread = flMax - flMin;
     switch(eChannel)
     {
-    case DATA_CHANNEL_X: return 1e30;
-    case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
-    case DATA_CHANNEL_VELOCITY: 
-    {
-      switch(m_sfLapOpts.eUnitPreference)
-      {
-      case UNIT_PREFERENCE_KMH: return KMH_TO_MS(25.0);
-	  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Adjusted by KDJ
-      case UNIT_PREFERENCE_MS: return 5;
-      }
-      return 10.0;
-    }
-    case DATA_CHANNEL_DISTANCE: 
-    {
-	  if(flSpread < 0.001) return 0.0001f;		
-	  if(flSpread < 0.005) return 0.0005f;		
-	  if(flSpread < 0.010) return 0.0010f;		
-      if(flSpread < 0.050) return 0.0050f;		
-      if(flSpread < 1.000) return 0.1000f;
-      if(flSpread < 10.00) return 1.0000f;
-	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 5000) return 500.0f;
-	  if(flSpread < 10000) return 1000.0f;
-      if(flSpread < 50000) return 5000.0f;
-	  if(flSpread < 110000) return 10000.0f;
-      if(flSpread < 1100000) return 100000.0f;
-      if(flSpread < 10000000) return 1000000.0f;
-	  return 10000000;
-	}
+		case DATA_CHANNEL_X: return 1e30;
+		case DATA_CHANNEL_Y: return 1e30; // we don't want guides for either latitude or longitude
+		case DATA_CHANNEL_VELOCITY: 
+		{
+		  switch(m_sfLapOpts.eUnitPreference)
+		  {
+			  case UNIT_PREFERENCE_KMH: return KMH_TO_MS(25.0);
+			  case UNIT_PREFERENCE_MPH: return MPH_TO_MS(20.0);		//	Adjusted by KDJ
+			  case UNIT_PREFERENCE_MS: return 5;
+		  }
+		  return 10.0;
+		}
+		case DATA_CHANNEL_DISTANCE: 
+		{
+		  if(flSpread < 0.001) return 0.0001f;		
+		  if(flSpread < 0.005) return 0.0005f;		
+		  if(flSpread < 0.010) return 0.0010f;		
+		  if(flSpread < 0.050) return 0.0050f;		
+		  if(flSpread < 1.000) return 0.1000f;
+		  if(flSpread < 10.00) return 1.0000f;
+		  if(flSpread < 1000) return 100.0f;
+		  if(flSpread < 5000) return 500.0f;
+		  if(flSpread < 10000) return 1000.0f;
+		  if(flSpread < 50000) return 5000.0f;
+		  if(flSpread < 110000) return 10000.0f;
+		  if(flSpread < 1100000) return 100000.0f;
+		  if(flSpread < 10000000) return 1000000.0f;
+		  return 10000000;
+		}
 
-    case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
-    case DATA_CHANNEL_TIMESLIP:
-	case DATA_CHANNEL_ELAPSEDTIME:
-    {
-	  if(flSpread < 10) return 1.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 100) return 10.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 1000) return 100.0f;		//	Added by KDJ to improve TS display
-	  if(flSpread < 5000) return 500.0f;
-	  if(flSpread < 10000) return 1000.0f;
-      if(flSpread < 50000) return 5000.0f;
-	  if(flSpread < 110000) return 10000.0f;
-      if(flSpread < 1100000) return 100000.0f;
-      if(flSpread < 10000000) return 1000000.0f;
-	  return 10000000.0f;
-    }
-	case DATA_CHANNEL_LAPTIME_SUMMARY:
-    {
-	  if(flSpread < 5) return 0.5f;
-	  if(flSpread < 10) return 1.0f;
-      if(flSpread < 50) return 5.0f;
-	  if(flSpread < 100) return 10.0f;
-      if(flSpread < 1100) return 100.0f;
-      if(flSpread < 10000) return 1000.0f;
-      if(flSpread < 50000) return 5000.0f;
-	  if(flSpread < 110000) return 10000.0f;
-      if(flSpread < 1100000) return 100000.0f;
-      if(flSpread < 10000000) return 1000000.0f;
-	  return 10000000.0f;
-    }
-    case DATA_CHANNEL_X_ACCEL: return 0.5f;
-    case DATA_CHANNEL_Y_ACCEL: return 0.5f;
-    case DATA_CHANNEL_Z_ACCEL: return 0.5f;
-    case DATA_CHANNEL_TEMP: return 10.0f;
-    case (DATA_CHANNEL_PID_START+0x5): return 25;
-    case (DATA_CHANNEL_PID_START+0xA): return 100;
-    case (DATA_CHANNEL_PID_START+0xc): return 1000; // rpms
-    case (DATA_CHANNEL_PID_START+0x5c): return 25;
-    default: 
-      if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
-          eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
-      {
-        if(flSpread < 1) return m_sfLapOpts.fIOIOHardcoded ? 0.1f : 1e30;	//	Added by KDJ
-		if(flSpread < 10) return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 25) return m_sfLapOpts.fIOIOHardcoded ? 2.5f : 1e30;	//	Added by KDJ
-		if(flSpread < 50) return m_sfLapOpts.fIOIOHardcoded ? 5.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 150) return m_sfLapOpts.fIOIOHardcoded ? 20.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 500) return m_sfLapOpts.fIOIOHardcoded ? 50.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 10000) return m_sfLapOpts.fIOIOHardcoded ? 1000.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 100000) return m_sfLapOpts.fIOIOHardcoded ? 5000.0f : 1e30;	//	Added by KDJ
-		if(flSpread < 1000000) return m_sfLapOpts.fIOIOHardcoded ? 50000.0f : 1e30;	//	Added by KDJ
-        return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;		// Original code, and default for non-transformed IOIO data
-      }
-      return 1e30;
-    }
+		case DATA_CHANNEL_TIME: return 1e30;		//	No guidelines for Y-axis
+		case DATA_CHANNEL_TIMESLIP:
+		case DATA_CHANNEL_ELAPSEDTIME:
+		{
+		  if(flSpread < 10) return 1.0f;
+		  if(flSpread < 100) return 10.0f;
+		  if(flSpread < 1000) return 100.0f;
+		  if(flSpread < 5000) return 500.0f;
+		  if(flSpread < 10000) return 1000.0f;
+		  if(flSpread < 50000) return 5000.0f;
+		  if(flSpread < 110000) return 10000.0f;
+		  if(flSpread < 1100000) return 100000.0f;
+		  if(flSpread < 10000000) return 1000000.0f;
+		  return 10000000.0f;
+		}
+		case DATA_CHANNEL_LAPTIME_SUMMARY:
+		{
+		  if(flSpread < 5) return 0.5f;
+		  if(flSpread < 10) return 1.0f;
+		  if(flSpread < 50) return 5.0f;
+		  if(flSpread < 100) return 10.0f;
+		  if(flSpread < 1100) return 100.0f;
+		  if(flSpread < 10000) return 1000.0f;
+		  if(flSpread < 50000) return 5000.0f;
+		  if(flSpread < 110000) return 10000.0f;
+		  if(flSpread < 1100000) return 100000.0f;
+		  if(flSpread < 10000000) return 1000000.0f;
+		  return 10000000.0f;
+		}
+		case DATA_CHANNEL_X_ACCEL: return 0.5f;
+		case DATA_CHANNEL_Y_ACCEL: return 0.5f;
+		case DATA_CHANNEL_Z_ACCEL: return 0.5f;
+		case DATA_CHANNEL_TEMP: return 10.0f;
+
+		default: 
+		  if(eChannel >= DATA_CHANNEL_IOIOPIN_START && eChannel < DATA_CHANNEL_IOIOPIN_END ||
+			  eChannel >= DATA_CHANNEL_IOIOCUSTOM_START && eChannel < DATA_CHANNEL_IOIOCUSTOM_END)
+		  {
+			if(flSpread < 1) return m_sfLapOpts.fIOIOHardcoded ? 0.1f : 1e30;
+			if(flSpread < 10) return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;
+			if(flSpread < 25) return m_sfLapOpts.fIOIOHardcoded ? 2.5f : 1e30;
+			if(flSpread < 50) return m_sfLapOpts.fIOIOHardcoded ? 5.0f : 1e30;
+			if(flSpread < 150) return m_sfLapOpts.fIOIOHardcoded ? 20.0f : 1e30;
+			if(flSpread < 500) return m_sfLapOpts.fIOIOHardcoded ? 50.0f : 1e30;
+			if(flSpread < 10000) return m_sfLapOpts.fIOIOHardcoded ? 1000.0f : 1e30;
+			if(flSpread < 100000) return m_sfLapOpts.fIOIOHardcoded ? 5000.0f : 1e30;
+			if(flSpread < 1000000) return m_sfLapOpts.fIOIOHardcoded ? 50000.0f : 1e30;
+			return m_sfLapOpts.fIOIOHardcoded ? 1.0f : 1e30;		// Original code, and default for non-transformed IOIO data
+		  }
+		  else if(eChannel >= DATA_CHANNEL_PID_START && eChannel < DATA_CHANNEL_PID_END)
+		  {
+			if(flSpread < 1) return 0.1f;
+			if(flSpread < 10) return 1.0f;
+			if(flSpread < 25) return 2.5f;
+			if(flSpread < 50) return 5.0f;
+			if(flSpread < 150) return 20.0f;
+			if(flSpread < 500) return 50.0f;
+			if(flSpread < 10000) return 1000.0f;
+			if(flSpread < 100000) return 5000.0f;
+			if(flSpread < 1000000) return 50000.0f;
+			return 1e30;
+		  }
+		  return 1e30;
+		}
   }
   virtual const LAPSUPPLIEROPTIONS& GetDisplayOptions() const override
   {
@@ -2386,7 +2744,7 @@ private:
   vector<MulticastListener*> m_lstMulticast;
   MCResponder m_sfResponder;
 
-  int m_iRaceId;
+  int m_iRaceId[50];
   ILapSupplier* z_ILapSupplier;
 };
 
@@ -2441,7 +2799,8 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
     return;
   }
 }
-  void InitPlotPrefs(LAPSUPPLIEROPTIONS &p_sfLapOpts)
+
+void InitPlotPrefs(LAPSUPPLIEROPTIONS &p_sfLapOpts)
   {
 	for (int i=0; i < 50; i++)
 	{
@@ -2450,58 +2809,22 @@ void LoadPitsideSettings(PITSIDE_SETTINGS* pSettings)
 		p_sfLapOpts.m_PlotPrefs[i].iPlotView = true;  //  Default to dsplay as a graph
 		p_sfLapOpts.m_PlotPrefs[i].fMinValue = -3.0;    //  Set all lower limits to -3.0
 		p_sfLapOpts.m_PlotPrefs[i].fMaxValue = 1000000.0;  //  Set all upper limits to 1000000.0
+		p_sfLapOpts.m_PlotPrefs[i].iTransformYesNo = false;  //  Default to display as a graph
+		p_sfLapOpts.m_PlotPrefs[i].fTransAValue = 0.0;  //  Set all A constants to 0.0
+		p_sfLapOpts.m_PlotPrefs[i].fTransBValue = 1.0;  //  Set all B constants to 1.0
+		p_sfLapOpts.m_PlotPrefs[i].fTransCValue = 0.0;  //  Set all C constants to 0.0
+		p_sfLapOpts.m_SplitPoints[i].m_sfXPoint = 0.0f;	//	Initialize all split points
+		p_sfLapOpts.m_SplitPoints[i].m_sfYPoint = 0.0f;	//	Initialize all split points
+		p_sfLapOpts.m_SplitPoints[i].m_sfSectorTime = 0;	//	Initialize all sector times
+		p_sfLapOpts.m_SplitPoints[i].m_sfSplitTime = 0.0f;
+		p_sfLapOpts.fDrawSplitPoints = false;	//	Default to not show split points
+		p_sfLapOpts.m_Tranformations[i].f_CoeffA= -1.0;
+		p_sfLapOpts.m_Tranformations[i].f_CoeffB= -1.0;
+		p_sfLapOpts.m_Tranformations[i].f_CoeffC= -1.0;
+		swprintf(p_sfLapOpts.m_Tranformations[i].c_Name, L"");
+		p_sfLapOpts.m_Tranformations[i].b_LoadTrans = false;
 	}
   }
-
-DWORD HTMLThreadProc(LPVOID pv)
-{
-  LPCTSTR lpszPath = (LPCTSTR)pv;
-  CSfArtSQLiteDB sfDB;
-  vector<wstring> lstTables;
-  if(SUCCEEDED(sfDB.Open(lpszPath,lstTables,true)))
-  {
-    while(true)
-    {
-      Sleep(5000);
-
-      ofstream out;
-      out.open("toplaps.html");
-
-      out<<"<html><head><script type=\"text/JavaScript\"> function timedRefresh(timeoutPeriod) {	setTimeout(\"location.reload(true);\",timeoutPeriod);} </script></head>"<<endl;
-      CSfArtSQLiteQuery sfQuery(sfDB);
-      //if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id and races.name like '%Received laps%' order by laptime asc limit 40"))
-      if(sfQuery.Init(L"select races.name,laps.laptime from laps,races where laps.raceid=races._id order by laptime asc limit 40"))
-      {
-        SYSTEMTIME st;
-        GetSystemTime(&st);
-
-        out<<"<body onload=\"JavaScript:timedRefresh(5000);\">"<<endl;
-        out<<"Last Updated "<<st.wHour<<":"<<st.wMinute<<":"<<st.wSecond<<endl;
-        out<<"<table><th>Car #<th>Laptime"<<endl;
-        while(sfQuery.Next())
-        {
-          TCHAR szRaceName[300];
-          TCHAR szLap[300];
-          float flLapTime = 0;
-          sfQuery.GetCol(0,szRaceName,NUMCHARS(szRaceName));
-          sfQuery.GetCol(1,&flLapTime);
-
-          ::FormatTimeMinutesSecondsMs(flLapTime,szLap,NUMCHARS(szLap));
-          std::wstring strw(szRaceName);
-          std::string strRaceName(strw.begin(),strw.end());
-          strw = szLap;
-          std::string strLapTime(strw.begin(),strw.end());
-          out<<"<tr><Td>"<<strRaceName<<"<td>"<<strLapTime<<"</tr>"<<endl;
-        }
-        out<<"</table></body>";
-      }
-      out.close();
-
-    }
-  }
-  return 0;
-}
-
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 
@@ -2528,7 +2851,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   CSQLiteLapDB sfLaps(&sfUI);
   bool fDBOpened = false;
 
-  int iRaceId = 0;
+  int iRaceId[50] = {0};
   TCHAR szDBPath[MAX_PATH];
   if(ArtGetSaveFileName(NULL,L"Select .wflp to open or save to",szDBPath,NUMCHARS(szDBPath),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
   {
@@ -2552,18 +2875,21 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ::ArtShowDialog<IDD_SELECTRACE>(&sfRaceSelect);
         if(!sfRaceResult.fCancelled)
         {
-          iRaceId = sfRaceResult.iRaceId;
+			for (int z = 0; z < 50; z++)
+			{
+				iRaceId[z] = sfRaceResult.iRaceId[z];	//	Load the first selected race session
+			}
           fDBOpened = true;
         }
         else
         {
-          iRaceId = -1;
+          iRaceId[0] = -1;
           fDBOpened = true;
         }
       }
       else
       {
-        iRaceId = -1;
+        iRaceId[0] = -1;
         fDBOpened = true;
       }
     }
@@ -2592,7 +2918,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     MessageBox(NULL,L"Pitside was unable to create a database to save data to.  Is your hard drive full?",L"Failed to create DB",MB_ICONERROR);
     exit(0);
   }
-  sfUI.SetRaceId(iRaceId);
+  sfUI.SetRaceId(&iRaceId[0]);
 
 
   g_pLapDB = &sfLaps;
@@ -2600,7 +2926,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   
   LAPSUPPLIEROPTIONS x_sfLapOpts; //sfLapOpts contains all lap display options
   InitPlotPrefs(x_sfLapOpts);	//	Initialize all PlotPrefs variables before displaying anything
-//  sfUI.SetDisplayOptions(x_sfLapOpts);
 
   PITSIDE_SETTINGS sfSettings;
   LoadPitsideSettings(&sfSettings);		//	Load preferences from "Settings.txt" file
@@ -2655,6 +2980,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
   x_sfLapOpts.eSortPreference = SORTSTYLE_BYTIMEOFRACE;		//	Default sort Lap List by time of lap
   sfUI.SetDisplayOptions(x_sfLapOpts);
+  sfUI.SetDBPath(szDBPath);
 
   PitsideHTTP aResponder(g_pLapDB,&sfUI);
   if(sfSettings.fRunHTTP && sfSettings.iHTTPPort > 0 && sfSettings.iHTTPPort < 65536)
@@ -2690,8 +3016,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   {
     g_pHTTPServer = NULL;
   }
-
-  //HANDLE hHTMLThread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)&HTMLThreadProc,(LPVOID)&szDBPath[0],0,NULL);
 
   HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&ReceiveThreadProc, (LPVOID)&sfLaps, 0, NULL);
 

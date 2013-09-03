@@ -26,6 +26,7 @@ public:
   virtual int GetLapCount(int iRaceId) const override; // gets the lap count for a given race
   virtual vector<RACEDATA> GetRaces() override;
   virtual vector<const ILap*> GetLaps(int iRaceId) override;
+  virtual vector<const ILap*> GetScoring(int iRaceId) override;
   virtual bool MergeLaps(int m_iRaceId1, int m_iRaceId2);
   virtual bool RenameLaps(TCHAR szName[260], int m_RaceId1);
   virtual const ILap* GetLap(int iLapId) override;
@@ -48,7 +49,8 @@ private:
   mutable ManagedCS m_cs;
 
   mutable CSfArtSQLiteDB m_sfDB;
-  StartFinish m_rgSF[3];
+//  StartFinish m_rgSF[3];
+  StartFinish m_rgSF[50];	//	Increased by KDJ
 
   set<int> m_setReceivingIds; // which race IDs have actually received laps from afar this session?
   int m_iLastRaceId; // what was the last race ID to receive a lap?

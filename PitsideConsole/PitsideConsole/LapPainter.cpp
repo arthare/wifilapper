@@ -182,51 +182,95 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   DATA_CHANNEL eX;
   eX = DATA_CHANNEL_DISTANCE;
   set<DATA_CHANNEL> setY;
-  map<DATA_CHANNEL,float> mapMinY;
-  map<DATA_CHANNEL,float> mapMaxY;
+  map<DATA_CHANNEL,float> mapMinY, mapMinYTemp;
+  map<DATA_CHANNEL,float> mapMaxY, mapMaxYTemp;
   float dMaxX = -1e30;
   float dMinX = 1e30;
   float dCenterOvalX = 0;
   float dCenterOvalY = 0;
-  { // figuring out bounds and getting matrices all set up
-    //	First lets load up all of the data into an array and determine its size
-    for(int x = 0;x < lstLaps.size(); x++)
-    {
+  const int cSectors = 9;	//	The maximum number of Sectors to display, gated by display area
+/////////////////////////////////////////
+  bool b_TransformY = false;	//	Flag if we should transform this channel using PlotPrefs polynomial function false = no, true = yes
+  int i_TransInt = 0;		//	PlotPrefs index for transformation function coefficients
+/////////////////////////////////////////
+  // figuring out bounds and getting matrices all set up
+  //	First lets load up all of the data into an array and determine its size
+  for (int x = 0; x < lstLaps.size(); x++)
+  {
       CExtendedLap* pLap = lstLaps[x];
       DATA_CHANNEL eDataX = m_pLapSupplier->GetXChannel();
       const IDataChannel* pDataX = pLap->GetChannel(eDataX);
       if(!pDataX || !pDataX->IsValid() || pDataX->GetData().size() <= 0) continue;
 
       vector<DATA_CHANNEL> lstDataY = m_pLapSupplier->GetYChannels();
-      for(int y = 0; y < lstDataY.size(); y++)	//	Loop through the data channels and display them
+      for (int y = 0; y < lstDataY.size(); y++)	//	Loop through the data channels and load their data
       {
-        int ValueDisplay = 0;	//	Flag if we should display this channel as a graph or not 0 = yes, 1 = no
+        bool ValueDisplay = false;	//	Flag if we should display this channel as a graph or not false = yes, true = no
+//////////////////////////////////
+		b_TransformY = false;
+		i_TransInt = 0;
+//////////////////////////////////
 		const IDataChannel* pChannel = pLap->GetChannel(lstDataY[y]);
-        if(!pChannel || !pChannel->IsValid()) continue;
+        if (!pChannel || !pChannel->IsValid()) continue;
 
         const DATA_CHANNEL eType = lstDataY[y];
 
 		//	Determine if this Data Channel is one that we only want to display the values for
 			for (int u = 0; u < sizeof lstDataY; u++)
 			{
-				if (eType == m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iDataChannel && m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iPlotView == false)
-				{	//	We have found a display only channel. Let's prevent the graph from displaying
-					ValueDisplay = 1;
+				if (eType == m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iDataChannel)
+				{
+					//	We have found the appropriate DATA_CHANNEL, let's do some tests on it
+////////////////////////////////////////
+					//	Let's check here if the Y values need to be transformed or not
+					if (m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iTransformYesNo == true)
+					{
+						//	Let's set the flags to transform the Y values for this data channel
+						b_TransformY = true;
+						i_TransInt = u;
+					}
+					else
+					{
+						b_TransformY = false;
+						i_TransInt = 0;
+					}
+////////////////////////////////////////
+					if (eType == m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iDataChannel && m_pLapSupplier->GetDisplayOptions().m_PlotPrefs[u].iPlotView == false)
+					{	//	We have found a display only channel. Let's prevent the graph from displaying
+						ValueDisplay = true;
+					}
 					break;
 				}
 			}
-      if(mapMinY.find(eType) == mapMinY.end())
+      if(mapMinYTemp.find(eType) == mapMinYTemp.end())
         {
-          mapMinY[eType] = min(pChannel->GetMin(),m_pLapSupplier->GetDataHardcodedMin(eType));
-          mapMaxY[eType] = max(pChannel->GetMax(),m_pLapSupplier->GetDataHardcodedMax(eType));
+          mapMinYTemp[eType] = min(pChannel->GetMin(),m_pLapSupplier->GetDataHardcodedMin(eType));
+          mapMaxYTemp[eType] = max(pChannel->GetMax(),m_pLapSupplier->GetDataHardcodedMax(eType));
         }
         else
         {
-          mapMinY[eType] = min(pChannel->GetMin(),mapMinY[eType]);
-          mapMaxY[eType] = max(pChannel->GetMax(),mapMaxY[eType]);
-        }
-        
-        if (ValueDisplay == 0)
+          mapMinYTemp[eType] = min(pChannel->GetMin(),mapMinYTemp[eType]);
+          mapMaxYTemp[eType] = max(pChannel->GetMax(),mapMaxYTemp[eType]);
+		}
+////////////////////////////////
+		//	Adding transformation functions here for Min/MaxY
+		if (b_TransformY == true && sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue < 0)
+		{
+			mapMaxY[eType] = (float)PolynomialFilter(mapMinYTemp[eType], sfLapOpts.m_PlotPrefs[i_TransInt].fTransAValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransCValue);
+			mapMinY[eType] = (float)PolynomialFilter(mapMaxYTemp[eType], sfLapOpts.m_PlotPrefs[i_TransInt].fTransAValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransCValue);
+		}
+		else if (b_TransformY == true)
+		{
+			mapMinY[eType] = (float)PolynomialFilter(mapMinYTemp[eType], sfLapOpts.m_PlotPrefs[i_TransInt].fTransAValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransCValue);
+			mapMaxY[eType] = (float)PolynomialFilter(mapMaxYTemp[eType], sfLapOpts.m_PlotPrefs[i_TransInt].fTransAValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransCValue);
+		}
+		else
+		{
+			mapMinY[eType] = mapMinYTemp[eType];
+			mapMaxY[eType] = mapMaxYTemp[eType];
+		}
+////////////////////////////////
+        if (ValueDisplay == false)
 	    {
 		  setY.insert(eType);
 	    }
@@ -238,8 +282,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
         eX = pDataX->GetChannelType();
       }
-    }
-  }
+	  b_TransformY = false;	//	Reset the flag for transforming the Data Channel
+  }	//	End of finding bounds and loading laps loop
 	 
   if(setY.size() <= 0)
   {
@@ -260,152 +304,124 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     rcSpot.bottom = iSegmentHeight;
   }
   int iPos = 0;
-
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   // y-channel graphing loop start
   for(set<DATA_CHANNEL>::iterator i = setY.begin(); i != setY.end(); i++)
   {
     vector<HIGHLIGHTDATA> lstMousePointsToDraw;
     glViewport(rcSpot.left,rcSpot.top,RECT_WIDTH(&rcSpot),RECT_HEIGHT(&rcSpot));
-
-    // now we have the bounds of all the laps we've looked at, so let's draw them
+	int y = 0;	//	Tracker for PlotPrefs array variable
+	for (int z = 0; z < 49; z++)
+	{
+		if (sfLapOpts.m_PlotPrefs[z].iDataChannel == *i)
+		{
+			y = z;
+			break;
+		}
+	}
+	// now we have the bounds of all the laps we've looked at, so let's draw them
     glPushMatrix();
     glLoadIdentity();
     glScalef(1.0f, 0.90f, 1.0f);	// Let's scale it so that graphs don't touch each other.
-    glOrtho(dMinX, dMaxX,mapMinY[*i], mapMaxY[*i],-1.0,1.0);
+    glOrtho(dMinX, dMaxX, mapMinY[*i], mapMaxY[*i], -1.0, 1.0);
 
-    // draw horizontal guide lines and text on the background. Yes this should probably go into a function, Art ;)
-    // first draw the starting guideline
-	{	
-		float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]);
-		LineColor();	//	Pick guideline color, based upon chosen color scheme
-		glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
-		glBegin(GL_LINE_STRIP);
-		glVertex2f(dMinX,flLine);
-		glVertex2f(dMaxX,flLine);
-		glEnd();
-
-		LineColor();	//	Pick guideline color, based upon chosen color scheme
-		char szText[256];
-		GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-		DrawText(dMinX, flLine, szText);
-	}
-	// now draw the rest of them
-	for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]) + m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
+    // draw horizontal guide lines and text on the background.
+	for(float flLine = m_pLapSupplier->GetGuideStart(*i, mapMinY[*i], mapMaxY[*i]); flLine < mapMaxY[*i]; flLine += m_pLapSupplier->GetGuideStep(*i, mapMinY[*i], mapMaxY[*i]))
     {
-	  LineColor();	//	Pick guideline color, based upon chosen color scheme
-      glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
-      glBegin(GL_LINE_STRIP);
-      glVertex2f(dMinX,flLine);
-      glVertex2f(dMaxX,flLine);
-      glEnd();
-      
-	  LineColor();	//	Pick guideline color, based upon chosen color scheme
       char szText[256];
       GetChannelString(*i, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-      DrawText(dMinX, flLine, szText);
+	  LineColor();	//	Pick guideline color, based upon chosen color scheme
+	  DrawHorizontalLine(flLine, dMinX, dMaxX, szText);
     }
+	//	End of Horizontal line drawing routine
 
-
-	// draw vertical guide lines and text on the background only if at 1.0X magnification
-	if (sfLapOpts.iZoomLevels != 0)
-	{
-	}
-	else
-	{
-		// first draw the starting guideline
-		{
-			float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX);
-			LineColor();	//	Pick guideline color, based upon chosen color scheme
-			glLineWidth(1);      
-			dCenterOvalX = 0.0f;	//	Center oval at the origin
-			dCenterOvalY = 0.0f;
-//			dCenterOvalX = (dMaxX - dMinX) / 2.0f + dMinX;
-//			dCenterOvalY = (mapMaxY[*i] - mapMinY[*i]) / 2.0f + mapMinY[*i];
-			//		If this is for drawing the Traction Circle, let's draw a circle as well (Oval really)
-			if (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL)
-			{
-				float w, h;
-				w = 3.0f;
-				h = 3.0f;
-				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 1.5G circle
-				w = 1.0f;
-				h = 1.0f;
-				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 0.5G circle
-				w = 2.0f;
-				h = 2.0f;
-				drawOval (dCenterOvalX, dCenterOvalY, w, h);	//	Draw 1.0G circle
-				//	Now let's draw a vertical line at the origin
-				glBegin(GL_LINE_STRIP);
-				glVertex3f(0.0f,mapMinY[*i],0);
-				glVertex3f(0.0f,mapMaxY[*i],0);
-				glEnd();
-			}
-			else
-			{
-				glBegin(GL_LINE_STRIP);
-				glVertex3f(flLine,mapMinY[*i],0);
-				glVertex3f(flLine,mapMaxY[*i],0);
-				glEnd();
-			}
-			LineColor();	//	Pick guideline color, based upon chosen color scheme
-			char szText[256];
-			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-			DrawText(flLine, mapMinY[*i]-12, szText);
-		}
-		// now draw the rest of them
-		for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX) + m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
-		{
-			LineColor();	//	Pick guideline color, based upon chosen color scheme
-			glLineWidth(1);      
-			glBegin(GL_LINE_STRIP);
-			glVertex3f(flLine,mapMinY[*i],0);
-			glVertex3f(flLine,mapMaxY[*i],0);
-			glEnd();
-
-			LineColor();	//	Pick guideline color, based upon chosen color scheme
-			char szText[256];
-			GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
-		
-			DrawText(flLine, mapMinY[*i]-12, szText);
-		}
-
-	}
-
-//		Set up the non-zoomed/panned view for the map
+	//	Set up the non-zoomed/panned view for the map
     GLdouble rgModelviewMatrix[16];
     GLdouble rgProjMatrix[16];
     GLint rgViewport[4];
     
 	{
-//	Now that the matrices are correct, let's graph them.    
+		//	Now that the matrices are correct, let's graph them.    
 		glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
 		glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
 		glGetIntegerv(GL_VIEWPORT, rgViewport);
-
+		static int OldiZoomLevels;
 		POINT ptMouse;
+		double dScaleAmt = pow(1.1, sfLapOpts.iZoomLevels);
+		static GLdouble dXShift, dYShift, dZShift;
 		if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
 		{
-		//		The mouse is in our window, so panning and zooming are active!
-			const double dCenterX = (dMinX + dMaxX)/2;		//	Center of X for scaling transformation
-			double dScaleAmt = pow(1.08,sfLapOpts.iZoomLevels);
-			GLdouble dXShift,dYShift,dZShift;
-		//		Project the window shift stuff so we know how far to translate the view
+			//		The mouse is in our window, so panning and zooming are active!
+			//		Project the window shift stuff so we know how far to translate the view
 			dYShift = 0;	// No Y shift or zoom for Map Plot.
-			gluUnProject(sfLapOpts.flWindowShiftX/dScaleAmt,0,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dXShift,&dYShift,&dZShift);
-		//		Set up to perform the ZOOM function for DATA PLOT.   
-		double dTranslateShiftX;
-		dTranslateShiftX= dCenterX;
-			glTranslated(dTranslateShiftX,0,0);	// Translate the map to origin on x-axis only
-			glScaled(dScaleAmt,1.0,1.0);	//	No scaling of Y-axis on Data Plot.
-			glTranslated(-dTranslateShiftX,0,0);	// Now put the map back in its place
-		//	Panning functionality
-			glTranslated(dXShift-dMinX,0,0);	//	Offset for this is still slight wrong, but the best for now.
+			gluUnProject(sfLapOpts.flWindowShiftX / dScaleAmt, 0, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dXShift, &dYShift, &dZShift);
+			//		Set up to perform the ZOOM function for DATA PLOT.   
+			static double dTranslateShiftX;
+			static GLdouble dX,dY,dZ;
+			if (sfLapOpts.iZoomLevels != OldiZoomLevels)
+			{
+				//		The mouse is in our window, let's determine the closest X point to the mouse
+				gluUnProject(ptMouse.x, 0, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dX, &dY, &dZ);
+				dTranslateShiftX = dX - dXShift;
+			}
+			else
+			{
+				dTranslateShiftX = dX - dXShift;
+			}
+			OldiZoomLevels = sfLapOpts.iZoomLevels;
+				
+			glTranslated(dTranslateShiftX, 0, 0);	// Translate the map to origin on x-axis only
+			glScaled(dScaleAmt, 1.0, 1.0);	//	No scaling of Y-axis on Data Plot.
+			glTranslated(-dTranslateShiftX, 0, 0);	// Now put the map back in its place
+			//	Panning functionality
+			glTranslated(dXShift - dMinX, 0, 0);	//	Offset for this is still slight wrong, but the best for now.
 
-		//		Now having shifted, let's get our new model matrices
-		  glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
-		  glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
-		  glGetIntegerv(GL_VIEWPORT, rgViewport);
+			//		Now having shifted, let's get our new model matrices
+			glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+			glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+			glGetIntegerv(GL_VIEWPORT, rgViewport);
 		}
+
+		//	Draw Vertical guidelines for the graph
+		if (sfLapOpts.fDrawSplitPoints && eX == DATA_CHANNEL_DISTANCE)
+		{
+			//	Draw Split Points if they are selected
+			for(int z = 0; z < cSectors; z++)
+			{
+				if (sfLapOpts.m_SplitPoints[z].m_sfXPoint != 0.0f)
+				{
+					CExtendedLap* pLap = lstLaps[lstLaps.size() - 1];	//	Last lap is the Reference Lap
+					const IDataChannel* pDistance = pLap->GetChannel(DATA_CHANNEL_DISTANCE);
+					const double dDistance = pDistance->GetValue(sfLapOpts.m_SplitPoints[z].m_sfSectorTime) - pDistance->GetValue(sfLapOpts.m_SplitPoints[0].m_sfSectorTime);
+					double flLine = dDistance;
+					char szText[256] = {NULL};
+					sprintf(szText, "S%i",z);
+					glColor3d(1.0,0.0,0.0);	//	Split Point guides are in red
+					DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
+				}
+			}
+		}
+		//		If this is for drawing the Traction Circle, let's draw a bunch of circles (Ovals really)
+		else if (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL)
+		{
+			drawOval (dCenterOvalX, dCenterOvalY, 3.0f, 3.0f);	//	Draw 1.5G circle
+			drawOval (dCenterOvalX, dCenterOvalY, 2.0f, 2.0f);	//	Draw 1.0G circle
+			drawOval (dCenterOvalX, dCenterOvalY, 1.0f, 1.0f);	//	Draw 0.5G circle
+			//	Now let's draw a vertical line at the origin
+			DrawVerticalLine(0.0f, mapMinY[*i], mapMaxY[*i], NULL);
+		}
+		//	Default is to draw the standard distance markers
+		else
+		{
+			for(float flLine = m_pLapSupplier->GetGuideStartX(eX, dMinX, dMaxX); flLine < dMaxX; flLine += m_pLapSupplier->GetGuideStepX(eX, dMinX, dMaxX))
+			{
+				LineColor();	//	Pick guideline color, based upon chosen color scheme
+				char szText[256];
+				GetChannelString(eX, sfLapOpts.eUnitPreference, flLine, szText, NUMCHARS(szText));
+				DrawVerticalLine(flLine, mapMinY[*i], mapMaxY[*i], szText);
+			}
+		}	//	End of Guideline drawing loop
+
 	}
 
     Vector2D ptHighlight; // the (x,y) coords in unit-space that we want to highlight.  Example: for a speed-distance graph, x would be in distance units, y in velocities.
@@ -414,14 +430,30 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     {
       //		The mouse is in our window... we make our own highlighter, ignoring anything that got sent to us
       GLdouble dX,dY,dZ;
-      gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
+      gluUnProject(ptMouse.x, ptMouse.y, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dX, &dY, &dZ);
       ptHighlight = V2D(dX,0);
     }
+	GLushort pattern;	//	Stippling pattern
+	GLint factor = 1;	// Stippling factor
     for(int x = 0; x < lstLaps.size(); x++)
     {
       CExtendedLap* pLap = lstLaps[x];
       const IDataChannel* pDataX = pLap->GetChannel(m_pLapSupplier->GetXChannel());
       const IDataChannel* pDataY = pLap->GetChannel(*i);
+
+	  float r;
+	  float g;
+	  float b;
+	  if (x == lstLaps.size() - 1)	//	Means that this lap is the Reference Lap, so let's color it special
+	  {
+		pattern = 0xFFFF;  // Stipple pattern is a line for Reference Lap
+		MakeColor ( pLap, true, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+	  }
+	  else
+	  {
+		pattern = 0xDBB6;  // Stipple pattern
+		MakeColor ( pLap, false, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+	  }
 
 	  if(pDataX && pDataY)
 	  {
@@ -430,20 +462,18 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
         float dTimeToHighlight = -1;
         const vector<DataPoint>& lstPointsX = pDataX->GetData();
         const vector<DataPoint>& lstPointsY = pDataY->GetData();
-//        srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw...
-		float r;
-		float g;
-		float b;
-		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
-        if(sfLapOpts.fDrawLines)
-        {
-          glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
-		  glBegin(GL_LINE_STRIP);
+		glEnable(GL_LINE_STIPPLE);
+		glLineStipple(factor, pattern);	//	Set the line dash/dot characteristics
+		//	Don't show lines for Traction Circle plots by default
+		if(sfLapOpts.fDrawLines == false || (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL) )
+		{
+          glPointSize(4.0f);
+          glBegin(GL_POINTS);
         }
         else
         {
-          glPointSize(4.0f);
-          glBegin(GL_POINTS);
+          glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
+		  glBegin(GL_LINE_STRIP);
         }
 
         vector<DataPoint>::const_iterator iX = lstPointsX.begin();
@@ -478,6 +508,17 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
             iX++;
             iY++;
           }
+//////////////////////////////////////////
+		  //	Can add transformation function here for Y
+		  if (sfLapOpts.m_PlotPrefs[y].iTransformYesNo == true)
+		  {
+			  dY = PolynomialFilter(ptY.flValue, sfLapOpts.m_PlotPrefs[y].fTransAValue, sfLapOpts.m_PlotPrefs[y].fTransBValue, sfLapOpts.m_PlotPrefs[y].fTransCValue);
+		  }
+		  else
+		  {
+			  dY = ptY.flValue;
+		  }
+//////////////////////////////////////////
           glVertex2f(dX,dY);
 
           // if we're a highlight source, try to figure out the closest point for this lap
@@ -492,7 +533,9 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
             }
           }
         }
-		    glEnd();
+	    factor++;	//	Increment the line patterning
+		glEnd();
+		glDisable(GL_LINE_STIPPLE);
         // for each lap, draw an indicator of the closest thing to the mouse
         if(!m_pLapSupplier->IsHighlightSource(m_iSupplierId))
         {
@@ -526,7 +569,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		float r;
 		float g;
 		float b;
-		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+		MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
 		//	For TIME displayed on X-axis, remove all data channel text so that user can see the trends more clearly.
 		if (pDataX->GetChannelType() != DATA_CHANNEL_TIME)
@@ -545,7 +588,20 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			::GetDataChannelName(lstMousePointsToDraw[x].m_eChannelY, szTypeY, NUMCHARS(szTypeY));	// <-- converts the y channel into a string
 
 			char szYString[256];
-			GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
+			float TempY;
+//////////////////////////////////////////
+//			Adding transformation functions here for Y
+			if (sfLapOpts.m_PlotPrefs[y].iTransformYesNo == true)
+			{
+				TempY = PolynomialFilter(pDataY->GetValue(dTimeToHighlight), sfLapOpts.m_PlotPrefs[y].fTransAValue, sfLapOpts.m_PlotPrefs[y].fTransBValue, sfLapOpts.m_PlotPrefs[y].fTransCValue);
+			}
+			else
+			{
+				TempY = pDataY->GetValue(dTimeToHighlight);
+			}
+//////////////////////////////////////////
+			GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, TempY, szYString, NUMCHARS(szYString));
+//			GetChannelString(lstMousePointsToDraw[x].m_eChannelY, sfLapOpts.eUnitPreference, pDataY->GetValue(dTimeToHighlight), szYString, NUMCHARS(szYString));
 			// <-- gets the actual unit string for the data channel.  For speed, this might be "100.0km/h"
 
 			char szXString[256];
@@ -555,7 +611,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			char szText[256];
 			sprintf(szText, "%S - (%S @ %S) %s @ %s", szLapName, szTypeY, szTypeX, szYString, szXString);
 
-			DrawText(100.0,(x+1)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
+			DrawText(100.0,(x+2)*GetWindowFontSize(),szText);	// <-- draws the text from the bottom of the window, working upwards
 
 			// we also want to draw a highlighted square
 			DrawGLFilledSquare(ptWindow.x, ptWindow.y, 3);	// <-- draws the stupid little box at ptWindow.x.
@@ -564,8 +620,8 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			glBegin(GL_LINE_STRIP);						// Added by KDJ
 			glVertex3f(ptWindow.x, 0, 0);				// Added by KDJ, modified by Chas
 			glVertex3f(ptWindow.x,rcSpot.bottom,0);		// Added by KDJ
-		}
 			glEnd();									// Added by KDJ
+		}
 	  }
       glPopMatrix();
       glPopMatrix();	//	Should there be two of these here?
@@ -573,6 +629,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     rcSpot.top += iSegmentHeight;
     rcSpot.bottom += iSegmentHeight;
   } // end y-channel data channel loop
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	
 }
@@ -589,7 +646,7 @@ void CLapPainter::MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, 
 		float r;
 		float g;
 		float b;
-		MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+		MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
 		// if we're the main screen, we want to draw some text data for each point
         TCHAR szLapName[256];
@@ -628,12 +685,6 @@ void CLapPainter::MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, 
 }
 */
 
-struct MAPHIGHLIGHT
-{
-  const CExtendedLap* pLap;
-  POINT pt;
-};
-
 //  Draws an oval centered at (x_center, y_center) and is is bound inside a rectangle whose width is w and height is h.
 void CLapPainter::drawOval (float x_center, float y_center, float w, float h)
 {
@@ -658,7 +709,7 @@ void CLapPainter::drawOval (float x_center, float y_center, float w, float h)
     glEnd ();
 }
 // Function for setting highlighting color, making sure that there is enough contrast to a black background
-void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float* pB) 
+void CLapPainter::MakeColor(const CExtendedLap* pLap, bool RefLapFlag, float* pR, float* pG, float* pB) 
 { 
 	srand((int)pLap);	//  <-- makes sure that we randomize the colours consistently, so that lap plots don't change colour from draw to draw... 
 	if (m_pLapSupplier->GetDisplayOptions().fColorScheme)	//	Background color is black, make sure there is enough contrast with the lines
@@ -683,6 +734,41 @@ void CLapPainter::MakeColor(const CExtendedLap* pLap, float* pR, float* pG, floa
 		while(*pR + *pG + *pB > 2.5); 
 		glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
 	}
+	//	Check if this the is the Reference Lap. If so, change the color to full White/Black
+	if (RefLapFlag && m_pLapSupplier->GetDisplayOptions().fColorScheme)	//	Background color is black, make Reference Lap white
+	{
+		*pR = 0.95; *pG = 0.95; *pB = 0.95;
+	}
+	else if (RefLapFlag)	//	Background color is black, make Reference Lap white
+	{
+		*pR = 0.0; *pG = 0.0; *pB = 0.0;
+	}
+	glColor3d( *pR, *pG, *pB ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+}
+// Function converts the Y-value for a data channel to a transformed polynomial value
+double CLapPainter::PolynomialFilter(double flValue, double fTransAValue, double fTransBValue, double fTransCValue)
+{
+  return fTransAValue + flValue * fTransBValue + flValue * flValue * fTransCValue;
+}
+
+void CLapPainter::DrawHorizontalLine(float flLine, float dMinX, float dMaxX, char szText[512])
+{
+	glLineWidth(1);			// Added by KDJ. Skinny lines for guidelines.
+	glBegin(GL_LINE_STRIP);
+	glVertex2f(dMinX,flLine);
+	glVertex2f(dMaxX,flLine);
+	glEnd();
+	DrawText(dMinX, flLine, szText);	//	Draw the text information on the graph as well
+}
+
+void CLapPainter::DrawVerticalLine(double flLine, float mapMinY, float mapMaxY, char szText[512])
+{
+	glLineWidth(1);      
+	glBegin(GL_LINE_STRIP);
+	glVertex3f(flLine,mapMinY,0);
+	glVertex3f(flLine,mapMaxY,0);
+	glEnd();
+	DrawText(flLine, mapMinY, szText);
 }
 
 void CLapPainter::LineColor() 
@@ -705,7 +791,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   GetClientRect(OGL_GetHWnd(), &rcClient);
   double dClientAspect = ((double)RECT_WIDTH(&rcClient)) / ((double)RECT_HEIGHT(&rcClient));
   double dMapAspect = abs(RECT_WIDTH(&rcAllLaps)) / abs(RECT_HEIGHT(&rcAllLaps));
-
+  const int cSectors = 9;	//	Max. number of Split Points
 
   if(dClientAspect > dMapAspect)
   {
@@ -749,7 +835,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
   
     const double dCenterX = (rcAllLaps.left + rcAllLaps.right)/2;
     const double dCenterY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-    double dScaleAmt = pow(1.06,sfLapOpts.iZoomLevels);
+    double dScaleAmt = pow(1.1,sfLapOpts.iZoomLevels);
 
 	POINT ptMouse;
 	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
@@ -757,7 +843,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 		// the mouse is in our window, so let's enable panning and zooming!
 		const double dTranslateShiftX = (rcAllLaps.left + rcAllLaps.right)/2;
 		const double dTranslateShiftY = (rcAllLaps.top + rcAllLaps.bottom)/2;
-		double dScaleAmt = pow(1.06,sfLapOpts.iZoomLevels);
+		double dScaleAmt = pow(1.1,sfLapOpts.iZoomLevels);
 		GLdouble dXShift,dYShift,dZ;
 
 		//		Project the window shift stuff so we know how far to translate the view
@@ -810,7 +896,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 	float r;
 	float g;
 	float b;
-	MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+	MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 
 	const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
     for(int x = 0; x< lstPoints.size(); x++)
@@ -864,87 +950,60 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 
       lstMousePointsToDraw.push_back(mapPt);
     }
-		glEnd();
+	glEnd();
 
   }
-//  if (pLap == m_pReferenceLap)	// If this lap is the reference lap, draw the segment lines
-//  {
 	  // draw the start-finish and segment lines
-	  if(lstLaps.size() > 0)
+	  if(lstLaps.size() > 0 && sfLapOpts.fDrawSplitPoints)
 	  {
 		const CExtendedLap* pReferenceLap = lstLaps[lstLaps.size()-1];
 		const StartFinish* pSF = pReferenceLap->GetLap()->GetSF();
-		for(int x = 0;x < 3; x++)
+		for(int x = 0;x < cSectors; x++)
 		{
-		  Vector2D pt1 = pSF[x].GetPt1();
-		  Vector2D pt2 = pSF[x].GetPt2();
-		  glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
-		  glBegin(GL_LINE_STRIP);
-		  glColor3d(1.0,0.0,0.0);	// Red for S/F line color
-		  glVertex2f(pt1.m_v[0],pt1.m_v[1]);
-		  glVertex2f(pt2.m_v[0],pt2.m_v[1]);
-		  glEnd();
+			if (sfLapOpts.m_SplitPoints[x].m_sfXPoint != 0.0f)
+			{
+			  Vector2D pt1 = pSF[x].GetPt1();
+			  Vector2D pt2 = pSF[x].GetPt2();
+			  glLineWidth(1);			// Added by KDJ. Skinny lines for Start/Finish.
+			  glColor3d(1.0,0.0,0.0);	// Red for S/F line color
+			  Vector2D vD;
 
-		  glColor3d(1.0,0.0,0.0);
-		  LPCSTR lpszText = "";
-		  if(x == 0) lpszText = "S1";	// Segment 1
-		  if(x == 1) lpszText = "S2";	// Segment 2
-		  if(x == 2) lpszText = "S/F";	// Segment 3, Start/Finish Line
-		  DrawText(pt1.m_v[0],pt1.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
-		  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Need to add offsets to these for them to be on the screen
+			  for(int z = 0; z < pReferenceLap->m_lstPoints.size(); z++)
+			  {
+				  //	Find the point in the lap where the Split Point is and get the vector			
+				  if (pt1.m_v[0] == pReferenceLap->m_lstPoints[z].flX && pt1.m_v[1] == pReferenceLap->m_lstPoints[z].flY)
+				  {
+					vD = V2D(pReferenceLap->m_lstPoints[z].flX, pReferenceLap->m_lstPoints[z].flY) - V2D(pReferenceLap->m_lstPoints[z+1].flX, pReferenceLap->m_lstPoints[z+1].flY);
+					break;
+				  }
+			  }
+			  //	We found our point and have the difference vector. Now let's rotate it 90 degrees.
+			  Vector2D vPerp = vD.RotateAboutOrigin(PI/2);
+			  //	Now let's create the vertices for plotting the split point line
+			  pt2 = pt2 + vPerp;
+			  pt1 = pt1 - vPerp;
+			  glBegin(GL_LINE_STRIP);
+			  glVertex2f(pt1.m_v[0], pt1.m_v[1]);
+			  glVertex2f(pt2.m_v[0], pt2.m_v[1]);
+			  glEnd();
+
+			  glColor3d(1.0,0.0,0.0);
+			  LPCSTR lpszText = "";
+			  if(x == 0) lpszText = "S/F";	// Start/Finish Line
+			  if(x == 1) lpszText = "S1";	// Segment 1
+			  if(x == 2) lpszText = "S2";	// Segment 2
+			  if(x == 3) lpszText = "S3";	// Segment 3
+			  if(x == 4) lpszText = "S4";	// Segment 4
+			  if(x == 5) lpszText = "S5";	// Segment 5
+			  if(x == 6) lpszText = "S6";	// Segment 6
+			  if(x == 7) lpszText = "S7";	// Segment 7
+			  if(x == 8) lpszText = "S8";	// Segment 8
+			  DrawText(pt2.m_v[0],pt2.m_v[1], lpszText);	//	Only draw text at one end of the line
+			}
 		}
 	  }
-//  }
 
 	glPopMatrix(); // popping us out of map-coords space.
-
-/*
-	//	The idea here is to get the mouse location and find the closest reference lap point to set the sector location
-	POINT ptMouse;
-	Vector2D vHighlight;
-	if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
-	{
-		// the mouse is in our window... we make our own highlighter
-		GLdouble dX,dY,dZ;
-
-		gluUnProject(ptMouse.x,ptMouse.y,0,rgModelviewMatrix,rgProjMatrix,rgViewport,&dX,&dY,&dZ);
-		vHighlight = V2D((float)dX,(float)dY);
-	}
-
-    float dBestLength = -1;
-    float dTimeToHighlight = -1;
-    TimePoint2D ptBest;
-
-	const vector<TimePoint2D>& lstPoints = pLap->GetPoints();
-    for(int x = 0; x< lstPoints.size(); x++)
-    {
-		const TimePoint2D& p = lstPoints[x];
-		glVertex2f(p.flX,p.flY);
-
-		// if we're a highlight source, try to figure out the closest point for this lap
-		if(m_pLapSupplier->IsHighlightSource(m_iSupplierId))
-		{
-			Vector2D vPt = V2D(p.flX,p.flY);
-			Vector2D vDiff = vPt - vHighlight;
-			if(vDiff.Length() < dBestLength || dBestLength < 0)
-			{
-				dBestLength = vDiff.Length();
-				dTimeToHighlight = p.iTime;
-				ptBest = p;
-			}
-		}
-		else
-		{
-			int iTime = m_pLapSupplier->GetLapHighlightTime(pLap);
-			if(abs(p.iTime - iTime) < dBestLength || dBestLength < 0)
-			{
-				dBestLength = abs(p.iTime - iTime);
-				ptBest = p;
-				dTimeToHighlight = iTime;
-			}
-		}
-	}
-*/
 
   if(lstMousePointsToDraw.size() > 0)
   {
@@ -962,7 +1021,7 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 	  float r;
 	  float g;
 	  float b;
-	  MakeColor ( pLap, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+	  MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
       
       // we also want to draw a highlighted square
       DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);

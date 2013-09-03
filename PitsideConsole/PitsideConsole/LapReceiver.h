@@ -214,7 +214,9 @@ public:
   }
   const Vector2D& GetPt1() const {return m_pt1;}
   const Vector2D& GetPt2() const {return m_pt2;}
-private:
+//  Vector2D& GetPt1() const {return m_pt1;}
+//  Vector2D& GetPt2() const {return m_pt2;}
+//private:		//		Made public by KDJ
   Vector2D m_pt1;
   Vector2D m_pt2;
 };
@@ -373,6 +375,7 @@ public:
   virtual int GetLapCount(int iRaceId) const = 0; // gets the lap count for a given race
   virtual vector<RACEDATA> GetRaces() = 0;
   virtual vector<const ILap*> GetLaps(int iRaceId) = 0;
+  virtual vector<const ILap*> GetScoring(int iRaceId) = 0;
   virtual const ILap* GetLap(int iLapId) = 0;
   virtual const IDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
   virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const = 0;

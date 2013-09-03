@@ -96,7 +96,8 @@ private:
   int m_iLapId;
   float m_flLapTime;
   mutable wstring m_strComment;
-  StartFinish m_rgSF[3];
+//  StartFinish m_rgSF[3];
+  StartFinish m_rgSF[50];	//		Increased by KDJ
 };
 
 //////////////////////////////////////////////////////////////
@@ -441,10 +442,32 @@ void CSQLiteLapDB::GetLastLapTimeStamp(const vector<int>& lstCarNumbers, vector<
   }
 }
 //////////////////////////////////////////////////////////////
+vector<const ILap*> CSQLiteLapDB::GetScoring(int iRaceId)
+{
+  AutoLeaveCS _cs(&m_cs);
+  vector<const ILap*> lstLaps;
+  // gotta load all the laps that are in the DB, but we don't want to fully load them, just their laptimes and other directly lap-related data
+  CSfArtSQLiteQuery sfQuery(m_sfDB);
+  TCHAR szQuery[MAX_PATH];
+  _snwprintf(szQuery, NUMCHARS(szQuery), L"Select laps._id,laps.laptime, laps.unixtime,extras.comment from laps left join extras on extras.lapid = laps._id where laps.raceid=%d", iRaceId);
+  if(sfQuery.Init(szQuery))
+  {
+    while(sfQuery.Next())
+    {
+      CSQLiteLap* pLap = (CSQLiteLap*)AllocateLap(false);
+      pLap->Load(m_sfDB,m_rgSF,sfQuery);
+      if(pLap->IsValid())
+      {
+        lstLaps.push_back(pLap);
+      }
+    }
+  }
+  return lstLaps;
+}
+//////////////////////////////////////////////////////////////
 int CSQLiteLapDB::GetLapCount(int iRaceId) const
 {
   AutoLeaveCS _cs(&m_cs);
-  vector<RACEDATA> lstRaces;
   CSfArtSQLiteQuery sfQuery(m_sfDB);
   TCHAR szQuery[MAX_PATH];
   _snwprintf(szQuery, NUMCHARS(szQuery), L"select count(laps._id) from races,laps where races._id = %d and laps.raceid=races._id group by races._id", iRaceId);

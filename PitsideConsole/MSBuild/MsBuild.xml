@@ -85,7 +85,7 @@
             CompressionType="Standard"
             LoggingType="Info"
             PreserveComments="false"
-            LineBreakPosition="-1"
+            LineBreakPosition="0"
        /> -->
 
       <!-- The version below produces the exact same results -->
@@ -106,7 +106,7 @@
             CompressionType="Standard"
             LoggingType="Info"
             PreserveComments="false"
-            LineBreakPosition="-1"
+            LineBreakPosition="0"
       />
       -->
       
@@ -119,7 +119,7 @@
           PreserveAllSemicolons="False"
           DisableOptimizations="No"
           EncodingType="Default"
-          LineBreakPosition="-1"
+          LineBreakPosition="0"
           LoggingType="Info"
           ThreadCulture="en-au"
           IsEvalIgnored="false"

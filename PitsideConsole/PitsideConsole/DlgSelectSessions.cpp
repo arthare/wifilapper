@@ -1,11 +1,10 @@
 #include "Stdafx.h"
-#include "DlgRaceSelect.h"
+#include "DlgSelectSessions.h"
 #include "resource.h"
 #include "PitsideConsole.h"
 #include "LapReceiver.h"
 #include "ArtSQL/ArtSQLite.h"
-
-LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CDlgSelectSessions::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
   switch(uMsg)
   {
@@ -51,29 +50,32 @@ LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         case IDOK:
         {
           set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
-		  if (setSelected.size() > 0)
+          if(setSelected.size() > 0)
           {
 			//   Need to find all Race Sessions selected
 			int z = 0;
 			for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
 			{
-				m_pResults->iRaceId[z] = *i;
+				m_pResults->m_RaceId[z] = *i;
 				z++;
 				if (z >= 50) break;	//	Maximum of 50 race sessions to display
 			}
 			m_pResults->fCancelled = false;
 			EndDialog(hWnd,0);
 		  }
-		  
           else
           {
+			//	Do nothing, no race sessions chosen
+			MessageBox(NULL,L"No race sessions selected\n\nSelect some race sessions and try again",L"", MB_OK);
           }
           return TRUE;
         }
         case IDCANCEL:
+		{
           m_pResults->fCancelled = true;
           EndDialog(hWnd,0);
           return TRUE;
+		}
       }
       break;
     } // end WM_COMMAND
