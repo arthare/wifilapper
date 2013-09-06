@@ -45,6 +45,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
@@ -70,6 +71,7 @@ public class IOIODiagnosticsActivity extends Activity implements Handler.Callbac
 		m_handler = new Handler(this);
 		m_pins = new PinWrapper[48];
 		m_ioio = IOIOFactory.create();
+    	getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		//m_ioio = new FakeIOIO();
 		
 		ConnectThread ct = new ConnectThread(m_ioio, m_handler);

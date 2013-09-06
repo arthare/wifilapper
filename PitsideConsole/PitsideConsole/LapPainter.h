@@ -8,6 +8,11 @@
 
 using namespace std;
 
+struct MAPHIGHLIGHT
+{
+  const CExtendedLap* pLap;
+  POINT pt;
+};
 
 class CExtendedLap;
 
@@ -16,6 +21,15 @@ enum CHANNELDISPLAYSTYLE
   CHANNELDISPLAYSTYLE_VALUE,
   CHANNELDISPLAYSTYLE_GRAPH,
 };
+
+// supplier IDs - each lap painter is given a supplier ID, which it uses to identify itself when asking for more data
+enum SUPPLIERID
+{
+  SUPPLIERID_MAINDISPLAY,
+  SUPPLIERID_SUBDISPLAY,
+  SUPPLIERID_SECTORDISPLAY,
+};
+
 enum LAPDISPLAYSTYLE
 {
   LAPDISPLAYSTYLE_MAP,
@@ -61,17 +75,20 @@ public:
 
   // paints all the laps supplied by our ILapSupplier
   virtual void OGL_Paint() override;
-  
+  void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map	Made puclic by KDJ
+  double CLapPainter::PolynomialFilter(double flValue, double fTransAValue, double fTransBValue, double fTransCValue);
   //void SetHighlighter(ILapHighlighter* pHighlighter);
   //ILapHighlighter* GetHighlighter() {return m_pHighlighter;}
 private:
   void DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
-  void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map
+//  void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map	Made public by KDJ
   void DrawSelectLapsPrompt() const;
   void DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const;
-  void MakeColor(const CExtendedLap* pLap, float* pR, float* pG, float*pB); 
+  void MakeColor(const CExtendedLap* pLap,  bool RefLapFlag, float* pR, float* pG, float*pB); 
   void LineColor();
   void drawOval (float x_center, float y_center, float w, float h);
+  void DrawHorizontalLine(float flLine, float dMinX, float dMaxX, char szText[256]);
+  void DrawVerticalLine(double flLine, float mapMinY, float mapMaxY, char szText[512]);
 //  void MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
 private:
   ILapSupplier* m_pLapSupplier;

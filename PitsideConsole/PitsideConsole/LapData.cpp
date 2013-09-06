@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "LapData.h"
+#include "PitsideConsole.h"
 
 
 struct PIDDATA
@@ -42,7 +43,7 @@ PIDDATA g_rgPIDData[] =
 	{L"O2 sens present",""},
 	{L"Aux input status",""},
 	{L"Run time since engine start,s","%5.0f"},
-	{L"PIDs supported [21 - 40]",""},
+  {L"PIDs supported [21 - 40]",""},
 	{L"Dist traveled w/MIL on,km","%5.1f"},
 	{L"Fuel Rail Press (rel mani vacuum)","%5.1f"},
 	{L"Fuel Rail Press (direct inject)kPa","%6.1f"},
@@ -74,7 +75,7 @@ PIDDATA g_rgPIDData[] =
 	{L"Cat Temp Bank 2, Sens 1",""},
 	{L"Cat Temp Bank 1, Sens 2",""},
 	{L"Cat Temp Bank 2, Sens 2",""},
-	{L"PIDs supported [41 - 60]",""},
+  {L"PIDs supported [41 - 60]",""},
 	{L"Mon status this drive cycle",""},
 	{L"Ctrl module voltage",""},
 	{L"Abs load value",""},
@@ -106,7 +107,7 @@ PIDDATA g_rgPIDData[] =
 	{L"Fuel inject timing",""},
 	{L"Eng fuel rate",""},
 	{L"Emission reqts",""},
-	{L"PIDs supported [61 - 80]",""},
+  {L"PIDs supported [61 - 80]",""},
 	{L"Drvr dmnd eng pct torque",""},
 	{L"Act eng pct torque",""},
 	{L"Eng ref torque",""},
@@ -138,7 +139,7 @@ PIDDATA g_rgPIDData[] =
 	{L"NOx NTE control status",""},
 	{L"PM NTE control status",""},
 	{L"Engine run time",""},
-	{L"PIDs supported [81 - A0]",""},
+  {L"PIDs supported [81 - A0]",""},
 	{L"Eng run time AECD",""},
 	{L"Eng run time AECD",""},
 	{L"NOx sensor",""},
@@ -180,7 +181,7 @@ PIDDATA g_rgPIDData[] =
 	{L"",""},
 	{L"",""},
 	{L"",""},
-  {L"",""},
+	{L"",""},
 	{L"",""},
 	{L"",""},
 	{L"",""},
@@ -548,7 +549,7 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
     const double dPct = (double)ixCheck / (double)cSize;
     const double dPctDiff = abs(dPct - dInputPercentage);
 
-    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.15)		// If you are within 15% of reference lap in data string
+    if((ixBestIndex == -1 || dAvg < dClosest) && dPctDiff < 0.25)		// If you are within 25% of reference lap in data string
     {
       dClosest = dAvg;
       ixBestIndex = ixCheck;
@@ -761,7 +762,8 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 		start near the point that is most likely to be near the current m_lstPoints point */
         int ixCheck = iRefCheckStart;
         const int cReferenceSize = lstReference.size();
-        while(true)
+
+		while(true)
         {
           const double dRefDist = pReferenceDistanceChannel->GetValue(lstReference[ixCheck].iTime);
           if(dRefDist >= dDistance && dLastRefDist <= dDistance)
@@ -782,7 +784,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
                 {
                   float dTimeSlip = dEstimatedElapsedTime - (double)iElapsedTime;
                   pTimeSlip->AddPoint(m_lstPoints[x].iTime, dTimeSlip);
-                }
+				}
               }
             }
             break;

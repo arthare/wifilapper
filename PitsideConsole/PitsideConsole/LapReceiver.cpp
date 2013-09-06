@@ -121,6 +121,7 @@ int CDataChannel::GetLapId() const
 {
   return iLapId;
 }
+
 float CDataChannel::GetValue(int iTime) const
 {
   CheckLazyLoad();
@@ -291,16 +292,16 @@ void CMemoryLap::Load(V2InputLapRaw* pLap)
 
 	for(int x = 0;x < pLap->cCount; x++)
 	{
-    TimePoint2D newPt(&pLap->rgPoints[x]);
-    if(newPt.IsValid())
-    {
-			lstPoints.push_back(newPt);
-    }
-    else
-    {
-      newPt.flX++;
-      newPt.flX--;
-    }
+		TimePoint2D newPt(&pLap->rgPoints[x]);
+		if(newPt.IsValid())
+		{
+		  lstPoints.push_back(newPt);
+		}
+		else
+		{
+		  newPt.flX++;
+		  newPt.flX--;
+		}
 	}
   for(int x = 0;x < NUMITEMS(pLap->rgSF); x++)
   {

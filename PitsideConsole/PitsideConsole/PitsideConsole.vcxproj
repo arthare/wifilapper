@@ -59,6 +59,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <ProgramDataBaseFileName>$(IntDir)$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -66,7 +67,7 @@
       <EntryPointSymbol>
       </EntryPointSymbol>
       <AdditionalDependencies>comctl32.lib; Iphlpapi.lib; kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies) opengl32.lib;glu32.lib;ws2_32.lib;winmm.lib</AdditionalDependencies>
-      <ProgramDatabaseFile>$(TargetDir)\$(TargetName).pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <PreBuildEvent>
       <Command>$(MSBuildBinPath)\msbuild.exe "$(ProjectDir)..\MSBuild\MSBuild.xml" /p:JavaScriptOutputFile="$(TargetDir)\pitside.min.js" /p:SourceLocation=$(ProjectDir)
@@ -86,6 +87,7 @@ copyjs_dbg.bat</Command>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <ProgramDataBaseFileName>$(IntDir)$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -93,7 +95,7 @@ copyjs_dbg.bat</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>comctl32.lib; iphlpapi.lib; kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)opengl32.lib;glu32.lib;ws2_32.lib; winmm.lib</AdditionalDependencies>
-      <ProgramDatabaseFile>$(TargetDir)\$(TargetName).pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <PostBuildEvent>
       <Command>runtests_release.bat</Command>
@@ -116,9 +118,13 @@ copyjs_rel.bat</Command>
     <ClInclude Include="DlgProgress.h" />
     <ClInclude Include="DlgRaceEditConfirm.h" />
     <ClInclude Include="DlgRaceNameEdit.h" />
+    <ClInclude Include="DlgRaceRerun.h" />
     <ClInclude Include="DlgRaceSelect.h" />
     <ClInclude Include="DlgRaceSelectEdit.h" />
+    <ClInclude Include="DlgSelectSessions.h" />
+    <ClInclude Include="DlgSetSplits.h" />
     <ClInclude Include="DlgSplash.h" />
+    <ClInclude Include="DlgTimingScoring.h" />
     <ClInclude Include="DlgWarning.h" />
     <ClInclude Include="Hyperlinks.h" />
     <ClInclude Include="jpge.h" />
@@ -141,9 +147,13 @@ copyjs_rel.bat</Command>
     <ClCompile Include="DlgProgress.cpp" />
     <ClCompile Include="DlgRaceEditConfirm.cpp" />
     <ClCompile Include="DlgRaceNameEdit.cpp" />
+    <ClCompile Include="DlgRaceRerun.cpp" />
     <ClCompile Include="DlgRaceSelect.cpp" />
     <ClCompile Include="DlgRaceSelectEdit.cpp" />
+    <ClCompile Include="DlgSelectSessions.cpp" />
+    <ClCompile Include="DlgSetSplits.cpp" />
     <ClCompile Include="DlgSplash.cpp" />
+    <ClCompile Include="DlgTimingScoring.cpp" />
     <ClCompile Include="DlgWarning.cpp" />
     <ClCompile Include="Hyperlinks.cpp" />
     <ClCompile Include="jpge.cpp" />

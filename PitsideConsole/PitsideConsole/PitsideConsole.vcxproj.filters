@@ -90,7 +90,19 @@
     <ClInclude Include="DlgWarning.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DlgSetSplits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="jpge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgSelectSessions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgTimingScoring.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DlgRaceRerun.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -155,7 +167,19 @@
     <ClCompile Include="DlgWarning.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DlgSetSplits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="jpge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgSelectSessions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgTimingScoring.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DlgRaceRerun.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

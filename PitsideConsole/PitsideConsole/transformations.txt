@@ -1,0 +1,55 @@
+P951: Oil Pressure (Bars)
+-4.48
+3.26
+0.0
+0
+P951: Fuel Level %
+115.6
+-40.1
+0.0
+0
+P951: Coolant T (C)
+167.2
+-44.0
+0.0
+0
+P951: Alternator Voltage
+4.14
+3.57
+0.0
+0
+P951: Tachometer RPM
+0.0
+31.8
+0.0
+0
+P924: Oil Pressure (Bars)
+1.16 
+–2.96
+1.84
+0
+P924: Gas Tank Reading %
+125 
+-51.8
+0.0
+0
+P924: Coolant T (C)
+131
+-36.7
+0.0
+0
+P924: Alternator Voltage
+0.0
+5.28
+0.0
+0
+//
+This file contains quadratic coefficients for transforming raw voltages into meaningful units.
+You can put up to 100 different transformations into this file for your setup.
+Structure for this file is:
+Line 1:	Name of the transformation (Will show up in Pitside)
+Line 2: Coefficient A (the Constant)
+Line 3:	Coefficient B (B * x)
+Line 4: Coefficient C (C * x^2)
+Line 5: Switch telling to use this transformation or not (0 = No, 1 = Yes)
+// tells the program that this is the last transformation in the file
