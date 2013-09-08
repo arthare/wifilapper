@@ -900,6 +900,18 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     AddChannel(pTimeSlip);
     AddChannel(pX);
     AddChannel(pY);
+
+    // let's add the rest of the data channels...
+    set<DATA_CHANNEL> setChannels = pLapDB->GetAvailableChannels(GetLap()->GetLapId());
+    for(set<DATA_CHANNEL>::iterator i = setChannels.begin(); i != setChannels.end(); i++)
+    {
+      const IDataChannel* pChannel = pLapDB->GetDataChannel(GetLap()->GetLapId(),*i);
+      if(pChannel)
+      {
+        AddChannel(pChannel);
+      }
+    }
+
   }
 }
 

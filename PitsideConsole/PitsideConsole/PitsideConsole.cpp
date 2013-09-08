@@ -782,7 +782,15 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
           case ID_DATA_SWITCHSESSION:
           {
             RACESELECT_RESULT sfResult;
-            CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
+
+			//	Zero out the Race ID's before selecting them
+			for (int z = 0; z < 50; z++)
+			{
+				m_iRaceId[z] = -1;	
+				sfResult.iRaceId[z] = -1;
+			}
+			
+			CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
             ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
 
             if(!sfResult.fCancelled)
@@ -1248,6 +1256,14 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
               {
                 _snwprintf(m_szPath, NUMCHARS(m_szPath), szFilename);
 				RACESELECT_RESULT sfResult;
+
+				//	Zero out the Race ID's before selecting them
+				for (int z = 0; z < 50; z++)
+				{
+					m_iRaceId[z] = -1;	
+					sfResult.iRaceId[z] = -1;
+				}
+
                 CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
                 ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
 
@@ -1467,6 +1483,14 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
             if(g_pLapDB->Init(lpszFilename))
             {
               RACESELECT_RESULT sfResult;
+
+			  //	Zero out the Race ID's before selecting them
+			  for (int z = 0; z < 50; z++)
+			  {
+				  m_iRaceId[z] = -1;	
+				  sfResult.iRaceId[z] = -1;
+			  }
+
               CRaceSelectDlg dlgRace(g_pLapDB, &sfResult);
               ArtShowDialog<IDD_SELECTRACE>(&dlgRace);
               if(!sfResult.fCancelled)
