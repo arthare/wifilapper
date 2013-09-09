@@ -94,7 +94,7 @@ var drawGraph = function() {
       showLabelsOnHighlight: false,
       interpolatePoints: true,
       connectSeparatedPoints: true,
-      highlightOnHover: true,	// false - KDJ
+      highlightOnHover: false,
       hideOverlayOnMouseOut: false,
       showRangeSelector: true,
       rangeSelectorHeight: 30,
@@ -113,8 +113,7 @@ var drawGraph = function() {
       axes: {
         x: {
           valueFormatter: function(ms) {
-//            return 'Distance: ' + ms.toFixed(2) + ' Units';	//	Changed by KDJ
-            return 'Distance: ' + ms.toFixed(1) + ' Units';
+            return 'Distance: ' + ms.toFixed(2) + ' Units';
           }
         },
         y: {
@@ -129,8 +128,7 @@ var drawGraph = function() {
               speed = prefs.layout[mySeries[1]].graphToValue(y);
               
             }            
-//            return ' ' + parseFloat(speed).toFixed(2);
-            return ' ' + parseFloat(speed).toFixed(1);	//	Changed by KDJ
+            return ' ' + parseFloat(speed).toFixed(2);
           }
         }  
       }
@@ -146,8 +144,7 @@ function drawLegend (pts) {
     var cell = document.getElementById(pts[i].name);
     if (cell) {
       var name = pts[i].name.split(" ");
-      cell.innerHTML = Number(prefs.layout[name[1]].graphToValue(pts[i].yval)).toFixed(1);	//	Changed by KDJ
-//      cell.innerHTML = Number(prefs.layout[name[1]].graphToValue(pts[i].yval)).toFixed(2);
+      cell.innerHTML = Number(prefs.layout[name[1]].graphToValue(pts[i].yval)).toFixed(2);
     }
   }
 }
@@ -323,7 +320,6 @@ function popRaces_cb(data) {
   var raceSelect = document.getElementById("race");
   
   //wipe out the existing options
-//	Remarked out below by KDJ
   raceSelect.options.length = 0;
   raceSelect.options[raceSelect.options.length] = new Option("Choose One",-1);
   for (var idx = 1; idx < raceArr.length; idx++) {
