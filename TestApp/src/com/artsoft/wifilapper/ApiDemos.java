@@ -614,6 +614,12 @@ implements
     @Override
     public void onClick(View v)
     {
+    	if(m_eState == State.PLOTTING)
+		{
+    		// Reset the best lap time if someone clicked the screen while stopped (speed less than 7.2kph)
+    		if( m_dLastSpeed < 2 ) m_best=null;
+		}
+	    	
     	if(m_eState == State.WAITINGFORSTART)
     	{
     		if(IsReadyForLineSet())
@@ -1716,6 +1722,7 @@ class DeciderWaitingView extends View
 	Paint paintLines;
 	Paint paintTrack;
 	Paint paintSmallText;
+	Paint paintAttention;
 	ApiDemos myApp;
 	public DeciderWaitingView(Context context)
 	{
@@ -1751,6 +1758,9 @@ class DeciderWaitingView extends View
 		
 		paintTrack = new Paint();
 		paintTrack.setARGB(255,255,255,255);
+		
+		paintAttention = new Paint();
+		paintAttention.setARGB(255,255,0,255);
 	}
 	public void onDraw(Canvas canvas)
 	{
@@ -1775,9 +1785,12 @@ class DeciderWaitingView extends View
 				String str[] = myApp.GetDeciderWaitingStrings();
 				
 				final int mid = getTop() + getHeight()/2;
-
+				
+				// Flash the screen for 0.5 second every 2, to alert driver to set start/finish line
+				if( System.currentTimeMillis()%2048 < 512)
+					canvas.drawPaint(paintAttention);
+				
 				Utility.DrawFontInBox(canvas, str[0], paintSmallText, new Rect(getLeft(),getTop(),getRight(),mid));
-				Utility.DrawFontInBox(canvas, str[1], paintSmallText, new Rect(getLeft(),mid,getRight(),getBottom()));
 			}
 			else
 			{
@@ -1943,6 +1956,101 @@ class MapPaintView extends View
 			String strSpeed = Prefs.FormatMetersPerSecond(flBestSpeed,num,eDisplayUnitSystem,false);
 			Utility.DrawFontInBox(canvas, strSpeed, p, rcBottom);
 		}
+	}
+	private void DrawLapTimer(Canvas canvas, Rect rcOnScreen, LapAccumulator lap, LapAccumulator lapBest)
+	{
+		
+		// todo: move the paint declaration to the constructor, or reuse existing
+		Paint p = new Paint();
+		final Rect rcTimeDiff = new Rect();
+		final Rect rcLapSeconds = new Rect();
+		final Rect rcLapTenths = new Rect();
+		final Rect rcBestSeconds = new Rect();
+		final Rect rcBestTenths = new Rect();
+		final float myFontSize;
+		
+		if( rcOnScreen.width() < rcOnScreen.height() )
+		{
+			// Portrait mode
+			final int midSplit  = rcOnScreen.centerY();
+			final int lowSplit  = rcOnScreen.top  + rcOnScreen.height() * 3/4;
+			final int rightSplit= rcOnScreen.left + rcOnScreen.width() * 4/5;
+
+			rcTimeDiff.set(rcOnScreen.left, rcOnScreen.top, rcOnScreen.right, midSplit);
+			rcLapSeconds.set(rcOnScreen.left, midSplit, rightSplit, lowSplit);
+			rcLapTenths.set(rightSplit, midSplit, rcOnScreen.right, lowSplit);
+			rcBestSeconds.set(rcOnScreen.left, lowSplit, rightSplit, rcOnScreen.bottom);
+			rcBestTenths.set(rightSplit, lowSplit, rcOnScreen.right, rcOnScreen.bottom);
+			myFontSize = (float)0.9*Utility.GetNeededFontSize("0:00.0 ", p, rcLapSeconds);
+			}
+		else
+		{
+			// Landscape mode
+			final int midXSplit  = rcOnScreen.centerX();
+			final int midXSplit2 = (int)(midXSplit * 1.1);
+			final int midYSplit  = rcOnScreen.centerY();
+			final int labelSplit = rcOnScreen.height()/10;
+
+			rcTimeDiff.set(rcOnScreen.left, rcOnScreen.top, midXSplit, rcOnScreen.bottom);
+			rcLapTenths.set(midXSplit2, rcOnScreen.top, rcOnScreen.right, rcOnScreen.top+labelSplit);
+			rcLapSeconds.set(midXSplit2, rcOnScreen.top+labelSplit, rcOnScreen.right, midYSplit);
+			rcBestTenths.set(midXSplit2, midYSplit, rcOnScreen.right, midYSplit+labelSplit);
+			rcBestSeconds.set(midXSplit2, midYSplit+labelSplit, rcOnScreen.right, rcOnScreen.bottom);
+			myFontSize = (float)0.9*Utility.GetNeededFontSize("0:00.0 ", p, rcLapSeconds);
+			
+		}
+		
+		LapAccumulator lapLast = myApp.GetLastLap();
+
+		final double dLastLap;
+		final String strLast;
+		final double dBestLap;
+		final String strBest;
+
+		if(lapLast != null && lapBest != null)
+		{
+			dLastLap = lapLast.GetLapTime();
+			DrawPlusMinus(canvas, rcTimeDiff, lap, lapBest);
+			dBestLap = lapBest.GetLapTime();
+			strBest = buildLapTime(dBestLap);
+			
+			if( dLastLap > dBestLap )
+				p.setARGB(255,255,128,128); // last lap worse, make red
+			else
+				p.setARGB(255,128,255,128); // last lap better/equal, make green
+
+			strLast = buildLapTime(dLastLap);
+			Utility.DrawFontInBoxFinal(canvas, strLast, myFontSize, p, rcLapSeconds, true, false);
+			Utility.DrawFontInBox(canvas, "Last", p, rcLapTenths);
+		}
+		else
+		{
+			final double flThisTime = ((double)lap.GetAgeInMilliseconds())/1000.0;
+			String strLapTime = buildLapTime(flThisTime);
+			strBest = "-:--.-";
+
+			p.setARGB(255,255,255,255); // reset to white
+			Utility.DrawFontInBoxFinal(canvas, strLapTime, myFontSize, p, rcLapSeconds, true,false);
+			Utility.DrawFontInBox(canvas, "Lap", p, rcLapTenths);
+		}
+		
+		p.setARGB(255,255,255,255); // Best lap in white
+		Utility.DrawFontInBoxFinal(canvas, strBest, myFontSize, p, rcBestSeconds, true, false);
+		Utility.DrawFontInBox(canvas, "Best", p, rcBestTenths);
+	
+	}
+	
+	public String buildLapTime( double flLapTime)
+	{
+		final int minutes = (int)(flLapTime/60);
+		final int seconds = (int)(flLapTime - minutes*60);
+		final int tenths = (int)((10* (flLapTime - minutes*60 - seconds)));
+		String strLapTime = minutes + ":";
+		if (seconds <10 )
+			strLapTime = strLapTime + "0" + seconds + "." + tenths;
+		else
+			strLapTime = strLapTime + seconds + "." + tenths;
+		return strLapTime;
 	}
 	public void onDraw(Canvas canvas)
 	{

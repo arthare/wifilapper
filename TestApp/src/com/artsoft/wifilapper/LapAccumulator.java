@@ -925,7 +925,7 @@ public class LapAccumulator
 			{
 				int iOldHeight = iTargetHeight;
 				// track is wider than the window, so the height of the target needs to shrink
-				iTargetHeight = (int)(iTargetHeight / dAspectWorld);
+				iTargetHeight = (int)(iTargetWidth / dAspectWorld);
 				rcOnScreen.bottom = rcOnScreen.top + iTargetHeight;
 				rcOnScreen.top += (iOldHeight-iTargetHeight)/2;
 				rcOnScreen.bottom += (iOldHeight-iTargetHeight)/2;
