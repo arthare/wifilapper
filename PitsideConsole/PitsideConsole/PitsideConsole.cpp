@@ -1418,7 +1418,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
               case EN_CHANGE:
               {
                 SendMessage(GetDlgItem(m_hWnd, IDC_COMMENTTEXT), WM_GETTEXT, NUMCHARS(m_szCommentText), (LPARAM)m_szCommentText);
-                UpdateUI(UPDATE_LIST | UPDATE_DASHBOARD);
+//                UpdateUI(UPDATE_LIST | UPDATE_DASHBOARD);
                 break;
               }
             }
