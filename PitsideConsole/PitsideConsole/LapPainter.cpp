@@ -451,7 +451,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 	  }
 	  else
 	  {
-		pattern = 0xDBB6;  // Stipple pattern
+		pattern = 0xEEEE;  // Stipple pattern
 		MakeColor ( pLap, false, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
 	  }
 
