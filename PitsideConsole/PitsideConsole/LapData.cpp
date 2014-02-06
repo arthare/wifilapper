@@ -983,3 +983,174 @@ const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTime
   }
   return TimePoint2D();
 }
+
+/*
+//	Code to smooth out the acceleration data
+
+
+// * Simple moving average implemented
+// * as a box filter and exponential moving
+// * average
+// *
+// * To compile using GNU tools
+// * g++ -Wall moving_average.c
+// * To run
+// * a.out
+// *
+//
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+//
+// * Generate a random number
+//
+double
+runif()
+{
+  return rand()/((double)RAND_MAX+1);
+}
+
+//
+// * Dump out the array of values to a file
+// * n number of samples
+// * v array of samples
+// * filename file to write to
+//
+void
+dump_values(int n, const double *v, const char *filename)
+{
+  FILE *f = fopen(filename,"w");
+  for(int i=0;i<n;i++)
+    fprintf(f, "%8d,%10f\n", i+1, v[i]);
+  fclose(f);
+}
+
+
+// * Brute force moving average
+// * n is the number of input samples
+// * v is an array of values of size n
+// * w is the size of the window, taken on each side of sample
+// * out is output array of size n
+// *
+//
+void
+box_moving_average( int n, const double *v, int w, double *out )
+{
+  int s;
+  for(s=0;s<w;s++)
+    out[s] = 0.0;
+  for(;s<n-w;s++)
+  {
+    double t = 0.0;
+    for(int a=-w;a<=w;a++)
+    {
+      t += v[s+a];
+    }
+    out[s] = t/(2*w+1);
+  }
+  for(;s<n;s++)
+    out[s] = 0.0;
+}
+
+
+// * Exponential moving average
+// * n is number of samples
+// * v is array of size n
+// * alpha is between 0 and 1, low values give more weight to past values
+// * out is the output array of size n
+//
+
+void
+exp_moving_average( int n, const double *v, double alpha, double *out )
+{
+  out[0] = v[0];
+  for(int i=1;i<n;i++)
+  {
+    out[i] = (1.0-alpha)*out[i-1] + alpha*v[i];
+  }
+}
+
+//
+// * Check a constant signal does not get changed
+// * by a box filter
+//
+void
+test1()
+{
+  int n = 100;
+  int w = 2;
+  double *v = new double[n];
+  for(int i=0;i<n;i++)
+    v[i] = 2.5;
+
+  double *out = new double[n];
+  box_moving_average( n, v, w, out );
+  for(int i=w;i<n-w;i++)
+  {
+    if ( out[i] != 2.5 ) 
+      printf("Mismatched values at %d\n",i);
+  }
+  
+  delete [] v;
+  delete [] out;
+}
+
+//
+// * Check a noisy signal gets smoothed
+// * by a box filter
+//
+void
+test2()
+{
+  int n = 100;
+  int w = 4;
+  double *v = new double[n];
+  for(int i=0;i<n;i++)
+    v[i] = sin(i*10.0/n) + 0.3 * runif();
+  dump_values(n,v,"original2.txt");
+
+  double *out = new double[n];
+  box_moving_average( n, v, w, out );
+  dump_values(n, out, "smooth2.txt");
+
+  delete [] v;
+  delete [] out;
+}
+
+//
+// * Check a noisy signal gets smoothed
+// * by exponential moving average
+//
+void
+test3()
+{
+  int n = 100;
+  double *v = new double[n];
+  for(int i=0;i<n;i++)
+    v[i] = sin(i*10.0/n) + 0.3 * runif();
+  dump_values(n,v,"original3.txt");
+
+  double *out = new double[n];
+  exp_moving_average( n, v, 0.3, out );
+  dump_values(n, out, "smooth3.txt");
+
+  delete [] v;
+  delete [] out;
+}
+
+
+
+int
+main(int argc, char *argv[])
+{
+  printf("Calculating moving average\n");
+  test1();
+  test2();
+  test3();
+}
+
+
+*/
