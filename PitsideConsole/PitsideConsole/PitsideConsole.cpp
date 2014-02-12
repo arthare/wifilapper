@@ -894,8 +894,12 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 			return TRUE;
 		  }		
 		  //	Nested loop for the following functions
-		  case IDM_PRINT_BM:
           case IDD_EDIT_COPY:
+		  {
+			//	Option is not working and causes crashes right now, so disable it
+			return TRUE;
+		  }
+		  case IDM_PRINT_BM:
 		  case IDM_SAVE_BM:
           {
 			  int SaveFlag = false, PrintFlag = false;	

@@ -89,7 +89,9 @@ private:
   void drawOval (float x_center, float y_center, float w, float h);
   void DrawHorizontalLine(float flLine, float dMinX, float dMaxX, char szText[256]);
   void DrawVerticalLine(double flLine, float mapMinY, float mapMaxY, char szText[512]);
-//  void MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
+  void fExpMovingAvg( int n, vector<DataPoint>& lstPointsX, double alpha, vector<DataPoint>& lstSmoothPts );
+  void fBoxMovingAvg( int n, vector<DataPoint>& lstPoints, int w, vector<DataPoint>& lstSmoothPts, bool bSmoothFlag );
+  //  void MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
 private:
   ILapSupplier* m_pLapSupplier;
 

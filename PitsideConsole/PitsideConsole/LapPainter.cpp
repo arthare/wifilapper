@@ -2,6 +2,7 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
+#include <math.h>
 
 struct HIGHLIGHTDATA
 {
@@ -306,6 +307,21 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   int iPos = 0;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   // y-channel graphing loop start
+  static bool bSmoothFlagX, bSmoothFlagY = false;		// Flags for checking if smooth has been done or not
+  static DATA_CHANNEL b_eXChannel;
+  if (b_eXChannel <= 0) b_eXChannel = (DATA_CHANNEL) 0;	//	Flag for testing if user changed X-axis
+  static vector <DATA_CHANNEL> b_YChannel = (vector <DATA_CHANNEL>) 0; //	Flag for testing if user changed Y-axis
+
+  static vector<CExtendedLap*> b_lstLapsX = (vector <CExtendedLap*>) 0;
+  if (b_lstLapsX != lstLaps ) 
+  {
+	  for (int zz = 0; zz < lstLaps.size() - 1; zz++) 
+	  {
+		  b_lstLapsX.push_back( (CExtendedLap*) -1 ); //	Flag for checking if user changed the laps selected to display
+	  }
+  }
+  static vector<CExtendedLap*> b_lstLapsY = (vector <CExtendedLap*>) 0;
+
   for(set<DATA_CHANNEL>::iterator i = setY.begin(); i != setY.end(); i++)
   {
     vector<HIGHLIGHTDATA> lstMousePointsToDraw;
@@ -460,25 +476,93 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 		  // tracking what we want to highlight
         float dBestLength = -1;
         float dTimeToHighlight = -1;
-        const vector<DataPoint>& lstPointsX = pDataX->GetData();
-        const vector<DataPoint>& lstPointsY = pDataY->GetData();
+        //	Changed to non-constant as we want to smooth the data sometimes
+		vector<DataPoint>& lstPointsX = (vector<DataPoint>&) pDataX->GetData();
+        vector<DataPoint>& lstPointsY = (vector<DataPoint>&) pDataY->GetData();
+		vector<DataPoint>& lstSmoothPtsX = (vector<DataPoint>) pDataX->GetData();
+		vector<DataPoint>& lstSmoothPtsY = (vector<DataPoint>) pDataY->GetData();
+		int w = 5;	// * w is the size of the smoothing window, taken on each side of sample
 		glEnable(GL_LINE_STIPPLE);
 		glLineStipple(factor, pattern);	//	Set the line dash/dot characteristics
-		//	Don't show lines for Traction Circle plots by default
-		if(sfLapOpts.fDrawLines == false || (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL) )
+
+		//	Smooth the data if the X-axis has changed or it's the first time through here
+		if ( b_eXChannel != m_pLapSupplier->GetXChannel() )
+		{
+			b_eXChannel = m_pLapSupplier->GetXChannel();
+			bSmoothFlagX = false;
+		}
+		//	Smooth the data if the Y-axis selections have changed or it's the first time through here
+		if ( b_YChannel != m_pLapSupplier->GetYChannels() )
+		{
+			b_YChannel = m_pLapSupplier->GetYChannels();
+			bSmoothFlagY = false;
+		}
+		//	Smooth the data if the Laps selections have changed
+		if ( x > 0 && (b_lstLapsY != lstLaps ||  b_lstLapsX != lstLaps) )
+		{
+			b_lstLapsY = lstLaps;
+			bSmoothFlagY = false;
+			b_lstLapsX = lstLaps;
+			bSmoothFlagX = false;
+		}
+
+		if(sfLapOpts.fDrawLines == false)
 		{
           glPointSize(4.0f);
           glBegin(GL_POINTS);
+        }
+		else if( (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL) && (*i == DATA_CHANNEL_X_ACCEL || *i == DATA_CHANNEL_Y_ACCEL || *i == DATA_CHANNEL_Z_ACCEL) )
+		//	Don't show lines for Traction Circle plots by default
+		{
+			//	Smooth out the accerlometer data before displaying it on the X-axis
+			fBoxMovingAvg( lstPointsX.size(), lstPointsX, w, lstSmoothPtsX, bSmoothFlagX );
+			lstPointsX = lstSmoothPtsX;
+			bSmoothFlagX = true;		//	Set switch so that no more smoothing is done
+/*			// * Exponential moving average
+			// * n is number of samples
+			// * v is array of size n
+			// * alpha is between 0 and 1, low values give more weight to past values
+			// * out is the output array of size n
+			double alpha = 0.5;
+			fExpMovingAvg (lstPointsX.size(), lstPointsX, alpha, lstSmoothPtsX);
+			//	Now let's replace lstPoints[] with the smoothed data
+//			lstPointsX = lstSmoothPts;
+*/
+			glPointSize(4.0f);
+			glBegin(GL_POINTS);
+        }
+		else if (*i == DATA_CHANNEL_X_ACCEL || *i == DATA_CHANNEL_Y_ACCEL || *i == DATA_CHANNEL_Z_ACCEL)
+		{
+			//	Smooth out the accerlometer data before displaying it on the Y-axis
+
+			fBoxMovingAvg( lstPointsY.size(), lstPointsY, w, lstSmoothPtsY, bSmoothFlagY  );
+			lstPointsY = lstSmoothPtsY;
+			bSmoothFlagY = true;		//	Set switch so that no more smoothing is done
+/*
+			// * Exponential moving average
+			// * n is number of samples
+			// * v is array of size n
+			// * alpha is between 0 and 1, low values give more weight to past values
+			// * out is the output array of size n
+			double alpha = 0.5;
+			fExpMovingAvg (lstPointsY.size(), lstPointsY, alpha, lstSmoothPtsY);
+			//	Now let's replace lstPoints[] with the smoothed data
+//			lstPointsY = lstSmoothPts;
+*/
+			glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
+			glBegin(GL_LINE_STRIP);
         }
         else
         {
           glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
 		  glBegin(GL_LINE_STRIP);
         }
-
-        vector<DataPoint>::const_iterator iX = lstPointsX.begin();
+		
+		vector<DataPoint>::const_iterator iX = lstPointsX.begin();
+		vector<DataPoint>::const_iterator iXend = lstPointsX.end();
         vector<DataPoint>::const_iterator iY = lstPointsY.begin();
-        while(iX != lstPointsX.end() && iY != lstPointsY.end())
+		vector<DataPoint>::const_iterator iYend = lstPointsY.end();
+		while(iX != iXend && iY != iYend)
         {
           float dX;
           float dY;
@@ -1027,5 +1111,45 @@ void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
       DrawGLFilledSquare(ptWindow.x, ptWindow.y, 5);
     }
     glPopMatrix(); // pop us from window space back to the identity
+  }
+}
+
+// * Exponential moving average
+// * n is number of samples
+// * v is array of size n
+// * alpha is between 0 and 1, low values give more weight to past values
+// * out is the output array of size n
+//
+
+void CLapPainter::fExpMovingAvg( int n, vector<DataPoint>& lstPoints, double alpha, vector<DataPoint>& lstSmoothPts )
+{
+  lstSmoothPts[0] = lstPoints[0];
+  for ( int i = 1; i < n; i++ )
+  {
+    lstSmoothPts[i].flValue = ( 1.0 - alpha ) * lstSmoothPts[i - 1].flValue + alpha * lstPoints[i].flValue;
+  }
+}
+
+// * Moving average function
+// * n is the number of input samples
+// * v is an array of values of size n
+// * w is the size of the window, taken on each side of sample
+// * out is output array of size n
+// *
+//
+void CLapPainter::fBoxMovingAvg( int n, vector<DataPoint>& lstPoints, int w, vector<DataPoint>& lstSmoothPts, bool bSmoothFlag )
+{
+  if (bSmoothFlag == true) return;
+  int s;
+  for(s=0; s < n; s++)
+  {
+    float t = 0.0;
+	int aTemp = 0;
+    for ( int a = s - w; a <= s + w; a++ )
+    {
+		if (a < 0) aTemp = 0; else if (a >= n) aTemp = n - 1; else aTemp = a;
+		t += lstPoints[aTemp].flValue;
+    }
+	lstSmoothPts[s].flValue = t / ( 2 * w + 1 );
   }
 }
