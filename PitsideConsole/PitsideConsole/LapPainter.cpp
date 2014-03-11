@@ -2,6 +2,7 @@
 #include "LapPainter.h"
 #include "LapData.h"
 #include "ArtUI.h"
+#include "ArtTools.h"
 #include <math.h>
 
 struct HIGHLIGHTDATA
@@ -45,9 +46,13 @@ void CLapPainter::OGL_Paint()
     glViewport(0,0,RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient));
     DrawLapLines(sfLapOpts);	//	Draws the lap as a map on primary display
     break;
+  case LAPDISPLAYSTYLE_TRACTIONCIRCLE:
+    glViewport(0,0,RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient));
+	DrawTractionCircle(sfLapOpts, true);	//	Draw the traction circle graph if the window is active
+    break;
   case LAPDISPLAYSTYLE_PLOT:
     DrawGeneralGraph(sfLapOpts, true);	//	Draws the data graphs on the primary display
-    break;
+	break;
   case LAPDISPLAYSTYLE_RECEPTION:
     DrawReceptionMap(sfLapOpts);	//	Draws the reception map on the primary display
     break;
@@ -141,6 +146,29 @@ void CLapPainter::DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const
 
 }
 
+void CLapPainter::DrawSelectLapsPromptShort() const
+{
+  RECT rcClient;
+  GetClientRect(OGL_GetHWnd(),&rcClient);
+  if (m_pLapSupplier->GetDisplayOptions().fColorScheme)	//	Background color is black, make sure there is enough contrast with the lines
+  {
+	glColor3d( 1.0, 1.0, 1.0 ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+  }
+  else
+  {
+	glColor3d( 0.0, 0.0, 0.0 ); // Final color to use.  Tells opengl to draw the following in the colour we just made up
+  }
+  glPushMatrix();
+  glLoadIdentity();
+  glScalef(1.0f, 0.90f, 1.0f);	//	Keep the same scaling - KDJ
+  glOrtho(0, RECT_WIDTH(&rcClient),0, RECT_HEIGHT(&rcClient),-1.0,1.0);
+
+  DrawText(0.0, 70, "Click X-Accel");
+  DrawText(0.0, 40, "to display");
+
+  glPopMatrix();
+}
+
 void CLapPainter::DrawSelectLapsPrompt() const
 {
   RECT rcClient;
@@ -182,6 +210,14 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
   DATA_CHANNEL eX;
   eX = DATA_CHANNEL_DISTANCE;
+/*
+  static set<int> i_Smoothed_LapId_X;	//	Tracker for which laps we have done smoothing on for X, Y, Z Acceleration data
+  i_Smoothed_LapId_X.begin();
+  static set<int> i_Smoothed_LapId_Y;	//	Tracker for which laps we have done smoothing on for X, Y, Z Acceleration data
+  i_Smoothed_LapId_Y.begin();
+  static set<int> i_Smoothed_LapId_Z;	//	Tracker for which laps we have done smoothing on for X, Y, Z Acceleration data
+  i_Smoothed_LapId_Z.begin();
+*/
   set<DATA_CHANNEL> setY;
   map<DATA_CHANNEL,float> mapMinY, mapMinYTemp;
   map<DATA_CHANNEL,float> mapMaxY, mapMaxYTemp;
@@ -307,21 +343,6 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
   int iPos = 0;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   // y-channel graphing loop start
-  static bool bSmoothFlagX, bSmoothFlagY = false;		// Flags for checking if smooth has been done or not
-  static DATA_CHANNEL b_eXChannel;
-  if (b_eXChannel <= 0) b_eXChannel = (DATA_CHANNEL) 0;	//	Flag for testing if user changed X-axis
-  static vector <DATA_CHANNEL> b_YChannel = (vector <DATA_CHANNEL>) 0; //	Flag for testing if user changed Y-axis
-
-  static vector<CExtendedLap*> b_lstLapsX = (vector <CExtendedLap*>) 0;
-  if (b_lstLapsX != lstLaps ) 
-  {
-	  for (int zz = 0; zz < lstLaps.size() - 1; zz++) 
-	  {
-		  b_lstLapsX.push_back( (CExtendedLap*) -1 ); //	Flag for checking if user changed the laps selected to display
-	  }
-  }
-  static vector<CExtendedLap*> b_lstLapsY = (vector <CExtendedLap*>) 0;
-
   for(set<DATA_CHANNEL>::iterator i = setY.begin(); i != setY.end(); i++)
   {
     vector<HIGHLIGHTDATA> lstMousePointsToDraw;
@@ -426,6 +447,7 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 			//	Now let's draw a vertical line at the origin
 			DrawVerticalLine(0.0f, mapMinY[*i], mapMaxY[*i], NULL);
 		}
+
 		//	Default is to draw the standard distance markers
 		else
 		{
@@ -456,7 +478,14 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
       CExtendedLap* pLap = lstLaps[x];
       const IDataChannel* pDataX = pLap->GetChannel(m_pLapSupplier->GetXChannel());
       const IDataChannel* pDataY = pLap->GetChannel(*i);
-
+/*      //	If Traction Circle window is active, pull and smooth that data
+	  IDataChannel* pDataX_ACCEL;
+	  IDataChannel* pDataY_ACCEL;
+	  IDataChannel* pDataZ_ACCEL;
+	  pDataX_ACCEL = (IDataChannel*) pLap->GetChannel(DATA_CHANNEL_X_ACCEL);
+	  pDataY_ACCEL = (IDataChannel*) pLap->GetChannel(DATA_CHANNEL_Y_ACCEL);
+	  pDataZ_ACCEL = (IDataChannel*) pLap->GetChannel(DATA_CHANNEL_Z_ACCEL);
+*/
 	  float r;
 	  float g;
 	  float b;
@@ -473,91 +502,190 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
 
 	  if(pDataX && pDataY)
 	  {
-		  // tracking what we want to highlight
+		// tracking what we want to highlight
+//		static bool bSmoothFlagX, bSmoothFlagY, bSmoothFlagZ;		// Flag for checking if smooth has been done or not. False = smoothing not yet done
         float dBestLength = -1;
         float dTimeToHighlight = -1;
-        //	Changed to non-constant as we want to smooth the data sometimes
-		vector<DataPoint>& lstPointsX = (vector<DataPoint>&) pDataX->GetData();
-        vector<DataPoint>& lstPointsY = (vector<DataPoint>&) pDataY->GetData();
-		vector<DataPoint>& lstSmoothPtsX = (vector<DataPoint>) pDataX->GetData();
-		vector<DataPoint>& lstSmoothPtsY = (vector<DataPoint>) pDataY->GetData();
-		int w = 5;	// * w is the size of the smoothing window, taken on each side of sample
+		const vector<DataPoint> &lstPointsX = (vector<DataPoint>&) pDataX->GetData();
+        const vector<DataPoint> &lstPointsY = (vector<DataPoint>&) pDataY->GetData();
+/*		//	Changed to non-constant as we want to smooth the data sometimes
+		vector<DataPoint> &lstPointsX = (vector<DataPoint>&) pDataX->GetData();
+        vector<DataPoint> &lstPointsY = (vector<DataPoint>&) pDataY->GetData();
+		vector<DataPoint> lstPointsX_Accel;
+		vector<DataPoint> &p_lstPointsX_Accel = (vector<DataPoint>&) lstPointsX_Accel; 
+		vector<DataPoint> lstPointsY_Accel;
+		vector<DataPoint> &p_lstPointsY_Accel = (vector<DataPoint>&) lstPointsY_Accel; 
+		vector<DataPoint> lstPointsZ_Accel;
+		vector<DataPoint> &p_lstPointsZ_Accel = (vector<DataPoint>&) lstPointsZ_Accel; 
+		for(set<DATA_CHANNEL>::iterator q = setY.begin(); q != setY.end(); q++)
+		{
+			if ( *q == DATA_CHANNEL_X_ACCEL && bSmoothFlagX == false )
+			{
+				lstPointsX_Accel.clear();
+				lstPointsX_Accel = pDataX_ACCEL->GetData();	//	pDataY->GetData()
+			}
+			if ( *q == DATA_CHANNEL_Y_ACCEL && bSmoothFlagY == false )
+			{
+				lstPointsY_Accel.clear();
+				lstPointsY_Accel = pDataY_ACCEL->GetData();	//	pDataY->GetData()
+			}
+			if ( *q == DATA_CHANNEL_Z_ACCEL && bSmoothFlagZ == false )
+			{
+				lstPointsZ_Accel.clear();
+				lstPointsZ_Accel = pDataZ_ACCEL->GetData();	//	pDataY->GetData()
+			}
+		}
+		int w = 8;	// * w is the size of the smoothing window, taken on each side of sample
+		//	If Accel X or Traction Circle are to be displayed, smooth the Accelerometer data
+		if ( m_pLapSupplier->GetXChannel() == DATA_CHANNEL_X_ACCEL ||  *i == DATA_CHANNEL_X_ACCEL || sfLapOpts.bTractionCircle )
+		{
+			//	Smooth the data if the X-axis is displaying ACCEL type data
+			if ( i_Smoothed_LapId_X.size() )
+			{
+				bSmoothFlagX = false;	//	Assume that we need to smooth the Accel data, then check if this lap has already been smoothed
+				for(set<int>::iterator t = i_Smoothed_LapId_X.begin(); t != i_Smoothed_LapId_X.end(); t++)
+				{
+					if ( pLap->GetLap()->GetLapId() == *t ) //	Lap has already been marked as smoothed, so abort
+					{
+						bSmoothFlagX = true;	//	Otherwise smooth the Accel data
+						break;
+					}
+				}
+			}
+		}
+
+		//	If Accel Y or Traction Circle are to be displayed, smooth the Accelerometer data
+		if ( m_pLapSupplier->GetXChannel() == DATA_CHANNEL_Y_ACCEL || *i == DATA_CHANNEL_Y_ACCEL || sfLapOpts.bTractionCircle )
+		{
+			//	Smooth the data if the X-axis is displaying ACCEL type data
+			if ( i_Smoothed_LapId_X.size() )
+			{
+				bSmoothFlagY = false;	//	Assume that we need to smooth the Accel data, then check if this lap has already been smoothed
+				for(set<int>::iterator t = i_Smoothed_LapId_Y.begin(); t != i_Smoothed_LapId_Y.end(); t++)
+				{
+					if ( pLap->GetLap()->GetLapId() == *t ) //	Lap has already been marked as smoothed, so abort
+					{
+						bSmoothFlagY = true;	//	Otherwise smooth the Accel data
+						break;
+					}
+				}
+			}
+		}
+
+		//	If Accel Z is to be displayed, smooth the Accelerometer data
+		if ( m_pLapSupplier->GetXChannel() == DATA_CHANNEL_Z_ACCEL || *i == DATA_CHANNEL_Z_ACCEL )
+		{
+			//	Smooth the data if the X-axis is displaying ACCEL type data
+			if ( i_Smoothed_LapId_Z.size() )
+			{
+				bSmoothFlagZ = false;	//	Assume that we need to smooth the Accel data, then check if this lap has already been smoothed
+				for(set<int>::iterator t = i_Smoothed_LapId_Z.begin(); t != i_Smoothed_LapId_Z.end(); t++)
+				{
+					if ( pLap->GetLap()->GetLapId() == *t ) //	Lap has already been marked as smoothed, so abort
+					{
+						bSmoothFlagZ = true;	//	Otherwise smooth the Accel data
+						break;
+					}
+				}
+			}
+		}
+
+		vector<DataPoint>& lstSmoothPts = (vector<DataPoint>) pDataX->GetData();
+		if( (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL) || sfLapOpts.bTractionCircle )
+		{
+			//	Smooth out the accerlometer data for all axes before displaying them on the X/Y-axes or in the Traction Circle display
+			if (lstPointsX_Accel.size() ) 
+			{
+				lstSmoothPts.clear();
+				lstSmoothPts = (vector<DataPoint>) pDataX_ACCEL->GetData();
+				fBoxMovingAvg( lstPointsX_Accel.size(), lstPointsX_Accel, w, lstSmoothPts, bSmoothFlagX );
+//				lstPointsX_Accel = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstPointsX = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstSmoothPts.clear();
+				bSmoothFlagX = true;		//	Set switch so that no more smoothing is done
+				i_Smoothed_LapId_X.insert( pLap->GetLap()->GetLapId() );	//	Add the name of this lap to the set of smoothed laps
+			}
+			if (lstPointsY_Accel.size() ) 
+			{
+				lstSmoothPts.clear();
+				lstSmoothPts = (vector<DataPoint>) pDataY_ACCEL->GetData();	//	Now do the same for the Y_ACCEL data
+				fBoxMovingAvg( lstPointsY_Accel.size(), lstPointsY_Accel, w, lstSmoothPts, bSmoothFlagY );
+//				lstPointsY_Accel = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstPointsX = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstSmoothPts.clear();
+				bSmoothFlagY = true;		//	Set switch so that no more smoothing is done
+				i_Smoothed_LapId_Y.insert( pLap->GetLap()->GetLapId() );	//	Add the name of this lap to the set of smoothed laps
+			}
+			if (lstPointsZ_Accel.size() ) 
+			{
+				lstSmoothPts.clear();
+				lstSmoothPts = (vector<DataPoint>) pDataZ_ACCEL->GetData();	//	Now do the same for the Z_ACCEL data
+				fBoxMovingAvg( lstPointsZ_Accel.size(), lstPointsZ_Accel, w, lstSmoothPts, bSmoothFlagZ );
+//				lstPointsZ_Accel = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstPointsX = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstSmoothPts.clear();
+				bSmoothFlagZ = true;		//	Set switch so that no more smoothing is done
+				i_Smoothed_LapId_Z.insert( pLap->GetLap()->GetLapId() );	//	Add the name of this lap to the set of smoothed laps
+			}
+        }
+
+		if( (*i == DATA_CHANNEL_X_ACCEL || *i == DATA_CHANNEL_Y_ACCEL || *i == DATA_CHANNEL_Z_ACCEL) || sfLapOpts.bTractionCircle )
+		{
+			//	Smooth out the accerlometer data for all axes before displaying them on the X/Y-axes or in the Traction Circle display
+			if (lstPointsX_Accel.size() ) 
+			{
+				lstSmoothPts.clear();
+				lstSmoothPts = (vector<DataPoint>) pDataX_ACCEL->GetData();
+				fBoxMovingAvg( lstPointsX_Accel.size(), lstPointsX_Accel, w, lstSmoothPts, bSmoothFlagX );
+//				lstPointsX_Accel = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstPointsY = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstSmoothPts.clear();
+				bSmoothFlagX = true;		//	Set switch so that no more smoothing is done
+				i_Smoothed_LapId_X.insert( pLap->GetLap()->GetLapId() );	//	Add the name of this lap to the set of smoothed laps
+			}
+			if (lstPointsY_Accel.size() ) 
+			{
+				lstSmoothPts.clear();
+				lstSmoothPts = (vector<DataPoint>) pDataY_ACCEL->GetData();	//	Now do the same for the Y_ACCEL data
+				fBoxMovingAvg( lstPointsY_Accel.size(), lstPointsY_Accel, w, lstSmoothPts, bSmoothFlagY );
+//				lstPointsY_Accel = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstPointsY = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstSmoothPts.clear();
+				bSmoothFlagY = true;		//	Set switch so that no more smoothing is done
+				i_Smoothed_LapId_Y.insert( pLap->GetLap()->GetLapId() );	//	Add the name of this lap to the set of smoothed laps
+			}
+			if (lstPointsZ_Accel.size() ) 
+			{
+				lstSmoothPts.clear();
+				lstSmoothPts = (vector<DataPoint>) pDataZ_ACCEL->GetData();	//	Now do the same for the Z_ACCEL data
+				fBoxMovingAvg( lstPointsZ_Accel.size(), lstPointsZ_Accel, w, lstSmoothPts, bSmoothFlagZ );
+//				lstPointsZ_Accel = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstPointsY = lstSmoothPts;	//	Copy the smoothed data points over to the original data set
+				lstSmoothPts.clear();
+				bSmoothFlagZ = true;		//	Set switch so that no more smoothing is done
+				i_Smoothed_LapId_Z.insert( pLap->GetLap()->GetLapId() );	//	Add the name of this lap to the set of smoothed laps
+			}
+        }
+*/
 		glEnable(GL_LINE_STIPPLE);
 		glLineStipple(factor, pattern);	//	Set the line dash/dot characteristics
-
-		//	Smooth the data if the X-axis has changed or it's the first time through here
-		if ( b_eXChannel != m_pLapSupplier->GetXChannel() )
-		{
-			b_eXChannel = m_pLapSupplier->GetXChannel();
-			bSmoothFlagX = false;
-		}
-		//	Smooth the data if the Y-axis selections have changed or it's the first time through here
-		if ( b_YChannel != m_pLapSupplier->GetYChannels() )
-		{
-			b_YChannel = m_pLapSupplier->GetYChannels();
-			bSmoothFlagY = false;
-		}
-		//	Smooth the data if the Laps selections have changed
-		if ( x > 0 && (b_lstLapsY != lstLaps ||  b_lstLapsX != lstLaps) )
-		{
-			b_lstLapsY = lstLaps;
-			bSmoothFlagY = false;
-			b_lstLapsX = lstLaps;
-			bSmoothFlagX = false;
-		}
-
 		if(sfLapOpts.fDrawLines == false)
 		{
-          glPointSize(4.0f);
-          glBegin(GL_POINTS);
-        }
-		else if( (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL) && (*i == DATA_CHANNEL_X_ACCEL || *i == DATA_CHANNEL_Y_ACCEL || *i == DATA_CHANNEL_Z_ACCEL) )
-		//	Don't show lines for Traction Circle plots by default
-		{
-			//	Smooth out the accerlometer data before displaying it on the X-axis
-			fBoxMovingAvg( lstPointsX.size(), lstPointsX, w, lstSmoothPtsX, bSmoothFlagX );
-			lstPointsX = lstSmoothPtsX;
-			bSmoothFlagX = true;		//	Set switch so that no more smoothing is done
-/*			// * Exponential moving average
-			// * n is number of samples
-			// * v is array of size n
-			// * alpha is between 0 and 1, low values give more weight to past values
-			// * out is the output array of size n
-			double alpha = 0.5;
-			fExpMovingAvg (lstPointsX.size(), lstPointsX, alpha, lstSmoothPtsX);
-			//	Now let's replace lstPoints[] with the smoothed data
-//			lstPointsX = lstSmoothPts;
-*/
 			glPointSize(4.0f);
 			glBegin(GL_POINTS);
         }
-		else if (*i == DATA_CHANNEL_X_ACCEL || *i == DATA_CHANNEL_Y_ACCEL || *i == DATA_CHANNEL_Z_ACCEL)
+		else if ( (eX == DATA_CHANNEL_X_ACCEL || eX == DATA_CHANNEL_Y_ACCEL || eX == DATA_CHANNEL_Z_ACCEL) && (*i == DATA_CHANNEL_X_ACCEL || *i == DATA_CHANNEL_Y_ACCEL || *i == DATA_CHANNEL_Z_ACCEL) )
 		{
-			//	Smooth out the accerlometer data before displaying it on the Y-axis
-
-			fBoxMovingAvg( lstPointsY.size(), lstPointsY, w, lstSmoothPtsY, bSmoothFlagY  );
-			lstPointsY = lstSmoothPtsY;
-			bSmoothFlagY = true;		//	Set switch so that no more smoothing is done
-/*
-			// * Exponential moving average
-			// * n is number of samples
-			// * v is array of size n
-			// * alpha is between 0 and 1, low values give more weight to past values
-			// * out is the output array of size n
-			double alpha = 0.5;
-			fExpMovingAvg (lstPointsY.size(), lstPointsY, alpha, lstSmoothPtsY);
-			//	Now let's replace lstPoints[] with the smoothed data
-//			lstPointsY = lstSmoothPts;
-*/
+			//	Don't show lines for Traction Circle plots by default
+			glPointSize(4.0f);
+			glBegin(GL_POINTS);
+		}
+		else
+		{
 			glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
 			glBegin(GL_LINE_STRIP);
-        }
-        else
-        {
-          glLineWidth(2);	// Added by KDJ. Sets the width of the line to draw.
-		  glBegin(GL_LINE_STRIP);
-        }
-		
+		}
+
 		vector<DataPoint>::const_iterator iX = lstPointsX.begin();
 		vector<DataPoint>::const_iterator iXend = lstPointsX.end();
         vector<DataPoint>::const_iterator iY = lstPointsY.begin();
@@ -714,9 +842,310 @@ void CLapPainter::DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHi
     rcSpot.bottom += iSegmentHeight;
   } // end y-channel data channel loop
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 	
 }
+
+
+void CLapPainter::DrawTractionCircle(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis)
+{
+  vector<CExtendedLap*> lstLaps = m_pLapSupplier->GetLapsToShow();
+
+  DATA_CHANNEL eX;
+  eX = DATA_CHANNEL_X_ACCEL;
+  set<DATA_CHANNEL> setY;
+  map<DATA_CHANNEL,float> mapMinY, mapMinYTemp;
+  map<DATA_CHANNEL,float> mapMaxY, mapMaxYTemp;
+  float dMaxX = -1e30;
+  float dMinX = 1e30;
+  float dCenterOvalX = 0;
+  float dCenterOvalY = 0;
+/////////////////////////////////////////
+  bool b_TransformY = false;	//	Flag if we should transform this channel using PlotPrefs polynomial function false = no, true = yes
+  int i_TransInt = 0;		//	PlotPrefs index for transformation function coefficients
+/////////////////////////////////////////
+  // figuring out bounds and getting matrices all set up
+  //	First lets load up all of the data into an array and determine its size
+  for (int x = 0; x < lstLaps.size(); x++)
+  {
+      CExtendedLap* pLap = lstLaps[x];
+      DATA_CHANNEL eDataX = eX;
+      const IDataChannel* pDataX = pLap->GetChannel(eDataX);
+      if(!pDataX || !pDataX->IsValid() || pDataX->GetData().size() <= 0) continue;
+
+      DATA_CHANNEL DataY = DATA_CHANNEL_Y_ACCEL;
+      {
+//////////////////////////////////
+		b_TransformY = false;
+		i_TransInt = 0;
+//////////////////////////////////
+		const IDataChannel* pChannel = pLap->GetChannel(DataY);
+        if (!pChannel || !pChannel->IsValid()) continue;
+
+        const DATA_CHANNEL eType = DataY;
+
+      if(mapMinYTemp.find(eType) == mapMinYTemp.end())
+        {
+          mapMinYTemp[eType] = min(pChannel->GetMin(),m_pLapSupplier->GetDataHardcodedMin(eType));
+          mapMaxYTemp[eType] = max(pChannel->GetMax(),m_pLapSupplier->GetDataHardcodedMax(eType));
+        }
+        else
+        {
+          mapMinYTemp[eType] = min(pChannel->GetMin(),mapMinYTemp[eType]);
+          mapMaxYTemp[eType] = max(pChannel->GetMax(),mapMaxYTemp[eType]);
+		}
+////////////////////////////////
+		//	Adding transformation functions here for Min/MaxY
+		if (b_TransformY == true && sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue < 0)
+		{
+			mapMaxY[eType] = (float)PolynomialFilter(mapMinYTemp[eType], sfLapOpts.m_PlotPrefs[i_TransInt].fTransAValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransCValue);
+			mapMinY[eType] = (float)PolynomialFilter(mapMaxYTemp[eType], sfLapOpts.m_PlotPrefs[i_TransInt].fTransAValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransCValue);
+		}
+		else if (b_TransformY == true)
+		{
+			mapMinY[eType] = (float)PolynomialFilter(mapMinYTemp[eType], sfLapOpts.m_PlotPrefs[i_TransInt].fTransAValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransCValue);
+			mapMaxY[eType] = (float)PolynomialFilter(mapMaxYTemp[eType], sfLapOpts.m_PlotPrefs[i_TransInt].fTransAValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransBValue, sfLapOpts.m_PlotPrefs[i_TransInt].fTransCValue);
+		}
+		else
+		{
+			mapMinY[eType] = mapMinYTemp[eType];
+			mapMaxY[eType] = mapMaxYTemp[eType];
+		}
+////////////////////////////////
+		setY.insert(eType);
+      }
+      if(pDataX)
+      {
+        dMaxX = max(dMaxX, pDataX->GetMax());
+        dMinX = min(dMinX, pDataX->GetMin());
+
+//        eX = pDataX->GetChannelType();
+      }
+	  b_TransformY = false;	//	Reset the flag for transforming the Data Channel
+  }	//	End of finding bounds and loading laps loop
+  
+  if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+  {
+		glClearColor( 0.03, 0.03f, 0.03f, 0.05f );  //  Background color is black.
+  }
+  else
+  {
+		glClearColor( 0.97, 0.97f, 0.97f, 0.95f );  //  Background color is grey.
+  }
+  glClear( GL_COLOR_BUFFER_BIT );
+
+
+  RECT rcSpot;
+  {
+    RECT rcClient;
+    GetClientRect(OGL_GetHWnd(), &rcClient);
+    glViewport(0,0,RECT_WIDTH(&rcClient), RECT_HEIGHT(&rcClient));
+  
+    rcSpot.left = 0;
+    rcSpot.top = 0;
+    rcSpot.right = RECT_WIDTH(&rcClient);
+    rcSpot.bottom = RECT_HEIGHT(&rcClient);
+  }
+
+    if(setY.size() <= 0)
+  {
+    DrawSelectLapsPromptShort();
+    return;
+  }
+
+  int iPos = 0;
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  // y-channel graphing loop start
+
+  for(set<DATA_CHANNEL>::iterator i = setY.begin(); i != setY.end(); i++)
+  {
+    vector<HIGHLIGHTDATA> lstMousePointsToDraw;
+    glViewport(rcSpot.left,rcSpot.top,RECT_WIDTH(&rcSpot),RECT_HEIGHT(&rcSpot));
+	int y = 0;	//	Tracker for PlotPrefs array variable
+	for (int z = 0; z < 49; z++)
+	{
+		if (sfLapOpts.m_PlotPrefs[z].iDataChannel == *i)
+		{
+			y = z;
+			break;
+		}
+	}
+	// now we have the bounds of all the laps we've looked at, so let's draw them
+    glPushMatrix();
+    glLoadIdentity();
+    glScalef(1.0f, 0.90f, 1.0f);	// Let's scale it so that graphs don't touch each other.
+    glOrtho(dMinX, dMaxX, mapMinY[*i], mapMaxY[*i], -1.0, 1.0);
+
+	//	Set up the non-zoomed/panned view for the map
+    GLdouble rgModelviewMatrix[16];
+    GLdouble rgProjMatrix[16];
+    GLint rgViewport[4];
+    
+	{
+		//	Now that the matrices are correct, let's graph them.    
+		glGetDoublev(GL_MODELVIEW_MATRIX, rgModelviewMatrix);
+		glGetDoublev(GL_PROJECTION_MATRIX, rgProjMatrix);
+		glGetIntegerv(GL_VIEWPORT, rgViewport);
+		if (m_pLapSupplier->GetDisplayOptions().fColorScheme)
+		{
+			glColor3d(1.0,1.0,1.0);	//	Background is black, lines are white
+		}
+		else
+		{
+			glColor3d(0.0,0.0,0.0);	//	Background is grey, lines are black
+		}
+		drawOval (dCenterOvalX, dCenterOvalY, 3.0f, 3.0f);	//	Draw 1.5G circle
+		drawOval (dCenterOvalX, dCenterOvalY, 2.0f, 2.0f);	//	Draw 1.0G circle
+		drawOval (dCenterOvalX, dCenterOvalY, 1.0f, 1.0f);	//	Draw 0.5G circle
+	}
+
+    Vector2D ptHighlight; // the (x,y) coords in unit-space that we want to highlight.  Example: for a speed-distance graph, x would be in distance units, y in velocities.
+    POINT ptMouse;
+    if(GetMouse(&ptMouse) && m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+    {
+      //		The mouse is in our window... we make our own highlighter, ignoring anything that got sent to us
+      GLdouble dX,dY,dZ;
+      gluUnProject(ptMouse.x, ptMouse.y, 0, rgModelviewMatrix, rgProjMatrix, rgViewport, &dX, &dY, &dZ);
+      ptHighlight = V2D(dX,0);
+    }
+    for(int x = 0; x < lstLaps.size(); x++)
+    {
+      CExtendedLap* pLap = lstLaps[x];
+      const IDataChannel* pDataX = pLap->GetChannel(eX);	//	Only pull the X-Accel data for this graph
+      const IDataChannel* pDataY = pLap->GetChannel(*i);
+
+	  if(pDataX && pDataY)
+	  {
+		  // tracking what we want to highlight
+        float dBestLength = -1;
+        float dTimeToHighlight = -1;
+        //	Changed to non-constant as we want to smooth the data sometimes
+		vector<DataPoint>& lstPointsX = (vector<DataPoint>&) pDataX->GetData();
+        vector<DataPoint>& lstPointsY = (vector<DataPoint>&) pDataY->GetData();
+
+		float r;
+		float g;
+		float b;
+		if (x == lstLaps.size() - 1)	//	We color the last lap, or Reference Lap if it's chosen, as black
+		{
+			MakeColor ( pLap, true, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+		}
+		else
+		{
+			MakeColor ( pLap, false, &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+		}
+
+		glPointSize(2.0f);
+		glBegin(GL_POINTS);
+		
+		vector<DataPoint>::const_iterator iX = lstPointsX.begin();
+		vector<DataPoint>::const_iterator iXend = lstPointsX.end();
+        vector<DataPoint>::const_iterator iY = lstPointsY.begin();
+		vector<DataPoint>::const_iterator iYend = lstPointsY.end();
+		while(iX != iXend && iY != iYend)
+        {
+          float dX;
+          float dY;
+          const DataPoint& ptX = *iX;
+          const DataPoint& ptY = *iY;
+          int iTimeUsed = 0;
+          if(ptX.iTimeMs < ptY.iTimeMs)
+          {
+            iTimeUsed = ptX.iTimeMs;
+            dX = ptX.flValue;
+            dY = pDataY->GetValue(ptX.iTimeMs, iY);
+            iX++;
+          }
+          else if(ptX.iTimeMs > ptY.iTimeMs)
+          {
+            iTimeUsed = ptY.iTimeMs;
+            dX = pDataX->GetValue(ptY.iTimeMs, iX);
+            dY = ptY.flValue;
+            iY++;
+          }
+          else
+          {
+            iTimeUsed = ptY.iTimeMs;
+            DASSERT(ptX.iTimeMs == ptY.iTimeMs);
+            dX = ptX.flValue;
+            dY = ptY.flValue;
+            iX++;
+            iY++;
+          }
+//////////////////////////////////////////
+		  //	Can add transformation function here for Y
+		  if (sfLapOpts.m_PlotPrefs[y].iTransformYesNo == true)
+		  {
+			  dY = PolynomialFilter(ptY.flValue, sfLapOpts.m_PlotPrefs[y].fTransAValue, sfLapOpts.m_PlotPrefs[y].fTransBValue, sfLapOpts.m_PlotPrefs[y].fTransCValue);
+		  }
+		  else
+		  {
+			  dY = ptY.flValue;
+		  }
+//////////////////////////////////////////
+          glVertex2f(dX,dY);
+
+          // if we're a highlight source, try to figure out the closest point for this lap
+          if(m_pLapSupplier->IsHighlightSource(m_iSupplierId))
+          {
+            Vector2D vPt = V2D(dX,0);
+            Vector2D vDiff = vPt - ptHighlight;
+            if(vDiff.Length() < dBestLength || dBestLength < 0)
+            {
+              dBestLength = vDiff.Length();
+              dTimeToHighlight = iTimeUsed;
+            }
+          }
+        }
+		glEnd();
+        // for each lap, draw an indicator of the closest thing to the mouse
+          // if we're not a source, use the given time to highlight
+          dTimeToHighlight = m_pLapSupplier->GetLapHighlightTime(pLap);
+        UpdateHighlightPointList(lstMousePointsToDraw, pLap, rgModelviewMatrix, rgProjMatrix, rgViewport, dTimeToHighlight, pDataX, pDataY);
+      }
+    } // end lap loop
+
+    if(lstMousePointsToDraw.size() > 0)
+    {
+      glPushMatrix(); // <-- pushes a matrix onto the opengl matrix stack.
+      glLoadIdentity();	//  <-- makes it so that the matrix stack just converts all our coordinates directly to window coordinates
+      glOrtho(0, RECT_WIDTH(&rcSpot),0, RECT_HEIGHT(&rcSpot),-1.0,1.0);
+	  /*  <-- tells OpenGL that it should show us the part of the openGL "world" that corresponds to 
+	  (0...window width, 0 ... window height).  This completes the "hey opengl, just draw where we 
+	  tell you to plz" part of the function */
+
+      for(int x = 0; x < lstMousePointsToDraw.size(); x++)	// <-- loops through all the stupid boxes/lines we want to draw
+      {
+        const CExtendedLap* pLap = lstMousePointsToDraw[x].m_pLap;	//  <-- gets the lap data we want to draw
+        const POINT& ptWindow = lstMousePointsToDraw[x].m_ptWindow;	// <-- gets info about where in the window we want to draw the box
+
+		float r;
+		float g;
+		float b;
+		MakeColor ( pLap, x == (lstLaps.size() - 1), &r, &g, &b ); // Function picks color to use and tells opengl to draw the following in the colour we just made up
+
+		// Let's draw a highlighted square
+		DrawGLFilledSquare(ptWindow.x, ptWindow.y, 4);	// <-- draws the stupid little box at ptWindow.x.
+		// we also want to draw a highlighted horizontal and vertical LINE for that individual lap/graph combination
+		glLineWidth(1);
+		glBegin(GL_LINE_STRIP);
+		glVertex3f(ptWindow.x, rcSpot.top, 0);
+		glVertex3f(ptWindow.x,rcSpot.bottom,0);
+		glEnd();
+		glBegin(GL_LINE_STRIP);
+		glVertex3f(rcSpot.left, ptWindow.y, 0);
+		glVertex3f(rcSpot.right, ptWindow.y, 0);
+		glEnd();
+	  }
+      glPopMatrix();
+      glPopMatrix();
+    }
+  } // end y-channel data channel loop
+}
+
+
+
+
+
 /*
 void CLapPainter::MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis)
 {
@@ -867,6 +1296,7 @@ void CLapPainter::LineColor()
 	}
 }
 
+//	Function for showing the map display
 void CLapPainter::DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts)
 {
   FLOATRECT rcAllLaps = m_pLapSupplier->GetAllLapsBounds();

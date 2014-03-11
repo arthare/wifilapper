@@ -43,6 +43,7 @@
 #include <CommCtrl.h>	//	For Listview sorting routines
 #include "DlgSelectSessions.h"
 #include "DlgTimingScoring.h"
+#include "DlgTractionCircle.h"
 
 //#pragma comment(lib,"sdl.lib")
 using namespace std;
@@ -272,8 +273,10 @@ public:
   CMainUI() 
     : m_sfLapPainter(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_MAINDISPLAY), 
       m_sfSubDisplay(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_SUBDISPLAY), 
+      m_sfTractionDisplay(/*static_cast<IUI*>(this), */static_cast<ILapSupplier*>(this),SUPPLIERID_TRACTIONCIRCLEDISPLAY), 
       m_eLapDisplayStyle(LAPDISPLAYSTYLE_PLOT),		//	Make data plot the default initial view
-      m_fShowBests(false), 
+      m_fShowTractionCircle(false),
+	  m_fShowBests(false), 
       m_fShowDriverBests(false),
 	  m_fShowReferenceLap(true),
       m_pReferenceLap(NULL),
@@ -528,6 +531,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
         }
         m_sfLapPainter.Init(GetDlgItem(hWnd,IDC_DISPLAY));
         m_sfSubDisplay.Init(GetDlgItem(hWnd,IDC_SUBDISPLAY));
+        m_sfTractionDisplay.Init(GetDlgItem(hWnd,IDC_TRACTIONCIRCLEMAP));
 
         set<DATA_CHANNEL> setAvailable;
         InitAxes(setAvailable);
@@ -893,8 +897,25 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
 			UpdateUI(UPDATE_ALL);
 			return TRUE;
 		  }		
+          case ID_OPTIONS_TRACTIONCIRCLE:
+		  {
+            m_fShowTractionCircle = !m_fShowTractionCircle;
+			m_sfLapOpts.bTractionCircle = m_fShowTractionCircle;
+/*			TRACTIONCIRCLEDLG_RESULT sfResult;
+//			CTractionCircleDlg dlgTractionCircle(g_pLapDB, m_pReferenceLap,  &sfResult, m_iRaceId[0], &m_sfLapOpts);
+//			ArtShowDialog<IDD_TRACTIONCIRCLE>(&dlgTractionCircle);
+
+			if(!sfResult.fCancelled)
+            {
+			  UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_DASHBOARD | UPDATE_VALUES);
+//			  UpdateUI(UPDATE_ALL | UPDATE_VALUES);
+			  return TRUE;
+			}
+*/			UpdateUI(UPDATE_MENU | UPDATE_MAP | UPDATE_TRACTIONCIRCLE);
+            return TRUE;
+		  }		
 		  //	Nested loop for the following functions
-          case IDD_EDIT_COPY:
+          case ID_EDIT_COPY:
 		  {
 			//	Option is not working and causes crashes right now, so disable it
 			return TRUE;
@@ -1573,6 +1594,7 @@ LPDEVMODE GetLandscapeDevMode(HWND hWnd, wchar_t *pDevice, HANDLE hPrinter)
   const static DWORD UPDATE_DASHBOARD = 0x4;
   const static DWORD UPDATE_MENU = 0x8;
   const static DWORD UPDATE_VALUES = 0x10;
+  const static DWORD UPDATE_TRACTIONCIRCLE = 0x20;
 
   const static DWORD UPDATE_ALL = 0xffffffff;
   //	Pull in PlotPrefs array as well as lines vs. dots and Painting color scheme settings from Settings.txt file
@@ -1842,6 +1864,8 @@ private:
     GET_WINDOWPOS(IDC_DISPLAY);
     GET_WINDOWPOS(IDC_SUBDISPLAY);
     GET_WINDOWPOS(IDC_LAPS);
+    GET_WINDOWPOS(IDC_TRACTIONCIRCLEMAP);
+
   }
   void HandleCtlResize(SIZE sNewSize, int idc, bool fResizeX, bool fResizeY)
   {
@@ -1855,6 +1879,7 @@ private:
     HandleCtlResize(sNewSize, IDC_DISPLAY, true, true); // main display window
     HandleCtlResize(sNewSize, IDC_SUBDISPLAY, false, false); // sub display window
     HandleCtlResize(sNewSize, IDC_LAPS, false, true); // lap list
+    HandleCtlResize(sNewSize, IDC_TRACTIONCIRCLEMAP, false, false); // Traction circle window
   }
 	float fAverage(DATA_CHANNEL eChannel, const IDataChannel* pChannel, float flVal)
 	{
@@ -2162,11 +2187,14 @@ void UpdateValues()
 		}
     }
   }
-void UpdateDisplays()
+  void UpdateDisplays()
   {
     m_sfLapPainter.Refresh();
 	m_sfSubDisplay.Refresh();
-
+	if (m_sfLapOpts.bTractionCircle)
+	{
+		m_sfTractionDisplay.Refresh();
+	}
   }
   void CheckMenuHelper(HMENU hMainMenu, int id, bool fChecked)
   {
@@ -2182,6 +2210,7 @@ void UpdateDisplays()
     CheckMenuHelper(hSubMenu, ID_OPTIONS_KMH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_KMH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MPH, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MPH);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_MS, m_sfLapOpts.eUnitPreference == UNIT_PREFERENCE_MS);
+	CheckMenuHelper(hSubMenu, ID_OPTIONS_TRACTIONCIRCLE, m_sfLapOpts.bTractionCircle);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWBESTS, m_fShowBests);
     CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWDRIVERBESTS, m_fShowDriverBests);
 	CheckMenuHelper(hSubMenu, ID_OPTIONS_SHOWREFERENCELAP, m_fShowReferenceLap);
@@ -2276,6 +2305,8 @@ void UpdateDisplays()
       return false;
 	case SUPPLIERID_SECTORDISPLAY:
 		return true;	//	Allow the Set Split Sectors to be highlight source
+	case SUPPLIERID_TRACTIONCIRCLEDISPLAY:
+		return false;	//	main display is always the driver of highlight data
     default:
       DASSERT(FALSE);
       return false;
@@ -2387,6 +2418,10 @@ void UpdateDisplays()
       case LAPDISPLAYSTYLE_MAP: return LAPDISPLAYSTYLE_PLOT;
       default: return LAPDISPLAYSTYLE_MAP;
       }
+	case SUPPLIERID_TRACTIONCIRCLEDISPLAY:
+	  {
+		return LAPDISPLAYSTYLE_TRACTIONCIRCLE;
+	  }
 	case SUPPLIERID_SECTORDISPLAY:
 	  {
 		return LAPDISPLAYSTYLE_MAP;
@@ -2740,6 +2775,7 @@ private:
 
   CLapPainter m_sfLapPainter;
   CLapPainter m_sfSubDisplay;
+  CLapPainter m_sfTractionDisplay;
 
   // lap display style data
   map<const CExtendedLap*,int> m_mapLapHighlightTimes; // stores the highlight times (in milliseconds since phone app start) for each lap.  Set from ILapSupplier calls
@@ -2747,6 +2783,7 @@ private:
   LAPDISPLAYSTYLE m_eLapDisplayStyle;
   DATA_CHANNEL m_eXChannel;
 //  vector<DATA_CHANNEL> m_lstYChannels;
+  bool m_fShowTractionCircle;
   bool m_fShowBests;
   bool m_fShowDriverBests;
   bool m_fShowReferenceLap;

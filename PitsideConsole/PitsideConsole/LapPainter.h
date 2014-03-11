@@ -28,6 +28,7 @@ enum SUPPLIERID
   SUPPLIERID_MAINDISPLAY,
   SUPPLIERID_SUBDISPLAY,
   SUPPLIERID_SECTORDISPLAY,
+  SUPPLIERID_TRACTIONCIRCLEDISPLAY,	//	Draw the traction 
 };
 
 enum LAPDISPLAYSTYLE
@@ -36,8 +37,8 @@ enum LAPDISPLAYSTYLE
   LAPDISPLAYSTYLE_PLOT,
   LAPDISPLAYSTYLE_NOLAPS, // what we display if there are no laps selected
   LAPDISPLAYSTYLE_RECEPTION, // display a map of wireless reception data
-
   LAPDISPLAYSTYLE_COUNT,
+  LAPDISPLAYSTYLE_TRACTIONCIRCLE,	//	Draw the traction 
 };
 // LapSupplier interface - needed so that the lap painter knows what to paint
 interface ILapSupplier
@@ -75,14 +76,16 @@ public:
 
   // paints all the laps supplied by our ILapSupplier
   virtual void OGL_Paint() override;
-  void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map	Made puclic by KDJ
+  void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map	Made public by KDJ
+  void DrawTractionCircle(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);	//	Made public by KDJ
   double CLapPainter::PolynomialFilter(double flValue, double fTransAValue, double fTransBValue, double fTransCValue);
   //void SetHighlighter(ILapHighlighter* pHighlighter);
   //ILapHighlighter* GetHighlighter() {return m_pHighlighter;}
 private:
-  void DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
+  void DrawGeneralGraph(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);	
 //  void DrawLapLines(const LAPSUPPLIEROPTIONS& sfLapOpts); // draws laps as a map	Made public by KDJ
   void DrawSelectLapsPrompt() const;
+  void DrawSelectLapsPromptShort() const;
   void DrawReceptionMap(const LAPSUPPLIEROPTIONS& sfLapOpts) const;
   void MakeColor(const CExtendedLap* pLap,  bool RefLapFlag, float* pR, float* pG, float*pB); 
   void LineColor();
