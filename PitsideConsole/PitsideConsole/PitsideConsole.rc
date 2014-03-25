@@ -13,7 +13,9 @@ MENU IDM_OPTIONS
 BEGIN
     CONTROL         "", IDC_LAPS, WC_LISTVIEW, WS_TABSTOP | WS_BORDER | LVS_ALIGNLEFT | LVS_REPORT | LVS_SHOWSELALWAYS, 0,150,150,200
     LTEXT           "",IDC_DISPLAY,155,63,590,282
-    LTEXT           "",IDC_SUBDISPLAY,520,0,200,63
+//    LTEXT           "",IDC_SUBDISPLAY,520,0,150,63
+    LTEXT           "",IDC_SUBDISPLAY,520,0,87,63
+    LTEXT           "",IDC_TRACTIONCIRCLEMAP,610,0,63,63
     AUTORADIOBUTTON "Map",IDC_DISPLAYTYPE_LINE,155,0,30,12
     AUTORADIOBUTTON "Data Plot",IDC_DISPLAYTYPE_PLOT,185,0,45,12
     //AUTORADIOBUTTON "Reception",IDC_DISPLAYTYPE_RECEPTION,230,0,50,12
@@ -63,6 +65,15 @@ BEGIN
     LTEXT           "Pitside may hang for up to 60s on next message send\nif previous attempt failed or was aborted",IDC_LBLMESSAGE2,5,47,195,24
     PUSHBUTTON      "OK", IDOK, 5,67,95,18
     PUSHBUTTON      "Cancel", IDCANCEL, 100,67,95,18
+END
+
+//	Dialog box for showing the Traction Circle display
+IDD_TRACTIONCIRCLE DIALOG 485,0,63,63
+STYLE DS_MODALFRAME | DS_SETFOREGROUND | WS_POPUP | WS_THICKFRAME // | WS_SIZEBOX //| WS_SYSMENU
+CAPTION ""
+FONT 10, "MS Shell Dlg"
+BEGIN
+    LTEXT           "",IDC_TRACTIONCIRCLEMAP2,0,0,63,63
 END
 
 //	Dialog box for setting sector split points
@@ -188,7 +199,7 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Pitside Console"
 FONT 8, "MS Shell Dlg"
 BEGIN
-	CTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0027\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
+	CTEXT			"Piside Console for Wifilapper\n\nVersion 2.003.0029\n\nThis is an Open Source project. If you want to contribute\n\n",IDC_LBLMESSAGE5,5,5,245,40
 	CTEXT			"https://sites.google.com/site/wifilapper",IDC_LBLMESSAGE6,5,60,245,20
     PUSHBUTTON      "OK", IDOK, 5,100,240,24
 END
@@ -445,7 +456,7 @@ POPUP "&File"
     END
 POPUP "&Edit"
     BEGIN
-        MENUITEM "Copy", IDD_EDIT_COPY
+        MENUITEM "Copy", ID_EDIT_COPY
     END
 POPUP "&Options"
     BEGIN
@@ -454,6 +465,8 @@ POPUP "&Options"
         MENUITEM "m/s", ID_OPTIONS_MS
 		MENUITEM SEPARATOR
 		MENUITEM "Set Split Points", ID_OPTIONS_SETSPLITS
+		MENUITEM SEPARATOR
+		MENUITEM "Show Traction Circle", ID_OPTIONS_TRACTIONCIRCLE
 		MENUITEM SEPARATOR
         MENUITEM "Show all-time bests",ID_OPTIONS_SHOWBESTS
         MENUITEM "Show driver bests",ID_OPTIONS_SHOWDRIVERBESTS

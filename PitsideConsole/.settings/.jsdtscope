@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="Debug"/>
+	<classpathentry excluding="dygraphs/|dygraphs/strftime/|dygraphs/rgbcolor/|dygraphs/plugins/" kind="src" path="PitsideConsole"/>
+	<classpathentry excluding="strftime/|rgbcolor/|plugins/" kind="src" path="PitsideConsole/dygraphs"/>
+	<classpathentry kind="src" path="PitsideConsole/dygraphs/plugins"/>
+	<classpathentry kind="src" path="PitsideConsole/dygraphs/rgbcolor"/>
+	<classpathentry kind="src" path="PitsideConsole/dygraphs/strftime"/>
+	<classpathentry kind="src" path="Release"/>
+	<classpathentry kind="con" path="org.eclipse.wst.jsdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path=""/>
+</classpath>

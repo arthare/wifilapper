@@ -240,8 +240,8 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
   case DATA_CHANNEL_Y: lpszDataName = L"Latitude"; break;
   case DATA_CHANNEL_DISTANCE: lpszDataName = L"Distance"; break;
   case DATA_CHANNEL_TIME: lpszDataName = L"Time"; break;
-  case DATA_CHANNEL_ELAPSEDTIME: lpszDataName = L"Lap Time"; break;
-  case DATA_CHANNEL_LAPTIME_SUMMARY: lpszDataName = L"Laptime Summary"; break;
+  case DATA_CHANNEL_ELAPSEDTIME: lpszDataName = L"Elapsed Time"; break;
+  case DATA_CHANNEL_LAPTIME_SUMMARY: lpszDataName = L"Lap Time"; break;
   case DATA_CHANNEL_VELOCITY: lpszDataName = L"Velocity"; break;
   case DATA_CHANNEL_TIMESLIP: lpszDataName = L"Time-slip"; break;
   case DATA_CHANNEL_X_ACCEL: lpszDataName = L"X accel"; break;

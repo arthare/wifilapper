@@ -76,7 +76,7 @@ enum LAPSORTSTYLE
 struct LAPSUPPLIEROPTIONS
 {
 public:
-  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(false),fDrawGuides(true),fDrawLines(true),fColorScheme(false),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0)
+  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(false),fDrawGuides(true),fDrawLines(true),fColorScheme(false),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0),bTractionCircle(false)
   {
   }
   UNIT_PREFERENCE eUnitPreference;
@@ -94,6 +94,7 @@ public:
   TRANSFORMATION m_Tranformations[100];	//	Pull in all Transformations data
   HWND hWndLap[50];
   LAPSORTSTYLE eSortPreference;
+  bool bTractionCircle;		//	Whether or not to display the Traction Circle display
 };
 
 
