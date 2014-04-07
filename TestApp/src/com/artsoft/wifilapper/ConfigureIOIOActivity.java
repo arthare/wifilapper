@@ -108,12 +108,19 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		    	CharSequence c = (CharSequence)spnPin.getItemAtPosition(x);
 		    	if(("" + iSelectedPin).equals(c))
 		    	{
-		    		spnPin.setSelection(x);
+		    		spnPin.setSelection(x,true);
 		    		break;
 		    	}
 		    }
 		}
+		ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+	            this, R.array.ioiocustomnames, android.R.layout.simple_spinner_item);
+		TextView txtCurrentFilter2 = (TextView)findViewById(R.id.lblCurrentFilter2);
+		int arrayIndex = (m_iLastCustomType==0) ? 0 : m_iLastCustomType - LapAccumulator.DataChannel.CHANNEL_IOIOCUSTOM_START;
 		
+		txtCurrentFilter2.setText("'" + adapter.getItem(arrayIndex) + "'");
+		txtCurrentFilter2.invalidate();
+	
 	    SeekBar seek = (SeekBar)findViewById(R.id.seekSampleRate);
 		CheckBox chk = (CheckBox)findViewById(R.id.chkIOIO);
 		CheckBox chkClicker = (CheckBox)findViewById(R.id.chkClicker);
@@ -180,7 +187,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 	    			long lPinNumber = Long.parseLong(objSelected.toString());
 	    			if(lPinNumber == pin.iPin)
 	    			{
-	    				spnPin.setSelection(x);
+	    				spnPin.setSelection(x,true);
 	    				break;
 	    			}
 	    		}
@@ -196,8 +203,15 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			
 	    	TextView txtCurrentFilter = (TextView)findViewById(R.id.lblCurrentFilter);
 			txtCurrentFilter.setText("Filter: " + PinParams.BuildDesc(pin.iFilterType, pin.dParam1, pin.dParam2, pin.dParam3, true));
-			
 			txtCurrentFilter.invalidate();
+
+			ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+		            this, R.array.ioiocustomnames, android.R.layout.simple_spinner_item);
+			TextView txtCurrentFilter2 = (TextView)findViewById(R.id.lblCurrentFilter2);
+			int arrayIndex = (m_iLastCustomType==0) ? 0 : m_iLastCustomType - LapAccumulator.DataChannel.CHANNEL_IOIOCUSTOM_START;
+			
+			txtCurrentFilter2.setText("'" + adapter.getItem(arrayIndex) + "'");
+			txtCurrentFilter2.invalidate();
 	    }
 	}
 	// builds a view to put in the list of pins
@@ -222,6 +236,14 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		TextView txtFilter = new TextView(this);
 		txtFilter.setText(PinParams.BuildDesc(pin.iFilterType,pin.dParam1,pin.dParam2, pin.dParam3, true));
 		
+		ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+	            this, R.array.ioiocustomnames, android.R.layout.simple_spinner_item);
+		int arrayIndex = (pin.iCustomType==0) ? 0 : pin.iCustomType - LapAccumulator.DataChannel.CHANNEL_IOIOCUSTOM_START;
+
+		TextView txtCustomName = new TextView(this);
+		txtCustomName.setText(adapter.getItem(arrayIndex));
+		txtCustomName.setLayoutParams(layout);
+
 		Button btn = new Button(this);
 		btn.setText("Delete");
 		btn.setId(pin.iPin);
@@ -233,6 +255,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		tr.addView(txtName);
 		tr.addView(txtPin);
 		tr.addView(txtRate);
+		tr.addView(txtCustomName);
 		tr.addView(txtFilter);
 		tr.addView(btn);
 		return tr;
