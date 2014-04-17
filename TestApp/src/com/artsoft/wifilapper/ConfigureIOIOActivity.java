@@ -311,7 +311,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		
 		boolean fIOIOEnabled = chkIOIO.isChecked();
 		
-		edit = edit.putBoolean(Prefs.PREF_USEACCEL_BOOLEAN, fIOIOEnabled);
+		edit = edit.putBoolean(Prefs.PREF_USEIOIO_BOOLEAN, fIOIOEnabled);
 
 		edit = Prefs.SavePins(edit,lstAnalPins,lstPulsePins);
 		
@@ -338,8 +338,8 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			double dSeek = (double)seek.getProgress() / (double)seek.getMax();
 			
 			
-			// we need seek(0) = 100, seek(0.5) = 1000, and seek(1.0) = 10000.  This does the trick
-			double dPeriod = 10000*Math.pow(Math.E, -4.605*dSeek);
+			// we need seek(0) = 10000, and seek(1.0) = 50.  This does the trick
+			double dPeriod = 10000*Math.pow(10, -2.30103*dSeek);
 			int iPin = Integer.parseInt(spnPin.getSelectedItem().toString());
 			
 			boolean fAlreadyPresent = false;
@@ -354,7 +354,7 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 			{
 				if(fPermitted)
 				{
-					IOIOManager.PinParams pin = new IOIOManager.PinParams(iPin,(int)dPeriod, m_iLastFilterType, m_dLastParam1, m_dLastParam2, m_dLastParam3, m_iLastCustomType);
+					IOIOManager.PinParams pin = new IOIOManager.PinParams(iPin,(int)Math.round(dPeriod), m_iLastFilterType, m_dLastParam1, m_dLastParam2, m_dLastParam3, m_iLastCustomType);
 					if(rg.getCheckedRadioButtonId() == R.id.rbAnalog)
 					{
 						lstAnalPins.add(pin);
@@ -418,8 +418,8 @@ public class ConfigureIOIOActivity extends Activity implements OnCheckedChangeLi
 		TextView txtRate = (TextView)findViewById(R.id.txtSampleRate);
 		double dSeek = (double)arg0.getProgress() / (double)arg0.getMax();
 		
-		// we need seek(0) = 100, seek(0.5) = 1000, and seek(1.0) = 10000.  This does the trick
-		double dPeriod = 10000*Math.pow(Math.E, -4.605*dSeek); // how many milliseconds between samples
+		// we need seek(0) = 10000, and seek(1.0) = 50.  This does the trick
+		double dPeriod = 10000*Math.pow(10, -2.30103*dSeek);
 		double dRate = 1000 / dPeriod;
 		txtRate.setText("Sample Rate (" + Utility.FormatFloat((float)dRate, 1) + "hz):");
 	}
