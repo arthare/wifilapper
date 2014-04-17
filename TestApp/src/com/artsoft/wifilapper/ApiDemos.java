@@ -142,6 +142,18 @@ implements
 	
 	private boolean m_fRecordReception; // whether we're currently recording reception.  This gets set when the wifi class tells us it is connected/disconnected
 	
+	// Acceleration sensor data
+	private float xAccelCum=0;  // moving average of accel data to smooth
+	private float yAccelCum=0;  // and reduce database sizs
+	private float zAccelCum=0;
+	
+	private int  sampleTime=0;	// saved timestamp for submitted entry
+	private int accelSample=-1; // counts the # of samples comprising an entry
+	
+	private float m_fGravityX;  // very long-term trend in accel vector 
+	private float m_fGravityY;  // which is used as 'gravity' to high-pass
+	private float m_fGravityZ;  // filter the accel data
+		
 	// data about this race
 	private String m_strRaceName;
 	private boolean m_fTestMode;
@@ -195,6 +207,8 @@ implements
     	String strSSID = i.getStringExtra(Prefs.IT_SSID_STRING);
     	String strBTGPS = i.getStringExtra(Prefs.IT_BTGPS_STRING);
     	String strOBD2 = i.getStringExtra(Prefs.IT_BTOBD2_STRING);
+    	
+    	accelSample = -1;  // special initial value--to init the gravity vector
     	
     	final boolean fUseAccel = i.getBooleanExtra(Prefs.IT_USEACCEL_BOOLEAN, Prefs.DEFAULT_USEACCEL);
     	m_strRaceName = i.getStringExtra(Prefs.IT_RACENAME_STRING);
@@ -792,9 +806,39 @@ implements
 			
 			if(m_XAccel != null && m_YAccel != null && m_ZAccel != null)
 			{
-				m_XAccel.AddData(event.values[1] / 9.81f,iTimeSinceAppStart);
-				m_YAccel.AddData(event.values[2] / 9.81f,iTimeSinceAppStart);
-				m_ZAccel.AddData(event.values[0] / 9.81f,iTimeSinceAppStart);
+				// Accumulate a moving average
+				xAccelCum += event.values[1];
+				yAccelCum += event.values[2];
+				zAccelCum += event.values[0];
+				
+				// Special loop value, to initialize the gravity vector
+				if( accelSample == -1 ) {
+					m_fGravityX = event.values[1];
+					m_fGravityY = event.values[2];
+					m_fGravityZ = event.values[0];
+				}
+				
+				// Store the sample as the middle timestamp, in the group of 5
+				if ( accelSample==2 )
+					sampleTime = iTimeSinceAppStart;
+				
+				// On the 5th sample, update the gravity vector and store average
+				if ( accelSample==4 ) {
+					m_fGravityX = 0.995f*m_fGravityX + 0.005f*event.values[1];
+					m_fGravityY = 0.995f*m_fGravityY + 0.005f*event.values[2];
+					m_fGravityZ = 0.995f*m_fGravityZ + 0.005f*event.values[0];
+
+					m_XAccel.AddData((xAccelCum/5.0f-m_fGravityX)/9.81f,sampleTime);
+					m_YAccel.AddData((yAccelCum/5.0f-m_fGravityY)/9.81f,sampleTime);
+					m_ZAccel.AddData((zAccelCum/5.0f-m_fGravityZ)/9.81f,sampleTime);
+
+					// reset for next loop
+					accelSample = 0;
+					xAccelCum = 0;
+					yAccelCum = 0;
+					zAccelCum = 0;
+				}
+				else accelSample++;
 			}
 		}
 	}
