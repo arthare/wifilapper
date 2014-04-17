@@ -255,7 +255,11 @@ public class IOIOManager
 					// everything is loaded, so let's continue
 					m_pStateMan.SetState(IOIOManager.class, STATE.ON, "IOIO Loaded");
 					
-					final int MS_PER_LOOP = 100;
+					final int MS_PER_LOOP = 50; // 20ms loop time
+					
+					// save previous values, to see if there's a significant change
+					float lastValue[] = new float[analIn.length];
+					float lastFreq[] = new float[analIn.length];
 					
 					int rgSpinsUntilQuery[] = new int[analIn.length];
 					int rgResetSpinsUntilQuery[] = new int[analIn.length];
@@ -263,24 +267,30 @@ public class IOIOManager
 					{
 						if(m_rgPulsePins[x] != null)
 						{
-							rgResetSpinsUntilQuery[x] = m_rgPulsePins[x].iPeriod / MS_PER_LOOP;
+							rgResetSpinsUntilQuery[x] = m_rgPulsePins[x].iPeriod / MS_PER_LOOP - 1;
+							lastFreq[x] = 99999f; // force the initial update
 						}
 					}
 					for(int x = 0;x < m_rgAnalPins.length; x++)
 					{
 						if(m_rgAnalPins[x] != null)
 						{
-							rgResetSpinsUntilQuery[x] = m_rgAnalPins[x].iPeriod / MS_PER_LOOP;
+							rgResetSpinsUntilQuery[x] = m_rgAnalPins[x].iPeriod / MS_PER_LOOP - 1;
+							lastValue[x] = 99999; // force the initial update
 						}
 					}
 					
-					// the loop runs at 10hz.
+					// the loop runs at 20hz.
 					// if rgSpinsUntilQuery[x] == 0, then we query the pin and reset the count.  Else, we decrement the counter
-					// So a 0.1hz pin will always get reset to 100, 1hz gets 10, and 10hz gets 1
+					// So a 0.1hz pin will always get reset to 199, 20hz gets 0
 					
 					boolean fLastButton = buttonPin != null ? buttonPin.read() : false;
+					long startTime;
+					long sleepTime= 0;
+					float tolerance = 0.005f;  // differences less than this are not submitted
 					while(m_fContinue)
 					{
+						startTime = System.currentTimeMillis();
 						for(int x = 0; x < analIn.length; x++)
 						{
 							if(analIn[x] != null)
@@ -288,8 +298,14 @@ public class IOIOManager
 								if(rgSpinsUntilQuery[x] == 0)
 								{
 									float flValue = analIn[x].getVoltage();
-									flValue = PinParams.DoFilter(m_rgAnalPins[x].iFilterType, m_rgAnalPins[x].dParam1, m_rgAnalPins[x].dParam2, m_rgAnalPins[x].dParam3, flValue);
-									m_listener.NotifyIOIOValue(x, m_rgAnalPins[x].iCustomType, flValue);
+									// Only store significant changes
+									if( Math.abs(flValue - lastValue[x]) > tolerance ) {
+										lastValue[x] = flValue;
+										flValue = PinParams.DoFilter(m_rgAnalPins[x].iFilterType, m_rgAnalPins[x].dParam1, m_rgAnalPins[x].dParam2, m_rgAnalPins[x].dParam3, flValue);
+										m_listener.NotifyIOIOValue(x, m_rgAnalPins[x].iCustomType, flValue);
+									} else {
+										// don't submit this value--too close to last one
+									}
 									rgSpinsUntilQuery[x] = rgResetSpinsUntilQuery[x];
 								}
 								else
@@ -302,8 +318,13 @@ public class IOIOManager
 								if(rgSpinsUntilQuery[x] == 0)
 								{
 									float flValue = pulseIn[x].getFrequency();
-									flValue = PinParams.DoFilter(m_rgPulsePins[x].iFilterType, m_rgPulsePins[x].dParam1, m_rgPulsePins[x].dParam2, m_rgPulsePins[x].dParam3, flValue);
-									m_listener.NotifyIOIOValue(x, m_rgPulsePins[x].iCustomType, flValue);
+									if( Math.abs(flValue - lastFreq[x]) > tolerance ) {
+									lastFreq[x] = flValue;
+										flValue = PinParams.DoFilter(m_rgPulsePins[x].iFilterType, m_rgPulsePins[x].dParam1, m_rgPulsePins[x].dParam2, m_rgPulsePins[x].dParam3, flValue);
+										m_listener.NotifyIOIOValue(x, m_rgPulsePins[x].iCustomType, flValue);
+									} else {
+										// don't submit this value--too close to last one
+									}
 									rgSpinsUntilQuery[x] = rgResetSpinsUntilQuery[x];
 								}
 								else
@@ -322,8 +343,10 @@ public class IOIOManager
 							}
 							fLastButton = fValue;
 						}
-						
-						Thread.sleep(MS_PER_LOOP); // max 10hz sampling
+						// This ensures the loop is triggered on regular intervals,
+						// independent of execution time of this loop
+						sleepTime = MS_PER_LOOP - startTime % MS_PER_LOOP;
+						Thread.sleep(sleepTime);
 					}
 				}
 				catch(ConnectionLostException e)
