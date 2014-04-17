@@ -49,19 +49,15 @@ public class ConfigureAccelerometerActivity extends Activity implements SensorEv
 	STATE m_eState = STATE.STATE_GRAVITY;
 	long tmStart;
 	
-	TextView lblInstructions;
-	String detectString = new String("Detecting gravity... do not move the phone");
-	CheckBox chkEnable;
-
-	SensorManager sensorMan;
-	Sensor accel;
+	//Button btnRedo;
+	//TextView lblInstructions;
 	
-	// Candidate gravity vector
-	float flXcand, flYcand, flZcand;
-		
+	float flXSum;
+	float flYSum;
+	float flZSum;
+	int cSamples;
+	
 	Timer timer;
-	
-	public static boolean debugMode = false;
 	
 	Handler m_handler;
 	
@@ -71,20 +67,11 @@ public class ConfigureAccelerometerActivity extends Activity implements SensorEv
 		super.onCreate(extras);
 		setContentView(R.layout.configureaccel);
 		
-
-		lblInstructions = (TextView)findViewById(R.id.lblInstructions);
-		lblInstructions.setText(detectString);
-	
+		//btnRedo = (Button)findViewById(R.id.btnRedo);
+		//lblInstructions = (TextView)findViewById(R.id.lblInstructions);
 		m_handler = new Handler(this);
-
-		sensorMan = (SensorManager)getSystemService(SENSOR_SERVICE);
-		accel = sensorMan.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
-		flXcand = flYcand = flZcand = 0;
 		
 		//btnRedo.setOnClickListener(this);
-		chkEnable = (CheckBox)findViewById(R.id.chkUseAccel);
-		chkEnable.setOnClickListener(this);
 		
 		timer = new Timer();
 	}
@@ -93,24 +80,22 @@ public class ConfigureAccelerometerActivity extends Activity implements SensorEv
 	public void onPause()
 	{
 		super.onPause();
-		sensorMan.unregisterListener(this);
-
 		
 		CheckBox chk = (CheckBox)findViewById(R.id.chkUseAccel);
 		SharedPreferences settings = this.getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
 		SharedPreferences.Editor edit = settings.edit();
 		edit.putBoolean(Prefs.PREF_USEACCEL_BOOLEAN, chk.isChecked());
 		
-		if(m_eState == STATE.STATE_GRAVITY)
+		if(m_eState == STATE.STATE_GRAVITY || cSamples <= 0)
 		{
 			// don't save anything - they left before it was configured
 		}
 		else
 		{
 			// save the gravity vector and anything they've entered for rotation.
-			edit.putFloat(Prefs.PREF_ACCEL_GRAV_X, flXcand);
-			edit.putFloat(Prefs.PREF_ACCEL_GRAV_Y, flYcand);
-			edit.putFloat(Prefs.PREF_ACCEL_GRAV_Z, flZcand);
+			edit.putFloat(Prefs.PREF_ACCEL_GRAV_X, flXSum / cSamples);
+			edit.putFloat(Prefs.PREF_ACCEL_GRAV_Y, flYSum / cSamples);
+			edit.putFloat(Prefs.PREF_ACCEL_GRAV_Z, flZSum / cSamples);
 		}
 		edit.commit();
 	}
@@ -134,9 +119,13 @@ public class ConfigureAccelerometerActivity extends Activity implements SensorEv
 		case STATE_GRAVITY:
 			// we're moving to a state where we're trying to detect gravity.  We need to wait 1 second while we find out where down is
 			
+			//lblInstructions.setText("Detecting gravity... do not move the phone");
+			
+			SensorManager sensorMan = (SensorManager)getSystemService(SENSOR_SERVICE);
+			Sensor accel = sensorMan.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 	    	if(accel != null)
 	    	{
-	    		sensorMan.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME);
+	    		sensorMan.registerListener(this, accel, SensorManager.SENSOR_DELAY_FASTEST);
 	    	}
 	    	
 			timer.cancel();
@@ -145,9 +134,7 @@ public class ConfigureAccelerometerActivity extends Activity implements SensorEv
 			
 			break;
 		case STATE_ROTATE:
-			lblInstructions.setText("Gravity found.  If the phone was not in its final mount in the car, you can run this test again by toggling the checkbox.");
-			sensorMan.unregisterListener(this, accel);
-
+			//lblInstructions.setText("Gravity found.  If the phone was not in its final mount in the car, you can run this test again then.");
 			break;
 		}
 		m_eState = eState;
@@ -182,65 +169,54 @@ public class ConfigureAccelerometerActivity extends Activity implements SensorEv
 		return false;
 	}
 	
+	SensorEvent lastEvent;
 	@Override
 	public void onSensorChanged(SensorEvent event) 
 	{
-
-		if( event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE )
-			return;
-
-		switch (event.sensor.getType() ) {
-		case Sensor.TYPE_ACCELEROMETER:
-
+		if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && m_eState == STATE.STATE_GRAVITY)
+		{
 			// check to see if phone has shaken.  If it has, delay the timer
-			float z = event.values[0];
-			float x = event.values[1];
-			float y = event.values[2];
-			float flDX = x - flXcand;
-			float flDY = y - flYcand;
-			float flDZ = z - flZcand;
-
-			float flDifference = flDX*flDX + flDY*flDY + flDZ*flDZ;
-			if( debugMode )
+			float x = event.values[0];
+			float y = event.values[1];
+			float z = event.values[2];
+			if(lastEvent != null)
 			{
-				float dist = x*x+y*y+z*z;
-				CheckBox chk = (CheckBox)findViewById(R.id.chkUseAccel);
-				chk.setText(
-						Float.toString(flXcand) + "     " +
-								Float.toString(flYcand) + "     " +
-								Float.toString(flZcand) + "   " +  Float.toString(dist) + 
-								"\nmotion " + Float.toString(flDifference));
-			}
-			if( flDifference > 0.1 )
-			{
-				lblInstructions.setText(detectString + "  !! Moving !!");
-				m_handler.sendEmptyMessage(RESTART);
+				float lastX = lastEvent.values[0];
+				float lastY = lastEvent.values[1];
+				float lastZ = lastEvent.values[2];
+				float flDX = x - lastX;
+				float flDY = y - lastY;
+				float flDZ = z - lastZ;
+				
+				float flMovement = (float)Math.sqrt(flDX*flDX + flDY*flDY + flDZ*flDZ);
+				if(flMovement > 1.0)
+				{
+					m_handler.sendEmptyMessage(RESTART);
+				}
+				else
+				{
+					flXSum += x;
+					flYSum += y;
+					flZSum += z;
+					cSamples++;
+				}
 			}
 			else
 			{
-				lblInstructions.setText(detectString);
+				flXSum = flYSum = flZSum = cSamples = 0;
+				m_handler.sendEmptyMessage(RESTART);
 			}
-
-			// Keep a moving average of the gravity vector
-			flXcand = 0.95f*flXcand + 0.05f*x;
-			flYcand = 0.95f*flYcand + 0.05f*y;
-			flZcand = 0.95f*flZcand + 0.05f*z;
-			break;
 		}
+		lastEvent = event;
 	}
 
 	@Override
 	public void onClick(View arg0) 
 	{
-		if(arg0.getId() == R.id.chkUseAccel) 
+		/*if(arg0.getId() == R.id.btnRedo)
 		{
-			if( chkEnable.isChecked() )
-			{
-				flXcand = flYcand = flZcand = 0;
-				m_handler.sendEmptyMessage(RESTART);
-			}
-			else
-				sensorMan.unregisterListener(this, accel);
-		}
+			flXSum = flYSum = flZSum = cSamples = 0;
+			m_handler.sendEmptyMessage(RESTART);
+		}*/
 	}
 }
