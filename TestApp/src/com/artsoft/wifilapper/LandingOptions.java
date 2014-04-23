@@ -138,7 +138,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.simplelistitem_blacktext, lstStrings);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spn.setAdapter(adapter);
-        if(ixDefault >= 0) spn.setSelection(ixDefault);
+        if(ixDefault >= 0) spn.setSelection(ixDefault,true);
         spn.invalidate();
     }
     protected void SetupUnitSpinner(Spinner spn, Prefs.UNIT_SYSTEM eDefault)
@@ -154,7 +154,7 @@ public class LandingOptions extends LandingRaceBase implements OnCheckedChangeLi
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.simplelistitem_blacktext, lstStrings);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spn.setAdapter(adapter);
-        if(ixDefault >= 0) spn.setSelection(ixDefault);
+        if(ixDefault >= 0) spn.setSelection(ixDefault,true);
         spn.invalidate();
     }
 
