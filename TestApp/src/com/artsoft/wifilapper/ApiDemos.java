@@ -131,7 +131,14 @@ implements
 	private LapAccumulator m_best = null;
 	
 	private LapAccumulator.LapAccumulatorParams m_lapParams = null;
-	
+
+	private boolean fUseAccelCorrection;
+	private float flPitch;
+	private float flRoll;
+	private float flSensorOffset[] = new float[3];
+	private int iFilterType;
+	private enum FILTER_TYPE {NONE,NOISE,HIGH_PASS,BOTH};
+		
 	Point2D m_ptCurrent; // the most recent point to come in from the location manager
 	public float m_tmCurrent; // the time (in seconds) of the m_ptCurrent
 	Point2D m_ptLast; // the point that came before that one
@@ -148,7 +155,8 @@ implements
 	private float zAccelCum=0;
 	
 	private int  sampleTime=0;	// saved timestamp for submitted entry
-	private int accelSample=-1; // counts the # of samples comprising an entry
+	private int accelSamples=-1; // counts the # of samples comprising an entry
+	private int iLastAccelSubmission;
 	
 	private float m_fGravityX;  // very long-term trend in accel vector 
 	private float m_fGravityY;  // which is used as 'gravity' to high-pass
@@ -160,6 +168,8 @@ implements
 	private long m_lRaceId;
 	private String m_strSpeedoStyle;
 	private Prefs.UNIT_SYSTEM m_eUnitSystem;
+	
+	private boolean bPortraitDisplay;	// holds the screen orientation, used for re-mapping accelerometer
 	
 	private long rgLastGPSGaps[] = new long[10];
 	private int iLastGPSGap = 0;
@@ -208,7 +218,17 @@ implements
     	String strBTGPS = i.getStringExtra(Prefs.IT_BTGPS_STRING);
     	String strOBD2 = i.getStringExtra(Prefs.IT_BTOBD2_STRING);
     	
-    	accelSample = -1;  // special initial value--to init the gravity vector
+    	accelSamples = -1;  // special initial value--to init the gravity vector
+    	iLastAccelSubmission = 0;
+    	
+    	fUseAccelCorrection =  i.getBooleanExtra(Prefs.IT_ACCEL_CORRECTION, Prefs.DEFAULT_ACCEL_CORRECTION);
+    	flPitch = i.getFloatExtra(Prefs.IT_ACCEL_CORRECTION_PITCH, Prefs.DEFAULT_ACCEL_CORRECTION_PITCH);
+    	flRoll  = i.getFloatExtra(Prefs.IT_ACCEL_CORRECTION_ROLL, Prefs.DEFAULT_ACCEL_CORRECTION_ROLL);
+    	flSensorOffset[1]  = i.getFloatExtra(Prefs.IT_ACCEL_OFFSET_X, Prefs.DEFAULT_ACCEL_OFFSET_X);
+    	flSensorOffset[2]  = i.getFloatExtra(Prefs.IT_ACCEL_OFFSET_Y, Prefs.DEFAULT_ACCEL_OFFSET_Y);
+    	flSensorOffset[0]  = i.getFloatExtra(Prefs.IT_ACCEL_OFFSET_Z, Prefs.DEFAULT_ACCEL_OFFSET_Z);
+		iFilterType = i.getIntExtra(Prefs.IT_ACCEL_FILTER,Prefs.DEFAULT_ACCEL_FILTER);
+
     	
     	final boolean fUseAccel = i.getBooleanExtra(Prefs.IT_USEACCEL_BOOLEAN, Prefs.DEFAULT_USEACCEL);
     	m_strRaceName = i.getStringExtra(Prefs.IT_RACENAME_STRING);
@@ -247,6 +267,8 @@ implements
 		
     	m_eUnitSystem = Prefs.UNIT_SYSTEM.valueOf(strUnitSystem);
     	
+    	bPortraitDisplay = false; // default value, landscape
+    	
     	int idLapLoadMode = (int)i.getLongExtra(Prefs.IT_LAPLOADMODE_LONG,RESUME_MODE.REUSE_SPLITS.ordinal());
     	
     	if(idLapLoadMode == RESUME_MODE.REUSE_SPLITS.ordinal())
@@ -268,9 +290,9 @@ implements
     	
     	m_lapParams = (LapAccumulator.LapAccumulatorParams)i.getParcelableExtra(Prefs.IT_LAPPARAMS);
     	
-    	StartupTracking(fRequireWifi, rgSelectedAnalPins, rgSelectedPulsePins, iButtonPin, rgSelectedPIDs, strIP, strSSID, strBTGPS, strOBD2, fUseAccel, m_fTestMode, idLapLoadMode);
+    	StartupTracking(fRequireWifi, rgSelectedAnalPins, rgSelectedPulsePins, iButtonPin, rgSelectedPIDs, strIP, strSSID, strBTGPS, strOBD2, fUseAccel, fUseAccelCorrection, iFilterType, flPitch, flRoll, m_fTestMode, idLapLoadMode);
     }
-    public static Intent BuildStartIntent(boolean fRequireWifi, IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, boolean fPointToPoint, int iStartMode, float flStartParam, int iStopMode, float flStopParam, List<Integer> lstSelectedPIDs, Context ctxApp, String strIP, String strSSID, LapAccumulator.LapAccumulatorParams lapParams, String strRaceName, String strPrivacy, boolean fAckSMS, boolean fUseAccel, boolean fTestMode, long idRace, long idModeSelected, String strBTGPS, String strBTOBD2, String strSpeedoStyle, String strUnitSystem)
+    public static Intent BuildStartIntent(boolean fRequireWifi, IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, boolean fPointToPoint, int iStartMode, float flStartParam, int iStopMode, float flStopParam, List<Integer> lstSelectedPIDs, Context ctxApp, String strIP, String strSSID, LapAccumulator.LapAccumulatorParams lapParams, String strRaceName, String strPrivacy, boolean fAckSMS, boolean fUseAccel, boolean fUseAccelCorrection, int iFilterType, float flPitch, float flRoll, float[] flSensorOffset, boolean fTestMode, long idRace, long idModeSelected, String strBTGPS, String strBTOBD2, String strSpeedoStyle, String strUnitSystem)
     {
     	Intent myIntent = new Intent(ctxApp, ApiDemos.class);
     	myIntent.putExtra(Prefs.IT_REQUIRE_WIFI, fRequireWifi);
@@ -285,6 +307,15 @@ implements
 		myIntent.putExtra(Prefs.IT_SPEEDOSTYLE_STRING, strSpeedoStyle);
 		myIntent.putExtra(Prefs.IT_UNITS_STRING, strUnitSystem);
 		myIntent.putExtra(Prefs.IT_USEACCEL_BOOLEAN, fUseAccel);
+		myIntent.putExtra(Prefs.PREF_ACCEL_CORRECTION, fUseAccelCorrection);
+		myIntent.putExtra(Prefs.PREF_ACCEL_FILTER, iFilterType);
+		myIntent.putExtra(Prefs.PREF_ACCEL_CORRECTION_PITCH, flPitch);
+		myIntent.putExtra(Prefs.PREF_ACCEL_CORRECTION_ROLL, flRoll);
+		myIntent.putExtra(Prefs.PREF_ACCEL_OFFSET_X, flSensorOffset[1]);
+		myIntent.putExtra(Prefs.PREF_ACCEL_OFFSET_Y, flSensorOffset[2]);
+		myIntent.putExtra(Prefs.PREF_ACCEL_OFFSET_Z, flSensorOffset[0]);
+		
+
 		myIntent.putExtra(Prefs.IT_ACKSMS_BOOLEAN, fAckSMS);
 		myIntent.putExtra(Prefs.IT_PRIVACYPREFIX_STRING, strPrivacy);
 		myIntent.putExtra(Prefs.IT_IOIOBUTTONPIN, iButtonPin);
@@ -473,7 +504,7 @@ implements
     	super.onConfigurationChanged(con);
     }
     // only called once the user has done all their settings stuff
-    private void StartupTracking(boolean fRequireWifi, IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, int rgSelectedPIDs[], String strIP, String strSSID, String strBTGPS, String strBTOBD2, boolean fUseAccel, boolean fTestMode, int idLapLoadMode)
+    private void StartupTracking(boolean fRequireWifi, IOIOManager.PinParams rgAnalPins[], IOIOManager.PinParams rgPulsePins[], int iButtonPin, int rgSelectedPIDs[], String strIP, String strSSID, String strBTGPS, String strBTOBD2, boolean fUseAccel, boolean fUseAccelCorrection, int iFiltertype, float flPitch, float flRoll, boolean fTestMode, int idLapLoadMode)
     {
     	ApiDemos.State eEndState = ApiDemos.State.WAITING_FOR_GPS;
 
@@ -578,6 +609,8 @@ implements
 		    	if(accel != null)
 		    	{
 		    		sensorMan.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME);
+		    		                                                     // _fastest is 10ms, _game is 20ms, 
+		    		                                                     // _ui is 100ms, _normal is 200ms, on my phone
 		    	}
 	    	}
 	    }
@@ -806,39 +839,93 @@ implements
 			
 			if(m_XAccel != null && m_YAccel != null && m_ZAccel != null)
 			{
-				// Accumulate a moving average
-				xAccelCum += event.values[1];
-				yAccelCum += event.values[2];
-				zAccelCum += event.values[0];
+				float[] flOffset = new float[3];	// acceleration data, shifted to center on "0"
+				float[] flCorrected = new float[3]; // acceleration data, after shifting and rotating
+
+				// Correct for offsets in the sensors
+				for( int i=0; i<3; i++ )
+					flOffset[i] = event.values[i] + flSensorOffset[i];
 				
-				// Special loop value, to initialize the gravity vector
-				if( accelSample == -1 ) {
-					m_fGravityX = event.values[1];
-					m_fGravityY = event.values[2];
-					m_fGravityZ = event.values[0];
+				// First, correct for the angle of the car mount, if requested
+				if( fUseAccelCorrection ) {
+					float flSinTheta, flCosTheta;
+					flSinTheta = (float) Math.sin(Math.toRadians(-flRoll));
+					flCosTheta = (float) Math.cos(Math.toRadians(-flRoll));
+					
+					flCorrected[0] = flOffset[0] * flCosTheta - flOffset[2] * flSinTheta;
+					flCorrected[2] = flOffset[0] * flSinTheta + flOffset[2] * flCosTheta;
+					
+					flSinTheta = (float) Math.sin(Math.toRadians(-flPitch));
+					flCosTheta = (float) Math.cos(Math.toRadians(-flPitch));
+					
+					flCorrected[1] = flOffset[1] * flCosTheta - flCorrected[2] * flSinTheta;
+					flCorrected[2] = flOffset[1] * flSinTheta + flCorrected[2] * flCosTheta;
 				}
-				
-				// Store the sample as the middle timestamp, in the group of 5
-				if ( accelSample==2 )
-					sampleTime = iTimeSinceAppStart;
-				
-				// On the 5th sample, update the gravity vector and store average
-				if ( accelSample==4 ) {
-					m_fGravityX = 0.995f*m_fGravityX + 0.005f*event.values[1];
-					m_fGravityY = 0.995f*m_fGravityY + 0.005f*event.values[2];
-					m_fGravityZ = 0.995f*m_fGravityZ + 0.005f*event.values[0];
+				else
+					flCorrected = flOffset.clone();
 
-					m_XAccel.AddData((xAccelCum/5.0f-m_fGravityX)/9.81f,sampleTime);
-					m_YAccel.AddData((yAccelCum/5.0f-m_fGravityY)/9.81f,sampleTime);
-					m_ZAccel.AddData((zAccelCum/5.0f-m_fGravityZ)/9.81f,sampleTime);
-
-					// reset for next loop
-					accelSample = 0;
+				// Axis mapping: axis labels vs sensor event indicies:
+			  	// in this program, x is the left/right force, y is the accel/deaccel force.  z is gravity
+				//    right turns are -x, braking is +y
+				// Otherwise, accumulate values for an average
+				if( bPortraitDisplay ) {
+					// remap the axes, depending on orientation
+					xAccelCum += -flCorrected[0];
+					yAccelCum += flCorrected[2];
+					zAccelCum += flCorrected[1];
+				} else {
+					xAccelCum += flCorrected[1];
+					yAccelCum += flCorrected[2];
+					zAccelCum += flCorrected[0];
+				}
+				accelSamples++;
+							
+				// the action we take is dependent on the sample number
+				if( accelSamples == 0 )
+				{	// Initialize the gravity vector to the very first sample after race has started
+					if( bPortraitDisplay ) {
+						// remap the axes, depending on orientation
+						m_fGravityX = -flCorrected[0];
+						m_fGravityY = flCorrected[2];
+						m_fGravityZ = flCorrected[1];
+					} else {
+						m_fGravityX = flCorrected[1];
+						m_fGravityY = flCorrected[2];
+						m_fGravityZ = flCorrected[0];
+					}
+					accelSamples = 0;
 					xAccelCum = 0;
 					yAccelCum = 0;
 					zAccelCum = 0;
-				}
-				else accelSample++;
+				} else if( iFilterType==FILTER_TYPE.HIGH_PASS.ordinal() || iFilterType==FILTER_TYPE.NONE.ordinal()
+							|| iTimeSinceAppStart-iLastAccelSubmission>70 ) {
+					// Time to store the average.  If Noise filter is on, samples are at least 70ms apart (<14Hz)
+					xAccelCum /= accelSamples; 
+					yAccelCum /= accelSamples; 
+					zAccelCum /= accelSamples;
+					
+					if( iFilterType==FILTER_TYPE.HIGH_PASS.ordinal() || iFilterType==FILTER_TYPE.BOTH.ordinal() ) {
+						// A very slow low-pass filter is the gravity vector
+						m_fGravityX = 0.995f*m_fGravityX + 0.005f*xAccelCum;
+						m_fGravityY = 0.995f*m_fGravityY + 0.005f*yAccelCum;
+						m_fGravityZ = 0.995f*m_fGravityZ + 0.005f*zAccelCum;
+					} else {
+						m_fGravityX = 0;
+						m_fGravityY = 0;
+						m_fGravityZ = 0;
+					}
+					// Subtract gravity, so the graphs show only car forces, in Gs
+					m_XAccel.AddData((xAccelCum-m_fGravityX)/SensorManager.GRAVITY_EARTH,iTimeSinceAppStart);
+					m_YAccel.AddData((yAccelCum-m_fGravityY)/SensorManager.GRAVITY_EARTH,iTimeSinceAppStart);
+					m_ZAccel.AddData((zAccelCum-m_fGravityZ)/SensorManager.GRAVITY_EARTH,iTimeSinceAppStart);
+					iLastAccelSubmission = iTimeSinceAppStart;
+
+					// reset for next loop
+					accelSamples = 0;
+					xAccelCum = 0;
+					yAccelCum = 0;
+					zAccelCum = 0;
+				}		
 			}
 		}
 	}
@@ -966,6 +1053,15 @@ implements
     	}
     	else if(m_eState == State.MOVING_TO_STARTLINE)
     	{
+    		// Lock the screen orientation, so it doesn't change during a race
+    		if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+    		    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    		    bPortraitDisplay = true;
+    		} else {
+    			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    			bPortraitDisplay = false;
+    		}
+    		
     		if(m_myLaps == null)
     		{
     			m_myLaps = new LapAccumulator(m_lapParams, m_ptCurrent, iUnixTime, -1, (int)location.getTime(), location.getSpeed());
