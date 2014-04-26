@@ -405,6 +405,12 @@ public class LapSender
 				if(strCurrentSSID != null)
 				{
 					String strLocalSSID = GetSSID();
+					
+					// Strip leading and trailing quotes, if present
+					if( strCurrentSSID.charAt(0)=='"') {
+						strCurrentSSID = strCurrentSSID.substring(1,strCurrentSSID.length()-1);
+					}
+				
 					if(strCurrentSSID.equalsIgnoreCase(strLocalSSID))
 					{
 						DhcpInfo pDHCPInfo = pWifi.getDhcpInfo();
@@ -496,8 +502,8 @@ public class LapSender
 				addr = InetAddress.getByName(strLocalIP);
 				s = new Socket();
 				sConnect = new InetSocketAddress(addr, iPort);
-				s.connect(sConnect, 500);
-				s.setSoTimeout(3000);
+				s.connect(sConnect, 5500);
+				s.setSoTimeout(6000);
 				
 				m_watchdog = new SocketWatchdog(this, s);
 			}

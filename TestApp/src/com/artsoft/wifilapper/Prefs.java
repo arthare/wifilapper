@@ -47,6 +47,14 @@ public class Prefs
 	public static String PREF_DBLOCATION_BOOL = "dbInternal";
 	public static String PREF_USEIOIO_BOOLEAN = "useioio";
 	public static String PREF_USEACCEL_BOOLEAN = "useaccel";
+	public static String PREF_ACCEL_FILTER = "accel_filter";
+	public static String PREF_ACCEL_CORRECTION = "correctaccel";
+	public static String PREF_ACCEL_CORRECTION_TYPE = "correctaccel_type";
+	public static String PREF_ACCEL_CORRECTION_PITCH = "correctaccel_pitch";
+	public static String PREF_ACCEL_CORRECTION_ROLL = "correctaccel_roll";
+	public static String PREF_ACCEL_OFFSET_X = "accel_x";
+	public static String PREF_ACCEL_OFFSET_Y = "accel_y";
+	public static String PREF_ACCEL_OFFSET_Z = "accel_z";
 	public static String PREF_ACCEL_GRAV_X = "gravx";
 	public static String PREF_ACCEL_GRAV_Y = "gravy";
 	public static String PREF_ACCEL_GRAV_Z = "gravz";
@@ -72,6 +80,14 @@ public class Prefs
 	public static Prefs.UNIT_SYSTEM DEFAULT_UNITS_STRING = Prefs.UNIT_SYSTEM.MPH;
 	public static boolean DEFAULT_DBLOCATION_BOOL = true; // whether the DB is on internal storage
 	public static boolean DEFAULT_USEACCEL = true; 
+	public static int DEFAULT_ACCEL_FILTER = 0;
+	public static boolean DEFAULT_ACCEL_CORRECTION = false;
+	public static float DEFAULT_ACCEL_CORRECTION_PITCH = 0f;
+	public static float DEFAULT_ACCEL_CORRECTION_ROLL = 0f;
+	public static float DEFAULT_ACCEL_OFFSET_X = 0f;
+	public static float DEFAULT_ACCEL_OFFSET_Y = 0f;
+	public static float DEFAULT_ACCEL_OFFSET_Z = 0f;
+
 	public static boolean DEFAULT_ACKSMS = false; // whether to send a text to acknowledge a text
 	public static String DEFAULT_PRIVACYPREFIX = "wflp";
 	public static int DEFAULT_IOIOBUTTONPIN = -1;
@@ -100,6 +116,13 @@ public class Prefs
 	public static String IT_IOIOBUTTONPIN = PREF_IOIOBUTTONPIN;
 	public static String IT_IOIOPULSEPINS_ARRAY = "selectedpulsepins";
 	public static String IT_USEACCEL_BOOLEAN = PREF_USEACCEL_BOOLEAN;
+	public static String IT_ACCEL_FILTER = PREF_ACCEL_FILTER;
+	public static String IT_ACCEL_CORRECTION = PREF_ACCEL_CORRECTION;
+	public static String IT_ACCEL_CORRECTION_PITCH = PREF_ACCEL_CORRECTION_PITCH;
+	public static String IT_ACCEL_CORRECTION_ROLL = PREF_ACCEL_CORRECTION_ROLL;
+	public static String IT_ACCEL_OFFSET_X = PREF_ACCEL_OFFSET_X;
+	public static String IT_ACCEL_OFFSET_Y = PREF_ACCEL_OFFSET_Y;
+	public static String IT_ACCEL_OFFSET_Z = PREF_ACCEL_OFFSET_Z;
 	public static String IT_ACKSMS_BOOLEAN = PREF_ACKSMS_BOOLEAN;
 	public static String IT_PRIVACYPREFIX_STRING = PREF_PRIVACYPREFIX_STRING;
 	public static String IT_P2P_ENABLED = PREF_P2P_ENABLED;
