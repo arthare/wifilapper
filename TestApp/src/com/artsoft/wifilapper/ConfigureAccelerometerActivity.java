@@ -29,8 +29,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.media.ToneGenerator;
-import android.os.Build;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -67,10 +66,12 @@ public class ConfigureAccelerometerActivity extends Activity implements
 	private SensorManager sensorMan;
 	private Sensor accel;
 	private Sensor mSensor;	
-
+	private long lastSampleTime;
 	
-	ToneGenerator tg;
-	
+	// Sounds 
+	SoundPool soundPool;
+	int streamId;
+	int soundId;
 	
 	// Variables
 	private float flPitch;
@@ -78,6 +79,7 @@ public class ConfigureAccelerometerActivity extends Activity implements
 	private float [] flSensorOffset = new float[3];
 	private boolean bMaskRadio1;
 	private boolean bCalibrating;
+	private boolean bOrienting;
 
 	// Variables to determine phone orientation angle
 	private float[] I = new float[16];
@@ -91,22 +93,24 @@ public class ConfigureAccelerometerActivity extends Activity implements
 	private int iAccelCount, iRotCount;
 	private float[] flAccelEvent = new float[3];
 	private float[] flRotEvent = new float[3];
-	private final int iFilterLength = 1;
+	private final int iFilterLength = 10;
 	private int iFilterType=1;
-
+	
 	// Variables dealing with the timer
 	Timer timer;
 	Handler m_handler;
 	private static final int REVERT = 203;	
-	
+			
 	@Override
 	public void onCreate(Bundle extras) {
 		super.onCreate(extras);
 		setContentView(R.layout.configureaccel);
 
 		bCalibrating = false;
-		
-		tg = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, ToneGenerator.MAX_VOLUME);
+		bOrienting = false;
+				
+		soundPool = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
+		soundId = soundPool.load(this,R.raw.short_1khz,1);
 		
 		flPitch = 0;
 		flRoll = 0;
@@ -168,6 +172,11 @@ public class ConfigureAccelerometerActivity extends Activity implements
 	public void onPause() {
 		super.onPause();
 		
+		if( soundPool != null ) {
+			soundPool.release();
+			soundPool=null;
+		}
+		
 		// disable sensors when leaving
 		enableSensors(false);
 
@@ -184,7 +193,6 @@ public class ConfigureAccelerometerActivity extends Activity implements
 			edit.putFloat(Prefs.PREF_ACCEL_OFFSET_Y, flSensorOffset[2]);
 			edit.putFloat(Prefs.PREF_ACCEL_OFFSET_Z, flSensorOffset[0]);
 		}
-
 		edit.commit();
 	}
 
@@ -193,7 +201,11 @@ public class ConfigureAccelerometerActivity extends Activity implements
 		super.onResume();
 
 		SharedPreferences settings = this.getSharedPreferences(Prefs.SHAREDPREF_NAME, 0);
-				
+
+		flPitch =settings.getFloat(Prefs.PREF_ACCEL_CORRECTION_PITCH,Prefs.DEFAULT_ACCEL_CORRECTION_PITCH);
+		flRoll =settings.getFloat(Prefs.PREF_ACCEL_CORRECTION_ROLL,Prefs.DEFAULT_ACCEL_CORRECTION_ROLL);
+		updatePitchAndRollSliders(flPitch,flRoll);
+
 		chkEnable.setChecked(settings.getBoolean(Prefs.PREF_USEACCEL_BOOLEAN,Prefs.DEFAULT_USEACCEL));
 
 		iFilterType = settings.getInt(Prefs.PREF_ACCEL_FILTER,Prefs.DEFAULT_ACCEL_FILTER);
@@ -209,37 +221,39 @@ public class ConfigureAccelerometerActivity extends Activity implements
 		flSensorOffset[2] = settings.getFloat(Prefs.PREF_ACCEL_OFFSET_Y, Prefs.DEFAULT_ACCEL_OFFSET_Y);
 		flSensorOffset[0] = settings.getFloat(Prefs.PREF_ACCEL_OFFSET_Z, Prefs.DEFAULT_ACCEL_OFFSET_Z);
 		
-		flPitch =settings.getFloat(Prefs.PREF_ACCEL_CORRECTION_PITCH,Prefs.DEFAULT_ACCEL_CORRECTION_PITCH);
-		flRoll =settings.getFloat(Prefs.PREF_ACCEL_CORRECTION_ROLL,Prefs.DEFAULT_ACCEL_CORRECTION_ROLL);
-		updatePitchAndRollSliders(flPitch,flRoll);
-
 		processCalibration();
 	}
 	@Override
 	public void onSensorChanged(SensorEvent event) {
 		if (event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE)
 			return;
-
+		boolean doCalc = false;
+		
 		switch (event.sensor.getType()) {
 		case Sensor.TYPE_ACCELEROMETER:
 
 			// When enabling the sensor, sometimes the first few samples are garbage.  Skip those.
-			if( iAccelCount < 0)
+			if( ++iAccelCount <= 0) {
 				flAccelEvent = new float[] {0,0,0};
-			else   			// Correct sensor by adding the offsets
-				for (int i = 0; i < 3; i++) 
-					if( flSensorOffset != null)
-						flAccelEvent[i] += event.values[i]+flSensorOffset[i];
-					else
-						flAccelEvent[i] += event.values[i];
+				break;
+			}
+
+			// Correct sensor by adding the offsets
+			for (int i = 0; i < 3; i++) 
+				if( flSensorOffset != null)
+					flAccelEvent[i] += event.values[i]+flSensorOffset[i];
+				else
+					flAccelEvent[i] += event.values[i];
 
 			// exit if still collecting samples
-			if (iAccelCount++ < iFilterLength - 1)
+			if( System.currentTimeMillis() - lastSampleTime < 50)
 				break;
+			
+			lastSampleTime = System.currentTimeMillis();
 
 			// Got enough samples, divide to determine average
 			for (int i = 0; i < 3; i++) {
-				flAccelEvent[i] /= iFilterLength;
+				flAccelEvent[i] /= iAccelCount;
 			}
 
 			gravity = flAccelEvent.clone();
@@ -247,7 +261,8 @@ public class ConfigureAccelerometerActivity extends Activity implements
 				// Save the initial gravity vector during mount angle compensation
 				savedGravity=gravity.clone();
 			}
-
+			doCalc = true;
+			
 			// Reset variables for next loop
 			iAccelCount = 0;
 			flAccelEvent = new float[] {0,0,0};
@@ -272,7 +287,7 @@ public class ConfigureAccelerometerActivity extends Activity implements
 			break;
 		}
 
-		if ( gravity != null && geomag != null) {
+		if ( doCalc && gravity != null && geomag != null) {
 			// try to find the rotation matrix
 			boolean success = SensorManager.getRotationMatrix(inR, I, gravity, geomag);
 			if (success) {
@@ -303,16 +318,25 @@ public class ConfigureAccelerometerActivity extends Activity implements
 				float flAngle;
 				flAngle = (float) Math.toDegrees(Math.acos(flDotProduct/(flMag[0]*flMag[1])));
 
-				// Notify the user aurally, since the screen will be tipped away from view
-				if(Math.abs(flAngle-90)<1) {
-					// Reached 90 degrees--confirm and stop the process
-					tg.startTone(ToneGenerator.TONE_PROP_ACK, 300);
-					m_handler.sendEmptyMessage(REVERT);
-				} else
-					// Getting close--issue warning tone to slow down the rotation
-					if(Math.abs(flAngle-90)<10) {
-						tg.startTone(ToneGenerator.TONE_DTMF_1, 100);
-					}
+				if( bOrienting )
+				{
+					// Notify the user aurally, since the screen will be tipped away from view
+					if(Math.abs(flAngle-90)<1) {
+						// Reached 90 degrees--first make sure the phone is not accelerating
+						if( Math.sqrt(Math.pow(gravity[0],2)+Math.pow(gravity[1],2)+Math.pow(gravity[2],2)) < SensorManager.GRAVITY_EARTH*1.02) {
+							// we're done
+							streamId = soundPool.play(soundId, 1.0f, 1.0f, 1, 3, 2.0f);
+							bOrienting = false;
+							m_handler.sendEmptyMessage(REVERT);
+						}
+					} else
+						// Getting close--issue warning tone to slow down the rotation
+						if(Math.abs(flAngle-90)<10) {							
+							streamId = soundPool.play(soundId, 1.0f, 1.0f, 1, 0, 1.0f);
+						}
+						else
+							soundPool.stop(streamId);
+				}
 			}
 		}
 	}
@@ -449,6 +473,7 @@ public class ConfigureAccelerometerActivity extends Activity implements
 		if( enable ) {
 			// set negative loop count, to discard first few samples
 			iAccelCount = -3;
+			lastSampleTime = -1;
 			gravity=null;
 			savedGravity=null;
 			sensorMan.registerListener(this, accel,	SensorManager.SENSOR_DELAY_GAME);
@@ -463,6 +488,7 @@ public class ConfigureAccelerometerActivity extends Activity implements
 	public void onCheckedChanged(RadioGroup group, int checkedId) {
 		if (rgCorrectionType.getCheckedRadioButtonId() == R.id.radio1) {
 			if( !bMaskRadio1 ) {
+				bOrienting = true;
 				enableSensors(true);
 				// Start a timer, to revert to manual mode
 				if( timer != null ) timer.cancel();
@@ -480,7 +506,8 @@ public class ConfigureAccelerometerActivity extends Activity implements
 	private class revertAuto extends TimerTask {
 		@Override
 		public void run() {
-			tg.startTone(ToneGenerator.TONE_CDMA_PIP, 1000);
+			streamId = soundPool.play(soundId, 1.0f, 1.0f, 1, 1, 0.5f);
+			bOrienting = false;
 			m_handler.sendEmptyMessage(REVERT);
 		}
 	}
@@ -491,7 +518,7 @@ public class ConfigureAccelerometerActivity extends Activity implements
 		switch( msg.what ) {
 		case REVERT:
 			// Select the 'manual' radio button when timer expires
-			bMaskRadio1 = false;
+			bMaskRadio1 = true;
 			rgCorrectionType.check(R.id.radio0);
 			break;
 		}

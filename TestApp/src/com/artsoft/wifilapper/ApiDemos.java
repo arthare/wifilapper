@@ -137,7 +137,7 @@ implements
 	private float flRoll;
 	private float flSensorOffset[] = new float[3];
 	private int iFilterType;
-	private enum FILTER_TYPE {NONE,NOISE,HIGH_PASS,BOTH};
+	private enum FILTER_TYPE {NONE,AVERAGING,HIGH_PASS,BOTH};
 		
 	Point2D m_ptCurrent; // the most recent point to come in from the location manager
 	public float m_tmCurrent; // the time (in seconds) of the m_ptCurrent
