@@ -17,7 +17,9 @@ LRESULT CRenameDlg::DlgProc
   {
     case WM_INITDIALOG:
     {
-        //  Initialize the send message parameters.
+        //  Initialize the send message parameters, and fill in the dialog with the old item for editing.
+        HWND hWndMsg = GetDlgItem(hWnd,IDC_EDTMESSAGE2);
+        SendMessageW(hWndMsg, WM_SETTEXT, (WPARAM)m_pResults->szName, (LPARAM)m_pResults->szName);
         return TRUE;
 	}
     case WM_COMMAND:
@@ -27,15 +29,17 @@ LRESULT CRenameDlg::DlgProc
         case IDOK:
         {
           HWND hWndMsg = GetDlgItem(hWnd,IDC_EDTMESSAGE2);
-          SendMessage(hWndMsg, WM_GETTEXT, NUMCHARS(m_pResults->szName), (LPARAM)m_pResults->szName);
-          if(wcslen(m_pResults->szName) > 0)
+		  TCHAR szTemp[MAX_PATH] = {NULL};
+          SendMessage(hWndMsg, WM_GETTEXT, NUMCHARS(szTemp), (LPARAM)szTemp);
+          if(wcslen(szTemp) > 0 && wcscmp( m_pResults->szName, szTemp ) != 0 )
           {
 			  //	User actually entered something. Let's return this for updating.
+			  wcscpy_s( m_pResults->szName, NUMCHARS(m_pResults->szName), szTemp );	//	Copy the string to the sfResult pointer
 	          m_pResults->fCancelled = false;
           }
 		  else
 		  {
-			  //	User did not enter anything. Let's not make any changes.
+			  //	User did not enter or change anything. Let's not make any changes.
 	          m_pResults->fCancelled = true;
 		  }
           EndDialog(hWnd,0);

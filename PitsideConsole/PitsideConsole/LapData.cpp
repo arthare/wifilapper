@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "LapData.h"
 #include "PitsideConsole.h"
+#include "dlgPlotSelect.h"
 
 
 struct PIDDATA
@@ -207,28 +208,44 @@ PIDDATA g_rgPIDData[] =
 };
 
 PIDDATA g_rgIOIOCustomData[] = {
-  {L"Fuel Level%%","%3.2f"},
-  {L"RPM","%5.1f"},
-  {L"Throttle Pos","%3.2f"},
-  {L"Brake Pos","%3.2f"},
-  {L"Clutch Pos","%3.2f"},
-  {L"LF Wheelspeed","%3.2f"},
-  {L"RF Wheelspeed","%3.2f"},
-  {L"LR Wheelspeed","%3.2f"},
-  {L"RR Wheelspeed","%3.2f"},
-  {L"Exhaust Temp","%3.1f"},
-  {L"LF Tire Temp","%3.1f"},
-  {L"RF Tire Tempe","%3.1f"},
-  {L"LR Tire Tempe","%3.1f"},
-  {L"RR Tire Tempe","%3.1f"},
-  {L"LF Brake Temp","%3.1f"},
-  {L"RF Brake Temp","%3.1f"},
-  {L"LR Brake Temp","%3.1f"},
-  {L"RR Brake Temp","%3.1f"},
-  {L"Oil Pressure","%3.2f"},
-  {L"Oil Temp","%3.1f"},
-  {L"Coolant Temp","%3.1f"},
-  {L"Alt Voltage","%3.2f"},
+  {L"Fuel Level%%","%3.2f"},	//	0x301
+  {L"RPM","%5.1f"},				//	0x302
+  {L"Throttle Pos","%3.2f"},	//	0x303
+  {L"Brake Pos","%3.2f"},		//	0x304
+  {L"Clutch Pos","%3.2f"},		//	0x305
+  {L"LF Wheelspeed","%3.2f"},	//	0x306
+  {L"RF Wheelspeed","%3.2f"},	//	0x307
+  {L"LR Wheelspeed","%3.2f"},	//	0x308
+  {L"RR Wheelspeed","%3.2f"},	//	0x309
+  {L"Exhaust Temp","%3.1f"},	//	0x30A
+  {L"LF Tire Temp","%3.1f"},	//	0x30B
+  {L"RF Tire Tempe","%3.1f"},	//	0x30C
+  {L"LR Tire Tempe","%3.1f"},	//	0x30D
+  {L"RR Tire Tempe","%3.1f"},	//	0x30E
+  {L"LF Brake Temp","%3.1f"},	//	0x30F
+  {L"RF Brake Temp","%3.1f"},	//	0x310
+  {L"LR Brake Temp","%3.1f"},	//	0x311
+  {L"RR Brake Temp","%3.1f"},	//	0x312
+  {L"Oil Pressure","%3.2f"},	//	0x313
+  {L"Oil Temp","%3.1f"},		//	0x314
+  {L"Coolant Temp","%3.1f"},	//	0x315
+  {L"Alt Voltage","%3.2f"},		//	0x316
+  {L"Air Temp (F)","%3.2f"},	//	0x317
+  {L"MAF (V)","%3.2f"},			//	0x318
+  {L"O2 Sensor (V)","%3.2f"},	//	0x319
+};
+
+PIDDATA g_rgRaceDACData[] = {
+  {L"RaceDAC A1","%3.2f"},		//	0x401
+  {L"RaceDAC A2","%3.2f"},		//	0x402
+  {L"RaceDAC A3","%3.2f"},		//	0x403
+  {L"RaceDAC A4","%3.2f"},		//	0x404
+  {L"RaceDAC A5","%3.2f"},		//	0x405
+  {L"RaceDAC A6","%3.2f"},		//	0x406
+  {L"RaceDAC A7","%3.2f"},		//	0x407
+  {L"RaceDAC A8","%3.2f"},		//	0x408
+  {L"RaceDAC D1","%4.1f"},		//	0x409
+  {L"RaceDAC D2","%4.1f"},		//	0x40A
 };
 
 void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
@@ -243,6 +260,7 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
   case DATA_CHANNEL_ELAPSEDTIME: lpszDataName = L"Elapsed Time"; break;
   case DATA_CHANNEL_LAPTIME_SUMMARY: lpszDataName = L"Lap Time"; break;
   case DATA_CHANNEL_VELOCITY: lpszDataName = L"Velocity"; break;
+  case DATA_CHANNEL_VELOCITYDELTA: lpszDataName = L"Vel. Delta"; break;
   case DATA_CHANNEL_TIMESLIP: lpszDataName = L"Time-slip"; break;
   case DATA_CHANNEL_X_ACCEL: lpszDataName = L"X accel"; break;
   case DATA_CHANNEL_Y_ACCEL: lpszDataName = L"Y accel"; break;
@@ -250,6 +268,9 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
   case DATA_CHANNEL_TEMP: lpszDataName = L"Temperature"; break;
   case DATA_CHANNEL_RECEPTION_X: lpszDataName = L"Wifi Dots X"; break;
   case DATA_CHANNEL_RECEPTION_Y: lpszDataName = L"Wifi Dots Y"; break;
+  case DATA_CHANNEL_HRM: lpszDataName = L"Heart Rate"; break;
+  case DATA_CHANNEL_PING: lpszDataName = L"Ping Time"; break;
+  case DATA_CHANNEL_STRENGTH: lpszDataName = L"Conn. Level"; break;
   default:
     if(eDC >= DATA_CHANNEL_IOIOPIN_START && eDC <= DATA_CHANNEL_IOIOPIN_END)
     {
@@ -268,6 +289,22 @@ void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch)
         lpszDataName = L"Ukwn IOIO pin";
       }
     }
+    else if(eDC >= DATA_CHANNEL_RACEDAC_START && eDC <= DATA_CHANNEL_RACEDAC_END)
+    {
+      lpszDataName = ::g_rgRaceDACData[eDC - DATA_CHANNEL_RACEDAC_START].pListDesc;
+	}
+    else if(eDC >= DATA_CHANNEL_RACEDACCUSTOM_START && eDC <= DATA_CHANNEL_RACEDACCUSTOM_END)
+    {
+      const int custom = eDC - DATA_CHANNEL_RACEDACCUSTOM_START;
+      if(custom >= 0 && custom < NUMITEMS(g_rgIOIOCustomData))
+      {
+        lpszDataName = ::g_rgIOIOCustomData[custom].pListDesc;
+      }
+      else
+      {
+        lpszDataName = L"Ukwn RaceDAC pin";
+      }
+	}
     else
     {
       DASSERT(eDC >= DATA_CHANNEL_PID_START && eDC < DATA_CHANNEL_PID_END);
@@ -316,7 +353,7 @@ LPCSTR GetUnitText(UNIT_PREFERENCE eUnits)
 
 void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPSTR lpsz, int cch)
 {
-  CASSERT(DATA_CHANNEL_COUNT == 0x401);
+  CASSERT(DATA_CHANNEL_COUNT == 0x601);
 
   switch(eX)
   {
@@ -339,7 +376,22 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
     }
     case DATA_CHANNEL_LAPTIME_SUMMARY:
     {
-      sprintf(lpsz, "%4.1fs", flValue);
+      sprintf(lpsz, "%4.1f", flValue);
+      break;
+    }
+	case DATA_CHANNEL_HRM:
+    {
+      sprintf(lpsz, "%4.1fBPM", flValue);
+      break;
+    }
+	case DATA_CHANNEL_PING:
+    {
+      sprintf(lpsz, "%4.0fms", flValue);
+      break;
+    }
+	case DATA_CHANNEL_STRENGTH:
+    {
+      sprintf(lpsz, "%4.1f", flValue);
       break;
     }
     case DATA_CHANNEL_TIME:
@@ -354,6 +406,7 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
     }
 
 	case DATA_CHANNEL_VELOCITY:
+	case DATA_CHANNEL_VELOCITYDELTA:
     {
       LPCSTR lpszUnits = GetUnitText(eUnits);
       // note: velocity is in m/s, but most humans will like km/h (well... except for americans, but screw them for now)
@@ -409,6 +462,16 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
         const int custom = eX - DATA_CHANNEL_IOIOCUSTOM_START;
         sprintf(lpsz,g_rgIOIOCustomData[custom].pDataFormat, flValue);
       }
+      else if(eX >= DATA_CHANNEL_RACEDAC_START && eX <= DATA_CHANNEL_RACEDAC_END)
+      {
+        const int pin = eX - DATA_CHANNEL_RACEDAC_START;
+        sprintf(lpsz, "%4.1fV", flValue);
+      }
+      else if(eX >= DATA_CHANNEL_RACEDACCUSTOM_START && eX <= DATA_CHANNEL_RACEDACCUSTOM_END)
+      {
+        const int custom = eX - DATA_CHANNEL_RACEDACCUSTOM_START;
+        sprintf(lpsz,g_rgIOIOCustomData[custom].pDataFormat, flValue);
+      }
       else
       {
         sprintf(lpsz,"%4.1f",flValue);
@@ -420,7 +483,7 @@ void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LP
 
 void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPSTR lpsz, int cch)
 {
-  CASSERT(DATA_CHANNEL_COUNT == 0x401);
+  CASSERT(DATA_CHANNEL_COUNT == 0x601);
 
   switch(eX)
   {
@@ -440,6 +503,9 @@ void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPS
       break;
     }
     case DATA_CHANNEL_LAPTIME_SUMMARY:
+	case DATA_CHANNEL_HRM:
+	case DATA_CHANNEL_PING:
+	case DATA_CHANNEL_STRENGTH:
     {
       sprintf(lpsz, "%4.1f", flValue);
       break;
@@ -455,6 +521,7 @@ void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPS
       break;
     }
 	case DATA_CHANNEL_VELOCITY:
+	case DATA_CHANNEL_VELOCITYDELTA:
     {
       // note: velocity is in m/s, but most humans will like km/h (well... except for americans, but screw them for now)
       sprintf(lpsz, "%4.1f", ConvertSpeed(eUnits,flValue));
@@ -506,6 +573,16 @@ void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPS
       else if(eX >= DATA_CHANNEL_IOIOCUSTOM_START && eX <= DATA_CHANNEL_IOIOCUSTOM_END)
       {
         const int custom = eX - DATA_CHANNEL_IOIOCUSTOM_START;
+        sprintf(lpsz,g_rgIOIOCustomData[custom].pDataFormat, flValue);
+      }
+      else if(eX >= DATA_CHANNEL_RACEDAC_START && eX <= DATA_CHANNEL_RACEDAC_END)
+      {
+        const int pin = eX - DATA_CHANNEL_RACEDAC_START;
+        sprintf(lpsz, "%4.1f", flValue);
+      }
+      else if(eX >= DATA_CHANNEL_RACEDACCUSTOM_START && eX <= DATA_CHANNEL_RACEDACCUSTOM_END)
+      {
+        const int custom = eX - DATA_CHANNEL_RACEDACCUSTOM_START;
         sprintf(lpsz,g_rgIOIOCustomData[custom].pDataFormat, flValue);
       }
       else
@@ -579,7 +656,7 @@ bool FindClosestTwoPoints(const TimePoint2D& p, int* pixStartIndex, double dInpu
 void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtendedLap* pReferenceLap, const ILapReceiver* pLapDB, bool fComputeTimeSlip)
 {
   if(lstPoints.size() <= 3) return;	//	Check so that following operations don't choke.
-
+//  if(lstPoints.size() <= 2) return;	//	Check so that following operations don't choke.
 
   // for calculating distance and time-slip, we need the reference lap
   if(pReferenceLap != NULL)
@@ -593,6 +670,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     // the distance-from-start/finish for P is thus (percentage) * (d2's distance) + (100 - percentage) * (d1's distance)
     IDataChannel* pDistance = pLapDB->AllocateDataChannel();
     IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
+	IDataChannel* pVelocityDelta = pLapDB->AllocateDataChannel();
     IDataChannel* pX = pLapDB->AllocateDataChannel();
     IDataChannel* pY = pLapDB->AllocateDataChannel();
     IDataChannel* pTime = pLapDB->AllocateDataChannel();
@@ -606,6 +684,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pY->Init(GetLap()->GetLapId(), DATA_CHANNEL_Y);
     pDistance->Init(GetLap()->GetLapId(), DATA_CHANNEL_DISTANCE);
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
+	pVelocityDelta->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITYDELTA);
     int iStartPoint = 0;
     for(int x = 0;x < lstPoints.size(); x++)
     {
@@ -641,6 +720,13 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 			m_lstPoints.push_back(TimePoint2D(p));
 			pDistance->AddPoint((int)p.iTime,dThisDistance);
 			pVelocity->AddPoint((int)p.iTime,p.flVelocity);
+
+			//	Let's compute the Velocity delta between the Reference and current lap
+			const IDataChannel* pReferenceVelocityChannel = pReferenceLap->GetChannel(DATA_CHANNEL_VELOCITY);
+			const double dD1Velocity = pReferenceVelocityChannel->GetValue(sfD1.iTime);
+			const double dD2Velocity = pReferenceVelocityChannel->GetValue(sfD2.iTime);
+			const double dRefVelocity = (dD1Velocity * (1-dPercent)) + (dD2Velocity * dPercent);
+			pVelocityDelta->AddPoint((int)p.iTime,p.flVelocity - (float)dRefVelocity );	//	Insert the velocity delta into the vector for this channel
 		  }
 		}
 		else
@@ -653,6 +739,13 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
             m_lstPoints.push_back(TimePoint2D(p));
 		    pDistance->AddPoint((int)p.iTime,dThisDistance);
             pVelocity->AddPoint((int)p.iTime,p.flVelocity);
+
+			//	Let's compute the Velocity delta between the Reference and current lap
+			const IDataChannel* pReferenceVelocityChannel = pReferenceLap->GetChannel(DATA_CHANNEL_VELOCITY);
+			const double dD1Velocity = pReferenceVelocityChannel->GetValue(sfD1.iTime);
+			const double dD2Velocity = pReferenceVelocityChannel->GetValue(sfD2.iTime);
+			const double dRefVelocity = (dD1Velocity * (1-dPercent)) + (dD2Velocity * dPercent);
+			pVelocityDelta->AddPoint((int)p.iTime,p.flVelocity - (float)dRefVelocity );	//	Insert the velocity delta into the vector for this channel
 		  }
 		}
 
@@ -741,6 +834,16 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
       pLapDB->FreeDataChannel(pVelocity);
       pVelocity = NULL;
     }
+    if(pVelocityDelta->IsValid())
+    {
+      pVelocityDelta->Lock();
+      AddChannel(pVelocityDelta);
+    }
+    else
+    {
+      pLapDB->FreeDataChannel(pVelocityDelta);
+      pVelocityDelta = NULL;
+    }
 
     if(fComputeTimeSlip && m_lstPoints.size() > 0)
     {
@@ -795,7 +898,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
           ixCheck = (ixCheck+1)%cReferenceSize;
           if(ixCheck == iRefCheckStart) break; // we've done the whole loop
         }
-      }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              }
 
       if(pTimeSlip && pTimeSlip->IsValid())
       {
@@ -838,6 +941,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 
     IDataChannel* pDistance = pLapDB->AllocateDataChannel();
     IDataChannel* pVelocity = pLapDB->AllocateDataChannel();
+    IDataChannel* pVelocityDelta = pLapDB->AllocateDataChannel();
     IDataChannel* pTimeSlip = pLapDB->AllocateDataChannel();
     IDataChannel* pTime = pLapDB->AllocateDataChannel();
     IDataChannel* pLapTime = pLapDB->AllocateDataChannel();
@@ -847,6 +951,7 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pLapTime->Init(GetLap()->GetLapId(), DATA_CHANNEL_ELAPSEDTIME);
     pLapTimeSummary->Init(GetLap()->GetLapId(), DATA_CHANNEL_LAPTIME_SUMMARY);		// Preparing to add Laptime Summary channel for X-axis
     pVelocity->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITY);
+    pVelocityDelta->Init(GetLap()->GetLapId(), DATA_CHANNEL_VELOCITYDELTA);
     pTimeSlip->Init(GetLap()->GetLapId(), DATA_CHANNEL_TIMESLIP);
     for(int x = 1;x < lstPoints.size(); x++)
     {
@@ -861,26 +966,22 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
 	  pLapTime->AddPoint(p.iTime, (double)iElapsedTime);
       const double dX = p.flX - ptLast.flX;
       const double dY = p.flY - ptLast.flY;
-/*		  // Converting from LONG/LAT to distance in meters
-		  double rad = 6371.0f;  // earth's mean radius in km 
-		  double dLat, dLon, R, lat1, lat2, lon1, lon2;
-		  R = rad;
-		  lat1 = p.flY * 0.0174532925199433;	// Convert from degrees to radians
-		  lon1 = p.flX * 0.0174532925199433;
-		  lat2 = ptLast.flY * 0.0174532925199433;
-		  lon2 = ptLast.flX * 0.0174532925199433;
-		  dLat = (lat2 - lat1);
-		  dLon = (lon2 - lon1);
-		  double a = sin(dLat/2) * sin(dLat/2) + cos(lat1) * cos(lat2) * sin(dLon/2) * sin(dLon/2);
-		  double c = 2 * atan2(sqrt(a), sqrt(1-a));
-		  const double d = R * c * 1000;	// Return the distance in meters	*/
-	  const double d = sqrt (dY*dY + dX*dX);	// Return distance in Theta of Long/Lat. Needed until Jason fixes web-side GUI
-      dDistance += d;
+	  double d;
+	  if ( SetDistance(-1) )
+	  {
+	  	d = fReturnDistanceInMeters (p, ptLast);	// Return the distance in meters
+	  }
+	  else
+	  {
+	  	d = sqrt (dY*dY + dX*dX);	// Return distance in Theta of Long/Lat. Needed until Jason fixes web-side GUI
+	  }
+	  dDistance += d;
       m_lstPoints.push_back(TimePoint2D(p));
       ptLast = p;
 
       pDistance->AddPoint(p.iTime, dDistance);
       pVelocity->AddPoint(p.iTime, p.flVelocity);
+      pVelocityDelta->AddPoint(p.iTime, 0);	//	No delta from reference lap, since we ARE the reference lap
       pTimeSlip->AddPoint(p.iTime, 0);
     }
 
@@ -891,12 +992,14 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     pLapTimeSummary->Lock();
     pLapTime->Lock();
 	pVelocity->Lock();
+	pVelocityDelta->Lock();
     pTimeSlip->Lock();
     AddChannel(pDistance);
     AddChannel(pTime);
     AddChannel(pLapTime);
     AddChannel(pLapTimeSummary);
 	AddChannel(pVelocity);
+	AddChannel(pVelocityDelta);
     AddChannel(pTimeSlip);
     AddChannel(pX);
     AddChannel(pY);
@@ -913,6 +1016,24 @@ void CExtendedLap::ComputeLapData(const vector<TimePoint2D>& lstPoints, CExtende
     }
 
   }
+}
+
+const double fReturnDistanceInMeters (const TimePoint2D& p, TimePoint2D ptLast)
+{
+		  // Converting from LONG/LAT to distance in meters
+		  double rad = 6371.0f;  // earth's mean radius in km 
+		  double dLat, dLon, R, lat1, lat2, lon1, lon2;
+		  R = rad;
+		  lat1 = p.flY * 0.0174532925199433;	// Convert from degrees to radians
+		  lon1 = p.flX * 0.0174532925199433;
+		  lat2 = ptLast.flY * 0.0174532925199433;
+		  lon2 = ptLast.flX * 0.0174532925199433;
+		  dLat = (lat2 - lat1);
+		  dLon = (lon2 - lon1);
+		  double a = sin(dLat/2) * sin(dLat/2) + cos(lat1) * cos(lat2) * sin(dLon/2) * sin(dLon/2);
+		  double c = 2 * atan2(sqrt(a), sqrt(1-a));
+		  const double d = R * c * 1000;	// Return the distance in meters
+		  return d;
 }
 
 const TimePoint2D GetPointAtTime(const vector<TimePoint2D>& lstPoints, int iTimeMs)

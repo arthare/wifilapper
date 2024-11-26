@@ -3,7 +3,7 @@ P951: Oil Pressure (Bars)
 3.26
 0.0
 0
-P951: Fuel Level %
+P951: Fuel Level %%
 115.6
 -40.1
 0.0
@@ -18,18 +18,63 @@ P951: Alternator Voltage
 3.57
 0.0
 0
+P951: Brake Pos %%
+0.0
+37.0
+0.0
+0
 P951: Tachometer RPM
 0.0
 31.8
 0.0
 0
+P924S: Tachometer RPM
+0.0
+31.8
+0.0
+0
+P924S: Oil Pressure (Bars)
+1.12
+-2.52
+1.41
+0
+P924S: Oil Temp (F)
+392.6
+-87.83
+0
+0
+P924S: Fuel Level %%
+116
+-49.8
+0.0
+0
+P924S: Coolant T (C)
+154.5
+-77.43
+13.0
+0
+P924S: Alternator Voltage
+0.0
+5.17
+0.0
+0
+P924S: Brake Pos %%
+0.0
+37.0
+0.0
+0
+P924S: Throttle Pos %%
+-22.45
+51.0
+0.0
+0
 P924: Oil Pressure (Bars)
-1.16 
+1.16
 –2.96
 1.84
 0
-P924: Gas Tank Reading %
-125 
+P924: Fuel Level %%
+125
 -51.8
 0.0
 0
@@ -41,6 +86,11 @@ P924: Coolant T (C)
 P924: Alternator Voltage
 0.0
 5.28
+0.0
+0
+P924: Brake Pos %%
+0.0
+37.0
 0.0
 0
 //

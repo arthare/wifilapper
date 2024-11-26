@@ -115,7 +115,7 @@ LRESULT CALLBACK _HyperlinkProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         {
 		  //	Shell to the website
 		  TCHAR lpOpen[MAX_PATH] = L"open";
-		  TCHAR lpFile[MAX_PATH] = L"https://sites.google.com/site/wifilapper/";
+		  TCHAR lpFile[MAX_PATH] = L"http://sites.google.com/site/speedfreqapp";
 		  int nShowCmd = SW_RESTORE;	//	Restore the Help document, if it is minimized or whatever.
 		  HINSTANCE Check = ShellExecuteW(hwnd, lpOpen, lpFile, NULL, NULL, nShowCmd);
 		  if ((int)Check <= 32)

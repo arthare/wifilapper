@@ -28,7 +28,9 @@ enum SUPPLIERID
   SUPPLIERID_MAINDISPLAY,
   SUPPLIERID_SUBDISPLAY,
   SUPPLIERID_SECTORDISPLAY,
-  SUPPLIERID_TRACTIONCIRCLEDISPLAY,	//	Draw the traction 
+  SUPPLIERID_TRACTIONCIRCLEDISPLAY,	//	Draw the traction circle
+  SUPPLIERID_ALLDATADISPLAY,	//	Show a window with all data for that lap for the given point
+//  SUPPLIERID_SUBWINDOW,
 };
 
 enum LAPDISPLAYSTYLE
@@ -38,7 +40,8 @@ enum LAPDISPLAYSTYLE
   LAPDISPLAYSTYLE_NOLAPS, // what we display if there are no laps selected
   LAPDISPLAYSTYLE_RECEPTION, // display a map of wireless reception data
   LAPDISPLAYSTYLE_COUNT,
-  LAPDISPLAYSTYLE_TRACTIONCIRCLE,	//	Draw the traction 
+  LAPDISPLAYSTYLE_TRACTIONCIRCLE,	//	Draw the traction circle
+  LAPDISPLAYSTYLE_ALLDATADISPLAY,	//	Draw the data window for given point
 };
 // LapSupplier interface - needed so that the lap painter knows what to paint
 interface ILapSupplier
@@ -94,11 +97,9 @@ private:
   void DrawVerticalLine(double flLine, float mapMinY, float mapMaxY, char szText[512]);
   void fExpMovingAvg( int n, vector<DataPoint>& lstPointsX, double alpha, vector<DataPoint>& lstSmoothPts );
   void fBoxMovingAvg( int n, vector<DataPoint>& lstPoints, int w, vector<DataPoint>& lstSmoothPts, bool bSmoothFlag );
-  //  void MagicDeterminingFunction(const LAPSUPPLIEROPTIONS& sfLapOpts, bool fHighlightXAxis);
+  
 private:
   ILapSupplier* m_pLapSupplier;
-
-  //ILapHighlighter* m_pHighlighter;
 
   int m_iSupplierId;
   static int d;	//	For Value table counting

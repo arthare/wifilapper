@@ -70,7 +70,11 @@ void CDataChannel::DoLoad(CSfArtSQLiteDB& db, int _id)
     }
   }
 }
-
+/*
+bool CReceiveLapOpts::m_Button_LiveData()
+{
+}
+*/
 bool CDataChannel::Load(CSfArtSQLiteDB& db, CSfArtSQLiteQuery& dc, bool fLazyLoad)
 {
   m_db = &db;
@@ -132,7 +136,21 @@ float CDataChannel::GetValue(int iTime) const
   int iEnd = cSize;
 
 
-  const DataPoint* pData = lstData.data();
+  DataPoint* pData = NULL;
+  vector<DataPoint>& lstPoints = lstData;
+  vector<DataPoint> lstSmoothPts;
+  lstSmoothPts.begin();
+  if ( ( eChannelType == DATA_CHANNEL_X_ACCEL || eChannelType == DATA_CHANNEL_Y_ACCEL || eChannelType == DATA_CHANNEL_Z_ACCEL ) )
+  {
+	lstSmoothPts.clear();
+	fBoxMovingAvg( lstPoints.size(), lstPoints, (int) lstPoints.size() / 400, lstSmoothPts );
+	pData = lstSmoothPts.data();
+  }
+  else
+  {
+	  pData = lstData.data();
+  }
+
   // this binary search will find the first and second points that we should use for interpolation.
   const DataPoint* dataFirst = NULL;
   const DataPoint* dataSecond = NULL;
@@ -183,43 +201,94 @@ float CDataChannel::GetValue(int iTime) const
       const float flFirst = dataFirst->flValue;
       const float flNext = dataSecond->flValue;
       const float flOffset = iTime - dataFirst->iTimeMs;
-      const float flWidth = dataSecond->iTimeMs - dataFirst->iTimeMs;
-      if(flWidth == 0) return flFirst;
-      const float flPct = flOffset / flWidth;
-      return (1-flPct)*flFirst + (flPct)*flNext;
+	  const float flWidth = dataSecond->iTimeMs - dataFirst->iTimeMs;
+	  if(flWidth == 0)
+	  {
+	      if ( (eChannelType == DATA_CHANNEL_X_ACCEL || eChannelType == DATA_CHANNEL_Y_ACCEL || eChannelType == DATA_CHANNEL_Z_ACCEL ) )
+		  {
+			  return SmoothedFilter().ApplyTo(flFirst);	//	Returns the first value, transformed Y-value for this data channel
+		  }
+		  else
+		  {
+			  return flFirst;	//	Returns the first value for the Y-value for this data channel
+		  }
+	  }
+
+	  const float flPct = flOffset / flWidth;
+	  if (eChannelType == DATA_CHANNEL_X_ACCEL || eChannelType == DATA_CHANNEL_Y_ACCEL || eChannelType == DATA_CHANNEL_Z_ACCEL )
+	  {
+		  return SmoothedFilter().ApplyTo( (1-flPct)*flFirst + (flPct)*flNext );	//	Returns the transformed Y-value for this data channel
+      }
+      else
+      {
+		  return (1-flPct)*flFirst + (flPct)*flNext;	//	Returns the interpolated Y-value for this data channel
+      }
     }
     else
     {
-      return pData[iCheck].flValue;
+      if (eChannelType == DATA_CHANNEL_X_ACCEL || eChannelType == DATA_CHANNEL_Y_ACCEL || eChannelType == DATA_CHANNEL_Z_ACCEL )
+	  {
+	      return SmoothedFilter().ApplyTo( pData[iCheck].flValue );	//	Returns the last value for the Y-value for this data channel
+	  }
+	  else
+	  {
+	      return pData[iCheck].flValue;	//	Returns the last value for the Y-value for this data channel
+	  }
     }
   }
   return 0;
 }
+
 float CDataChannel::GetValue(int iTime, const vector<DataPoint>::const_iterator& i) const
 {
   CheckLazyLoad();
   DASSERT(fLocked); // you should only be getting data after the channel is all loaded up!
   const DataPoint& data = (*i);
   DASSERT(data.iTimeMs >= iTime);
-  if(i != lstData.begin())
+    if(i != lstData.begin() )
+  //  if(i != lstData.begin() && (eChannelType != DATA_CHANNEL_X_ACCEL || eChannelType != DATA_CHANNEL_Y_ACCEL || eChannelType != DATA_CHANNEL_Z_ACCEL ) && sfLapOpts.bSmoothYesNo == true )
   {
     // this iterator has been moved forward from the start of the vector.
     // back up one from it, then interpolate between those two points
     vector<DataPoint>::const_iterator iBack = i;
     iBack--;
     const DataPoint& dataLast = *iBack;
-    if(dataLast.iTimeMs == data.iTimeMs) return dataLast.flValue;
+    if(dataLast.iTimeMs == data.iTimeMs)
+	{
+		if ( (eChannelType == DATA_CHANNEL_X_ACCEL || eChannelType == DATA_CHANNEL_Y_ACCEL || eChannelType == DATA_CHANNEL_Z_ACCEL ) )
+		{
+			return SmoothedFilter().ApplyTo( dataLast.flValue );	//	Returns the last value for the Y-value for this data channel
+		}
+		else
+		{
+			return dataLast.flValue;
+		}
+	}
 
     float flWidth = data.iTimeMs - dataLast.iTimeMs;
     float flOffset = iTime - dataLast.iTimeMs;
     float flPct = flOffset / flWidth;
     DASSERT(flPct >= 0.0f && flPct <= 1.0f);
-    return (1-flPct)*dataLast.flValue + flPct * data.flValue;
+    if (eChannelType == DATA_CHANNEL_X_ACCEL || eChannelType == DATA_CHANNEL_Y_ACCEL || eChannelType == DATA_CHANNEL_Z_ACCEL )
+	{
+	    return SmoothedFilter().ApplyTo( (1-flPct)*dataLast.flValue + flPct * data.flValue );	//	Returns the last value for the Y-value for this data channel
+	}
+	else
+	{
+		return (1-flPct)*dataLast.flValue + flPct * data.flValue;
+	}
   }
   else
   {
     // this iterator is actually the first element in our vector, so just return it's value
-    return data.flValue;
+    if (eChannelType == DATA_CHANNEL_X_ACCEL || eChannelType == DATA_CHANNEL_Y_ACCEL || eChannelType == DATA_CHANNEL_Z_ACCEL )
+	{
+		return SmoothedFilter().ApplyTo( data.flValue );
+	}
+	else
+	{
+		return data.flValue;
+	}
   }
 }
 float CDataChannel::GetMin() const
@@ -421,6 +490,20 @@ void GetIPString(DWORD ip, LPTSTR lpsz, int cchBuf)
   swprintf(lpsz, cchBuf, L"%d.%d.%d.%d",pBytes[0],pBytes[1],pBytes[2],pBytes[3]);
 }
 
+int str_ends_with2(const TCHAR * str, const TCHAR * suffix) 
+{
+  if( str == NULL || suffix == NULL )
+    return 0;
+
+  size_t str_len = wcslen(str);
+  size_t suffix_len = wcslen(suffix);
+
+  if(suffix_len > str_len)
+    return 0;
+
+  return 0 == wcsncmp( str + str_len - suffix_len, suffix, suffix_len );
+}
+
 int TimeoutRead(SOCKET s, char* buf, int cbBuf, int flags, int timeout, bool* pfConnectionLost)
 {
   *pfConnectionLost = false;
@@ -496,111 +579,150 @@ public:
 	    char buf[1024];
       bool fConnectionLost = false;
 	    int cbRead = TimeoutRead(sData,buf,sizeof(buf),0,10000, &fConnectionLost);
+//		CReceiveLapOpts::m_pLapSupplier()->GetDisplayOptions().;
+//		bool b_ButtonLiveData = CReceiveLapOpts::m_pLapSupplier->;
 	    if(cbRead <= 0 || fConnectionLost)
 	    {
 		    pLaps->SetNetStatus(NETSTATUS_STATUS, L"Probably lost connection");
         pLaps->SetNetStatus(NETSTATUS_REMOTEIP, L"");
 		    break;
 	    }
+		else if (int b_Button_LiveData =! true)	//	Check if user wants to disable live data collection for lap processing
+		{
+		    pLaps->SetNetStatus(NETSTATUS_STATUS, L"Data reception disabled");
+	        pLaps->SetNetStatus(NETSTATUS_REMOTEIP, L"");
+		    break;
+		}
 	    else
 	    {
 		    for(int x = 0;x < cbRead; x++)
 		    {
-          lstLapBuf.push_back(buf[x]);
-			    if(aV1Start.Process(buf[x]))
-			    {
-            eRecv = RECV_V1_LAP;
-				    aV1Start.Reset();
-				    // we have detected the start of a new lap
-				    lstLapBuf.clear();
-			    }
-			    if(aV1End.Process(buf[x]))
-			    {
-            eRecv = RECV_NONE;
-				    aV1End.Reset();
-				    // we have found the end of a lap
-				    int iLapId = 0;
-				    ILap* pLap = pLaps->AllocateLap(true);
-				    if(ProcessV1LapData(lstLapBuf, &iLapId, pLap))
-				    {
-					    pLaps->AddLap(pLap, 0xffffffff);
-				    }
-				    else
-				    {
-              pLap->Free();
-				    }
-            lstLapBuf.clear();
-			    }
-          if(aV2Start.Process(buf[x]))
-          {
-            eRecv = RECV_V2_LAP;
-            aV2Start.Reset();
-            lstLapBuf.clear();
-          }
-          if(aV2End.Process(buf[x]))
-          {
-            eRecv = RECV_NONE;
-            aV2End.Reset();
-            int iLapId = 0;
-            ILap* pLap = pLaps->AllocateLap(true);
-            if(ProcessV2LapData(lstLapBuf, &iLapId, pLap))
-            {
-              pLaps->AddLap(pLap, 0xffffffff);
-            }
-          }
+			  lstLapBuf.push_back(buf[x]);
+					if(aV1Start.Process(buf[x]))
+					{
+				eRecv = RECV_V1_LAP;
+						aV1Start.Reset();
+						// we have detected the start of a new lap
+						lstLapBuf.clear();
+					}
+					if(aV1End.Process(buf[x]))
+					{
+				eRecv = RECV_NONE;
+						aV1End.Reset();
+						// we have found the end of a lap
+						int iLapId = 0;
+						ILap* pLap = pLaps->AllocateLap(true);
+						if(ProcessV1LapData(lstLapBuf, &iLapId, pLap))
+						{
+							pLaps->AddLap(pLap, 0xffffffff);
+						}
+						else
+						{
+				  pLap->Free();
+						}
+				lstLapBuf.clear();
+					}
+			  if(aV2Start.Process(buf[x]))
+			  {
+				eRecv = RECV_V2_LAP;
+				aV2Start.Reset();
+				lstLapBuf.clear();
+			  }
+			  if(aV2End.Process(buf[x]))
+			  {
+				eRecv = RECV_NONE;
+				aV2End.Reset();
+				int iLapId = 0;
+				ILap* pLap = pLaps->AllocateLap(true);
+				if(ProcessV2LapData(lstLapBuf, &iLapId, pLap))
+				{
+				  pLaps->AddLap(pLap, 0xffffffff);
+				}
+			  }
 
-          lstDataBuf.push_back(buf[x]);
-          if(aDataStart.Process(buf[x]))
-          {
-            eRecv = RECV_DATA;
-            aDataStart.Reset();
-            lstDataBuf.clear();
-          }
-          if(aDataEnd.Process(buf[x]))
-          {
-            eRecv = RECV_NONE;
-            int iLapId = 0;
-            aDataEnd.Reset();
-            IDataChannel* pDataChannel = pLaps->AllocateDataChannel();
-            if(ProcessDataChannel(lstDataBuf,&iLapId, pDataChannel))
-            {
-              pLaps->AddDataChannel(pDataChannel);
-            }
-            lstDataBuf.clear();
-          }
+			  lstDataBuf.push_back(buf[x]);
+			  if(aDataStart.Process(buf[x]))
+			  {
+				eRecv = RECV_DATA;
+				aDataStart.Reset();
+				lstDataBuf.clear();
+			  }
+			  if(aDataEnd.Process(buf[x]))
+			  {
+				eRecv = RECV_NONE;
+				int iLapId = 0;
+				aDataEnd.Reset();
+				IDataChannel* pDataChannel = pLaps->AllocateDataChannel();
+				if(ProcessDataChannel(lstDataBuf,&iLapId, pDataChannel))
+				{
+				  pLaps->AddDataChannel(pDataChannel);
+				}
+				lstDataBuf.clear();
+			  }
         
-			    if(aHTBT.Process(buf[x]))
-			    {
-            eRecv = RECV_NONE;
-				    aHTBT.Reset();
-				    const char* pbResponse = "HTBT";
-				    send(sData, pbResponse, 4, 0);
+					if(aHTBT.Process(buf[x]))
+					{
+				eRecv = RECV_NONE;
+						aHTBT.Reset();
+						const char* pbResponse = "HTBT";
+						send(sData, pbResponse, 4, 0);
 
-            lstLapBuf.clear();
-            lstDataBuf.clear();
-			    }
-          lstDBBuf.push_back(buf[x]);
+				lstLapBuf.clear();
+				lstDataBuf.clear();
+					}
+			  lstDBBuf.push_back(buf[x]);
 
-          if(aDBIncoming.Process(buf[x]))
-          {
-            eRecv = RECV_DB;
-            lstDBBuf.clear();
-          }
-          if(aDBDone.Process(buf[x]))
-          {
-            eRecv = RECV_NONE;
-            // we have received a raw database.  Save it to a temp folder, then send the path to the pitside UI so it can decide what to do
-            TCHAR szTemp[MAX_PATH];
-            if(GetTempPath(MAX_PATH, szTemp))
-            {
-              wcscat(szTemp,L"TempPitsideDB.wflp");
-              if(SaveBufferToFile(szTemp, &lstDBBuf[0], lstDBBuf.size()-aDBDone.GetSize()))
-              {
-                pLaps->NotifyDBArrival(szTemp);
-              }
-            }
-          
-          }
+			  if(aDBIncoming.Process(buf[x]))
+			  {
+				eRecv = RECV_DB;
+				lstDBBuf.clear();
+			  }
+			  if(aDBDone.Process(buf[x]))
+			  {
+				eRecv = RECV_NONE;
+				// First, let the user know that the database has been recieved and determine where to save it
+				DWORD dwRet = MessageBox(NULL,L"A new database has been sent from a phone.\n\nSpecify a name and folder to save it to",L"New database",MB_OK);
+
+				// we have received a raw database.  Select a folder to save it to, then send the path to the pitside UI so it can decide what to do
+				TCHAR szDBPath[MAX_PATH] = {NULL};
+				wcscat(szDBPath,L"TempPitsideDB.wflp");
+				while (true)
+				{
+					if(ArtGetSaveFileName(NULL,L"Select location and filename to save to",szDBPath,NUMCHARS(szDBPath),L"WifiLapper Files (*.wflp)\0*.WFLP\0\0"))
+					{
+						// let's make sure there's a .wflp suffix on that bugger.
+						if(!str_ends_with2(szDBPath,L".wflp") && !str_ends_with2(szDBPath,L".WFLP"))
+						{
+							wcsncat(szDBPath,L".wflp", NUMCHARS(szDBPath));
+						}
+						const bool fFileIsNew = !DoesFileExist(szDBPath);
+						if(fFileIsNew)
+						{
+						  break;	//	Exit loop, as file name is valid and new
+						}
+						else
+						{
+							DWORD dwRet = MessageBox(NULL,L"A database already exists with that name.\n\nAre you sure you want to overwrite it?",L"WARNING", MB_APPLMODAL | MB_ICONWARNING | MB_YESNO | MB_TOPMOST | MB_DEFBUTTON2);
+							if (dwRet == IDYES)
+							{
+								break;	//	User wants to overwrite file, so exit loop and proceed
+							}
+						}
+					}
+					else
+					{
+						return;	//	User cancelled the save operation, so leave subroutine
+					}
+				}
+				if(SaveBufferToFile(szDBPath, &lstDBBuf[0], lstDBBuf.size()-aDBDone.GetSize()))
+				{
+					pLaps->NotifyDBArrival(szDBPath);
+				}
+				else
+				{
+					MessageBox(NULL,L"An error occurred while saving the database",L"ERROR",MB_APPLMODAL | MB_ICONERROR | MB_TOPMOST | MB_OK);
+				}
+			  }
         
 		    } // end processing loop
       
@@ -651,7 +773,7 @@ public:
         {
           Sleep(1); // let's let the buffer fill up
         }
-	    }
+	  }
     }
 
     if(sData != INVALID_SOCKET)
@@ -710,43 +832,43 @@ bool ReceiveLaps(int iPort, ILapReceiver* pLaps)
 			      closesocket(aSocket);
 			      aSocket = INVALID_SOCKET;
 		      }
-          else
-          {
-            sockaddr sfAddr = {0};
-            int cbAddr = sizeof(sfAddr);
-            TCHAR szIPString[512] = {0};
-            pLaps->SetNetStatus(NETSTATUS_STATUS, L"Waiting for incoming connection to accept");
-            sDataSocket = accept(aSocket, &sfAddr, &cbAddr);
-            if(sDataSocket != INVALID_SOCKET)
-            {
-              sockaddr_in* pIn = (sockaddr_in*)&sfAddr;
-              pLaps->SetNetStatus(NETSTATUS_STATUS, L"Connected");
+			  else
+			  {
+				sockaddr sfAddr = {0};
+				int cbAddr = sizeof(sfAddr);
+				TCHAR szIPString[512] = {0};
+				pLaps->SetNetStatus(NETSTATUS_STATUS, L"Waiting for incoming connection to accept");
+				sDataSocket = accept(aSocket, &sfAddr, &cbAddr);
+				if(sDataSocket != INVALID_SOCKET)
+				{
+				  sockaddr_in* pIn = (sockaddr_in*)&sfAddr;
+				  pLaps->SetNetStatus(NETSTATUS_STATUS, L"Connected");
 
-              TCHAR szIPString[512] = L"";
-              GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
-              pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
+				  TCHAR szIPString[512] = L"";
+				  GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
+				  pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
 
             
-              new LapSocketReceiver(pLaps, sDataSocket); // creates the guy that will actually receive this data (and close the socket when he's done)
+				  new LapSocketReceiver(pLaps, sDataSocket); // creates the guy that will actually receive this data (and close the socket when he's done)
 
-              {
-                sockaddr sfName = {0};
-                int cbName = sizeof(sfName);
-                getsockname(sDataSocket, &sfName, &cbName);
+				  {
+					sockaddr sfName = {0};
+					int cbName = sizeof(sfName);
+					getsockname(sDataSocket, &sfName, &cbName);
               
-                pIn = (sockaddr_in*)&sfName;
-                GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
-                pLaps->SetNetStatus(NETSTATUS_THISIP, szIPString);
-              }
-            }
-            else
-            {
-              sockaddr sfName = {0};
-              TCHAR szIPString[512] = {0};
-              sockaddr_in* pIn = (sockaddr_in*)&sfName;
-              GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
-              pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
-            }
+					pIn = (sockaddr_in*)&sfName;
+					GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
+					pLaps->SetNetStatus(NETSTATUS_THISIP, szIPString);
+				  }
+				}
+				else
+				{
+				  sockaddr sfName = {0};
+				  TCHAR szIPString[512] = {0};
+				  sockaddr_in* pIn = (sockaddr_in*)&sfName;
+				  GetIPString(pIn->sin_addr.S_un.S_addr, szIPString, NUMCHARS(szIPString));
+				  pLaps->SetNetStatus(NETSTATUS_REMOTEIP, szIPString);
+				}
 		      }
 		    }
       }
@@ -880,12 +1002,7 @@ DWORD LoadFromSQLiteThreadProc(LPVOID pvParam)
   return 0;
 }
 
-void LoadFromSQLite
-(
-  LPCTSTR lpszSQL, 
-  int iRaceId, 
-  ILapReceiver* pRecv
-)
+void LoadFromSQLite( LPCTSTR lpszSQL, int iRaceId, ILapReceiver* pRecv )
 {
   DASSERT(iRaceId >= 0);
 
@@ -898,5 +1015,31 @@ void LoadFromSQLite
   {
     ArtShowDialog<IDD_PROGRESS>(&dlgProgress);
     WaitForSingleObject(hThread, INFINITE);
+  }
+}
+
+// * Moving average function
+// * n is the number of input samples
+// * v is an array of values of size n
+// * w is the size of the window, taken on each side of sample
+// * out is output array of size n
+// *
+//
+void fBoxMovingAvg( int n, vector<DataPoint>& lstPoints, int w, vector<DataPoint>& lstSmoothPts )
+{
+  int s;
+  for(s=0; s < n; s++)
+  {
+    float t = 0.0;
+	int aTemp = 0;
+    for ( int a = s - w; a <= s + w; a++ )
+    {
+		if (a < 0) aTemp = 0; else if (a >= n) aTemp = n - 1; else aTemp = a;
+		t += lstPoints[aTemp].flValue;
+    }
+	DataPoint tempDataPoint;
+	tempDataPoint.flValue = (t / ( 2 * w + 1 ));
+	tempDataPoint.iTimeMs = lstPoints[s].iTimeMs;
+	lstSmoothPts.push_back( tempDataPoint );
   }
 }

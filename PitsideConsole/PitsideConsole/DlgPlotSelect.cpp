@@ -35,7 +35,7 @@ void LoadLaps(ILapReceiver* pReceiver, int m_iRaceId)
 
 vector<CExtendedLap*> GetAllLaps()
   {
-    set<LPARAM> setSelectedLaps = m_LapList.GetSelectedItemsData();
+    set<LPARAM> setSelectedLaps = m_LapList.GetSelectedItemsData3();
     vector<CExtendedLap*> lstLaps;
     for(map<int,CExtendedLap*>::const_iterator i = m_mapLaps.begin(); i != m_mapLaps.end(); i++)
     {
@@ -191,9 +191,7 @@ vector<CExtendedLap*> GetAllLaps()
       {
         case WM_INITDIALOG:
         {
-          //  Initialize all data channels, if not already set by user.
-          if (m_sfLapOpts->m_PlotPrefs[1].m_ChannelName[512] == m_sfLapOpts->m_PlotPrefs[0].m_ChannelName[512])
-		  {
+			//  Initialize all data channels, if not already set by user.
             InitPlotPrefs(hWnd, lParam);
 			LoadTransformations(*m_sfLapOpts);	//	Load transformations from "Transformations.txt" file
 			LoadDropDown(hWnd);		//	Now load those names into drop down list for selection
@@ -206,14 +204,9 @@ vector<CExtendedLap*> GetAllLaps()
 				SendMessage(hWndComboBox, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 			}
 
-          }
-          else
-          {
             set<DATA_CHANNEL> setAvailable;
             SetPlotPrefs(hWnd, setAvailable);
- 			LoadDropDown(hWnd);		//	Now load those names into drop down list for selection
-         }
-          return TRUE;
+			return TRUE;
         }
 
         case WM_COMMAND:
@@ -711,9 +704,6 @@ vector<CExtendedLap*> GetAllLaps()
 								//   Send CB_GETCURSEL message to get the index of the selected list item.
 								{
 									int ItemIndex = SendMessage((HWND) lParam, (UINT) CB_GETCURSEL, (WPARAM) 0, (LPARAM) 0);
-//									TCHAR  ListItem[256];
-//									(TCHAR) SendMessage((HWND) lParam, (UINT) CB_GETLBTEXT, (WPARAM) ItemIndex, (LPARAM) ListItem);
-//									MessageBox(hWnd, (LPCWSTR) ListItem, TEXT("WM_COMMAND"), MB_OK);
 									m_sfLapOpts->m_PlotPrefs[1].fTransAValue = m_sfLapOpts->m_Tranformations[ItemIndex].f_CoeffA;
 									m_sfLapOpts->m_PlotPrefs[1].fTransBValue = m_sfLapOpts->m_Tranformations[ItemIndex].f_CoeffB;
 									m_sfLapOpts->m_PlotPrefs[1].fTransCValue = m_sfLapOpts->m_Tranformations[ItemIndex].f_CoeffC;

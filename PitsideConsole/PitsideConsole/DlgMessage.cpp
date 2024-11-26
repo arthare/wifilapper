@@ -18,6 +18,8 @@ LRESULT CMessageDlg::DlgProc
     case WM_INITDIALOG:
     {
         //  Initialize the send message parameters.
+		HWND hWndMsg = GetDlgItem(hWnd,IDC_EDTMESSAGE);
+		SendMessage(hWndMsg, WM_SETTEXT, NUMCHARS(m_pResults->szMessage), (LPARAM)m_pResults->szMessage);
 		TCHAR szTime[100] = L"1";
 		HWND hWndTime = GetDlgItem(hWnd, IDC_EDTTIME);
 		SendMessage(hWndTime, WM_SETTEXT, NUMCHARS(szTime), (LPARAM)szTime);

@@ -8,22 +8,134 @@
 #include <fstream>
 #include "DlgRaceRerun.h"
 
+//	Set up global variables for listview processing
 static TCHAR szTitle[MAX_PATH];
 SCORINGDATA m_ScoringData[50];
+HWND HL_hWnd;
+HWND TS_hWnd;
+// HWND click_hWnd;
+// HWND hWnd;
+LVITEM p_HLlvi;				//	Listview global pointer for Hot Laps
+LVITEM p_TSlvi;				//	Listview global pointer for Race Scoring
 
 //	Routines for sorting list views by column headers
-int CALLBACK CompareListItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+int CALLBACK CompareHLListItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort )
 {
-    BOOL bSortAscending = (lParamSort > 0);
-    int nColumn = abs(lParamSort) - 1;
+    // Get the text of the list items for comparison
+	LVITEM pitem1 = {NULL};
+	LVITEM pitem2 = {NULL};
+	TCHAR sz_Result1[512] = {NULL};
+	TCHAR sz_Result2[512] = {NULL};
+	BOOL result;
+	BOOL b_TextResult;
+	BOOL bSortAscending = (lParamSort > 0);	//	Determines which way to sort the column
+    int nColumn = abs(lParamSort) - 1;	//	Then pulls the column number from the same variable
 
-    // Just compare the values of lParam1 and lParam2 - in a real application 
-    // you'd do something more useful here, like get the text of the list items
-    // and compare that, but this is just an example!
-//		wcscmp(szRaceNameStart, szRaceName);		//	String comparison function, not sure how to use it here
-	return bSortAscending ? (lParam1 - lParam2) : (lParam2 - lParam1);
+	if ( HL_hWnd )	//	Hot Laps listview
+	{
+		//	Get the text value for the given items and compare them
+		p_HLlvi.iItem = lParam1;
+		p_HLlvi.iSubItem =nColumn;
+		ListView_GetItem(HL_hWnd, (LVITEM*)&p_HLlvi);
+		swprintf(sz_Result1, p_HLlvi.cchTextMax, L"%s", p_HLlvi.pszText);
+		p_HLlvi.iItem = lParam2;
+		p_HLlvi.iSubItem = nColumn;
+		ListView_GetItem(HL_hWnd, (LVITEM*)&p_HLlvi);
+		swprintf(sz_Result2, p_HLlvi.cchTextMax, L"%s", p_HLlvi.pszText);
+	}
+
+//	b_TextResult = wcscmp(sz_Result2, sz_Result1);
+	b_TextResult = _wcsicmp(sz_Result1, sz_Result2);
+	if (bSortAscending > 0 && b_TextResult < 0)
+//	if (bSortAscending && b_TextResult < 0)
+	{
+		result = -1 * abs((lParam1 - lParam2));
+//		result = (lParam2 - lParam1);
+	}
+	else if (bSortAscending > 0 && b_TextResult >= 0)
+//	else if (bSortAscending && b_TextResult >= 0)
+	{
+		result = 1 * abs((lParam1 - lParam2));
+//		result = (lParam1 - lParam2);
+	}
+	else if (b_TextResult < 0)
+//	else if (b_TextResult < 0)
+	{
+		result = 1 * abs(lParam2 - lParam1);
+//		result = (lParam1 - lParam2);
+	}
+	else
+	{
+		result = -1 * abs(lParam2 - lParam1);
+//		result = (lParam2 - lParam1);
+	}
+
+//	result = (bSortAscending && b_TextResult < 0) ? -1 : 1;
+	if (nColumn == 0) 
+	{
+		result = bSortAscending ? (lParam1 - lParam2) : (lParam2 - lParam1);
+	}
+	return result;
 }
-void OnColumnClick(LPNMLISTVIEW pLVInfo)
+
+int CALLBACK CompareTSListItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort )
+{
+    // Get the text of the list items for comparison
+	LVITEM pitem1 = {NULL};
+	LVITEM pitem2 = {NULL};
+	TCHAR sz_Result1[512] = {NULL};
+	TCHAR sz_Result2[512] = {NULL};
+	BOOL result;
+	BOOL b_TextResult;
+	BOOL bSortAscending = (lParamSort > 0);	//	Determines which way to sort the column
+    int nColumn = abs(lParamSort) - 1;	//	Then pulls the column number from the same variable
+
+	if ( TS_hWnd )
+	{
+		//	Get the text value for the given items and compare them
+		p_TSlvi.iItem = lParam1;
+		p_TSlvi.iSubItem =nColumn;
+		p_TSlvi.iItem = lParam2;
+		p_TSlvi.iSubItem = nColumn;
+		ListView_GetItem(TS_hWnd, (LVITEM*)&p_TSlvi);
+		swprintf(sz_Result1, p_TSlvi.cchTextMax, L"%s", p_TSlvi.pszText, p_TSlvi.iSubItem);
+		ListView_GetItem(TS_hWnd, (LVITEM*)&p_TSlvi);
+		swprintf(sz_Result2, p_TSlvi.cchTextMax, L"%s", p_TSlvi.pszText, p_TSlvi.iSubItem);
+	}
+	else
+	{
+		return 0;	//	Should not hit this
+	}
+
+//	b_TextResult = wcscmp(sz_Result2, sz_Result1);
+	b_TextResult = wcscmp(sz_Result1, sz_Result2);
+	if (bSortAscending > 0 && b_TextResult < 0)
+	{
+		result = -1 * abs((lParam1 - lParam2));
+	}
+	else if (bSortAscending > 0 && b_TextResult >= 0)
+	{
+		result = 1 * abs((lParam1 - lParam2));
+	}
+	else if (b_TextResult < 0)
+	{
+		result = 1 * abs(lParam2 - lParam1);
+	}
+	else
+	{
+		result = -1 * abs(lParam2 - lParam1);
+	}
+
+//	result = (bSortAscending && b_TextResult < 0) ? -1 : 1;
+	if (nColumn == 0) 
+	{
+		return bSortAscending ? (lParam1 - lParam2) : (lParam2 - lParam1);
+	}
+	else
+		return result;
+}
+
+void OnColumnClick(LPNMLISTVIEW pLVInfo, HWND hWnd)
 {
     static int nSortColumn = 0;
     static BOOL bSortAscending = TRUE;
@@ -35,7 +147,7 @@ void OnColumnClick(LPNMLISTVIEW pLVInfo)
     else
     {
         nSortColumn = pLVInfo->iSubItem;
-        bSortAscending = TRUE;
+        bSortAscending = !bSortAscending;
     }
 
     // combine sort info into a single value we can send to our sort function
@@ -43,13 +155,26 @@ void OnColumnClick(LPNMLISTVIEW pLVInfo)
     if (!bSortAscending)
         lParamSort = -lParamSort;
 
+//	click_hWnd = pLVInfo->hdr.hwndFrom;
+//	HL_hWnd = hWnd;
+//	TS_hWnd = hWnd;
+//	HL_hWnd = GetDlgItem(hWnd, IDC_RACESCORING);
+//	TS_hWnd = GetDlgItem(hWnd, IDC_TIMINGSCORING);
+
     // sort list
-    ListView_SortItems(pLVInfo->hdr.hwndFrom, CompareListItems, lParamSort);
+	if ( HL_hWnd && pLVInfo->hdr.hwndFrom == HL_hWnd)
+		ListView_SortItems(pLVInfo->hdr.hwndFrom, CompareHLListItems, lParamSort);
+	else
+		ListView_SortItems(pLVInfo->hdr.hwndFrom, CompareTSListItems, lParamSort);
+
 }
 
 LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-  switch(uMsg)
+	static int tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
+	HL_hWnd = GetDlgItem(hWnd,IDC_TIMINGSCORING);	//	Hot Laps listview
+	TS_hWnd = GetDlgItem(hWnd,IDC_RACESCORING);	//	Race Timing listview
+	switch(uMsg)
   {
     case WM_INITDIALOG:
     {
@@ -59,8 +184,8 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			swprintf(m_ScoringData[i].db_strRaceName, NUMCHARS(m_ScoringData[i].db_strRaceName),L"");
 			swprintf(m_ScoringData[i].db_szTotTime, NUMCHARS(m_ScoringData[i].db_szTotTime),L"");
 		}
-		tmStartRace = NULL;
-		tmEndRace = NULL;	//	Set the initial End Race time to NULL
+//		tmStartRace = NULL;
+//		tmEndRace = NULL;	//	Set the initial End Race time to NULL
 		//	Set up the Hot Lap timing list box
 		vector<wstring> lstCols;
 		vector<int> lstWidths;
@@ -72,8 +197,8 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		lstWidths.push_back(210);
 		lstWidths.push_back(85);
 		lstWidths.push_back(85);
-		HWND Dlg_hWnd = GetDlgItem(hWnd,IDC_TIMINGSCORING);
-		sfListBox.Init(Dlg_hWnd,lstCols,lstWidths);
+//		HL_hWnd = GetDlgItem(hWnd,IDC_TIMINGSCORING);	//	Hot Laps listview
+		sfListBox.Init(HL_hWnd,lstCols,lstWidths);
 
 
 		//	Now set up the Scoring list box
@@ -85,9 +210,7 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		scoringLstWidths.push_back(30);
 		scoringLstWidths.push_back(145);
 		scoringLstWidths.push_back(95);
-		HWND DlgScoring_hWnd = GetDlgItem(hWnd,IDC_RACESCORING);
-		sfListBox.Init(DlgScoring_hWnd,scoringLstCols,scoringLstWidths);
-		tmStartRace = NULL;	//	No races started at window initialization
+		sfListBox.Init(TS_hWnd,scoringLstCols,scoringLstWidths);
 		HWND hWnd_Comment = GetDlgItem(hWnd, IDC_RACE_COMMENT);
 		SetDlgItemText(hWnd, IDC_RACE_COMMENT, szTitle);
 
@@ -97,13 +220,15 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	case WM_NOTIFY:
 	{
 		// check for column click notification and sort the list view accordingly
-		if ((((LPNMHDR)lParam)->idFrom == IDC_RACESCORING) && (((LPNMHDR)lParam)->code == LVN_COLUMNCLICK))
+		if ( ( ((LPNMHDR)lParam)->idFrom == IDC_RACESCORING) && ( ((LPNMHDR)lParam)->code == LVN_COLUMNCLICK) )
 		{
-			OnColumnClick((LPNMLISTVIEW)lParam);
+//			TS_hWnd = GetDlgItem(hWnd,IDC_RACESCORING);
+			OnColumnClick((LPNMLISTVIEW)lParam, TS_hWnd );
 		}
-		else if ((((LPNMHDR)lParam)->idFrom == IDC_TIMINGSCORING) && (((LPNMHDR)lParam)->code == LVN_COLUMNCLICK))
+		else if ( ( ((LPNMHDR)lParam)->idFrom == IDC_TIMINGSCORING) && ( ((LPNMHDR)lParam)->code == LVN_COLUMNCLICK) )
 		{
-			OnColumnClick((LPNMLISTVIEW)lParam);
+//			HL_hWnd = GetDlgItem(hWnd,IDC_TIMINGSCORING);
+			OnColumnClick((LPNMLISTVIEW)lParam, HL_hWnd );
 		}
 		return TRUE;
 	}
@@ -116,7 +241,7 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			TimingScoringProc((LPVOID)&m_szPath, hWnd);
 			if (tmStartRace)
 			{
-				CRaceScoring((LPVOID) &m_szPath, hWnd);
+				CRaceScoring((LPVOID) &m_szPath, hWnd, tmStartRace, tmEndRace);
 			}
             m_pResults->fCancelled = false;
 			return TRUE;
@@ -141,6 +266,16 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			}
 			else
 			{
+				if (tmStartRace > 0)	//	There is already a time marker stored, verify user wants to change this
+				{
+					DWORD dRet = MessageBox(hWnd, L"You already have a race stored!\n\nAre you sure you want to start a new race?\n\nPrevious race results will be lost if you haven't saved them", L"WARNING", MB_YESNO);
+					if(dRet == IDNO)
+					{
+						//	Do nothing
+						m_pResults->fCancelled = true;
+						return TRUE;
+					}
+				}
 				tmEndRace = NULL;	//	Remove any end of race marker when new race begins. INT format
 				tmStartRace = GetSecondsSince1970();		//	Set the start time for this race session. Unixtime in INT format
 //				tmStartRace = 1376100527;	// Used for the TestRaces database only
@@ -161,6 +296,17 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			{
 				TCHAR szText[MAX_PATH] = {NULL};			
 				TCHAR szTemp[MAX_PATH] = {NULL};			
+				if (tmEndRace > 0)	//	There is already a time marker stored, verify user wants to change this
+				{
+					DWORD dRet = MessageBox(hWnd, L"You already have a race stored!\n\nAre you sure you want to change the end time for this race?\n\nPrevious race results will be lost if you haven't saved them", L"WARNING", MB_YESNO);
+					if(dRet == IDNO)
+					{
+						//	Do nothing
+						m_pResults->fCancelled = true;
+						return TRUE;
+					}
+				}
+
 				tmEndRace = GetSecondsSince1970();		//	Set the end time for this race session. Unixtime in INT format
 //				tmEndRace = 1376100699;	// Used for the TestRaces database only
 //				swprintf(szText, NUMCHARS(szText), L"Race End = %i", tmEndRace);
@@ -174,7 +320,7 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				TimingScoringProc((LPVOID)&m_szPath, hWnd);	//	Refresh the results one last time
 				if (tmStartRace)
 				{
-					CRaceScoring((LPVOID) &m_szPath, hWnd);
+					CRaceScoring((LPVOID) &m_szPath, hWnd, tmStartRace, tmEndRace);
 				}
 
 				swprintf(szTemp, NUMCHARS(szTemp), szText);
@@ -194,8 +340,9 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			int m_RaceId[50] = {NULL};
 			// Show the race-selection dialog and let the User pick which ones to use on T&S page
 			RACERERUN_RESULT sfResult;
-			sfResult.iStart = tmStartRace;
-			sfResult.iEnd = tmEndRace;
+			if (sfResult.iStart <= 0 || tmStartRace > 0) sfResult.iStart = tmStartRace;
+			if (sfResult.iEnd <= 0 || tmEndRace > 0) sfResult.iEnd = tmEndRace;
+
 			CRaceRerunDlg dlgRace(&sfResult);
 			ArtShowDialog<IDD_RACE_RERUN>(&dlgRace);
 
@@ -207,7 +354,7 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				TimingScoringProc((LPVOID)&m_szPath, hWnd);	//	Refresh the results one last time
 				if (tmStartRace)
 				{
-					CRaceScoring((LPVOID) &m_szPath, hWnd);
+					CRaceScoring((LPVOID) &m_szPath, hWnd, tmStartRace, tmEndRace);
 				}
 			}
 			return TRUE;
@@ -231,15 +378,37 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				{
 //				  swprintf(szText, NUMCHARS(szText), L"Race Start = %i\n\nRace End = %i", tmStartRace, tmEndRace);
 //				  MessageBox(hWnd, szText, L"Saving", MB_OK);
-				  TCHAR szFilename[MAX_PATH];
-				  if(ArtGetSaveFileName(hWnd, L"Choose Output file", szFilename, NUMCHARS(szFilename),L"TXT Files (*.txt)\0*.TXT\0\0"))
+				  TCHAR szFilename[MAX_PATH] = {NULL};
+				  wcscat(szFilename,L"TimingScoring.txt");
+				  while (true)
 				  {
-					// let's make sure there's a .txt suffix on that bugger.
-					if(!str_ends_with(szFilename,L".txt"))
+					if(ArtGetSaveFileName(hWnd, L"Choose Output file", szFilename, NUMCHARS(szFilename),L"TXT Files (*.txt)\0*.TXT\0\0"))
 					{
-						wcsncat(szFilename,L".txt", NUMCHARS(szFilename));
+						// let's make sure there's a .txt suffix on that bugger.
+						if(!str_ends_with(szFilename,L".txt") && !str_ends_with(szFilename,L".TXT") )
+						{
+							wcsncat(szFilename,L".txt", NUMCHARS(szFilename));
+						}
+						const bool fFileIsNew = !DoesFileExist(szFilename);
+						if(fFileIsNew)
+						{
+							break;	//	Exit loop, as file name is valid and new
+						}
+						else
+						{
+							DWORD dwRet = MessageBox(NULL,L"A file already exists with that name.\n\nAre you sure you want to overwrite it?",L"WARNING", MB_APPLMODAL | MB_ICONWARNING | MB_YESNO | MB_TOPMOST | MB_DEFBUTTON2);
+							if (dwRet == IDYES)
+							{
+								break;	//	User wants to overwrite file, so exit loop and proceed
+							}
+						}
 					}
-                
+					else
+					{
+						return 0;	//	User cancelled the save operation, so leave subroutine
+					}
+				  }
+
 					//	Open up the file and write the information to it
 					wofstream out;
 					out.open(szFilename);
@@ -299,7 +468,6 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	
 					m_pResults->fCancelled = false;
 					return TRUE;
-				  }
 				}
 				else
 				{
@@ -326,12 +494,13 @@ LRESULT CDlgTimingScoring::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 }
 
 // Function calculates the current laps and elapsed time since the race started
-DWORD* CDlgTimingScoring::CRaceScoring(LPVOID pv, HWND hWnd)
+DWORD* CDlgTimingScoring::CRaceScoring(LPVOID pv, HWND hWnd, int tmStartRace, int tmEndRace)
 {
   LPCTSTR lpszPath = (LPCTSTR)pv;
   CSfArtSQLiteDB sfDB;
   vector<wstring> lstTables;
-  HWND DlgScoring_hWnd = GetDlgItem(hWnd, IDC_RACESCORING);
+//  HWND DlgScoring_hWnd = GetDlgItem(hWnd, IDC_RACESCORING);
+//  TS_hWnd = GetDlgItem(hWnd, IDC_RACESCORING);
   if(SUCCEEDED(sfDB.Open(lpszPath, lstTables, true)))
   {
 		// Race ID's are stored in the sfResult.m_RaceId structure
@@ -481,64 +650,62 @@ DWORD* CDlgTimingScoring::CRaceScoring(LPVOID pv, HWND hWnd)
 			}
 			rec++;	// Keep the counter correct
 		}
+		sfDB.Close();	//	Close the file
 
 		// set up List view items
-		vector<wstring> lstPos;
-		vector<wstring> lstRaceName;
-		vector<wstring> lstLapTimes;
-
-		ListView_DeleteAllItems(DlgScoring_hWnd);	// Clear the list before displaying the update
+		ListView_DeleteAllItems(TS_hWnd);	// Clear the list before displaying the update
 		TCHAR szText[MAX_PATH] = {NULL};
 		int nItem;
-		LVITEM lvi;
+//		LVITEM lvi;
 		LPWSTR result;
 		for (nItem = 0; nItem < rec; ++nItem)
 		{
-		lvi.mask = LVIF_TEXT | LVIF_PARAM;
-		lvi.iItem = nItem;
-		lvi.iSubItem = 0;
-		lvi.lParam = nItem;
+		p_TSlvi.mask = LVIF_TEXT | LVIF_PARAM;
+		p_TSlvi.iItem = nItem;
+		p_TSlvi.iSubItem = 0;
+		p_TSlvi.lParam = nItem;
 		swprintf(szTemp, NUMCHARS(szTemp), L"%i", m_ScoringData[nItem].db_iRaceId);
 		std::wstring strTemp(szTemp);
 		result = (LPWSTR)strTemp.c_str();	
-		lvi.pszText = result;
-		lvi.cchTextMax = wcslen(result);
-		ListView_InsertItem(DlgScoring_hWnd, &lvi);
+		p_TSlvi.pszText = result;
+		p_TSlvi.cchTextMax = wcslen(result);
+		ListView_InsertItem(TS_hWnd, &p_TSlvi);
 
 		// set up subitems
-		lvi.mask = LVIF_TEXT;
-		lvi.iItem = nItem;
+		p_TSlvi.mask = LVIF_TEXT;
+		p_TSlvi.iItem = nItem;
 
-		lvi.iSubItem = 1;
+		p_TSlvi.iSubItem = 1;
 		std::wstring strRace(m_ScoringData[nItem].db_strRaceName);
 		result = (LPWSTR)strRace.c_str();	
-		lvi.pszText = result;
-		lvi.cchTextMax = wcslen(result);
-		ListView_SetItem(DlgScoring_hWnd, &lvi);
+//		p_TSlvi.lParam = (LPARAM) result;	//	Try this for LPARAM
+		p_TSlvi.lParam = nItem;
+		p_TSlvi.pszText = result;
+		p_TSlvi.cchTextMax = wcslen(result);
+		ListView_SetItem(TS_hWnd, &p_TSlvi);
 
-		lvi.iSubItem = 2;
+		p_TSlvi.iSubItem = 2;
 		std::wstring strTotTimes(m_ScoringData[nItem].db_szTotTime);
 		result = (LPWSTR)strTotTimes.c_str();	
-		lvi.pszText = result;
-		lvi.cchTextMax = wcslen(result);
-		ListView_SetItem(DlgScoring_hWnd, &lvi);
+//		p_TSlvi.lParam = (LPARAM) result;	//	Try this for LPARAM
+		p_TSlvi.lParam = nItem;
+		p_TSlvi.pszText = result;
+		p_TSlvi.cchTextMax = wcslen(result);
+		ListView_SetItem(TS_hWnd, &p_TSlvi);
 	}
-	lstPos.clear();
-	lstRaceName.clear();
-	lstLapTimes.clear();
   }
   return 0;
 }
 
 
 
-//	Function updates the T&S screen for HPDE's and track days, based upon user choices for Race Sessions selected
+//	Function updates the HotLap screen for HPDE's and track days, based upon user choices for Race Sessions selected
 DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 {
   LPCTSTR lpszPath = (LPCTSTR)pv;
   CSfArtSQLiteDB sfDB;
   vector<wstring> lstTables;
-  HWND Dlg_hWnd = GetDlgItem(hWnd, IDC_TIMINGSCORING);
+//  HL_hWnd = GetDlgItem(hWnd, IDC_TIMINGSCORING);
   if(SUCCEEDED(sfDB.Open(lpszPath, lstTables, true)))
   {
 	  //	Race ID's are stored in the sfResult.m_RaceId structure
@@ -576,6 +743,7 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 			TCHAR szRaceName[300] = {NULL};
 			TCHAR szComment[300] = {NULL};
 			TCHAR szLap[300] = {NULL};
+			//	Load up all of the HL vectors with data from the database
 			while(sfQuery.Next())
 			{
 			  float flLapTime = 0;
@@ -591,52 +759,65 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 			  lstLapTimes.push_back(szLap);
 			  z++;
 			}
-			HWND Dlg_hWnd = GetDlgItem(hWnd, IDC_TIMINGSCORING);
-			ListView_DeleteAllItems(Dlg_hWnd);	//	Clear the list before displaying the update
+//			HWND HL_hWnd = GetDlgItem(hWnd, IDC_TIMINGSCORING);
+			ListView_DeleteAllItems(HL_hWnd);	//	Clear the list before displaying the update
 			ClearHotLaps();	//	Clear the Top 40 Hot Laps list before updating
 			TCHAR szText[MAX_PATH] = {NULL};
 
 			// set up list view items
 			int nItem;
-			LVITEM lvi;
+//			LVITEM p_HLlvi;
 			LPWSTR result;
 			for (nItem = 0; nItem < z - 1; ++nItem)
 			{
-				lvi.mask = LVIF_TEXT | LVIF_PARAM;
-				lvi.iItem = nItem;
-				lvi.iSubItem = 0;
-				lvi.lParam = nItem;
+				p_HLlvi.mask = LVIF_TEXT | LVIF_PARAM;
+				p_HLlvi.iItem = nItem;
+				p_HLlvi.iSubItem = 0;
+				p_HLlvi.lParam = nItem;
 				std::wstring strPos(lstPos[nItem]);
 				result = (LPWSTR)strPos.c_str();		  
-				lvi.pszText = result;
-				lvi.cchTextMax = wcslen(result);
-				ListView_InsertItem(Dlg_hWnd, &lvi);
+				p_HLlvi.pszText = result;
+				p_HLlvi.cchTextMax = wcslen(result);
+				ListView_InsertItem(HL_hWnd, &p_HLlvi);
 
 				// set up subitems
-				lvi.mask = LVIF_TEXT;
-				lvi.iItem = nItem;
+				p_HLlvi.mask = LVIF_TEXT;
+				p_HLlvi.iItem = nItem;
 
-				lvi.iSubItem = 1;
+				p_HLlvi.iSubItem = 1;
 				std::wstring strRace(lstRaceName[nItem]);
 				result = (LPWSTR)strRace.c_str();		  
-				lvi.pszText = result;
-				lvi.cchTextMax = wcslen(result);
-				ListView_SetItem(Dlg_hWnd, &lvi);
+				//From TCHAR to DWORD.
+//				DWORD dwSomeNum;
+//				dwSomeNum = wcstod(result, _T('\0'));
+//				p_HLlvi.lParam = (LPARAM) dwSomeNum;	//	Try this for LPARAM
+				p_HLlvi.lParam = nItem;
+				p_HLlvi.pszText = result;
+				p_HLlvi.cchTextMax = wcslen(result);
+				ListView_SetItem(HL_hWnd, &p_HLlvi);
 
-				lvi.iSubItem = 2;
+				p_HLlvi.iSubItem = 2;
 				std::wstring strComment(lstComment[nItem]);
 				result = (LPWSTR)strComment.c_str();		  
-				lvi.pszText = result;
-				lvi.cchTextMax = wcslen(result);
-				ListView_SetItem(Dlg_hWnd, &lvi);
+				//From TCHAR to DWORD.
+//				dwSomeNum = wcstod(result, _T('\0'));
+//				p_HLlvi.lParam = (LPARAM) dwSomeNum;	//	Try this for LPARAM
+				p_HLlvi.lParam = nItem;
+				p_HLlvi.pszText = result;
+				p_HLlvi.cchTextMax = wcslen(result);
+				ListView_SetItem(HL_hWnd, &p_HLlvi);
 
-				lvi.iSubItem = 3;
-				lvi.pszText = (LPWSTR)&lstLapTimes[nItem];
+				p_HLlvi.iSubItem = 3;
+				p_HLlvi.pszText = (LPWSTR)&lstLapTimes[nItem];
 				std::wstring strLapTimes(lstLapTimes[nItem]);
 				result = (LPWSTR)strLapTimes.c_str();		  
-				lvi.pszText = result;
-				lvi.cchTextMax = wcslen(result);
-				ListView_SetItem(Dlg_hWnd, &lvi);
+				//From TCHAR to DWORD.
+//				dwSomeNum = wcstod(result, _T('\0'));
+//				p_HLlvi.lParam = (LPARAM) dwSomeNum;	//	Try this for LPARAM
+				p_HLlvi.lParam = nItem;
+				p_HLlvi.pszText = result;
+				p_HLlvi.cchTextMax = wcslen(result);
+				ListView_SetItem(HL_hWnd, &p_HLlvi);
 			}
 	  
 			//	Now load the RACERESULTS vectors with the Top 40 Hot Laps for saving to a text file
@@ -663,6 +844,7 @@ DWORD* CDlgTimingScoring::TimingScoringProc(LPVOID pv, HWND hWnd)
 	  lstRaceName.clear();
 	  lstComment.clear();
 	  lstLapTimes.clear();
+	  sfDB.Close();
   }
   return 0;
 }

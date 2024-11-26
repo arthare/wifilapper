@@ -7,6 +7,8 @@
 class CSQLiteLap : public ILap
 {
 public:
+	vector <int> vLastLapId;
+	
   CSQLiteLap(CSfArtSQLiteDB& sfDB, ILapReceiver* pWriteBack) : m_sfDB(sfDB),m_pWriteBack(pWriteBack), m_fLoaded(false) {};
   virtual ~CSQLiteLap() {};
 
@@ -579,6 +581,20 @@ vector<const ILap*> CSQLiteLapDB::GetLaps(int iRaceId)
   }
   return lstLaps;
 }
+
+//////////////////////////////////////////////////////////////
+const ILap* CSQLiteLapDB::GetLastLap() {
+  AutoLeaveCS _cs(&m_cs);
+  DASSERT(vLastLapId.size() < 2);
+  if( !vLastLapId.empty() ) {
+	const int ret = vLastLapId.back();
+	vLastLapId.pop_back();
+	return GetLap(ret);
+  }
+  else
+	return NULL;
+}
+
 //////////////////////////////////////////////////////////////
 const ILap* CSQLiteLapDB::GetLap(int iLapId)
 {
@@ -684,10 +700,13 @@ void CSQLiteLapDB::GetComments(int iLapId, vector<wstring>& lstComments) const
     }
   }
 }
+
 //////////////////////////////////////////////////////////////
 void CSQLiteLapDB::AddLap(const ILap* pLap, int _iRaceId)
 {
   AutoLeaveCS _cs(&m_cs);
+  vLastLapId.push_back(pLap->GetLapId());
+  
   CARNUMBERCOMBO sfCarNumber = pLap->GetCarNumbers();
   int iSaveRaceId = -1;
   if(mapCarNumberRaceIds.find(sfCarNumber) == mapCarNumberRaceIds.end())

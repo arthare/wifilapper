@@ -10,8 +10,8 @@ public:
   RACERERUN_RESULT()
   {
     fCancelled = false;
-	iStart = 0;
-	iEnd = 0;
+//	iStart = 0;
+//	iEnd = 0;
   }
   bool fCancelled;
   int iStart;

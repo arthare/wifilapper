@@ -14,7 +14,7 @@ LRESULT CWarningDlg::DlgProc(HWND c_hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		swprintf(szMessage, NUMCHARS(szMessage), L"One or more of the alarm limits has been triggered\n\nCheck your Data Value parameters!!\n\nFailing Channel(s): \n%s", m_szYString);
 		HWND hWndWarning = GetDlgItem(c_hWnd, IDC_WARNING1);
 		SendMessage(hWndWarning, WM_SETTEXT, NUMCHARS(szMessage), (LPARAM)szMessage);
-		MessageBeep(MB_ICONWARNING);
+		MessageBeep(MB_OK);	//	Play a warning sound
 		break;
     }
     case WM_COMMAND:

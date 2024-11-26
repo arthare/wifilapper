@@ -123,9 +123,7 @@ copyjs_rel.bat</Command>
     <ClInclude Include="DlgRaceSelectEdit.h" />
     <ClInclude Include="DlgSelectSessions.h" />
     <ClInclude Include="DlgSetSplits.h" />
-    <ClInclude Include="DlgSplash.h" />
     <ClInclude Include="DlgTimingScoring.h" />
-    <ClInclude Include="DlgTractionCircle.h" />
     <ClInclude Include="DlgWarning.h" />
     <ClInclude Include="Hyperlinks.h" />
     <ClInclude Include="jpge.h" />
@@ -153,9 +151,7 @@ copyjs_rel.bat</Command>
     <ClCompile Include="DlgRaceSelectEdit.cpp" />
     <ClCompile Include="DlgSelectSessions.cpp" />
     <ClCompile Include="DlgSetSplits.cpp" />
-    <ClCompile Include="DlgSplash.cpp" />
     <ClCompile Include="DlgTimingScoring.cpp" />
-    <ClCompile Include="DlgTractionCircle.cpp" />
     <ClCompile Include="DlgWarning.cpp" />
     <ClCompile Include="Hyperlinks.cpp" />
     <ClCompile Include="jpge.cpp" />

@@ -6,7 +6,6 @@
 #include "ArtTools.h" // for FLOATRECT
 #include "ArtUI.h" // for ArtOpenGLWindow
 
-
 LRESULT CSetSplitsDlg::DlgProc
 (
   HWND hWnd, 
@@ -42,10 +41,8 @@ LRESULT CSetSplitsDlg::DlgProc
   {
 	return 0;
   }
-  
   switch(uMsg)
   {
-
     case WM_INITDIALOG:
     {
 		//	Get the Start time for the lap and store it
@@ -60,7 +57,6 @@ LRESULT CSetSplitsDlg::DlgProc
 			pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 			pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 		}
-
 		x = FINISH;
 		{
 			const TimePoint2D& p = lstPoints[lstPoints.size()-1];
@@ -70,15 +66,11 @@ LRESULT CSetSplitsDlg::DlgProc
 			pSF[x].m_pt1 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 			pSF[x].m_pt2 = V2D(m_sfLapOpts->m_SplitPoints[x].m_sfXPoint,m_sfLapOpts->m_SplitPoints[x].m_sfYPoint);
 		}
-
 		//	Show the split points
 		m_sfLapOpts->fDrawSplitPoints = true;
-
 		//	The the OGL handle
 		p_sfRefLapPainter.Init(hWnd_OGL);
-
 		p_sfRefLapPainter.DrawLapLines(*m_sfLapOpts); // draws laps as a map
-
         return TRUE;
 	}
 /*    case WM_MOUSEMOVE:
@@ -163,72 +155,56 @@ LRESULT CSetSplitsDlg::DlgProc
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT1, szTempSplit, hWnd);
-				  
 				m_sfLapOpts->fDrawSplitPoints = true;
-
 				return TRUE;
 			}
 			case IDC_SETSPLIT2:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT2, szTempSplit, hWnd);
-
 				m_sfLapOpts->fDrawSplitPoints = true;
-
 				return TRUE;
 			}
 			case IDC_SETSPLIT3:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT3, szTempSplit, hWnd);
-
 				m_sfLapOpts->fDrawSplitPoints = true;
-
 				return TRUE;
 			}
 			case IDC_SETSPLIT4:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT4, szTempSplit, hWnd);
-
 				m_sfLapOpts->fDrawSplitPoints = true;
-
 				return TRUE;
 			}
 			case IDC_SETSPLIT5:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT5, szTempSplit, hWnd);
-
 				m_sfLapOpts->fDrawSplitPoints = true;
-
 				return TRUE;
 			}
 			case IDC_SETSPLIT6:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT6, szTempSplit, hWnd);
-
 				m_sfLapOpts->fDrawSplitPoints = true;
-
 				return TRUE;
 			}
 			case IDC_SETSPLIT7:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT7, szTempSplit, hWnd);
-
 				m_sfLapOpts->fDrawSplitPoints = true;
-
 				return TRUE;
 			}
 			case IDC_SETSPLIT8:
 			{
 				//	Get the Finish time for the lap and store it and fill in the S/F vectors for this lap
 				GetSplitPoint(SPLIT8, szTempSplit, hWnd);
-
 				m_sfLapOpts->fDrawSplitPoints = true;
-
 				return TRUE;
 			}
 			case IDOK:

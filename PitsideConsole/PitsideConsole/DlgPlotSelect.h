@@ -40,6 +40,8 @@ struct PITSIDE_SETTINGS
 	iVelocity = 1;
 	iMapLines = 1;
 	iColorScheme = 0;
+	bSmoothYesNo = false;
+	bXAxis_KM = false;
   }
 
   int fRunHTTP;
@@ -47,6 +49,8 @@ struct PITSIDE_SETTINGS
   int iVelocity;
   int iMapLines;
   int iColorScheme;
+  bool bSmoothYesNo;
+  bool bXAxis_KM;
 };
 
 struct TRANSFORMATION
@@ -66,20 +70,38 @@ struct TRANSFORMATION
 	float f_CoeffC;
 	bool b_LoadTrans;
 };
+/*
+enum UNIT_PREFERENCE
+{
+  UNIT_PREFERENCE_KMH,
+  UNIT_PREFERENCE_MPH,
+  UNIT_PREFERENCE_MS,
 
+  UNIT_PREFERENCE_COUNT,
+};
+*/
 enum LAPSORTSTYLE
 {
 	SORTSTYLE_BYTIMEOFRACE, // sort by the time the lap was done: 2:31pm comes before 4:45pm (well... on the same day)
 	SORTSTYLE_BYLAPTIME, // sort by lap time.  1:12.15 comes before 1:13.45
 };
 
+enum ORIENTATION	//	These are phone orientatino ENUMS, for setting up the Traction Circle display inside LapPainter.cpp
+{
+	VERTICAL_LANDSCAPE,
+	VERTICAL_PORTRAIT,
+	FLAT_LANDSCAPE,
+	FLAT_PORTRAIT
+};
+
 struct LAPSUPPLIEROPTIONS
 {
 public:
-  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),fDrawSplitPoints(false),fDrawGuides(true),fDrawLines(true),fColorScheme(false),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0),bTractionCircle(false)
+  LAPSUPPLIEROPTIONS() : eUnitPreference(UNIT_PREFERENCE_MPH),bXAxis_KM(false),fDrawSplitPoints(false),fDrawGuides(true),fDrawLines(true),fColorScheme(false),fIOIOHardcoded(true),flWindowShiftX(0),flWindowShiftY(0),iZoomLevels(0),bTractionCircle(false),bShowReferenceLap(true),e_Orientation(VERTICAL_LANDSCAPE), b_Button_LiveData(true)
   {
   }
   UNIT_PREFERENCE eUnitPreference;
+  bool bXAxis_KM;
   bool fDrawSplitPoints;
   bool fDrawGuides;
   bool fDrawLines; // whether to draw lines between data points
@@ -95,6 +117,11 @@ public:
   HWND hWndLap[50];
   LAPSORTSTYLE eSortPreference;
   bool bTractionCircle;		//	Whether or not to display the Traction Circle display
+  bool bSmoothYesNo;	//	Whether or not to smooth the accelerometer graphs
+  bool bShowReferenceLap;	//	Whether or not the Reference Lap is displayed
+  ORIENTATION e_Orientation;	//	Phone orientation when installed in the car
+  BOOL b_Button_LiveData;		//	Button for choosing to pause live data collection to allow for data processing
+  int LapId;
 };
 
 

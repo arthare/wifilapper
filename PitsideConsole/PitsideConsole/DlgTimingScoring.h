@@ -53,7 +53,7 @@ public:
 public:
   TS_RESULT* m_pResults;
   DWORD* TimingScoringProc(LPVOID pv, HWND hWnd);
-  DWORD* CRaceScoring(LPVOID pv, HWND hWnd);
+  DWORD* CRaceScoring(LPVOID pv, HWND hWnd, int tmStartRace, int tmEndRace);
 
 private:
   ILapReceiver* m_pLapDB;
@@ -61,6 +61,5 @@ private:
   TCHAR m_szPath[MAX_PATH];
   SELECTSESSIONS_RESULT* m_sfResult;
   int str_ends_with(const TCHAR * str, const TCHAR * suffix);
-  int tmStartRace, tmEndRace;	//	Variables for setting up receive time / live car position
   void ClearHotLaps();
 };

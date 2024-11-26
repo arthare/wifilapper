@@ -21,10 +21,10 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
       lstCols.push_back(L"Date");
       lstCols.push_back(L"Race Name");
       lstCols.push_back(L"Laps");
-      lstWidths.push_back(75);
+      lstWidths.push_back(85);
       lstWidths.push_back(160);
       lstWidths.push_back(40);
-      sfListBox.Init(GetDlgItem(hWnd,IDC_RACE),lstCols,lstWidths);
+      sfListBox.Init2(GetDlgItem(hWnd,IDC_RACE),lstCols,lstWidths);
 
       // gotta set up the list
       vector<RACEDATA> lstRaces = m_pLapDB->GetRaces();
@@ -55,7 +55,7 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
       {
         case IDOK:
         {
-          set<LPARAM> set = sfListBox.GetSelectedItemsData();
+          set<LPARAM> set = sfListBox.GetSelectedItemsData2();
           if(set.size() == 1)
           {
 			MessageBox(NULL,L"Only 1 race session selected\n\nNo changes were made",L"", MB_OK);
@@ -84,7 +84,7 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		  if(!sfResult.fCancelled)
 		  {
 			  // Okay they are serious and really want to merge these race sessions
-			  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+			  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData2();
 			  if(setSelected.size() == 1)
 			  {
 				//	Do nothing, only 1 race session chosen
@@ -125,12 +125,31 @@ LRESULT CRaceSelectEditDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         {
 		  //	Let's make sure that the user really wants to do this.
 		  RENAMEDLG_RESULT sfResult;
+		  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData2();
+		  if(setSelected.size() >= 1)
+		  {
+			  //   Get the current Race Name to insert into edit dialog
+			  for(set<LPARAM>::const_iterator i = setSelected.begin(); i != setSelected.end(); i++)
+			  {
+				// Let's find the race name in the database to display in the edit dialog
+				vector<RACEDATA> lstRaces = m_pLapDB->GetRaces();
+      
+				for(int x = 0;x < lstRaces.size(); x++)
+				{
+					if( lstRaces[x].raceId == *i)
+					{
+						wcscpy_s( sfResult.szName, NUMCHARS(sfResult.szName), lstRaces[x].strName.c_str() );	//	Copy the string to the sfResult pointer
+						break;
+					}
+				}
+			  }
+		  }
 		  CRenameDlg dlgRaceRename(&sfResult);
 		  ArtShowDialog<IDD_RACENAMECHANGE>(&dlgRaceRename);
 		  if(!sfResult.fCancelled)
 		  {
 			  // Okay they are serious and really want to rename these race sessions
-			  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+			  set<LPARAM> setSelected = sfListBox.GetSelectedItemsData2();
 			  if(setSelected.size() == 0)
 			  {
 				//	Do nothing, no race sessions chosen

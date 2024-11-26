@@ -15,10 +15,10 @@ LRESULT CDlgSelectSessions::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
       lstCols.push_back(L"Date");
       lstCols.push_back(L"Race Name");
       lstCols.push_back(L"Laps");
-      lstWidths.push_back(75);
+      lstWidths.push_back(85);
       lstWidths.push_back(160);
       lstWidths.push_back(40);
-      sfListBox.Init(GetDlgItem(hWnd,IDC_RACE),lstCols,lstWidths);
+      sfListBox.Init2(GetDlgItem(hWnd,IDC_RACE),lstCols,lstWidths);
 
       // gotta set up the list
       vector<RACEDATA> lstRaces = m_pLapDB->GetRaces();
@@ -49,7 +49,7 @@ LRESULT CDlgSelectSessions::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
       {
         case IDOK:
         {
-          set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+          set<LPARAM> setSelected = sfListBox.GetSelectedItemsData2();
           if(setSelected.size() > 0)
           {
 			//   Need to find all Race Sessions selected
@@ -66,7 +66,13 @@ LRESULT CDlgSelectSessions::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
           else
           {
 			//	Do nothing, no race sessions chosen
-			MessageBox(NULL,L"No race sessions selected\n\nSelect some race sessions and try again",L"", MB_OK);
+			int iRet = MessageBox(NULL,L"No race sessions selected\n\nDo you want to start a race without any racers?\n\n(Do this if you want to capture the Start and End time markers\nfor Re-Running the race scenario once all data is collected)",L"", MB_YESNO);
+			if(iRet == IDYES)
+			{
+				m_pResults->m_RaceId[0] = -1;	//	No Race_Id stored, so let's just save the start/end markers
+				m_pResults->fCancelled = false;
+				EndDialog(hWnd,0);
+			}
           }
           return TRUE;
         }

@@ -1,7 +1,9 @@
 #pragma once
 #include <vector>
-#include "LapReceiver.h"
 #include "ArtTools.h" // for FormatTimeMinutesSecondsMs
+#include "resource.h"
+#include "LapReceiver.h"
+#include "PitsideConsole.h"
 using namespace std;
 
 enum DATA_CHANNEL
@@ -9,13 +11,8 @@ enum DATA_CHANNEL
   DATA_CHANNEL_START = 0,
   DATA_CHANNEL_X = DATA_CHANNEL_START,
   DATA_CHANNEL_Y = 1,
-
   DATA_CHANNEL_PLOTTABLE_START = 2,
-
   DATA_CHANNEL_DISTANCE = DATA_CHANNEL_PLOTTABLE_START,
-  DATA_CHANNEL_TIME = 11,
-  DATA_CHANNEL_ELAPSEDTIME = 12,
-  DATA_CHANNEL_LAPTIME_SUMMARY = 13,
   DATA_CHANNEL_VELOCITY = 3,
   DATA_CHANNEL_TIMESLIP = 4,
   DATA_CHANNEL_X_ACCEL = 5,
@@ -24,15 +21,32 @@ enum DATA_CHANNEL
   DATA_CHANNEL_RECEPTION_X = 8,
   DATA_CHANNEL_RECEPTION_Y = 9,
   DATA_CHANNEL_Z_ACCEL = 10,
+  DATA_CHANNEL_TIME = 11,
+  DATA_CHANNEL_ELAPSEDTIME = 12,
+  DATA_CHANNEL_LAPTIME_SUMMARY = 13,
+  DATA_CHANNEL_VELOCITYDELTA = 14,
 
+  DATA_CHANNEL_STRENGTH = 0x11,
+  DATA_CHANNEL_HRM = 0x80,
+  DATA_CHANNEL_PING = 0x81,
   DATA_CHANNEL_PID_START = 0x100,
   DATA_CHANNEL_PID_END = 0x200,
 
-  DATA_CHANNEL_IOIOPIN_START = 0x200,
+  DATA_CHANNEL_IOIOPIN_START = 0x201,
   DATA_CHANNEL_IOIOPIN_END = 0x300,
   DATA_CHANNEL_IOIOCUSTOM_START = 0x301,
   DATA_CHANNEL_IOIOCUSTOM_END = 0x400,
-  DATA_CHANNEL_COUNT,
+  DATA_CHANNEL_RACEDAC_START = 0x401,
+  DATA_CHANNEL_RACEDAC_END = 0x500,
+  DATA_CHANNEL_RACEDACCUSTOM_START = 0x501,
+  DATA_CHANNEL_RACEDACCUSTOM_END = 0x600,
+  DATA_CHANNEL_COUNT = 0x601,
+};
+
+enum XAXIS_PREFERENCE
+{
+  XAXIS_PREFERENCE_LAT,
+  XAXIS_PREFERENCE_KM,
 };
 
 enum UNIT_PREFERENCE
@@ -43,11 +57,15 @@ enum UNIT_PREFERENCE
 
   UNIT_PREFERENCE_COUNT,
 };
+
 void GetDataChannelName(DATA_CHANNEL eDC, LPTSTR lpszName, int cch);
 float ConvertSpeed(UNIT_PREFERENCE eConvertTo, float flVelocityInMetersPerSecond);
+bool bXAxisUnits(XAXIS_PREFERENCE xConvertTo);
 LPCSTR GetUnitText(UNIT_PREFERENCE eUnits);
 void GetChannelString(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPSTR lpsz, int cch);
 void GetChannelValue(DATA_CHANNEL eX, UNIT_PREFERENCE eUnits, float flValue, LPSTR lpsz, int cch);
+const double fReturnDistanceInMeters (const TimePoint2D& p, TimePoint2D ptLast);
+static bool b_Distance;	//	Whether or not distance is reported in KM or LAT
 
 bool FindClosestTwoPoints(const TimePoint2D& p, double dInputPercentage, const vector<TimePoint2D>& lstPoints, TimePoint2D* pt1, TimePoint2D* pt2);
 
@@ -99,6 +117,23 @@ public:
         swprintf(lpszBuffer, cchBuffer, L"%02d:%02d:%02d - Laptime: %s", m_tmStart.wHour, m_tmStart.wMinute, m_tmStart.wSecond, szTime);
       }
   }
+static bool SetDistance(int b_KmOrLat)	//	Function to set X-Axis units in either KM to Latitude/Longitudinal degrees
+  {
+      if( b_KmOrLat == -1 )	//	Read the existing state of the switch
+	  {
+		  return b_Distance;
+	  }
+      else if( b_KmOrLat == 1 )
+      {
+        b_Distance = true;
+		return true;
+      }
+      else
+      {
+        b_Distance = false;
+		return false;
+      }
+  }
   static void GetStringHeaders(vector<wstring>& lstCols, vector<int>& lstWidths)
   {
     lstCols.push_back(L"Time");
@@ -117,6 +152,17 @@ public:
   {
     lstCols.push_back(L"Y-Axis");
     lstWidths.push_back(90);
+  }
+  static void GetStringHeadersDataValues(vector<wstring>& lstCols, vector<int>& lstWidths)
+  {
+	lstCols.push_back(L"Parameter");
+    lstWidths.push_back(110);
+    lstCols.push_back(L"Min:");
+    lstWidths.push_back(50);
+    lstCols.push_back(L"Max:");
+    lstWidths.push_back(50);
+    lstCols.push_back(L"Avg:");
+    lstWidths.push_back(50);
   }
   void GetStrings(vector<wstring>& lstStrings) const
   {
@@ -189,11 +235,14 @@ private:
 private:
   ILapReceiver* m_pLapDB;
   CExtendedLap* m_pReferenceLap;
-  const ILap* m_pLap;
+//  const ILap* m_pLap;	//	Made public by KDJ
   SYSTEMTIME m_tmRecv; // when was this thing constructed?
   SYSTEMTIME m_tmStart; // when was this thing started on-track?
 public:
+  const ILap* m_pLap;
   vector<TimePoint2D> m_lstPoints;	//	Made public by KDJ
+//  mutable map<DATA_CHANNEL,const IDataChannel*> m_mapChannels; // we own these pointers.  We get them allocated in ComputeLapData, and it is our responsibility to get them de-allocated
+
 private:  
   bool m_fComputeTimeSlip; // time-slip is the most expensive data channel, so let's allow the caller to choose not to compute it
 

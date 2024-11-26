@@ -16,10 +16,10 @@ LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
       lstCols.push_back(L"Date");
       lstCols.push_back(L"Race Name");
       lstCols.push_back(L"Laps");
-      lstWidths.push_back(75);
+      lstWidths.push_back(85);
       lstWidths.push_back(160);
       lstWidths.push_back(40);
-      sfListBox.Init(GetDlgItem(hWnd,IDC_RACE),lstCols,lstWidths);
+      sfListBox.Init2(GetDlgItem(hWnd,IDC_RACE),lstCols,lstWidths);
 
       // gotta set up the list
       vector<RACEDATA> lstRaces = m_pLapDB->GetRaces();
@@ -50,7 +50,7 @@ LRESULT CRaceSelectDlg::DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
       {
         case IDOK:
         {
-          set<LPARAM> setSelected = sfListBox.GetSelectedItemsData();
+          set<LPARAM> setSelected = sfListBox.GetSelectedItemsData2();
 		  if (setSelected.size() > 0)
           {
 			//   Need to find all Race Sessions selected

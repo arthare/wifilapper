@@ -7,6 +7,9 @@
 #include "ArtTools.h"
 #include <map>
 #include "ArtSQL/ArtSQLite.h"
+#include "PitsideConsole.h"
+//#include "DlgPlotSelect.h"
+//#include "LapPainter.h"
 
 using namespace std;
 
@@ -109,6 +112,13 @@ struct V2InputLapRaw
 	TimePoint2D rgPoints[1];
 };
 
+//   CDataChannelFilter is a functino to allow for data transformations inputed by the user - KDJ
+class CDataChannelFilter
+{
+public:
+  virtual float ApplyTo(float flValue) const = 0;
+};
+
 class IDataChannel
 {
 public:
@@ -160,7 +170,7 @@ public:
   float GetMax() const override;
   int GetEndTimeMs() const override;
   int GetStartTimeMs() const override;
-
+  
   const vector<DataPoint>& GetData() const override {return lstData;}
 
   void AddPoint(int iTime, float flValue) override; // iTime must be in milliseconds since the phone app started.  flValue can be whatever you want
@@ -377,6 +387,7 @@ public:
   virtual vector<const ILap*> GetLaps(int iRaceId) = 0;
   virtual vector<const ILap*> GetScoring(int iRaceId) = 0;
   virtual const ILap* GetLap(int iLapId) = 0;
+  virtual const ILap* GetLastLap() = 0;
   virtual const IDataChannel* GetDataChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;
   virtual set<DATA_CHANNEL> GetAvailableChannels(int iLapId) const = 0;
   virtual void GetComments(int iLapId, vector<wstring>& lstComments) const = 0;
@@ -393,10 +404,90 @@ public:
   virtual LPCTSTR GetNetStatus(NETSTATUSSTRING eString) const = 0;
   virtual bool MergeLaps(int m_iRaceId1, int m_iRaceId2) = 0;
   virtual bool RenameLaps(TCHAR szName[260], int m_RaceId1) = 0;
+//  virtual bool m_Button_LiveData();
 };
+/*
+// LapSupplier interface - needed so that LapReceiver knows whether or not to collect Live Data, from m_sfLapOpts
+interface ILapSupplier
+{
+public:
+  virtual vector<CExtendedLap*> GetLapsToShow() const = 0;	// <-- returns which laps you want painted
+  virtual vector<CExtendedLap*> GetAllLaps() const = 0;		// <-- returns all the laps
+  virtual LAPDISPLAYSTYLE GetLapDisplayStyle(int iSupplierId) const = 0;	// <-- returns how you want the laps shown: this can be a map or a data plot
+  virtual DATA_CHANNEL GetXChannel() const = 0;				//  <-- returns what data channel you want to use for the x-axis
+  virtual vector<DATA_CHANNEL> GetYChannels() const = 0;	//  <-- returns what data channels you want to use for the y-axes (can be 1 or more)
+  virtual const IDataChannel* GetChannel(int iLapId, DATA_CHANNEL eChannel) const = 0;	// <-- returns the actual data channel object for a given lap.
+  virtual FLOATRECT GetAllLapsBounds() const = 0;			//  <-- returns the x and y bounds for all the laps
 
+  // guide-parameter functions - these configure the background horizontal/vertical lines
+  virtual float GetGuideStart(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	//  <-- returns the position (in the units of whatever data channel you're plotting) of the first line we should draw
+  virtual float GetGuideStartX(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	//  <-- returns the position (in the units of whatever data channel you're plotting) of the first line we should draw
+  virtual float GetGuideStep(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	// <-- returns the distance between guidelines (in units of whatever data channel you're plotting)
+  virtual float GetGuideStepX(DATA_CHANNEL eChannel, float flMin, float flMax) = 0;	// <-- returns the distance between guidelines (in units of whatever data channel you're plotting)
+  virtual float GetDataHardcodedMin(DATA_CHANNEL eChannel) const = 0;		// <-- returns the absolute lowest value we want to display for a given data channel type
+  virtual float GetDataHardcodedMax(DATA_CHANNEL eChannel) const = 0;		// <-- returns the absolute highest value we want to display for a given data channel type
+
+  // highlighting functions
+  virtual void SetLapHighlightTime(const CExtendedLap* pLap, int iTimeMs) = 0;	//  <-- only call if you are a HighlightSource. Sets the time in milliseconds that should be highlighted.
+  virtual int GetLapHighlightTime(const CExtendedLap* pLap) const = 0;		// <-- gets the time in milliseconds that should be highlighted.
+  virtual bool IsHighlightSource(int iSupplierId) const = 0; // returns whether the caller should be a lap highlighter (calling SetLapHighlightTime) or a lap highlight-receiver (calling GetLapHighlightTime)
+
+  virtual const LAPSUPPLIEROPTIONS& GetDisplayOptions() const = 0;		// <-- gets more display options.
+};
+class CReceiveLapOpts
+{
+public:
+  CReceiveLapOpts(ILapSupplier* pLapSupplier);
+  virtual ~CReceiveLapOpts();
+//private:
+  ILapSupplier* m_pLapSupplier;
+};
+*/
+
+/*
+//	Pull in the Lap Options information so that data collection can be turned on and off with the button
+class CReceiveLapOpts
+{
+public:
+  CReceiveLapOpts(LAPSUPPLIEROPTIONS* q_sfLapOpts) : m_sfLapOpts(q_sfLapOpts)
+  {
+  };
+  // <-- gets more display options.
+  virtual const LAPSUPPLIEROPTIONS& GetDisplayOptions() const
+  {
+    return *m_sfLapOpts;
+  }
+//private:
+	LAPSUPPLIEROPTIONS* m_sfLapOpts;
+	bool m_Button_LiveData();
+};
+*/
 // net-thread entry point.  Fills a ILapReceiver from the network
 bool ReceiveLaps(int iPort, ILapReceiver* pLaps);
 
 // fills an ILapReceiver from an SQLite database
 void LoadFromSQLite(LPCTSTR lpszSQL, int iRaceId, ILapReceiver* pRecv);
+
+class PassThroughFilter : public CDataChannelFilter
+{
+public:
+  virtual float ApplyTo(float flValue) const override {return flValue;}
+};
+
+class DoublerFilter : public CDataChannelFilter // for example
+{
+public:
+  virtual float ApplyTo(float flValue) const override {return flValue*2;}
+};
+
+class SmoothedFilter : public CDataChannelFilter // Smoothes the data channel for display
+{
+public:
+  virtual float ApplyTo(float flValue) const override 
+  {
+	  return flValue;
+  }
+};
+
+void fBoxMovingAvg( int n, vector<DataPoint>& lstPoints, int w, vector<DataPoint>& lstSmoothPts );
+

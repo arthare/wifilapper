@@ -23,7 +23,8 @@ public:
   ArtListBox()
   {
   }
-  void Init(HWND hWnd, const vector<wstring>& lstColumnHeaders, const vector<int>& lstColWidths)
+  //	Initialization routine for Listviews with checkboxes for multiple-select options
+  void Init2(HWND hWnd, const vector<wstring>& lstColumnHeaders, const vector<int>& lstColWidths)
   {
     DASSERT(lstColumnHeaders.size() == lstColWidths.size());
 
@@ -56,8 +57,46 @@ public:
         SendMessage(m_hWnd,LVM_INSERTCOLUMN,x,(LPARAM)&LvCol); // Insert/Show the coloum
       }
     }
-    ListView_SetExtendedListViewStyleEx(m_hWnd, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+	ListView_SetExtendedListViewStyleEx(m_hWnd, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_SHOWSELALWAYS, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_SHOWSELALWAYS);
   }
+
+  //	Original Listview initialization function for non-checkbox Listviews
+  void Init(HWND hWnd, const vector<wstring>& lstColumnHeaders, const vector<int>& lstColWidths)
+  {
+    DASSERT(lstColumnHeaders.size() == lstColWidths.size());
+
+    m_hWnd = hWnd;
+
+    m_cColumns = lstColumnHeaders.size();
+    if(lstColumnHeaders.size() <= 0)	//	No data to display
+    {
+      RECT rc;
+      GetClientRect(m_hWnd,&rc);
+
+      LVCOLUMN LvCol = {0};
+      LvCol.mask=LVCF_TEXT|LVCF_WIDTH|LVCF_SUBITEM;
+      LvCol.pszText=L"";
+      LvCol.cx=RECT_WIDTH(&rc) - 30;
+		
+      SendMessage(m_hWnd,LVM_INSERTCOLUMN,0,(LPARAM)&LvCol); // Insert/Show the coloum
+    }
+    else								//	Data to display
+    {
+      LVCOLUMN LvCol = {0};
+      LvCol.mask=LVCF_TEXT|LVCF_WIDTH|LVCF_SUBITEM;
+      
+      for(unsigned int x = 0; x < lstColumnHeaders.size(); x++)
+      {
+        TCHAR szTemp[MAX_PATH];
+        wcsncpy_s(szTemp,lstColumnHeaders[x].c_str(),NUMCHARS(szTemp));
+        LvCol.cx=lstColWidths[x];
+        LvCol.pszText=szTemp;
+        SendMessage(m_hWnd,LVM_INSERTCOLUMN,x,(LPARAM)&LvCol); // Insert/Show the coloum
+      }
+    }
+	ListView_SetExtendedListViewStyleEx(m_hWnd, LVS_EX_FULLROWSELECT | LVS_SHOWSELALWAYS, LVS_EX_FULLROWSELECT | LVS_SHOWSELALWAYS);
+  }
+
   void AddString(LPCTSTR lpszString, int iData)
   {
     TCHAR szString[MAX_PATH];
@@ -74,10 +113,45 @@ public:
 
     VERIFY(ListView_InsertItem(m_hWnd,&lvItem) >= 0);
   }
+
+  int GetCount() 
+  {
+	  return ListView_GetItemCount(m_hWnd);
+  }
+
+  // Insert the table row at the specified row number, iItem
+  void InsertStrings(vector<wstring> lstCols, int iData, int iItem)
+  {
+    DASSERT(lstCols.size() == m_cColumns);
+    
+    TCHAR szString[MAX_PATH];
+    wcsncpy_s(szString,lstCols[0].c_str(),NUMCHARS(szString));
+
+    {
+      LVITEM lvItem = {0};
+      lvItem.mask = LVIF_PARAM | LVIF_TEXT;
+      lvItem.lParam = iData;
+      lvItem.pszText = szString;
+      lvItem.iItem = iItem;
+      lvItem.iSubItem = 0;
+      lvItem.state = 0;
+      lvItem.stateMask = -1;
+      lvItem.cchTextMax = wcslen(szString);
+      VERIFY(ListView_InsertItem(m_hWnd,&lvItem) >= 0);
+    }
+
+    for(unsigned int x = 0;x < lstCols.size(); x++)
+    {
+      TCHAR szString[MAX_PATH];
+      wcsncpy_s(szString,lstCols[x].c_str(),NUMCHARS(szString));
+      ListView_SetItemText(m_hWnd, iItem, x, szString);
+    }
+  }
+
+  // Add the row at the end of the table
   void AddStrings(vector<wstring> lstCols, int iData)
   {
     DASSERT(lstCols.size() == m_cColumns);
-
     const int iItem = ListView_GetItemCount(m_hWnd);
     
     TCHAR szString[MAX_PATH];
@@ -100,17 +174,7 @@ public:
     {
       TCHAR szString[MAX_PATH];
       wcsncpy_s(szString,lstCols[x].c_str(),NUMCHARS(szString));
-
-      LVITEM lvItem = {0};
-      lvItem.mask = LVIF_TEXT;
-      lvItem.pszText = szString;
-      lvItem.iItem = iItem;
-      lvItem.iSubItem = x;
-      lvItem.state = 0;
-      lvItem.stateMask = -1;
-      lvItem.cchTextMax = wcslen(szString);
-
-      VERIFY(ListView_SetItem(m_hWnd,&lvItem));
+      ListView_SetItemText(m_hWnd, iItem, x, szString);
     }
   }
   void Clear()
@@ -150,31 +214,34 @@ public:
     int ixItem = -1;
     do
     {
-      ixItem = SendMessage(m_hWnd, LVM_GETNEXTITEM, ixItem, LVNI_ALL);
+      ixItem = SendMessage(m_hWnd, LVM_GETNEXTITEM, ixItem, LVNI_ALL);	//	Search sequentially through the LV index
       if(ixItem >= 0)
       {
         LVITEM sfItem = {0};
         sfItem.iItem = ixItem;
         sfItem.iSubItem = 0;
-        sfItem.stateMask = LVIS_SELECTED;
+        sfItem.stateMask = LVIS_SELECTED | LVIS_STATEIMAGEMASK;
         sfItem.mask = LVIF_STATE | LVIF_PARAM;
 
-        if(ListView_GetItem(m_hWnd,&sfItem))
+        if(ListView_GetItem(m_hWnd,&sfItem))	//	If item is exists, let's check it against the setData set for a match
         {
-          DASSERT(sfItem.lParam);
-          if(setData.find(sfItem.lParam) != end(setData))
+		  DASSERT(sfItem.lParam);
+		  //	See if the item is part of the selected set
+          if( setData.find(sfItem.lParam) != end(setData) )
           {
-            // found the item in the selection set, so make it selected
-            sfItem.state |= LVIS_SELECTED;
-            sfItem.stateMask |= LVIS_SELECTED;
-            ListView_SetItem(m_hWnd,&sfItem);
+            // found the item in the selection set, so make it selected and checkbox checked
+            sfItem.state |= LVIS_FOCUSED | LVIS_SELECTED;
+            sfItem.stateMask |= LVIS_SELECTED | LVIS_STATEIMAGEMASK;
+            ListView_SetItem(m_hWnd,&sfItem);				//	Highlight the lap
+			ListView_SetCheckState(m_hWnd,ixItem,true);		//	Check the checkbox
           }
           else
           {
             // this item is not supposed to be selected
-            sfItem.state &= ~LVIS_SELECTED;
-            sfItem.stateMask &= ~LVIS_SELECTED;
-            ListView_SetItem(m_hWnd, &sfItem);
+            sfItem.state &= ~LVIS_SELECTED & ~LVIS_FOCUSED;
+            sfItem.stateMask &= ~LVIS_SELECTED & ~LVIS_STATEIMAGEMASK;
+            ListView_SetItem(m_hWnd, &sfItem);				//	Unhighlight the lap
+			ListView_SetCheckState(m_hWnd,ixItem,false);	//	Uncheck the checkbox
           }
         }
         else
@@ -184,9 +251,130 @@ public:
       }
     } while(ixItem >= 0);
   }
-  set<LPARAM> GetSelectedItemsData() const
+  
+  set<LPARAM> GetSelectedItemsData() const	//	GetSelectedItems for single select Listviews
   {
     set<LPARAM> ret;
+    int ixSelect = -1;
+    do
+    {
+	  ixSelect = SendMessage(m_hWnd, LVM_GETNEXTITEM, ixSelect, LVNI_SELECTED);
+      if(ixSelect >= 0) 
+      {
+        LVITEM sfItem = {0};
+        sfItem.iItem = ixSelect;
+        sfItem.iSubItem = 0;
+        sfItem.stateMask = LVIS_SELECTED | LVIS_STATEIMAGEMASK;
+        sfItem.mask = LVIF_STATE | LVIF_PARAM;
+
+        if(ListView_GetItem(m_hWnd,&sfItem))
+        {
+          // found an item!
+          DASSERT(sfItem.lParam != NULL);
+          ret.insert(sfItem.lParam);
+        }
+		else {DASSERT(FALSE); break;}		// Added by KDJ to prevent locks when no data is passed
+      }
+    } while(ixSelect >= 0);
+
+    return ret;
+  }
+
+  set<LPARAM> GetSelectedItemsData2() const	//	New version to capture the checkbox selections for multi-select Listviews
+  {
+	set<LPARAM> ret;
+    int ixSelect = -1;
+	int iCount = 0;
+	int iTotCount = ListView_GetItemCount(m_hWnd);	//	Returns the number of items in the Listview
+/*
+	//	First let's clean up the selected or deselected the items and associated checkboxes
+	do
+	{
+		ixSelect = SendMessage(m_hWnd, LVM_GETNEXTITEM, ixSelect, LVNI_SELECTED);	//	Go through all of the selected items sequentially
+//		ixSelect = SendMessage(m_hWnd, LVM_GETNEXTITEM, ixSelect, LVNI_ALL);	//	Go through all of the LV items sequentially
+		if(ixSelect >= 0)
+		{
+			LVITEM sfItem = {0};
+			sfItem.iItem = ixSelect;
+			sfItem.iSubItem = 0;
+			sfItem.stateMask = LVIS_SELECTED | LVIS_STATEIMAGEMASK;
+			sfItem.mask = LVIF_STATE | LVIF_PARAM;
+			if( ListView_GetItem(m_hWnd,&sfItem) )	//	Item exists!
+			{
+				if ( ListView_GetItemState(m_hWnd,sfItem.iItem, LVIS_SELECTED) )	//	Item is selected
+				{
+					// Item is highlighted
+					ListView_SetCheckState(m_hWnd,sfItem.iItem, true);	//	Check the checkbox for this item
+					ListView_SetItemState(m_hWnd,sfItem.iItem, LVIS_SELECTED, LVIS_SELECTED);	//	Highlight the item
+					DASSERT(sfItem.lParam != NULL);
+					ret.insert(sfItem.lParam);		//	Add the item to the selected Set
+				}
+				else if ( !ListView_GetItemState(m_hWnd,sfItem.iItem, LVIS_SELECTED) )	//	Item is not highlighted, should not hit this
+				{
+					// Item is not highlighted
+					ListView_SetCheckState(m_hWnd,sfItem.iItem, false);	//	Uncheck the checkbox for this item
+					ListView_SetItemState(m_hWnd,sfItem.iItem, ~LVIS_SELECTED, LVIS_SELECTED);	//	Unhighlight the item
+					ret.erase(sfItem.lParam);		//	Remove this item from the set
+				}
+			}
+			else 
+			{
+				DASSERT(FALSE); 
+				break;
+			} // Added by KDJ to prevent locks when no data is passed
+		}
+	} while(ixSelect >= 0);	
+	//	Now let's find any other items that have their checkboxes checked, and add them to the set
+    for(iCount = 0; iCount < iTotCount; iCount++)	//	Let's clean up the Checkboxes and Selected items
+    {
+        LVITEM sfItem = {0};
+        sfItem.iItem = iCount;
+        sfItem.iSubItem = 0;
+        sfItem.stateMask = LVIS_SELECTED | LVIS_STATEIMAGEMASK;
+        sfItem.mask = LVIF_STATE | LVIF_PARAM;
+        // found an item!
+		ListView_GetItem(m_hWnd,&sfItem);	//	Get the details about the item and store the lParam
+		if(ListView_GetCheckState(m_hWnd,sfItem.iItem))	//	Check box is checked, let's highlight the item
+		{
+			ListView_SetItemState(m_hWnd,sfItem.iItem, LVIS_SELECTED, LVIS_SELECTED);	//	Highlight the checked item
+			DASSERT(sfItem.lParam != NULL);
+			ret.insert(sfItem.lParam);
+		}
+		else if(!ListView_GetCheckState(m_hWnd,sfItem.iItem) )	//	Checkbox is not checked, let's unhighlight the item
+		{
+			ListView_SetItemState(m_hWnd,sfItem.iItem, ~LVIS_SELECTED, LVIS_SELECTED);	//	Deselect the highlighted item
+			DASSERT(sfItem.lParam != NULL);
+			ret.erase(sfItem.lParam);		//	Remove this item from the set
+		}
+    }
+*/
+	for(iCount = 0; iCount < iTotCount; iCount++)	//	Let's clean up the Checkboxes and Selected items
+    {
+        LVITEM sfItem = {0};
+        sfItem.iItem = iCount;
+        sfItem.iSubItem = 0;
+        sfItem.stateMask = LVIS_SELECTED | LVIS_STATEIMAGEMASK;
+        sfItem.mask = LVIF_STATE | LVIF_PARAM;
+        // found an item!
+		ListView_GetItem(m_hWnd,&sfItem);	//	Get the details about the item and store the lParam
+		if(ListView_GetCheckState(m_hWnd,sfItem.iItem))	//	Check box is checked, let's highlight the item
+		{
+			ListView_SetItemState(m_hWnd,sfItem.iItem, LVIS_SELECTED, LVIS_SELECTED);	//	Highlight the checked item
+			DASSERT(sfItem.lParam != NULL);
+			ret.insert(sfItem.lParam);
+		}
+		else if(!ListView_GetCheckState(m_hWnd,sfItem.iItem) && ListView_GetItemState(m_hWnd,sfItem.iItem,LVIS_SELECTED))	//	Check box is not checked, let's unhighlight this item
+		{
+			ListView_SetItemState(m_hWnd,sfItem.iItem, ~LVIS_SELECTED, LVIS_SELECTED);	//	Unhighlight this item
+		}
+    }
+
+    return ret;	//	Return the set of items
+  }
+
+  set<LPARAM> GetSelectedItemsData3() const	//	Version to capture the Lap List for multi-select choices more efficiently
+  {
+	set<LPARAM> ret;
     int ixSelect = -1;
     do
     {
@@ -209,13 +397,13 @@ public:
       }
     } while(ixSelect >= 0);
 
-    return ret;
+	return ret;	//	Return the set of items
   }
+
 private:
   HWND m_hWnd;
   int m_cColumns; // used for debugging
 };
-
 
 #include "gl/gl.h"
 #include "gl/glu.h"
